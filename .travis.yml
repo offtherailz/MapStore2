@@ -9,6 +9,8 @@ before_install:
     - sh -e /etc/init.d/xvfb start
     - if [[ `npm -v` != 3* ]]; then npm i -g npm@3; fi
     - npm -v
+after_success:
+    - cat ./coverage/lcov.info | ./node_modules/.bin/codacy-coverage
 branches:
   only:
     - master
