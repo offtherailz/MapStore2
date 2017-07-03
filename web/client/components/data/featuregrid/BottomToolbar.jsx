@@ -12,12 +12,12 @@ module.exports = (props = {
     onPageChange: () => {}
 }) => {
     const {page = 0, size = 0, resultSize = 0, maxPages = 0, total = 0} = toPage(props);
-    return (<Grid fluid style={{width: "100%"}}>
-        <Row>
+    return (<Grid className="bg-body" fluid style={{width: "100%"}}>
+        <Row className="featuregrid-toolbar-margin">
             <Col md={3}>
                 <span>{ page * size + 1 } - {page * size + resultSize} of {total}</span>
             </Col>
-            <Col md={6} style={{textAlign: "center"}}>
+            <Col className="text-center" md={6}>
                 <Button
                     onClick={() => props.onPageChange(0)}
                     disabled={page === 0}
