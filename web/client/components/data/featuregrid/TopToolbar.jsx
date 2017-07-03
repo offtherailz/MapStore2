@@ -13,7 +13,7 @@ module.exports = (props = {
                 </ButtonGroup>
             </Col>
             <Col md={4}>
-                <div className="text-center text-primary"><b>{props.title}</b></div>
+                <div className="text-center text-primary"><strong>{props.title}</strong></div>
             </Col>
             <Col md={4}>
                 <Button onClick={props.onClose} style={{"float": "right"}} className="square-button no-border featuregrid-top-toolbar-margin">

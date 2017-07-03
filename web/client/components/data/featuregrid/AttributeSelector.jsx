@@ -5,6 +5,8 @@ module.exports = (props = {
     onChange: () => {}
     }) => (
     <div style={props.style}>
+        <h4 className="text-center"><strong>Columns</strong></h4>
+        <div>
         {props.attributes.map( attr =>
             (<Checkbox
                 key={attr.attribute}
@@ -13,5 +15,6 @@ module.exports = (props = {
                 {attr.label || attr.attribute}
             </Checkbox>)
         )}
+        </div>
     </div>
 );

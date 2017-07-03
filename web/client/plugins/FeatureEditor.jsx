@@ -42,11 +42,13 @@ const FeatureDock = (props = {
     return (<Dock {...dockProps} >
         {props.open &&
         <BorderLayout
+            key={"feature-grid-container"}
             header={<TopToolbar {...props.toolbarEvents} title={props.title}/>}
             columns={getPanels(props.tools)}
             footer={<BottomToolbar {...props.pageEvents} {...props.pagination} loading={props.featureLoading} totalFeatures={props.totalFeatures} resultSize={props.resultSize}/>
             }>
             <Grid
+            key={"feature-grid-container"}
             columnSettings={props.attributes}
             {...props.gridEvents}
             describeFeatureType={props.describe}
