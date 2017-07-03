@@ -1,5 +1,5 @@
 const React = require('react');
-const extent = require('turf-extent');
+const bbox = require('@turf/bbox');
 const {zoomToExtent} = require('../../actions/map');
 const {Glyphicon} = require('react-bootstrap');
 module.exports = [{
@@ -7,7 +7,7 @@ module.exports = [{
         width: 35,
         locked: true,
         events: {
-            onClick: (p, opts, describe, {crs}= {}) => zoomToExtent(extent(p), crs || "EPSG:4326")
+            onClick: (p, opts, describe, {crs}= {}) => zoomToExtent(bbox(p), crs || "EPSG:4326")
         },
         formatter: () => <Glyphicon glyph="zoom-in" />
 }];
