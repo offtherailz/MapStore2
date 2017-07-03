@@ -1,0 +1,12 @@
+/* remove this css when style updated with m-square-btn */
+.featuregrid-top-toolbar .m-square-btn {
+    width: 50px;
+    height: 50px;
+    padding: 0 !important;
+    transition: all 0.3s;
+    overflow: hidden;
+}
+.featuregrid-top-toolbar .m-square-btn span {
+    font-size: 26px;
+    margin: 10px;
+}

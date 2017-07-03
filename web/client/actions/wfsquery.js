@@ -8,6 +8,7 @@
 const FEATURE_TYPE_SELECTED = 'FEATURE_TYPE_SELECTED';
 const FEATURE_TYPE_LOADED = 'FEATURE_TYPE_LOADED';
 const FEATURE_LOADED = 'FEATURE_LOADED';
+const FEATURE_LOADING = 'FEATURE_LOADING';
 const FEATURE_TYPE_ERROR = 'FEATURE_TYPE_ERROR';
 const FEATURE_ERROR = 'FEATURE_ERROR';
 const FEATURE_CLOSE = 'FEATURE_CLOSE';
@@ -45,6 +46,12 @@ function featureTypeError(typeName, error) {
     };
 }
 
+function featureLoading(isLoading) {
+    return {
+        type: FEATURE_LOADING,
+        isLoading
+    };
+}
 function featureLoaded(typeName, feature) {
     return {
         type: FEATURE_LOADED,
@@ -158,6 +165,7 @@ module.exports = {
     QUERY_ERROR, queryError,
     RESET_QUERY, resetQuery,
     QUERY, query,
+    FEATURE_LOADING, featureLoading,
     FEATURE_LOADED,
     loadFeature,
     toggleQueryPanel,
