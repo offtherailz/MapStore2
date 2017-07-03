@@ -77,6 +77,7 @@
   "//": "replace react-sortable-items with official on npm when it will support React 15",
   "dependencies": {
     "@carnesen/redux-add-action-listener-enhancer": "0.0.1",
+    "@turf/bbox": "4.1.0",
     "@turf/inside": "4.1.0",
     "@turf/line-intersect": "4.1.0",
     "@turf/polygon-to-linestring": "4.1.0",
@@ -170,7 +171,6 @@
     "shpjs": "3.3.2",
     "turf-bbox": "3.0.10",
     "turf-buffer": "3.0.10",
-    "turf-extent": "1.0.4",
     "turf-intersect": "3.0.10",
     "turf-point-on-surface": "3.0.10",
     "turf-union": "3.0.10",
