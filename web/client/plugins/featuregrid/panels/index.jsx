@@ -4,7 +4,7 @@ const panels = {
 };
 const panelDefaultProperties = {
     settings: {
-        style: {overflow: "auto", flex: "0 0 12em"}
+        style: {overflow: "auto", flex: "0 0 12em", boxShadow: "inset 0px 0px 10px lightgrey"}
     }
 };
 module.exports = {

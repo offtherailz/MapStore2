@@ -4,7 +4,7 @@ const {Checkbox} = require('react-bootstrap');
 module.exports = (props = {
     onChange: () => {}
     }) => (
-    <div style={props.style}>
+    <div className="bg-body" style={props.style}>
         <h4 className="text-center"><strong>Columns</strong></h4>
         <div>
         {props.attributes.map( attr =>
