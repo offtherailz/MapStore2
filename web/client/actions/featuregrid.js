@@ -9,6 +9,7 @@
 const SELECT_FEATURES = 'SELECT_FEATURES';
 const SET_FEATURES = 'SET_FEATURES';
 const SORT_BY = 'FEATUREGRID:SORT_BY';
+const SET_LAYER = 'FEATUREGRID:SET_LAYER';
 const CHANGE_PAGE = 'FEATUREGRID:CHANGE_PAGE';
 const DOCK_SIZE_FEATURES = 'DOCK_SIZE_FEATURES';
 
@@ -46,6 +47,12 @@ function changePage(page, size) {
         size
     };
 }
+function setLayer(id) {
+    return {
+        type: SET_LAYER,
+        id
+    };
+}
 
 module.exports = {
     SELECT_FEATURES,
@@ -53,6 +60,8 @@ module.exports = {
     DOCK_SIZE_FEATURES,
     SORT_BY,
     CHANGE_PAGE,
+    SET_LAYER,
+    setLayer,
     selectFeatures,
     setFeatures,
     dockSizeFeatures,

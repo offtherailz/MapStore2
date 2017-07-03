@@ -155,7 +155,7 @@
                         "alwaysVisible": true
                     }
                 }
-            }, "Home", "FeatureGrid", "FeatureEditor", "WFSDownload", {
+            }, "Home", "FeatureEditor", "WFSDownload", {
                 "name": "TOC",
                 "cfg": {
                     "activateQueryTool": true,

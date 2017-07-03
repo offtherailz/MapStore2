@@ -5,6 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
+const LAYER_SELECTED_FOR_SEARCH = 'LAYER_SELECTED_FOR_SEARCH';
 const FEATURE_TYPE_SELECTED = 'FEATURE_TYPE_SELECTED';
 const FEATURE_TYPE_LOADED = 'FEATURE_TYPE_LOADED';
 const FEATURE_LOADED = 'FEATURE_LOADED';
@@ -23,6 +24,12 @@ const {toggleControl, setControlProperty} = require('./controls');
 const {changeDrawingStatus} = require('./draw');
 const {reset} = require('./queryform');
 
+function layerSelectedForSearch(id) {
+    return {
+        type: LAYER_SELECTED_FOR_SEARCH,
+        id
+    }
+}
 function featureTypeSelected(url, typeName) {
     return {
         type: FEATURE_TYPE_SELECTED,
@@ -126,7 +133,7 @@ function resetQuery() {
 }
 
 
-function toggleQueryPanel(url, name) {
+function toggleQueryPanel(url, name, id) {
     return (dispatch, getState) => {
         if (getState().query.typeName !== name) {
             dispatch(reset());
@@ -134,6 +141,7 @@ function toggleQueryPanel(url, name) {
         dispatch(changeDrawingStatus('clean', null, "queryform", []));
         dispatch(featureTypeSelected(url, name));
         dispatch(toggleControl('queryPanel', null));
+        dispatch(layerSelectedForSearch(id));
         dispatch(setControlProperty('drawer', 'width', getState().controls.queryPanel.enabled ? 700 : 300));
     };
 }
@@ -155,6 +163,7 @@ function closeResponse() {
 }
 
 module.exports = {
+    LAYER_SELECTED_FOR_SEARCH, layerSelectedForSearch,
     FEATURE_TYPE_SELECTED, featureTypeSelected,
     FEATURE_TYPE_LOADED, featureTypeLoaded,
     FEATURE_TYPE_ERROR, featureTypeError,

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 const assign = require("object-assign");
-const {SELECT_FEATURES, SET_FEATURES, DOCK_SIZE_FEATURES} = require('../actions/featuregrid');
+const {SELECT_FEATURES, SET_FEATURES, DOCK_SIZE_FEATURES, SET_LAYER} = require('../actions/featuregrid');
 
 const emptyResultsState = {
     pagination: {
@@ -26,6 +26,8 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {features: action.features});
     case DOCK_SIZE_FEATURES:
         return assign({}, state, {dockSize: action.dockSize});
+    case SET_LAYER:
+        return assign({}, state, {selectedLayer: action.id});
     default:
         return state;
     }

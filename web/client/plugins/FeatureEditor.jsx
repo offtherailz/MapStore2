@@ -14,6 +14,8 @@ const Grid = require('../components/data/featuregrid/FeatureGrid');
 const BottomToolbar = require('../components/data/featuregrid/BottomToolbar');
 const TopToolbar = require('../components/data/featuregrid/TopToolbar');
 const BorderLayout = require('../components/layout/BorderLayout');
+
+const {getTitleSelector} = require('../selectors/featuregrid');
 const {tools, gridEvents, pageEvents, toolbarEvents} = require('./featuregrid/index');
 
 const FeatureDock = (props) => {
@@ -32,24 +34,25 @@ const FeatureDock = (props) => {
         toolbarEvents: {},
         zIndex: 1030
     };
+    // columns={[<aside style={{backgroundColor: "red", flex: "0 0 12em"}}>column-selector</aside>]}
     return (<Dock {...dockProps} >
+        {props.open &&
         <BorderLayout
-             header={<TopToolbar {...props.toolbarEvents}/>}
+             header={<TopToolbar {...props.toolbarEvents} title={props.title}/>}
             footer={<BottomToolbar {...props.pageEvents} {...props.pagination} loading={props.featureLoading} totalFeatures={props.totalFeatures} resultSize={props.resultSize}/>
-            }
-            columns={[<aside style={{backgroundColor: "red", flex: "0 0 12em"}}>column-selector</aside>]}
-            >
+            }>
             <Grid
             {...props.gridEvents}
             describeFeatureType={props.describe}
             features={props.features}
             minHeight={600}
             tools={props.gridTools}
-         /></BorderLayout>
+         /></BorderLayout>}
     </Dock>);
 };
 
 const EditorPlugin = connect((state) => ({
+    title: getTitleSelector(state),
     features: get(state, "query.result.features"),
     resultSize: get(state, "query.result.features.length"),
     totalFeatures: get(state, "query.result.totalFeatures"),

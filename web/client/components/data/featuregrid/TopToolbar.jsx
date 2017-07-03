@@ -10,10 +10,10 @@ module.exports = (props = {
                 <ButtonToolbar><Button className="m-square-btn" onClick={props.onDownloadToggle}><Glyphicon glyph="download"/></Button></ButtonToolbar>
             </Col>
             <Col md={4}>
-                <h3 className="text-center text-primary">Layer Title</h3>
+                <h3 className="text-center text-primary">{props.title}</h3>
             </Col>
             <Col md={4}>
-                <Button style={{"float": "right"}} className="m-square-btn no-border"><Glyphicon glyph="1-close"/></Button>
+                <Button onClick={props.onClose} style={{"float": "right"}} className="m-square-btn no-border"><Glyphicon glyph="1-close"/></Button>
             </Col>
         </Row>
     </Grid>);

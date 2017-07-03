@@ -1,7 +1,7 @@
 const React = require('react');
 const {Button, Glyphicon, Grid, Row, Col} = require('react-bootstrap');
 const Spinner = require('react-spinkit');
-const toPage = ({startIndex, maxFeatures = 1, totalFeatures, resultSize} = {}) => ({
+const toPage = ({startIndex = 0, maxFeatures = 1, totalFeatures = 0, resultSize} = {}) => ({
     page: Math.ceil(startIndex / maxFeatures),
     resultSize,
     size: maxFeatures,
@@ -11,7 +11,7 @@ const toPage = ({startIndex, maxFeatures = 1, totalFeatures, resultSize} = {}) =
 module.exports = (props = {
     onPageChange: () => {}
 }) => {
-    const {page, size, resultSize, maxPages, total} = toPage(props);
+    const {page = 0, size = 0, resultSize = 0, maxPages = 0, total = 0} = toPage(props);
     return (<Grid fluid style={{width: "100%"}}>
         <Row>
             <Col md={3}>

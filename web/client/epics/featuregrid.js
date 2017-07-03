@@ -7,10 +7,11 @@
  */
 const Rx = require('rxjs');
 
-const {get} = require('lodash');
+const {get, head} = require('lodash');
 const {toggleControl} = require('../actions/controls');
-const {query, QUERY_CREATE} = require('../actions/wfsquery');
-const {SORT_BY, CHANGE_PAGE} = require('../actions/featuregrid');
+const {layersSelector} = require('../selectors/layers');
+const {query, QUERY_CREATE, LAYER_SELECTED_FOR_SEARCH} = require('../actions/wfsquery');
+const {SORT_BY, CHANGE_PAGE, setLayer} = require('../actions/featuregrid');
 
 /*
 // FILTER CREATION FUNCTIONS
@@ -56,7 +57,6 @@ const objToFilter = (fo, builder) =>
         })).map( response => querySearchResponse(response.data));
     })
      */
-
 // pagination selector
 const getPagination = (state, {page, size} = {}) => {
     let currentPagination = get(state, "featuregrid.pagination");
@@ -73,6 +73,9 @@ const addPagination = (filterObj, pagination) => ({
 });
 
 module.exports = {
+    featureLayerSelectionInitialization: (action$) =>
+        action$.ofType(LAYER_SELECTED_FOR_SEARCH)
+            .switchMap( a => Rx.Observable.of(setLayer(a.id))),
     featureGridStartupQuery: (action$, store) =>
         action$.ofType(QUERY_CREATE)
             .switchMap(action => Rx.Observable.of(
@@ -93,6 +96,7 @@ module.exports = {
                     )
             ))
         ),
+
     featureGridChangePage: (action$, store) =>
         action$.ofType(CHANGE_PAGE).switchMap( ({page, size} = {}) =>
             Rx.Observable.of( query(
