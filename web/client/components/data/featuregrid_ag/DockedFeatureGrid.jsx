@@ -1,8 +1,7 @@
-const PropTypes = require('prop-types');
 const React = require('react');
 const {connect} = require('react-redux');
-const {isObject, isEqual, head} = require('lodash');
-const Dock = require('react-dock').default;
+const {isObject} = require('lodash');
+const Dock = require('react-dock');
 
 const {Button, Glyphicon} = require('react-bootstrap');
 const Modal = require('../../../components/misc/Modal');
@@ -16,90 +15,92 @@ const FeatureGrid = connect((state) => {
     };
 }, {})(require('./FeatureGrid'));
 
+const {head} = require('lodash');
 const I18N = require('../../../components/I18N/I18N');
 const Spinner = require('react-spinkit');
 const assign = require('object-assign');
+const {isEqual} = require('lodash');
 
 require("./featuregrid.css");
 
-class DockedFeatureGrid extends React.Component {
-    static propTypes = {
-        isNew: PropTypes.bool,
-        open: PropTypes.bool,
-        features: PropTypes.oneOfType([ PropTypes.array, PropTypes.object]),
-        columnsDef: PropTypes.array,
-        map: PropTypes.object,
-        loadingGrid: PropTypes.bool,
-        loadingGridError: PropTypes.oneOfType([
-            PropTypes.string,
-            PropTypes.object
+const DockedFeatureGrid = React.createClass({
+    propTypes: {
+        isNew: React.PropTypes.bool,
+        open: React.PropTypes.bool,
+        features: React.PropTypes.oneOfType([ React.PropTypes.array, React.PropTypes.object]),
+        columnsDef: React.PropTypes.array,
+        map: React.PropTypes.object,
+        loadingGrid: React.PropTypes.bool,
+        loadingGridError: React.PropTypes.oneOfType([
+            React.PropTypes.string,
+            React.PropTypes.object
         ]),
-        initWidth: PropTypes.oneOfType([ PropTypes.number, PropTypes.string ]),
-        params: PropTypes.object,
-        profile: PropTypes.string,
-        changeMapView: PropTypes.func,
-        onExpandFilterPanel: PropTypes.func,
-        selectFeatures: PropTypes.func,
-        totalFeatures: PropTypes.number,
-        pagination: PropTypes.bool,
-        featureTypeName: PropTypes.string,
-        onQuery: PropTypes.func,
-        searchUrl: PropTypes.string,
-        filterObj: PropTypes.object,
-        dataSourceOptions: PropTypes.object,
-        withMap: PropTypes.bool.isRequired,
-        cleanError: PropTypes.func,
-        selectAllToggle: PropTypes.func,
-        zoomToFeatureAction: PropTypes.func,
-        onBackToSearch: PropTypes.func,
-        dockSize: PropTypes.number,
-        minDockSize: PropTypes.number,
-        maxDockSize: PropTypes.number,
-        setDockSize: PropTypes.func,
-        exportAction: PropTypes.func,
-        exportEnabled: PropTypes.bool
-    };
-
-    static contextTypes = {
-        messages: PropTypes.object
-    };
-
-    static defaultProps = {
-        open: false,
-        loadingGrid: false,
-        loadingGridError: null,
-        profile: null,
-        features: [],
-        featureTypeName: null,
-        columnsDef: [],
-        pagination: true,
-        params: {},
-        groupFields: [],
-        filterFields: [],
-        spatialField: {},
-        searchUrl: null,
-        dataSourceOptions: {
-            rowCount: -1,
-            pageSize: 20
-        },
-        initWidth: 600,
-        withMap: true,
-        onBackToSearch: () => {},
-        changeMapView: () => {},
-        // loadFeatureGridConfig: () => {},
-        onExpandFilterPanel: () => {},
-        selectFeatures: () => {},
-        onQuery: () => {},
-        cleanError: () => {},
-        selectAllToggle: () => {},
-        dockSize: 0.35,
-        minDockSize: 0.1,
-        maxDockSize: 1.0,
-        setDockSize: () => {}
-    };
-
-    state = {searchN: 0};
-
+        initWidth: React.PropTypes.oneOfType([ React.PropTypes.number, React.PropTypes.string ]),
+        params: React.PropTypes.object,
+        // featureGrigConfigUrl: React.PropTypes.string,
+        profile: React.PropTypes.string,
+        changeMapView: React.PropTypes.func,
+        // loadFeatureGridConfig: React.PropTypes.func,
+        onExpandFilterPanel: React.PropTypes.func,
+        selectFeatures: React.PropTypes.func,
+        totalFeatures: React.PropTypes.number,
+        pagination: React.PropTypes.bool,
+        featureTypeName: React.PropTypes.string,
+        onQuery: React.PropTypes.func,
+        searchUrl: React.PropTypes.string,
+        filterObj: React.PropTypes.object,
+        dataSourceOptions: React.PropTypes.object,
+        withMap: React.PropTypes.bool.isRequired,
+        cleanError: React.PropTypes.func,
+        selectAllToggle: React.PropTypes.func,
+        zoomToFeatureAction: React.PropTypes.func,
+        onBackToSearch: React.PropTypes.func,
+        dockSize: React.PropTypes.number,
+        minDockSize: React.PropTypes.number,
+        maxDockSize: React.PropTypes.number,
+        setDockSize: React.PropTypes.func
+    },
+    contextTypes: {
+        messages: React.PropTypes.object
+    },
+    getInitialState() {
+        return {searchN: 0};
+    },
+    getDefaultProps() {
+        return {
+            open: false,
+            loadingGrid: false,
+            loadingGridError: null,
+            profile: null,
+            features: [],
+            featureTypeName: null,
+            columnsDef: [],
+            pagination: true,
+            params: {},
+            groupFields: [],
+            filterFields: [],
+            spatialField: {},
+            searchUrl: null,
+            dataSourceOptions: {
+                rowCount: -1,
+                pageSize: 20
+            },
+            initWidth: 600,
+            withMap: true,
+            onBackToSearch: () => {},
+            changeMapView: () => {},
+            // loadFeatureGridConfig: () => {},
+            onExpandFilterPanel: () => {},
+            selectFeatures: () => {},
+            onQuery: () => {},
+            cleanError: () => {},
+            selectAllToggle: () => {},
+            dockSize: 0.35,
+            minDockSize: 0.1,
+            maxDockSize: 1.0,
+            setDockSize: () => {}
+        };
+    },
     shouldComponentUpdate(nextProps) {
         // this is mandatory to avoid infinite looping. TODO externalize pagination
         return Object.keys(this.props).reduce((prev, prop) => {
@@ -108,13 +109,12 @@ class DockedFeatureGrid extends React.Component {
             }
             return prev;
         }, false);
-    }
-
+    },
     componentWillUpdate(nextProps) {
         if (!nextProps.loadingGrid && !this.props.isNew && nextProps.isNew) {
             this.setState({searchN: this.state.searchN + 1});
         }
-        if (!nextProps.loadingGrid && nextProps.pagination && nextProps.dataSourceOptions !== this.props.dataSourceOptions) {
+        if (!nextProps.loadingGrid && nextProps.pagination && (nextProps.dataSourceOptions !== this.props.dataSourceOptions)) {
             this.dataSource = this.getDataSource(nextProps.dataSourceOptions);
         }
         if (!nextProps.loadingGrid && (this.featureLoaded && nextProps.features !== this.props.features)) {
@@ -123,38 +123,33 @@ class DockedFeatureGrid extends React.Component {
                 this.featureLoaded.successCallback(rowsThisPage, nextProps.totalFeatures);
             }
         }
-        if (this.props.open && !nextProps.open || this.props.columnsDef && !nextProps.columnsDef || this.props.filterObj && !nextProps.filterObj) {
+        if ((this.props.open && !nextProps.open) || (this.props.columnsDef && !nextProps.columnsDef) || (this.props.filterObj && !nextProps.filterObj)) {
             this.props.selectFeatures([]);
             this.props.selectAllToggle();
         }
-    }
-
+    },
     componentDidUpdate(prevProps) {
         if (!this.props.loadingGrid && !this.featureLoaded && !this.props.pagination && this.props.searchUrl) {
             if (this.props.filterObj && !isEqual(prevProps.filterObj, this.props.filterObj)) {
                 this.getFeatures();
             }
         }
-    }
-
-    onGridClose = (filter) => {
+    },
+    onGridClose(filter) {
         this.props.selectFeatures([]);
         this.props.selectAllToggle();
         if (filter) {
             this.props.onExpandFilterPanel(true);
         }
-    };
-
-    getSortAttribute = (colId) => {
+    },
+    getSortAttribute(colId) {
         let col = head(this.props.columnsDef.filter((c) => colId === `properties.${c.field}`));
-        return col && col.sortAttribute ? col.sortAttribute : col && col.field || '';
-    };
-
-    getSortOptions = (params) => {
+        return col && col.sortAttribute ? col.sortAttribute : (col && col.field || '');
+    },
+    getSortOptions(params) {
         return params.sortModel.reduce((o, m) => ({sortBy: this.getSortAttribute(m.colId), sortOrder: m.sort.toUpperCase()}), {});
-    };
-
-    getFeatures = (params) => {
+    },
+    getFeatures(params) {
         if (!this.props.loadingGrid && this.props.searchUrl) {
             let pagination = this.props.pagination ? {startIndex: params.startRow, maxFeatures: params.endRow - params.startRow} : null;
             let filterObj = {
@@ -167,18 +162,16 @@ class DockedFeatureGrid extends React.Component {
             this.props.onQuery(this.props.searchUrl, filterObj);
 
         }
-    };
-
-    getDataSource = (dataSourceOptions) => {
+    },
+    getDataSource(dataSourceOptions) {
         return {
             rowCount: dataSourceOptions.rowCount,
             getRows: this.getFeatures,
             pageSize: this.props.pagination ? dataSourceOptions.pageSize : 10000000,
             overflowSize: 20
         };
-    };
-
-    renderLoadingException = (loadingError, msg) => {
+    },
+    renderLoadingException(loadingError, msg) {
         let exception;
         if (isObject(loadingError)) {
             exception = loadingError.status +
@@ -199,11 +192,11 @@ class DockedFeatureGrid extends React.Component {
                 <Modal.Body>
                     <div className="mapstore-error">{exception}</div>
                 </Modal.Body>
-                <Modal.Footer />
+                <Modal.Footer>
+                </Modal.Footer>
             </Modal>
         );
-    };
-
+    },
     render() {
         let loadingError = this.props.loadingGridError;
         if (loadingError) {
@@ -213,7 +206,7 @@ class DockedFeatureGrid extends React.Component {
         }
 
         let cols = this.props.columnsDef && this.props.columnsDef.map((column) => {
-            if (!column.profiles || column.profiles && column.profiles.indexOf(this.props.profile) !== -1) {
+            if (!column.profiles || (column.profiles && column.profiles.indexOf(this.props.profile) !== -1)) {
                 return assign({}, column, {field: "properties." + column.field});
             }
         }).filter((c) => c);
@@ -233,14 +226,14 @@ class DockedFeatureGrid extends React.Component {
         if (this.props.open && this.props.filterObj && cols) {
             return (
                 <Dock
-                    zIndex={1030 /* below dialogs, above left menu*/}
+                    zIndex={1030 /*below dialogs, above left menu*/}
                     position={"bottom" /* 'left', 'top', 'right', 'bottom' */}
                     size={this.props.dockSize}
-                    dimMode={"none" /* 'transparent', 'none', 'opaque'*/}
-                    isVisible
+                    dimMode={"none" /*'transparent', 'none', 'opaque'*/}
+                    isVisible={true}
                     onVisibleChange={this.handleVisibleChange}
                     onSizeChange={(this.limitDockHeight)}
-                    fluid
+                    fluid={true}
                     dimStyle={{ background: 'rgba(0, 0, 100, 0.2)' }}
                     dockStyle={null}
                     dockHiddenStyle={null} >
@@ -255,11 +248,10 @@ class DockedFeatureGrid extends React.Component {
                             </div>
                         </div> :
                         <div style={{
-                            height: "100%"
-                        }}>
+                                height: "100%"
+                                }}>
                             <FeatureGrid
-                                useIcons
-                                exportAction={this.props.exportEnabled && this.props.exportAction}
+                                useIcons={true}
                                 tools={[<Button onClick={this.props.onBackToSearch} ><Glyphicon glyph="arrow-left" /><I18N.Message msgId="featuregrid.backtosearch"/></Button>]}
                                 key={"search-results-" + (this.state && this.state.searchN)}
                                 className="featureGrid"
@@ -293,9 +285,8 @@ class DockedFeatureGrid extends React.Component {
         }
 
         return null;
-    }
-
-    selectAll = (select) => {
+    },
+    selectAll(select) {
         if (select) {
             let filterObj = {
                 ...this.props.filterObj
@@ -305,14 +296,12 @@ class DockedFeatureGrid extends React.Component {
         } else {
             this.props.selectAllToggle();
         }
-    };
-
-    selectFeatures = (features) => {
+    },
+    selectFeatures(features) {
         this.props.selectAllToggle();
         this.props.selectFeatures(features);
-    };
-
-    limitDockHeight = (size) => {
+    },
+    limitDockHeight(size) {
         if (size >= this.props.maxDockSize) {
             this.props.setDockSize(this.props.maxDockSize);
         } else if (size <= this.props.minDockSize) {
@@ -320,7 +309,7 @@ class DockedFeatureGrid extends React.Component {
         } else {
             this.props.setDockSize(size);
         }
-    };
-}
+    }
+});
 
 module.exports = DockedFeatureGrid;

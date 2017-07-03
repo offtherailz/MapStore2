@@ -91,6 +91,7 @@ const extractInfo = (data) => {
                 conf = fieldConfig[attribute.name] ? {...conf, ...fieldConfig[attribute.name]} : conf;
                 return conf;
             }),
+        original: data,
         attributes: data.featureTypes[0].properties
             .filter((attribute) => attribute.type.indexOf('gml:') !== 0 && types[attribute.type])
             .map((attribute) => {

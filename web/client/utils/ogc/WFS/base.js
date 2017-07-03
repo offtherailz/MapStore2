@@ -50,6 +50,7 @@ const getPropertyDesciptor = (propName, describeFeatureType) =>
  * @return {string}   url of the schemaLocation
  */
 const schemaLocation = (d) => d.targetNamespace;
+const isGeometryType = (pd) => pd.type.indexOf("gml:") === 0;
 
 /**
  * Base utilities for WFS.
@@ -58,6 +59,7 @@ const schemaLocation = (d) => d.targetNamespace;
  */
 module.exports = {
     schemaLocation,
+    isGeometryType,
     /**
      * retrieves the featureTypeSchema entry for XML from describeFeatureType
      * @param  {object} d describeFeatureType
@@ -73,8 +75,8 @@ module.exports = {
      */
     getValue: (value, key, describeFeatureType, version = "1.1.0") => {
         // TODO implement normal attributes;
-        const isGeometryType = getPropertyDesciptor(key, describeFeatureType).type.indexOf("gml:") === 0;
-        if (isGeometryType) {
+        const isGeom = isGeometryType(getPropertyDesciptor(key, describeFeatureType));
+        if (isGeom) {
             return processOGCGeometry(version, {
                     type: value.type,
                     coordinates: value.coordinates

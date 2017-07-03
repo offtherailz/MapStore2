@@ -8,6 +8,8 @@
 
 const SELECT_FEATURES = 'SELECT_FEATURES';
 const SET_FEATURES = 'SET_FEATURES';
+const SORT_BY = 'FEATUREGRID:SORT_BY';
+const CHANGE_PAGE = 'FEATUREGRID:CHANGE_PAGE';
 const DOCK_SIZE_FEATURES = 'DOCK_SIZE_FEATURES';
 
 function selectFeatures(features) {
@@ -30,12 +32,30 @@ function dockSizeFeatures(dockSize) {
         dockSize: dockSize
     };
 }
+function sort(sortBy, sortOrder) {
+    return {
+        type: SORT_BY,
+        sortBy,
+        sortOrder
+    };
+}
+function changePage(page, size) {
+    return {
+        type: CHANGE_PAGE,
+        page,
+        size
+    };
+}
 
 module.exports = {
     SELECT_FEATURES,
     SET_FEATURES,
     DOCK_SIZE_FEATURES,
+    SORT_BY,
+    CHANGE_PAGE,
     selectFeatures,
     setFeatures,
-    dockSizeFeatures
+    dockSizeFeatures,
+    sort,
+    changePage
 };

@@ -155,7 +155,7 @@
                         "alwaysVisible": true
                     }
                 }
-            }, "Home", "FeatureGrid", "WFSDownload", {
+            }, "Home", "FeatureGrid", "FeatureEditor", "WFSDownload", {
                 "name": "TOC",
                 "cfg": {
                     "activateQueryTool": true,
@@ -242,7 +242,7 @@
               "cfg": {
                 "externalCookieUrl" : "",
                 "declineUrl" : "http://www.google.com"
-              }
+                }
             },
             "OmniBar", "Login", "Save", "SaveAs", "BurgerMenu", "Expander", "Undo", "Redo", "FullScreen", "GlobeViewSwitcher", "SearchServicesConfig"
         ],

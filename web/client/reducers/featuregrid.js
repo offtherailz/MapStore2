@@ -9,6 +9,10 @@ const assign = require("object-assign");
 const {SELECT_FEATURES, SET_FEATURES, DOCK_SIZE_FEATURES} = require('../actions/featuregrid');
 
 const emptyResultsState = {
+    pagination: {
+        startIndex: 0,
+        maxFeatures: 20
+    },
     select: [],
     features: [],
     dockSize: 0.35

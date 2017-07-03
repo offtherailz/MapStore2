@@ -1,4 +1,3 @@
-const PropTypes = require('prop-types');
 /**
  * Copyright 2017, GeoSolutions Sas.
  * All rights reserved.
@@ -9,17 +8,16 @@ const PropTypes = require('prop-types');
 const React = require('react');
 const {Glyphicon} = require('react-bootstrap');
 
-class ZoomToFeatureIcon extends React.Component {
-    static propTypes = {
-        params: PropTypes.object
-    };
-
+const ZoomToFeatureIcon = React.createClass({
+    propTypes: {
+        params: React.PropTypes.object
+    },
     render() {
         const geometry = this.props.params && this.props.params.data && this.props.params.data.geometry;
-        return geometry && geometry.coordinates ?
+        return geometry && geometry.coordinates ? (
             <Glyphicon glyph="zoom-in" width={16}/>
-         : null;
+        ) : null;
     }
-}
+});
 
 module.exports = ZoomToFeatureIcon;
