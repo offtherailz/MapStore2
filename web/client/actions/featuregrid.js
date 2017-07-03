@@ -12,6 +12,8 @@ const SORT_BY = 'FEATUREGRID:SORT_BY';
 const SET_LAYER = 'FEATUREGRID:SET_LAYER';
 const CHANGE_PAGE = 'FEATUREGRID:CHANGE_PAGE';
 const DOCK_SIZE_FEATURES = 'DOCK_SIZE_FEATURES';
+const TOGGLE_TOOL = 'FEATUREGRID:TOGGLE_TOOL';
+const CUSTOMIZE_ATTRIBUTE = 'FEATUREGRID:CUSTOMIZE_ATTRIBUTE';
 
 function selectFeatures(features) {
     return {
@@ -53,6 +55,21 @@ function setLayer(id) {
         id
     };
 }
+function toggleTool(tool, value) {
+    return {
+        type: TOGGLE_TOOL,
+        tool,
+        value
+    };
+}
+function customizeAttribute(name, key, value) {
+    return {
+        type: CUSTOMIZE_ATTRIBUTE,
+        name,
+        key,
+        value
+    };
+}
 
 module.exports = {
     SELECT_FEATURES,
@@ -61,10 +78,14 @@ module.exports = {
     SORT_BY,
     CHANGE_PAGE,
     SET_LAYER,
+    TOGGLE_TOOL,
+    CUSTOMIZE_ATTRIBUTE,
     setLayer,
     selectFeatures,
     setFeatures,
     dockSizeFeatures,
     sort,
-    changePage
+    changePage,
+    toggleTool,
+    customizeAttribute
 };

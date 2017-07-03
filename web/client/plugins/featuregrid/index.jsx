@@ -1,5 +1,5 @@
 module.exports = {
-    tools: require('./tools'),
+    gridTools: require('./gridTools'),
     toolbarEvents: require('./toolbarEvents'),
     gridEvents: require('./gridEvents'),
     pageEvents: require('./pageEvents')

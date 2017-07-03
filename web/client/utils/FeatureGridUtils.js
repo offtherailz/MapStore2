@@ -1,8 +1,8 @@
 const {getFeatureTypeProperties, isGeometryType} = require('./ogc/WFS/base');
 const getRow = (i, rows) => rows[i];
 module.exports = {
-    featureTypeToGridColumns: (describe) =>
-        (getFeatureTypeProperties(describe) || []).filter( e => !isGeometryType(e)).map( (desc) => ({
+    featureTypeToGridColumns: (describe, columnSettings = {}) =>
+        (getFeatureTypeProperties(describe) || []).filter( e => !isGeometryType(e)).filter(e => !(columnSettings[e.name] && columnSettings[e.name].hide)).map( (desc) => ({
                 sortable: true,
                 key: desc.name,
                 width: 200,

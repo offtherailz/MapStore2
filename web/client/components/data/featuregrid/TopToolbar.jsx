@@ -1,5 +1,5 @@
 const React = require('react');
-const {Button, ButtonToolbar, Grid, Row, Col, Glyphicon} = require('react-bootstrap');
+const {Button, ButtonGroup, Grid, Row, Col, Glyphicon} = require('react-bootstrap');
 require("./toolbarstyle.css");
 module.exports = (props = {
     onDownloadToggle: () => {}
@@ -7,11 +7,10 @@ module.exports = (props = {
     return (<Grid className="bg-body" fluid style={{width: "100%"}}>
         <Row className="flex-center">
             <Col md={4}>
-                <ButtonToolbar>
-                    <Button className="square-button featuregrid-toolbar-margin" onClick={props.onDownloadToggle}>
-                        <Glyphicon glyph="download"/>
-                    </Button>
-                </ButtonToolbar>
+                <ButtonGroup className="featuregrid-toolbar-margin">
+                    <Button className="square-button" onClick={props.onDownloadToggle}><Glyphicon glyph="download"/></Button>
+                    <Button className="square-button" onClick={props.onSettingsToggle}><Glyphicon glyph="cog"/></Button>
+                </ButtonGroup>
             </Col>
             <Col md={4}>
                 <div className="text-center text-primary"><b>{props.title}</b></div>

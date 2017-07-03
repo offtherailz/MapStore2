@@ -7,18 +7,22 @@
  */
 const React = require('react');
 const {connect} = require('react-redux');
+const {createSelector} = require('reselect');
 const {bindActionCreators} = require('redux');
 const {get} = require('lodash');
 const Dock = require('react-dock').default;
 const Grid = require('../components/data/featuregrid/FeatureGrid');
 const BottomToolbar = require('../components/data/featuregrid/BottomToolbar');
 const TopToolbar = require('../components/data/featuregrid/TopToolbar');
+const {getPanels} = require('./featuregrid/panels/index');
 const BorderLayout = require('../components/layout/BorderLayout');
 
 const {getTitleSelector} = require('../selectors/featuregrid');
-const {tools, gridEvents, pageEvents, toolbarEvents} = require('./featuregrid/index');
+const {gridTools, gridEvents, pageEvents, toolbarEvents} = require('./featuregrid/index');
 
-const FeatureDock = (props) => {
+const FeatureDock = (props = {
+    tools: {}
+}) => {
     const dockProps = {
         dimMode: "none",
         dockSize: 0.35,
@@ -38,10 +42,12 @@ const FeatureDock = (props) => {
     return (<Dock {...dockProps} >
         {props.open &&
         <BorderLayout
-             header={<TopToolbar {...props.toolbarEvents} title={props.title}/>}
+            header={<TopToolbar {...props.toolbarEvents} title={props.title}/>}
+            columns={getPanels(props.tools)}
             footer={<BottomToolbar {...props.pageEvents} {...props.pagination} loading={props.featureLoading} totalFeatures={props.totalFeatures} resultSize={props.resultSize}/>
             }>
             <Grid
+            columnSettings={props.attributes}
             {...props.gridEvents}
             describeFeatureType={props.describe}
             features={props.features}
@@ -50,21 +56,32 @@ const FeatureDock = (props) => {
          /></BorderLayout>}
     </Dock>);
 };
-
-const EditorPlugin = connect((state) => ({
-    title: getTitleSelector(state),
-    features: get(state, "query.result.features"),
-    resultSize: get(state, "query.result.features.length"),
-    totalFeatures: get(state, "query.result.totalFeatures"),
-    pagination: get(state, "query.filterObj.pagination"),
-    open: get(state, "query.open"),
-    featureLoading: get(state, "query.featureLoading"),
-    describe: get(state, `query.featureTypes.${get(state, "query.filterObj.featureTypeName")}.original`)
-}), (dispatch) => ({
+const selector = createSelector(
+    getTitleSelector,
+    state => get(state, "query.open"),
+    (state) => ({
+        describe: get(state, `query.featureTypes.${get(state, "query.filterObj.featureTypeName")}.original`),
+        featureLoading: get(state, "query.featureLoading"),
+        features: get(state, "query.result.features"),
+        resultSize: get(state, "query.result.features.length"),
+        totalFeatures: get(state, "query.result.totalFeatures"),
+        pagination: get(state, "query.filterObj.pagination")
+    }),
+    state => get(state, `featuregrid.attributes`),
+    state => get(state, "featuregrid.tools"),
+    (title, open, results, attributes, tools) => ({
+        title,
+        open,
+        ...results,
+        attributes,
+        tools
+    })
+);
+const EditorPlugin = connect(selector, (dispatch) => ({
     gridEvents: bindActionCreators(gridEvents, dispatch),
     pageEvents: bindActionCreators(pageEvents, dispatch),
     toolbarEvents: bindActionCreators(toolbarEvents, dispatch),
-    gridTools: tools.map((t) => ({
+    gridTools: gridTools.map((t) => ({
         ...t,
         events: bindActionCreators(t.events, dispatch)
     }))

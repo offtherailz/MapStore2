@@ -7,9 +7,8 @@
  */
 const Rx = require('rxjs');
 
-const {get, head} = require('lodash');
+const {get} = require('lodash');
 const {toggleControl} = require('../actions/controls');
-const {layersSelector} = require('../selectors/layers');
 const {query, QUERY_CREATE, LAYER_SELECTED_FOR_SEARCH} = require('../actions/wfsquery');
 const {SORT_BY, CHANGE_PAGE, setLayer} = require('../actions/featuregrid');
 
