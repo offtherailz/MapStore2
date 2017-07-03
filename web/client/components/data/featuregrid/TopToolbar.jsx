@@ -7,7 +7,10 @@ module.exports = (props = {
     return (<Grid className="featuregrid-top-toolbar" fluid style={{width: "100%"}}>
         <Row>
             <Col md={4}>
-                <ButtonToolbar><Button className="m-square-btn" onClick={props.onDownloadToggle}><Glyphicon glyph="download"/></Button></ButtonToolbar>
+                <ButtonToolbar>
+                    <Button className="square-button" onClick={props.onDownloadToggle}><Glyphicon glyph="download"/></Button>
+                    <Button className="square-button" onClick={props.onSettingsToggle}><Glyphicon glyph="cog"/></Button>
+                    </ButtonToolbar>
             </Col>
             <Col md={4}>
                 <h3 className="text-center text-primary">{props.title}</h3>
