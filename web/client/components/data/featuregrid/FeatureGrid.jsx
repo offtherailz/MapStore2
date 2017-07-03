@@ -28,6 +28,7 @@ class FeatureGrid extends React.Component {
         features: PropTypes.array,
         gridComponent: PropTypes.func,
         describeFeatureType: PropTypes.object,
+        columnSettings: PropTypes.object,
         gridOptions: PropTypes.object,
         actionOpts: PropTypes.object,
         tools: PropTypes.array,
@@ -38,6 +39,7 @@ class FeatureGrid extends React.Component {
         gridComponent: AdaptiveGrid,
         onGridSort: () => {},
         describeFeatureType: {},
+        columnSettings: {},
         features: [],
         tools: []
     };
@@ -54,7 +56,7 @@ class FeatureGrid extends React.Component {
         };
         const columns =
         getToolColumns(this.props.tools, rowGetter, this.props.describeFeatureType, this.props.actionOpts)
-            .concat(featureTypeToGridColumns(this.props.describeFeatureType));
+            .concat(featureTypeToGridColumns(this.props.describeFeatureType, this.props.columnSettings));
         return (<Grid
           onGridSort={this.onGridSort}
           columns={columns}
