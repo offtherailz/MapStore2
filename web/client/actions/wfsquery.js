@@ -28,7 +28,7 @@ function layerSelectedForSearch(id) {
     return {
         type: LAYER_SELECTED_FOR_SEARCH,
         id
-    }
+    };
 }
 function featureTypeSelected(url, typeName) {
     return {
