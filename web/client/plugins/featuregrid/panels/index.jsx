@@ -1,6 +1,6 @@
 const React = require('react');
 const panels = {
-  settings: require('./AttributeSelector')
+    settings: require('./AttributeSelector')
 };
 const panelDefaultProperties = {
     settings: {
@@ -14,5 +14,5 @@ module.exports = {
             .map(t => {
                 const Panel = panels[t];
                 return <Panel {...(panelDefaultProperties[t] || {})} />;
-    })
+            })
 };

@@ -4,7 +4,7 @@ require("./toolbarstyle.css");
 module.exports = (props = {
     onDownloadToggle: () => {}
 }) => {
-    return (<Grid className="bg-body" fluid style={{width: "100%"}}>
+    return (<Grid className="bg-body data-grid-top-toolbar" fluid style={{width: "100%"}}>
         <Row className="flex-center">
             <Col md={4}>
                 <ButtonGroup className="featuregrid-toolbar-margin">

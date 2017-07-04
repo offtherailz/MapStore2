@@ -4,6 +4,7 @@ const {zoomToExtent} = require('../../actions/map');
 const {Glyphicon} = require('react-bootstrap');
 module.exports = [{
         name: '',
+        key: "__zoom_to_feature__",
         width: 35,
         locked: true,
         events: {

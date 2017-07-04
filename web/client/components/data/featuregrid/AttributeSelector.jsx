@@ -1,17 +1,21 @@
 const React = require('react');
 const {Checkbox} = require('react-bootstrap');
+const Message = require('../../I18N/Message');
 
-module.exports = (props = {
-    onChange: () => {}
-    }) => (
-    <div className="bg-body" style={props.style}>
-        <h4 className="text-center"><strong>Columns</strong></h4>
+module.exports = ({
+    style={},
+    titleMsg= "featuregrid.columns",
+    onChange= () => {},
+    attributes= []
+} = {}) => (
+    <div className="bg-body data-attribute-selector" style={style}>
+        <h4 className="text-center"><strong><Message msgId={titleMsg} /></strong></h4>
         <div>
-        {props.attributes.map( attr =>
+        {attributes.map( attr =>
             (<Checkbox
-                key={attr.attribute}
+                key={attr.attribute || attr.name}
                 checked={!attr.hide}
-                onChange={() => props.onChange(attr.attribute, !attr.hide ) }>
+                onChange={() => onChange(attr.attribute, !attr.hide ) }>
                 {attr.label || attr.attribute}
             </Checkbox>)
         )}
