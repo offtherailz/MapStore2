@@ -7,7 +7,7 @@
  */
 const expect = require('expect');
 const featuregrid = require('../featuregrid');
-const {setFeatures, dockSizeFeatures, setLayer, toggleTool, customizeAttribute} = require('../../actions/featuregrid');
+const {setFeatures, dockSizeFeatures, setLayer, toggleTool, customizeAttribute, selectFeatures, deselectFeatures, toggleSelection, clearSelection} = require('../../actions/featuregrid');
 const museam = require('json-loader!../../test-resources/wfs/museam.json');
 describe('Test the featuregrid reducer', () => {
 
@@ -22,38 +22,66 @@ describe('Test the featuregrid reducer', () => {
         expect(state.select).toExist();
         expect(state.features).toExist();
     });
-    it('FeatureGrid selectFeature', () => {
-        let testAction = {
-            type: 'SELECT_FEATURES',
-            features: [1, 2]
-        };
-        let state = featuregrid( {}, testAction);
+    it('selectFeature', () => {
+        let state = featuregrid( {}, selectFeatures([1, 2]));
         expect(state.select).toExist();
+        expect(state.select.length).toBe(1);
         expect(state.select[0]).toBe(1);
-    });
-    it('FeatureGrid selectFeature', () => {
-        let testAction = {
-            type: 'SELECT_FEATURES',
-            features: [1, 2]
-        };
-        let state = featuregrid( {}, testAction);
+
+        // check multiselect
+        state = featuregrid( {multiselect: true}, selectFeatures([1, 2]));
         expect(state.select).toExist();
+        expect(state.select.length).toBe(2);
         expect(state.select[0]).toBe(1);
+        // check append mode with multiselect on
+        state = featuregrid( state, selectFeatures([3], true));
+        expect(state.select).toExist();
+        expect(state.select.length).toBe(3);
+        expect(state.select[2]).toBe(3);
     });
-    it('FeatureGrid setFeatures', () => {
+    it('clearSelection', () => {
+        let state = featuregrid( {select: [1, 2]}, clearSelection());
+        expect(state.select).toExist();
+        expect(state.select.length).toBe(0);
+    });
+    it('deselectFeature', () => {
+        let state = featuregrid( {select: [1, 2]}, deselectFeatures([1]));
+        expect(state.select).toExist();
+        expect(state.select[0]).toBe(2);
+    });
+    it('toggleSelection', () => {
+        let state = featuregrid( {select: [1, 2], multiselect: true}, toggleSelection([1, 3, 4]));
+        expect(state.select).toExist();
+        expect(state.select.length).toBe(3);
+        state = featuregrid( state, toggleSelection([2, 3, 4]));
+        expect(state.select.length).toBe(0);
+        state = featuregrid( state, toggleSelection([1]));
+        expect(state.select.length).toBe(1);
+        expect(state.select[0]).toBe(1);
+        state = featuregrid( state, toggleSelection([1]));
+        expect(state.select.length).toBe(0);
+        // single select
+        state = featuregrid( {select: [2], multiselect: false}, toggleSelection([1, 3, 4]));
+        expect(state.select.length).toBe(1);
+        state = featuregrid( {select: [], multiselect: false}, toggleSelection([1]));
+        expect(state.select.length).toBe(1);
+        state = featuregrid( state, toggleSelection([1]));
+        expect(state.select.length).toBe(0);
+    });
+    it('setFeatures', () => {
         let state = featuregrid( {}, setFeatures(museam.features));
         expect(state.features).toExist();
         expect(state.features.length).toBe(1);
     });
-    it('FeatureGrid dockSizeFeatures', () => {
+    it('dockSizeFeatures', () => {
         let state = featuregrid( {}, dockSizeFeatures(200));
         expect(state.dockSize).toBe(200);
     });
-    it('FeatureGrid setLayer', () => {
+    it('setLayer', () => {
         let state = featuregrid( {}, setLayer("TEST_ID"));
         expect(state.selectedLayer).toBe("TEST_ID");
     });
-    it('FeatureGrid toggleTool', () => {
+    it('toggleTool', () => {
         let state = featuregrid( {}, toggleTool("toolA"));
         expect(state.tools).toExist();
         expect(state.tools.toolA).toBe(true);
@@ -62,7 +90,7 @@ describe('Test the featuregrid reducer', () => {
         state = featuregrid( state, toggleTool("toolA", "value"));
         expect(state.tools.toolA).toBe("value");
     });
-    it('FeatureGrid customizeAttribute', () => {
+    it('customizeAttribute', () => {
         let state = featuregrid( {}, customizeAttribute("attrA", "test", true));
         expect(state.attributes).toExist();
         expect(state.attributes.attrA).toExist();

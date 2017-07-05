@@ -9,7 +9,7 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const AdaptiveGrid = require('../../misc/AdaptiveGrid');
 
-const {featureTypeToGridColumns, getToolColumns, getRow} = require('../../../utils/FeatureGridUtils');
+const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents} = require('../../../utils/FeatureGridUtils');
 
 /**
  * A component that gets the describeFeatureType and the features to display
@@ -25,6 +25,8 @@ const {featureTypeToGridColumns, getToolColumns, getRow} = require('../../../uti
  */
 class FeatureGrid extends React.Component {
     static propTypes = {
+        gridOpts: PropTypes.object,
+        selectBy: PropTypes.object,
         features: PropTypes.array,
         gridComponent: PropTypes.func,
         describeFeatureType: PropTypes.object,
@@ -32,20 +34,18 @@ class FeatureGrid extends React.Component {
         gridOptions: PropTypes.object,
         actionOpts: PropTypes.object,
         tools: PropTypes.array,
-        onGridSort: PropTypes.func
+        gridEvents: PropTypes.object
     };
 
     static defaultProps = {
         gridComponent: AdaptiveGrid,
-        onGridSort: () => {},
+        gridEvents: {},
+        gridOpts: {},
         describeFeatureType: {},
         columnSettings: {},
         features: [],
         tools: []
     };
-    onGridSort = (sortColumn, sortDirection) => {
-        this.props.onGridSort(sortColumn, sortDirection);
-    }
     render() {
         const Grid = this.props.gridComponent;
         const rows = this.props.features;
@@ -54,11 +54,32 @@ class FeatureGrid extends React.Component {
             feature.get = key => feature.properties && feature.properties[key] ? feature.properties[key] : feature[key];
             return feature;
         };
-        const columns =
-        getToolColumns(this.props.tools, rowGetter, this.props.describeFeatureType, this.props.actionOpts)
+        // bind proper events and setup the colums array
+        const columns = getToolColumns(this.props.tools, rowGetter, this.props.describeFeatureType, this.props.actionOpts)
             .concat(featureTypeToGridColumns(this.props.describeFeatureType, this.props.columnSettings));
+        // bind and get proper grid events from gridEvents object
+        let {onRowsSelected, onRowsDeselected, onRowsToggled, ...gridEvents} = getGridEvents(this.props.gridEvents, rowGetter, this.props.describeFeatureType, this.props.actionOpts);
+
+        // setup gridOpts setting app selection events binded
+        let {rowSelection, ...gridOpts} = this.props.gridOpts;
+
+        gridOpts = {
+            ...gridOpts,
+            rowSelection: rowSelection ? {
+                ...rowSelection,
+                onRowsSelected,
+                onRowsDeselected
+            } : null
+        };
+
+        // set selection by row click if checkbox are not present is enabled
+        if (rowSelection && !rowSelection.showCheckbox) {
+            gridEvents.onRowClick = (rowIdx, row) => onRowsToggled([{rowIdx, row}]);
+        }
         return (<Grid
-          onGridSort={this.onGridSort}
+          selectBy={this.props.selectBy}
+          {...gridEvents}
+          {...gridOpts}
           columns={columns}
           minHeight={600}
           rowGetter={rowGetter}

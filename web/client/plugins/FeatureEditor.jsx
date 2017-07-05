@@ -21,7 +21,8 @@ const {getTitleSelector} = require('../selectors/featuregrid');
 const {gridTools, gridEvents, pageEvents, toolbarEvents} = require('./featuregrid/index');
 
 const FeatureDock = (props = {
-    tools: {}
+    tools: {},
+    select: []
 }) => {
     const dockProps = {
         dimMode: "none",
@@ -48,13 +49,24 @@ const FeatureDock = (props = {
             footer={<BottomToolbar {...props.pageEvents} {...props.pagination} loading={props.featureLoading} totalFeatures={props.totalFeatures} resultSize={props.resultSize}/>
             }>
             <Grid
-            key={"feature-grid-container"}
-            columnSettings={props.attributes}
-            {...props.gridEvents}
-            describeFeatureType={props.describe}
-            features={props.features}
-            minHeight={600}
-            tools={props.gridTools}
+                gridOpts={{
+                    rowSelection: {
+                        showCheckbox: false,
+                        selectBy: {
+                            keys: {
+                                rowKey: 'id',
+                                values: props.select.map(f => f.id)
+                            }
+                        }
+                    }
+                }}
+                key={"feature-grid-container"}
+                columnSettings={props.attributes}
+                gridEvents={props.gridEvents}
+                describeFeatureType={props.describe}
+                features={props.features}
+                minHeight={600}
+                tools={props.gridTools}
          /></BorderLayout>}
     </Dock>);
 };
@@ -71,12 +83,14 @@ const selector = createSelector(
     }),
     state => get(state, `featuregrid.attributes`),
     state => get(state, "featuregrid.tools"),
-    (title, open, results, attributes, tools) => ({
+    state => get(state, 'featuregrid.select') || [],
+    (title, open, results, attributes, tools, select) => ({
         title,
         open,
         ...results,
         attributes,
-        tools
+        tools,
+        select
     })
 );
 const EditorPlugin = connect(selector, (dispatch) => ({
@@ -92,6 +106,7 @@ module.exports = {
      FeatureEditorPlugin: EditorPlugin,
      epics: require('../epics/featuregrid'),
      reducers: {
-         featuregrid: require('../reducers/featuregrid')
+         featuregrid: require('../reducers/featuregrid'),
+         highlight: require('../reducers/featuregrid')
      }
  };

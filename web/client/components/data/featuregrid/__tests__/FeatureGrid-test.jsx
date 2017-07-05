@@ -57,7 +57,7 @@ describe('Test for FeatureGrid component', () => {
             onSort: () => {}
         };
         spyOn(events, "onSort");
-        const cmp = ReactDOM.render(<FeatureGrid onGridSort={events.onSort} describeFeatureType={describePois} features={museam.features}/>, document.getElementById("container"));
+        const cmp = ReactDOM.render(<FeatureGrid gridEvents={{onGridSort: events.onSort}} describeFeatureType={describePois} features={museam.features}/>, document.getElementById("container"));
         expect(cmp).toExist();
         document.getElementsByClassName('react-grid-HeaderCell-sortable')[0].click();
         expect(events.onSort).toHaveBeenCalled();

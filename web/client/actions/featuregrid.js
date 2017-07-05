@@ -7,6 +7,10 @@
  */
 
 const SELECT_FEATURES = 'SELECT_FEATURES';
+const DESELECT_FEATURES = 'FEATUREGRID:DESELECT_FEATURES';
+const CLEAR_SELECTION = 'FEATUREGRID:CLEAR_SELECTION';
+const SET_SELECTION_OPTIONS = 'FEATUREGRID:SET_SELECTION_OPTIONS';
+const TOGGLE_FEATURES_SELECTION = 'FEATUREGRID:TOGGLE_FEATURES_SELECTION';
 const SET_FEATURES = 'SET_FEATURES';
 const SORT_BY = 'FEATUREGRID:SORT_BY';
 const SET_LAYER = 'FEATUREGRID:SET_LAYER';
@@ -15,13 +19,37 @@ const DOCK_SIZE_FEATURES = 'DOCK_SIZE_FEATURES';
 const TOGGLE_TOOL = 'FEATUREGRID:TOGGLE_TOOL';
 const CUSTOMIZE_ATTRIBUTE = 'FEATUREGRID:CUSTOMIZE_ATTRIBUTE';
 
-function selectFeatures(features) {
+function selectFeatures(features, append) {
     return {
         type: SELECT_FEATURES,
-        features: features
+        features,
+        append
     };
 }
+function deselectFeatures(features) {
+    return {
+        type: DESELECT_FEATURES,
+        features
+    };
+}
+function clearSelection() {
+    return {
+        type: CLEAR_SELECTION
+    };
+}
+function toggleSelection(features) {
+    return {
+        type: TOGGLE_FEATURES_SELECTION,
+        features
+    };
+}
+function setSelectionOptions({multiselect= false} = {}) {
+    return {
+        type: SET_SELECTION_OPTIONS,
+        multiselect
+    };
 
+}
 function setFeatures(features) {
     return {
         type: SET_FEATURES,
@@ -73,6 +101,10 @@ function customizeAttribute(name, key, value) {
 
 module.exports = {
     SELECT_FEATURES,
+    DESELECT_FEATURES,
+    CLEAR_SELECTION,
+    TOGGLE_FEATURES_SELECTION,
+    SET_SELECTION_OPTIONS,
     SET_FEATURES,
     DOCK_SIZE_FEATURES,
     SORT_BY,
@@ -82,6 +114,10 @@ module.exports = {
     CUSTOMIZE_ATTRIBUTE,
     setLayer,
     selectFeatures,
+    deselectFeatures,
+    setSelectionOptions,
+    clearSelection,
+    toggleSelection,
     setFeatures,
     dockSizeFeatures,
     sort,
