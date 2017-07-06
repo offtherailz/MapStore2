@@ -9,8 +9,7 @@ module.exports = {
     getLayerById(
         state,
         getSelectedId(state)
-    )
-    ),
+    )),
     getCustomizedAttributes: state => {
         return (get(state, `query.featureTypes.${get(state, "query.filterObj.featureTypeName")}.attributes`) || []).map(att => {
             const custom = getCustomAttributeSettings(state, att);
@@ -22,5 +21,20 @@ module.exports = {
             }
             return att;
         });
-    }
+    },
+    resultsSelector: (state) => ({
+        features: get(state, "query.result.features")
+    }),
+    paginationInfoSelector: (state) => ({
+        startIndex: get(state, "query.filterObj.pagination.startIndex"),
+        maxFeatures: get(state, "query.filterObj.pagination.maxFeatures"),
+        resultSize: get(state, "query.result.features.length"),
+        totalFeatures: get(state, "query.result.totalFeatures")
+    }),
+    describeSelector: (state) => ({
+        describe: get(state, `query.featureTypes.${get(state, "query.filterObj.featureTypeName")}.original`)
+    }),
+    featureLoadingSelector: (state) => ({
+        featureLoading: get(state, "query.featureLoading")
+    })
 };

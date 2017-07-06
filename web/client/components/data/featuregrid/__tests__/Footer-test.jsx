@@ -7,7 +7,7 @@
  */
 var React = require('react');
 var ReactDOM = require('react-dom');
-var BottomToolbar = require('../BottomToolbar');
+var BottomToolbar = require('../Footer');
 var expect = require('expect');
 const spyOn = expect.spyOn;
 

@@ -5,10 +5,11 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-var React = require('react');
-var ReactDOM = require('react-dom');
-var TopToolbar = require('../TopToolbar');
-var expect = require('expect');
+const React = require('react');
+const ReactDOM = require('react-dom');
+const Header = require('../Header');
+const ViewTools = require('../toolbars/ViewTools');
+const expect = require('expect');
 
 describe('Test for TopToolbar component', () => {
     beforeEach((done) => {
@@ -22,7 +23,12 @@ describe('Test for TopToolbar component', () => {
         setTimeout(done);
     });
     it('render with defaults', () => {
-        ReactDOM.render(<TopToolbar/>, document.getElementById("container"));
+        ReactDOM.render(<Header/>, document.getElementById("container"));
+        const el = document.getElementsByClassName("data-grid-top-toolbar")[0];
+        expect(el).toExist();
+    });
+    it('render with ViewTools', () => {
+        ReactDOM.render(<Header toolbar={ViewTools}/>, document.getElementById("container"));
         const el = document.getElementsByClassName("data-grid-top-toolbar")[0];
         expect(el).toExist();
     });

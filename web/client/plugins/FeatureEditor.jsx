@@ -12,12 +12,10 @@ const {bindActionCreators} = require('redux');
 const {get} = require('lodash');
 const Dock = require('react-dock').default;
 const Grid = require('../components/data/featuregrid/FeatureGrid');
-const BottomToolbar = require('../components/data/featuregrid/BottomToolbar');
-const TopToolbar = require('../components/data/featuregrid/TopToolbar');
-const {getPanels} = require('./featuregrid/panels/index');
+const {resultsSelector, describeSelector, paginationInfoSelector} = require('../selectors/featuregrid');
+const {getPanels, getHeader, getFooter} = require('./featuregrid/panels/index');
 const BorderLayout = require('../components/layout/BorderLayout');
 
-const {getTitleSelector} = require('../selectors/featuregrid');
 const {gridTools, gridEvents, pageEvents, toolbarEvents} = require('./featuregrid/index');
 
 const FeatureDock = (props = {
@@ -44,10 +42,9 @@ const FeatureDock = (props = {
         {props.open &&
         <BorderLayout
             key={"feature-grid-container"}
-            header={<TopToolbar {...props.toolbarEvents} title={props.title}/>}
+            header={getHeader()}
             columns={getPanels(props.tools)}
-            footer={<BottomToolbar {...props.pageEvents} {...props.pagination} loading={props.featureLoading} totalFeatures={props.totalFeatures} resultSize={props.resultSize}/>
-            }>
+            footer={getFooter()}>
             <Grid
                 gridOpts={{
                     rowSelection: {
@@ -71,23 +68,16 @@ const FeatureDock = (props = {
     </Dock>);
 };
 const selector = createSelector(
-    getTitleSelector,
     state => get(state, "query.open"),
-    (state) => ({
-        describe: get(state, `query.featureTypes.${get(state, "query.filterObj.featureTypeName")}.original`),
-        featureLoading: get(state, "query.featureLoading"),
-        features: get(state, "query.result.features"),
-        resultSize: get(state, "query.result.features.length"),
-        totalFeatures: get(state, "query.result.totalFeatures"),
-        pagination: get(state, "query.filterObj.pagination")
-    }),
+    resultsSelector,
+    describeSelector,
     state => get(state, `featuregrid.attributes`),
     state => get(state, "featuregrid.tools"),
     state => get(state, 'featuregrid.select') || [],
-    (title, open, results, attributes, tools, select) => ({
-        title,
+    (open, results, describe, attributes, tools, select) => ({
         open,
         ...results,
+        ...describe,
         attributes,
         tools,
         select
