@@ -7,11 +7,14 @@
  */
 var React = require('react');
 var ReactDOM = require('react-dom');
-var FeatureGrid = require('../FeatureGrid');
 var expect = require('expect');
+const TestUtils = require('react-dom/test-utils');
+var FeatureGrid = require('../FeatureGrid');
+
 const spyOn = expect.spyOn;
 const museam = require('json-loader!../../../../test-resources/wfs/museam.json');
 const describePois = require('json-loader!../../../../test-resources/wfs/describe-pois.json');
+
 
 describe('Test for FeatureGrid component', () => {
     beforeEach((done) => {
@@ -39,19 +42,25 @@ describe('Test for FeatureGrid component', () => {
             key: "test_tool",
             name: '',
             width: 35,
-            locked: true
+            locked: true,
+            events: {
+                onClick: () => {}
+            },
+            formatter: () => <div className="test-grid-tool" />
         };
+        spyOn(tool.events, "onClick");
         const cmp = ReactDOM.render(<FeatureGrid describeFeatureType={describePois} features={museam.features} tools={[tool]}/>, document.getElementById("container"));
         expect(cmp).toExist();
         expect(document.getElementsByClassName('react-grid-HeaderCell').length).toBe(4);
         expect(document.getElementsByClassName('react-grid-Row').length).toBe(1);
+        document.getElementsByClassName('test-grid-tool')[0].click();
+        expect(tool.events.onClick).toHaveBeenCalled();
     });
     it('hide columns features', () => {
         const cmp = ReactDOM.render(<FeatureGrid describeFeatureType={describePois} features={museam.features} columnSettings={{NAME: {hide: true}}}/>, document.getElementById("container"));
         expect(cmp).toExist();
         expect(document.getElementsByClassName('react-grid-HeaderCell').length).toBe(2);
     });
-
     it('sort event', () => {
         const events = {
             onSort: () => {}
@@ -61,5 +70,62 @@ describe('Test for FeatureGrid component', () => {
         expect(cmp).toExist();
         document.getElementsByClassName('react-grid-HeaderCell-sortable')[0].click();
         expect(events.onSort).toHaveBeenCalled();
+    });
+    //
+    // ROW SELECTION EVENTS
+    //
+    it('row selection event without checkbox', () => {
+        const events = {
+            onRowsToggled: () => {}
+        };
+        spyOn(events, "onRowsToggled");
+        const cmp = ReactDOM.render(<FeatureGrid gridEvents={{onRowsToggled: events.onRowsToggled}} gridOpts= {{rowSelection: {
+            showCheckbox: false,
+            selectBy: {
+                keys: {
+                    rowKey: 'id',
+                    values: []
+                }
+            }
+        }}} describeFeatureType={describePois} features={museam.features}/>, document.getElementById("container"));
+        expect(cmp).toExist();
+        // TODO click on a row
+        document.getElementsByClassName('react-grid-Cell')[0].click();
+        expect(events.onRowsToggled).toHaveBeenCalled();
+    });
+    it('row selection event with checkboxes', () => {
+        const events = {
+            onRowsSelected: () => {},
+            onRowsDeselected: () => {},
+            onRowsToggled: () => {}
+        };
+        spyOn(events, "onRowsSelected");
+        spyOn(events, "onRowsDeselected");
+        spyOn(events, "onRowsToggled");
+        let cmp = ReactDOM.render(<FeatureGrid gridEvents={events} gridOpts= {{rowSelection: {
+            showCheckbox: true,
+            selectBy: {
+                keys: {
+                    rowKey: 'id',
+                    values: []
+                }
+            }
+        }}} describeFeatureType={describePois} features={museam.features}/>, document.getElementById("container"));
+        expect(cmp).toExist();
+        let domNode = document.getElementsByClassName('react-grid-checkbox')[1];
+        TestUtils.Simulate.click(domNode);
+        expect(events.onRowsSelected).toHaveBeenCalled();
+        cmp = ReactDOM.render(<FeatureGrid gridEvents={events} gridOpts= {{rowSelection: {
+            showCheckbox: true,
+            selectBy: {
+                keys: {
+                    rowKey: 'id',
+                    values: [museam.features[0].id]
+                }
+            }
+        }}} describeFeatureType={describePois} features={museam.features}/>, document.getElementById("container"));
+        domNode = document.getElementsByClassName('react-grid-checkbox')[1];
+        TestUtils.Simulate.click(domNode);
+        expect(events.onRowsDeselected).toHaveBeenCalled();
     });
 });

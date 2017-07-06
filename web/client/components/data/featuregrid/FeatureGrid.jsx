@@ -58,7 +58,11 @@ class FeatureGrid extends React.Component {
         const columns = getToolColumns(this.props.tools, rowGetter, this.props.describeFeatureType, this.props.actionOpts)
             .concat(featureTypeToGridColumns(this.props.describeFeatureType, this.props.columnSettings));
         // bind and get proper grid events from gridEvents object
-        let {onRowsSelected, onRowsDeselected, onRowsToggled, ...gridEvents} = getGridEvents(this.props.gridEvents, rowGetter, this.props.describeFeatureType, this.props.actionOpts);
+        let {
+            onRowsSelected = () => {},
+            onRowsDeselected = () => {},
+            onRowsToggled = () => {},
+            ...gridEvents} = getGridEvents(this.props.gridEvents, rowGetter, this.props.describeFeatureType, this.props.actionOpts);
 
         // setup gridOpts setting app selection events binded
         let {rowSelection, ...gridOpts} = this.props.gridOpts;

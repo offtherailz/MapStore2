@@ -9,8 +9,8 @@ const Rx = require('rxjs');
 
 const {get} = require('lodash');
 const {toggleControl} = require('../actions/controls');
-const {query, QUERY_CREATE, LAYER_SELECTED_FOR_SEARCH} = require('../actions/wfsquery');
-const {SORT_BY, CHANGE_PAGE, setLayer} = require('../actions/featuregrid');
+const {query, QUERY_CREATE, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
+const {SORT_BY, CHANGE_PAGE, setLayer, clearSelection} = require('../actions/featuregrid');
 
 /*
 // FILTER CREATION FUNCTIONS
@@ -75,6 +75,7 @@ module.exports = {
     featureLayerSelectionInitialization: (action$) =>
         action$.ofType(LAYER_SELECTED_FOR_SEARCH)
             .switchMap( a => Rx.Observable.of(setLayer(a.id))),
+    featureGridSelectionClearOnClose: (action$) => action$.ofType(FEATURE_CLOSE).switchMap(() => Rx.Observable.of(clearSelection())),
     featureGridStartupQuery: (action$, store) =>
         action$.ofType(QUERY_CREATE)
             .switchMap(action => Rx.Observable.of(
@@ -95,7 +96,6 @@ module.exports = {
                     )
             ))
         ),
-
     featureGridChangePage: (action$, store) =>
         action$.ofType(CHANGE_PAGE).switchMap( ({page, size} = {}) =>
             Rx.Observable.of( query(
