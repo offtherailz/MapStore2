@@ -12,7 +12,7 @@ const {bindActionCreators} = require('redux');
 const {get} = require('lodash');
 const Dock = require('react-dock').default;
 const Grid = require('../components/data/featuregrid/FeatureGrid');
-const {resultsSelector, describeSelector, paginationInfoSelector} = require('../selectors/featuregrid');
+const {resultsSelector, describeSelector} = require('../selectors/featuregrid');
 const {getPanels, getHeader, getFooter} = require('./featuregrid/panels/index');
 const BorderLayout = require('../components/layout/BorderLayout');
 
