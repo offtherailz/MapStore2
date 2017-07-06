@@ -46,6 +46,10 @@
             "featureTypeError": "Layerattribute können nicht geladen werden",
             "elevation": "Höhe"
         },
+        "notification": {
+            "backgroundLayerNotSupported": "Der zuvor gewählte Hintergrund wird nicht für diese Art von Karte unterstützt. Der erste verfügbare wird dann verwendet.",
+            "noBackgroundLayerSupported": "Es gibt keine unterstützten Hintergrundschichten für diese Art von Karte."
+        },
         "dock": {
             "row": "{rowsSelected} reihe ausgewählt",
             "rows": "{rowsSelected} reihen ausgewählt"
@@ -474,6 +478,7 @@
                 "combo_placeholder": "Attribut",
                 "text_placeholder": "Gib den zu suchenden Text ein",
                 "attribute_filter_header": "Attribut Filter",
+                "tooltipTextField": "Verwenden <b>*</b> für ein beliebiges Zeichen</br>Verwenden <b>.</b> für ein einzelnes Zeichen</br>Verwenden <b>!</b> für Sonderzeichen (* und .)</br>",
                 "groupField": {
                     "any": "jeder",
                     "all": "alle",

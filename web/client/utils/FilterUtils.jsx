@@ -1,6 +1,6 @@
 
-/**
- * Copyright 2016, GeoSolutions Sas.
+/*
+ * Copyright 2017, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -294,6 +294,9 @@ const FilterUtils = {
                         break;
                     default:
                         break;
+                }
+                if (field.operator === "isNull") {
+                    fieldFilter = ogcStringField(field.attribute, field.operator, field.operator, nsplaceholder);
                 }
                 if (fieldFilter) {
                     arr.push(fieldFilter);
@@ -716,7 +719,8 @@ const FilterUtils = {
     ogcNumberField,
     ogcDateField,
     ogcListField,
-    ogcStringField
+    ogcStringField,
+    isLikeOrIlike: (operator) => operator === "ilike" || operator === "like"
 };
 
 module.exports = FilterUtils;
