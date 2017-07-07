@@ -10,5 +10,5 @@ module.exports = [{
         events: {
             onClick: (p, opts, describe, {crs}= {}) => zoomToExtent(bbox(p), crs || "EPSG:4326")
         },
-        formatter: () => <Glyphicon glyph="zoom-in" />
+        formatter: () => <Glyphicon glyph="zoom-to" />
 }];

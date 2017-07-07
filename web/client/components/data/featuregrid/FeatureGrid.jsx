@@ -10,7 +10,7 @@ const PropTypes = require('prop-types');
 const AdaptiveGrid = require('../../misc/AdaptiveGrid');
 
 const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents} = require('../../../utils/FeatureGridUtils');
-
+require("./featuregrid.css");
 /**
  * A component that gets the describeFeatureType and the features to display
  * attributes
@@ -32,6 +32,7 @@ class FeatureGrid extends React.Component {
         selectBy: PropTypes.object,
         features: PropTypes.array,
         editable: PropTypes.bool,
+        showDragHandle: PropTypes.bool,
         gridComponent: PropTypes.func,
         describeFeatureType: PropTypes.object,
         columnSettings: PropTypes.object,
@@ -52,7 +53,8 @@ class FeatureGrid extends React.Component {
         columnSettings: {},
         features: [],
         tools: [],
-        editable: false
+        editable: false,
+        showDragHandle: false
     };
     getChildContext() {
         return {
@@ -63,6 +65,7 @@ class FeatureGrid extends React.Component {
         };
     }
     render() {
+        const dragHandle = this.props.showDragHandle ? 'feature-grid-drag-handle-show' : 'feature-grid-drag-handle-hide';
         const Grid = this.props.gridComponent;
         const rows = this.props.features;
         const rowGetter = (i) => {
@@ -97,6 +100,7 @@ class FeatureGrid extends React.Component {
             gridEvents.onRowClick = (rowIdx, row) => onRowsToggled([{rowIdx, row}]);
         }
         return (<Grid
+          className={dragHandle}
           enableCellSelect={this.props.editable}
           selectBy={this.props.selectBy}
           {...gridEvents}
