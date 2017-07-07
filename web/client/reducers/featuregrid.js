@@ -6,9 +6,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 const assign = require("object-assign");
-const {SELECT_FEATURES, DESELECT_FEATURES, TOGGLE_FEATURES_SELECTION, CLEAR_SELECTION, SET_FEATURES, DOCK_SIZE_FEATURES, SET_LAYER, TOGGLE_TOOL, CUSTOMIZE_ATTRIBUTE, SET_SELECTION_OPTIONS} = require('../actions/featuregrid');
+const {
+    SELECT_FEATURES,
+    DESELECT_FEATURES,
+    TOGGLE_FEATURES_SELECTION,
+    CLEAR_SELECTION,
+    SET_FEATURES,
+    DOCK_SIZE_FEATURES,
+    SET_LAYER, TOGGLE_TOOL,
+    CUSTOMIZE_ATTRIBUTE,
+    SET_SELECTION_OPTIONS,
+    TOGGLE_MODE,
+    MODES
+} = require('../actions/featuregrid');
 
 const emptyResultsState = {
+    mode: MODES.VIEW,
     pagination: {
         startIndex: 0,
         maxFeatures: 20
@@ -28,9 +41,6 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {select: (action.features || []).splice(0, 1)});
     case TOGGLE_FEATURES_SELECTION:
         let newArr = state.select.filter( f => !isPresent(f, action.features)).concat( (action.features || []).filter( f => !isPresent(f, state.select)));
-        if (state.multiselect) {
-            return assign({}, state, {select: newArr});
-        }
         return assign({}, state, {select: newArr.filter( f => isPresent(f, action.features)).splice(0, 1)});
     case DESELECT_FEATURES:
         return assign({}, state, {
@@ -56,16 +66,21 @@ function featuregrid(state = emptyResultsState, action) {
 
         });
     case CUSTOMIZE_ATTRIBUTE:
-    return assign({}, state, {
-        attributes: {
-            ...state.attributes,
-            [action.name]: {
-                ...(state.attributes && state.attributes[action.name] || {}),
-                [action.key]: action.value || (state.attributes && state.attributes[action.name] && !state.attributes[action.name][action.key])
+        return assign({}, state, {
+            attributes: {
+                ...state.attributes,
+                [action.name]: {
+                    ...(state.attributes && state.attributes[action.name] || {}),
+                    [action.key]: action.value || (state.attributes && state.attributes[action.name] && !state.attributes[action.name][action.key])
+                }
             }
-        }
-
-    });
+        });
+    case TOGGLE_MODE: {
+        return assign({}, state, {
+            mode: action.mode,
+            multiselect: action.mode === MODES.EDIT
+        });
+    }
     default:
         return state;
     }

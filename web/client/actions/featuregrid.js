@@ -10,6 +10,7 @@ const SELECT_FEATURES = 'SELECT_FEATURES';
 const DESELECT_FEATURES = 'FEATUREGRID:DESELECT_FEATURES';
 const CLEAR_SELECTION = 'FEATUREGRID:CLEAR_SELECTION';
 const SET_SELECTION_OPTIONS = 'FEATUREGRID:SET_SELECTION_OPTIONS';
+const TOGGLE_MODE = 'FEATUREGRID:TOGGLE_MODE';
 const TOGGLE_FEATURES_SELECTION = 'FEATUREGRID:TOGGLE_FEATURES_SELECTION';
 const SET_FEATURES = 'SET_FEATURES';
 const SORT_BY = 'FEATUREGRID:SORT_BY';
@@ -18,6 +19,9 @@ const CHANGE_PAGE = 'FEATUREGRID:CHANGE_PAGE';
 const DOCK_SIZE_FEATURES = 'DOCK_SIZE_FEATURES';
 const TOGGLE_TOOL = 'FEATUREGRID:TOGGLE_TOOL';
 const CUSTOMIZE_ATTRIBUTE = 'FEATUREGRID:CUSTOMIZE_ATTRIBUTE';
+const MODES = {
+    EDIT: "EDIT"
+};
 
 function selectFeatures(features, append) {
     return {
@@ -98,6 +102,18 @@ function customizeAttribute(name, key, value) {
         value
     };
 }
+function toggleEditMode() {
+    return {
+        type: TOGGLE_MODE,
+        mode: MODES.EDIT
+    };
+}
+function toggleViewMode() {
+    return {
+        type: TOGGLE_MODE,
+        mode: MODES.VIEW
+    };
+}
 
 module.exports = {
     SELECT_FEATURES,
@@ -112,6 +128,8 @@ module.exports = {
     SET_LAYER,
     TOGGLE_TOOL,
     CUSTOMIZE_ATTRIBUTE,
+    TOGGLE_MODE,
+    MODES,
     setLayer,
     selectFeatures,
     deselectFeatures,
@@ -123,5 +141,7 @@ module.exports = {
     sort,
     changePage,
     toggleTool,
-    customizeAttribute
+    customizeAttribute,
+    toggleEditMode,
+    toggleViewMode
 };

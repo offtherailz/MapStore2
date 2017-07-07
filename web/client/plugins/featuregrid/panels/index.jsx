@@ -1,23 +1,38 @@
 const React = require('react');
 const {connect} = require('react-redux');
-const {createSelector} = require('reselect');
-const {getTitleSelector, paginationInfoSelector, featureLoadingSelector} = require('../../../selectors/featuregrid');
+const {bindActionCreators} = require('redux');
+const {createSelector, createStructuredSelector} = require('reselect');
+const {paginationInfo, featureLoadingSelector} = require('../../../selectors/query');
+const {getTitleSelector, modeSelector, selectedFeaturesCount} = require('../../../selectors/featuregrid');
 const {toolbarEvents, pageEvents} = require('../index');
-const ViewTools = connect( () => ({}),
-    toolbarEvents
-)(require('../../../components/data/featuregrid/toolbars/ViewTools'));
+
+const Toolbar = connect(
+    createStructuredSelector({
+        mode: modeSelector,
+        selectedCount: selectedFeaturesCount
+    }),
+    (dispatch) => ({events: bindActionCreators(toolbarEvents, dispatch)})
+)(require('../../../components/data/featuregrid/toolbars/Toolbar'));
 
 
 const Header = connect(
-    createSelector(getTitleSelector, (title) => ({title})), {
+    createSelector(
+        getTitleSelector,
+        (title) => ({title})),
+    {
         onClose: toolbarEvents.onClose
     }
 )(require('../../../components/data/featuregrid/Header'));
+
 // loading={props.featureLoading} totalFeatures={props.totalFeatures} resultSize={props.resultSize}/
-const Footer = connect(createSelector(paginationInfoSelector, featureLoadingSelector, (pagination, loading) => ({
-    ...pagination,
-    loading: loading.featureLoading
-})),
+const Footer = connect(
+        createSelector(
+            createStructuredSelector(paginationInfo),
+            featureLoadingSelector,
+            (pagination, loading) => ({
+                ...pagination,
+                loading
+            })),
     pageEvents
 )(require('../../../components/data/featuregrid/Footer'));
 
@@ -38,7 +53,7 @@ module.exports = {
                 return <Panel {...(panelDefaultProperties[t] || {})} />;
             }),
     getHeader: () => {
-        return <Header toolbar={<ViewTools />} ><ViewTools /></Header>;
+        return <Header ><Toolbar /></Header>;
     },
     getFooter: () => {
         return <Footer />;

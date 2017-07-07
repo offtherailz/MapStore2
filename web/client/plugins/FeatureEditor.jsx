@@ -12,7 +12,8 @@ const {bindActionCreators} = require('redux');
 const {get} = require('lodash');
 const Dock = require('react-dock').default;
 const Grid = require('../components/data/featuregrid/FeatureGrid');
-const {resultsSelector, describeSelector} = require('../selectors/featuregrid');
+const {resultsSelector, describeSelector} = require('../selectors/query');
+const {modeSelector} = require('../selectors/featuregrid');
 const {getPanels, getHeader, getFooter} = require('./featuregrid/panels/index');
 const BorderLayout = require('../components/layout/BorderLayout');
 
@@ -46,9 +47,10 @@ const FeatureDock = (props = {
             columns={getPanels(props.tools)}
             footer={getFooter()}>
             <Grid
+                editable={props.mode === "EDIT"}
                 gridOpts={{
                     rowSelection: {
-                        showCheckbox: false,
+                        showCheckbox: props.mode === "EDIT",
                         selectBy: {
                             keys: {
                                 rowKey: 'id',
@@ -74,13 +76,15 @@ const selector = createSelector(
     state => get(state, `featuregrid.attributes`),
     state => get(state, "featuregrid.tools"),
     state => get(state, 'featuregrid.select') || [],
-    (open, results, describe, attributes, tools, select) => ({
+    modeSelector,
+    (open, features, describe, attributes, tools, select, mode) => ({
         open,
-        ...results,
-        ...describe,
+        features,
+        describe,
         attributes,
         tools,
-        select
+        select,
+        mode
     })
 );
 const EditorPlugin = connect(selector, (dispatch) => ({

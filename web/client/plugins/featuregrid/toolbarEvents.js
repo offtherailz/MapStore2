@@ -1,9 +1,11 @@
 const {toggleControl} = require('../../actions/controls');
 const {closeResponse} = require('../../actions/wfsquery');
-const {toggleTool} = require('../../actions/featuregrid');
+const {toggleTool, toggleEditMode, toggleViewMode} = require('../../actions/featuregrid');
 
 module.exports = {
-    onDownloadToggle: () => toggleControl("wfsdownload"),
-    onSettingsToggle: () => toggleTool("settings"),
+    download: () => toggleControl("wfsdownload"),
+    settings: () => toggleTool("settings"),
+    switchEditMode: () => toggleEditMode(),
+    switchViewMode: () => toggleViewMode(),
     onClose: () => closeResponse()
 };

@@ -4,6 +4,7 @@ const getLayerById = (state, id) => head(layersSelector(state).filter(l => l.id 
 const getTitle = (layer = {}) => layer.title || layer.name;
 const getSelectedId = state => get(state, "featuregrid.selectedLayer");
 const getCustomAttributeSettings = (state, att) => get(state, `featuregrid.attributes[${att.name || att.attribute}]`);
+const {attributesSelector} = require('./query');
 module.exports = {
   getTitleSelector: state => getTitle(
     getLayerById(
@@ -11,7 +12,7 @@ module.exports = {
         getSelectedId(state)
     )),
     getCustomizedAttributes: state => {
-        return (get(state, `query.featureTypes.${get(state, "query.filterObj.featureTypeName")}.attributes`) || []).map(att => {
+        return (attributesSelector(state) || []).map(att => {
             const custom = getCustomAttributeSettings(state, att);
             if (custom) {
                 return {
@@ -22,19 +23,6 @@ module.exports = {
             return att;
         });
     },
-    resultsSelector: (state) => ({
-        features: get(state, "query.result.features")
-    }),
-    paginationInfoSelector: (state) => ({
-        startIndex: get(state, "query.filterObj.pagination.startIndex"),
-        maxFeatures: get(state, "query.filterObj.pagination.maxFeatures"),
-        resultSize: get(state, "query.result.features.length"),
-        totalFeatures: get(state, "query.result.totalFeatures")
-    }),
-    describeSelector: (state) => ({
-        describe: get(state, `query.featureTypes.${get(state, "query.filterObj.featureTypeName")}.original`)
-    }),
-    featureLoadingSelector: (state) => ({
-        featureLoading: get(state, "query.featureLoading")
-    })
+    modeSelector: (state) => state && state.featuregrid && state.featuregrid.mode,
+    selectedFeaturesCount: (state) => state && state.featuregrid && state.featuregrid.select && state.featuregrid.select.length || 0
 };

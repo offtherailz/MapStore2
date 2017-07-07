@@ -20,14 +20,18 @@ const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents} = requir
  * @prop {object} describeFeatureType the describeFeatureType in json format
  * @prop {Component} gridComponent the grid component, if different from AdaptiveGrid
  * @prop {object} gridOptions to pass to the grid
+ * @prop {object} gridEvents an object with events for the grid. Note: onRowsSelected, onRowsDeselected and onRowsToggled will be associated automatically from this object
+ * to the rowSelection tool. If checkbox are enabled, onRowsSelected and onRowsDeselected will be triggered. If showCheckbox is false, onRowsToggled will be triggered.
  * @prop {object[]} tools. a list of tools. the format is the react-data-grid column format but with the following differences:
  * - The events are automatically binded to call the related callback with the feature as first parameter, second argument is the same, no original event is passed. describeFeatureType as third
  */
 class FeatureGrid extends React.Component {
     static propTypes = {
         gridOpts: PropTypes.object,
+        updates: PropTypes.object,
         selectBy: PropTypes.object,
         features: PropTypes.array,
+        editable: PropTypes.bool,
         gridComponent: PropTypes.func,
         describeFeatureType: PropTypes.object,
         columnSettings: PropTypes.object,
@@ -36,16 +40,28 @@ class FeatureGrid extends React.Component {
         tools: PropTypes.array,
         gridEvents: PropTypes.object
     };
-
+    static childContextTypes = {
+        shouldHighlight: React.PropTypes.func
+    };
     static defaultProps = {
         gridComponent: AdaptiveGrid,
+        updates: {},
         gridEvents: {},
         gridOpts: {},
         describeFeatureType: {},
         columnSettings: {},
         features: [],
-        tools: []
+        tools: [],
+        editable: false
     };
+    getChildContext() {
+        return {
+            shouldHighlight: () => {
+                return true;/* this.state.updates.hasOwnProperty(id) &&
+                    this.state.updates[id].hasOwnProperty(key);*/
+            }
+        };
+    }
     render() {
         const Grid = this.props.gridComponent;
         const rows = this.props.features;
@@ -56,7 +72,7 @@ class FeatureGrid extends React.Component {
         };
         // bind proper events and setup the colums array
         const columns = getToolColumns(this.props.tools, rowGetter, this.props.describeFeatureType, this.props.actionOpts)
-            .concat(featureTypeToGridColumns(this.props.describeFeatureType, this.props.columnSettings));
+            .concat(featureTypeToGridColumns(this.props.describeFeatureType, this.props.columnSettings, this.props.editable));
         // bind and get proper grid events from gridEvents object
         let {
             onRowsSelected = () => {},
@@ -77,10 +93,11 @@ class FeatureGrid extends React.Component {
         };
 
         // set selection by row click if checkbox are not present is enabled
-        if (rowSelection && !rowSelection.showCheckbox) {
+        if (rowSelection) {
             gridEvents.onRowClick = (rowIdx, row) => onRowsToggled([{rowIdx, row}]);
         }
         return (<Grid
+          enableCellSelect={this.props.editable}
           selectBy={this.props.selectBy}
           {...gridEvents}
           {...gridOpts}
