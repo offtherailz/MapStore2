@@ -1,8 +1,10 @@
-const {sort, selectFeatures, deselectFeatures, toggleSelection} = require('../../actions/featuregrid');
+const {sort, selectFeatures, deselectFeatures, featureModified} = require('../../actions/featuregrid');
+
+const range = (start, end) => Array.from({length: (end + 1 - start)}, (v, k) => k + start);
 module.exports = {
     onGridSort: (sortBy, sortOrder) => sort(sortBy, sortOrder),
-    onGridRowsUpdated: ({fromRow, toRow, updated}) => ({type: "FEATURES_MODIFIED", fromRow, toRow, updated}),
-    onRowsToggled: (rows, rowGetter) => toggleSelection(rows.map(r => rowGetter(r.rowIdx))),
+    onGridRowsUpdated: ({fromRow, toRow, updated}, rowGetter) => featureModified(range(fromRow, toRow).map(r => rowGetter(r)), updated),
+    onRowsToggled: (rows, rowGetter) => selectFeatures(rows.map(r => rowGetter(r.rowIdx)), false),
     onRowsSelected: (rows, rowGetter) => selectFeatures(rows.map(r => rowGetter(r.rowIdx)), true),
     onRowsDeselected: (rows, rowGetter) => deselectFeatures(rows.map(r => rowGetter(r.rowIdx)))
 };

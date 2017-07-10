@@ -12,6 +12,11 @@ const {
     TOGGLE_FEATURES_SELECTION,
     CLEAR_SELECTION,
     SET_FEATURES,
+    FEATURES_MODIFIED,
+    SAVING,
+    SAVE_SUCCESS,
+    SAVE_ERROR,
+    DELETE_SELECTED_FEATURES_CONFIRM,
     DOCK_SIZE_FEATURES,
     SET_LAYER, TOGGLE_TOOL,
     CUSTOMIZE_ATTRIBUTE,
@@ -22,6 +27,7 @@ const {
 
 const emptyResultsState = {
     mode: MODES.VIEW,
+    changes: [],
     pagination: {
         startIndex: 0,
         maxFeatures: 20
@@ -35,8 +41,11 @@ const isPresent = (f1, features = []) => features.filter( f2 => f2 === f1 || (f1
 function featuregrid(state = emptyResultsState, action) {
     switch (action.type) {
     case SELECT_FEATURES:
-        if (state.multiselect) {
+        if (state.multiselect && action.append) {
             return assign({}, state, {select: action.append ? [...state.select, ...action.features] : action.features});
+        }
+        if (action.features && state.select && action.features[0] === state.select[0]) {
+            return state;
         }
         return assign({}, state, {select: (action.features || []).splice(0, 1)});
     case TOGGLE_FEATURES_SELECTION:
@@ -50,7 +59,7 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {multiselect: action.multiselect});
     }
     case CLEAR_SELECTION:
-        return assign({}, state, {select: []});
+        return assign({}, state, {select: [], changes: []});
     case SET_FEATURES:
         return assign({}, state, {features: action.features});
     case DOCK_SIZE_FEATURES:
@@ -79,6 +88,37 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {
             mode: action.mode,
             multiselect: action.mode === MODES.EDIT
+        });
+    }
+    case FEATURES_MODIFIED: {
+        return assign({}, state, {
+            changes: [...(state && state.changes || []), ...(action.features.filter(f => {
+                return Object.keys(action.updated || {}).filter(k => f.properties[k] !== action.updated[k]).length > 0;
+            }).map(f => ({
+                id: f.id,
+                updated: action.updated
+            })))]
+        });
+    }
+    case SAVING: {
+        return assign({}, state, {
+            saving: true,
+            loading: true
+        });
+    }
+    case SAVE_SUCCESS: {
+        return assign({}, state, {
+            changes: [],
+            deleteConfirm: false,
+            saving: false,
+            loading: false
+        });
+    }
+    case SAVE_ERROR: {
+        return assign({}, state, {
+            deleteConfirm: false,
+            saving: false,
+            loading: false
         });
     }
     default:

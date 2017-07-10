@@ -13,14 +13,15 @@ const {get} = require('lodash');
 const Dock = require('react-dock').default;
 const Grid = require('../components/data/featuregrid/FeatureGrid');
 const {resultsSelector, describeSelector} = require('../selectors/query');
-const {modeSelector} = require('../selectors/featuregrid');
-const {getPanels, getHeader, getFooter} = require('./featuregrid/panels/index');
+const {modeSelector, changesMapSelector} = require('../selectors/featuregrid');
+const {getPanels, getHeader, getFooter, getDialogs} = require('./featuregrid/panels/index');
 const BorderLayout = require('../components/layout/BorderLayout');
 
 const {gridTools, gridEvents, pageEvents, toolbarEvents} = require('./featuregrid/index');
 
 const FeatureDock = (props = {
     tools: {},
+    dialogs: {},
     select: []
 }) => {
     const dockProps = {
@@ -46,7 +47,9 @@ const FeatureDock = (props = {
             header={getHeader()}
             columns={getPanels(props.tools)}
             footer={getFooter()}>
+            {getDialogs(props.tools)}
             <Grid
+                changes={props.changes}
                 editable={props.mode === "EDIT"}
                 gridOpts={{
                     rowSelection: {
@@ -73,18 +76,22 @@ const selector = createSelector(
     state => get(state, "query.open"),
     resultsSelector,
     describeSelector,
-    state => get(state, `featuregrid.attributes`),
+    state => get(state, "featuregrid.attributes"),
     state => get(state, "featuregrid.tools"),
+    state => get(state, "state.dialogs"),
     state => get(state, 'featuregrid.select') || [],
     modeSelector,
-    (open, features, describe, attributes, tools, select, mode) => ({
+    changesMapSelector,
+    (open, features, describe, attributes, tools, dialogs, select, mode, changes) => ({
         open,
         features,
         describe,
         attributes,
         tools,
+        dialogs,
         select,
-        mode
+        mode,
+        changes
     })
 );
 const EditorPlugin = connect(selector, (dispatch) => ({

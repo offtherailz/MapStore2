@@ -12,6 +12,13 @@ const CLEAR_SELECTION = 'FEATUREGRID:CLEAR_SELECTION';
 const SET_SELECTION_OPTIONS = 'FEATUREGRID:SET_SELECTION_OPTIONS';
 const TOGGLE_MODE = 'FEATUREGRID:TOGGLE_MODE';
 const TOGGLE_FEATURES_SELECTION = 'FEATUREGRID:TOGGLE_FEATURES_SELECTION';
+const FEATURES_MODIFIED = 'FEATUREGRID:FEATURES_MODIFIED';
+const SAVE_CHANGES = 'FEATUREGRID:SAVE_CHANGES';
+const SAVING = 'FEATUREGRID:SAVING';
+const SAVE_SUCCESS = "FEATUREGRID:SAVE_SUCCESS";
+const SAVE_ERROR = "FEATUREGRID:SAVE_ERROR";
+const DELETE_SELECTED_FEATURES = "FEATUREGRID:DELETE_SELECTED_FEATURES";
+const DELETE_SELECTED_FEATURES_CONFIRM = "FEATUREGRID:DELETE_SELECTED_FEATURES_CONFIRM";
 const SET_FEATURES = 'SET_FEATURES';
 const SORT_BY = 'FEATUREGRID:SORT_BY';
 const SET_LAYER = 'FEATUREGRID:SET_LAYER';
@@ -114,6 +121,44 @@ function toggleViewMode() {
         mode: MODES.VIEW
     };
 }
+function featureModified(features, updated) {
+    return {
+        type: FEATURES_MODIFIED,
+        features,
+        updated
+    };
+}
+
+function saveChanges() {
+    return {
+        type: SAVE_CHANGES
+    };
+}
+function saveSuccess() {
+    return {
+        type: SAVE_SUCCESS
+    };
+}
+function deleteFeaturesConfirm() {
+    return {
+        type: DELETE_SELECTED_FEATURES_CONFIRM
+    };
+}
+function deleteFeatures() {
+    return {
+        type: DELETE_SELECTED_FEATURES
+    };
+}
+function featureSaving() {
+    return {
+        type: SAVING
+    };
+}
+function saveError() {
+    return {
+        type: SAVE_ERROR
+    };
+}
 
 module.exports = {
     SELECT_FEATURES,
@@ -122,6 +167,12 @@ module.exports = {
     TOGGLE_FEATURES_SELECTION,
     SET_SELECTION_OPTIONS,
     SET_FEATURES,
+    FEATURES_MODIFIED,
+    SAVE_CHANGES,
+    SAVE_SUCCESS,
+    SAVE_ERROR,
+    DELETE_SELECTED_FEATURES_CONFIRM,
+    DELETE_SELECTED_FEATURES,
     DOCK_SIZE_FEATURES,
     SORT_BY,
     CHANGE_PAGE,
@@ -137,6 +188,13 @@ module.exports = {
     clearSelection,
     toggleSelection,
     setFeatures,
+    featureModified,
+    saveChanges,
+    featureSaving,
+    saveSuccess,
+    saveError,
+    deleteFeaturesConfirm,
+    deleteFeatures,
     dockSizeFeatures,
     sort,
     changePage,

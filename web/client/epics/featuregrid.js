@@ -6,62 +6,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 const Rx = require('rxjs');
-
 const {get} = require('lodash');
-const {toggleControl} = require('../actions/controls');
-const {query, QUERY_CREATE, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
-const {SORT_BY, CHANGE_PAGE, setLayer, clearSelection, toggleViewMode} = require('../actions/featuregrid');
-
-/*
-// FILTER CREATION FUNCTIONS
-const getLogicOperation = (builder, group) => {
-    switch (group.logic) {
-        case "AND":
-            return builder.and;
-        case "OR":
-            return builder.or;
-        default:
-        return () => {};
-
-    }
-};
 const axios = require('../libs/ajax');
-const getOperations = (filterFields, group) => filterFields.filter(group.groupId);
-const requestBuilder = require("../utils/ogc/WFS/RequestBuilder");
-const getGroups = (gid, groups) => groups.filter( g => g.groupId === gid );
-const groupToFilter = (b, fo, group) => {
-    const logicOperation = getLogicOperation(b, group);
-    const operations = getOperations(fo.filterFields || [], group);
-    const groups = getGroups(group.id, groups);
-    const groupFilters = groups.map(g => groupToFilter(b, fo, g));
-    return logicOperation(operations.concat(groupFilters));
-};
-const objToFilter = (fo, builder) =>
-    builder.filter(groupToFilter(builder, fo, fo.groupFields.filter( g => !g.groupId)));
-    */
-    /*
-    initialWFSQuerySearch: (action$, store) => action$.ofType("QUERY_CREATE").switchMap( ({filterObj, searchUrl}) => {
+const {fidFilter} = require('../utils/ogc/Filter/filter');
+const requestBuilder = require('../utils/ogc/WFST/RequestBuilder');
+const {toggleControl} = require('../actions/controls');
+const {query, QUERY_CREATE, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE, DELETE_SELECTED_FEATURES} = require('../actions/wfsquery');
 
-        const paginationInfo = get(store.getState(), "featuregrid.pagination") || {
-            startIndex: 0,
-            maxFeatures: 50
-        };
-        const builder = requestBuilder();
-        const {getFeature, query} = builder;
-        const filter = objToFilter(filterObj, builder);
-        Rx.defer( () => axios.post(searchUrl, getFeature(filterObj.featureTypeName, query(filter)), {
-            outputFormat: "application/json",
-            startIndex: store,
-            ...paginationInfo
-        })).map( response => querySearchResponse(response.data));
-    })
-     */
+const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS,
+    featureSaving, saveSuccess, saveError,
+    setLayer, clearSelection, toggleViewMode} = require('../actions/featuregrid');
+const {selectedFeaturesSelector, changesMapSelector} = require('../selectors/featuregrid');
+const {describeSelector} = require('../selectors/query');
+
+
 // pagination selector
 const getPagination = (state, {page, size} = {}) => {
     let currentPagination = get(state, "featuregrid.pagination");
     let maxFeatures = size !== undefined ? size : currentPagination.maxFeatures;
     return {
-        currentPagination,
+        ...currentPagination,
         startIndex: page !== undefined ? page * maxFeatures : currentPagination.startIndex,
         maxFeatures
     };
@@ -71,6 +35,35 @@ const addPagination = (filterObj, pagination) => ({
     pagination
 });
 
+const createChangesTransaction = (changes, {update, propertyChange, transaction})=>
+    transaction(
+        Object.keys(changes).map( id =>
+            Object.keys(changes[id]).map(name =>
+                update([propertyChange(name, changes[id][name]), fidFilter("ogc", id)])
+            )
+        )
+    );
+const createDeleteTransaction = (features, {transaction, deleteFeature}) => transaction(
+    features.map(deleteFeature)
+);
+const save = (url, body) => Rx.Observable.defer(() => axios.post(url, body, {headers: { 'Content-Type': 'application/xml'}}).then( response => {
+    if (typeof response.data === "string") {
+        if (response.data.indexOf("ExceptionReport") > 0) {
+            throw response.data;
+        }
+    }
+    return response;
+}));
+
+const createSaveChangesFlow = (changes = {}, describeFeatureType, url) => save(
+        url,
+        createChangesTransaction(changes, requestBuilder(describeFeatureType))
+);
+
+const createDeleteFlow = (features, describeFeatureType, url) => save(
+    url,
+    createDeleteTransaction(features, requestBuilder(describeFeatureType))
+);
 module.exports = {
     featureLayerSelectionInitialization: (action$) =>
         action$.ofType(LAYER_SELECTED_FOR_SEARCH)
@@ -106,6 +99,44 @@ module.exports = {
                         getPagination(store.getState(), {page, size})
                     )
             ))
+        ),
+    featureGridReloadPageOnSaveSuccess: (action$, store) =>
+        action$.ofType(SAVE_SUCCESS).switchMap( ({page, size} = {}) =>
+            Rx.Observable.of( query(
+                    get(store.getState(), "query.searchUrl"),
+                    addPagination({
+                            ...get(store.getState(), "query.filterObj")
+                        },
+                        getPagination(store.getState(), {page, size})
+                    )
+            ))
+        ),
+    savePendingFeatureGridChanges: (action$, store) =>
+        action$.ofType(SAVE_CHANGES).switchMap( () =>
+            Rx.Observable.of(featureSaving())
+                .concat(
+                    createSaveChangesFlow(
+                        changesMapSelector(store.getState()),
+                        describeSelector(store.getState()),
+                        get(store.getState(), "query.searchUrl")
+                    ).map(() => saveSuccess())
+                    .catch(() => saveError())
+                )
+
+
+        ),
+    deleteSelectedFeatureGridFeatures: (action$, store) =>
+        action$.ofType(DELETE_SELECTED_FEATURES).switchMap( () =>
+            Rx.Observable.of(featureSaving())
+                .concat(
+                    createDeleteFlow(
+                        selectedFeaturesSelector(store.getState()),
+                        describeSelector(store.getState()),
+                        get(store.getState(), "query.searchUrl")
+                    ).map(() => saveSuccess())
+                    .catch(() => saveError())
+                )
         )
+
 
 };

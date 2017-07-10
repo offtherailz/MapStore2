@@ -28,7 +28,7 @@ require("./featuregrid.css");
 class FeatureGrid extends React.Component {
     static propTypes = {
         gridOpts: PropTypes.object,
-        updates: PropTypes.object,
+        changes: PropTypes.object,
         selectBy: PropTypes.object,
         features: PropTypes.array,
         editable: PropTypes.bool,
@@ -42,11 +42,11 @@ class FeatureGrid extends React.Component {
         gridEvents: PropTypes.object
     };
     static childContextTypes = {
-        shouldHighlight: React.PropTypes.func
+        isModified: React.PropTypes.func
     };
     static defaultProps = {
         gridComponent: AdaptiveGrid,
-        updates: {},
+        changes: {},
         gridEvents: {},
         gridOpts: {},
         describeFeatureType: {},
@@ -58,9 +58,9 @@ class FeatureGrid extends React.Component {
     };
     getChildContext() {
         return {
-            shouldHighlight: () => {
-                return true;/* this.state.updates.hasOwnProperty(id) &&
-                    this.state.updates[id].hasOwnProperty(key);*/
+            isModified: (id, key) => {
+                return this.props.changes.hasOwnProperty(id) &&
+                    this.props.changes[id].hasOwnProperty(key);
             }
         };
     }
@@ -70,7 +70,12 @@ class FeatureGrid extends React.Component {
         const rows = this.props.features;
         const rowGetter = (i) => {
             let feature = {...getRow(i, rows)};
-            feature.get = key => feature.properties && feature.properties[key] ? feature.properties[key] : feature[key];
+            feature.get = key => {
+                if (this.props.changes && this.props.changes[feature.id] && this.props.changes[feature.id][key]) {
+                    return this.props.changes[feature.id][key];
+                }
+                return feature.properties && feature.properties[key] ? feature.properties[key] : feature[key];
+            };
             return feature;
         };
         // bind proper events and setup the colums array
@@ -100,6 +105,7 @@ class FeatureGrid extends React.Component {
             gridEvents.onRowClick = (rowIdx, row) => onRowsToggled([{rowIdx, row}]);
         }
         return (<Grid
+          rowRenderer={require('./renderers/RowRenderer')}
           className={dragHandle}
           enableCellSelect={this.props.editable}
           selectBy={this.props.selectBy}
