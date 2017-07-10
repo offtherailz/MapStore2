@@ -11,9 +11,9 @@ const axios = require('../libs/ajax');
 const {fidFilter} = require('../utils/ogc/Filter/filter');
 const requestBuilder = require('../utils/ogc/WFST/RequestBuilder');
 const {toggleControl} = require('../actions/controls');
-const {query, QUERY_CREATE, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE, DELETE_SELECTED_FEATURES} = require('../actions/wfsquery');
+const {query, QUERY_CREATE, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
 
-const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS,
+const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES,
     featureSaving, saveSuccess, saveError,
     setLayer, clearSelection, toggleViewMode} = require('../actions/featuregrid');
 const {selectedFeaturesSelector, changesMapSelector} = require('../selectors/featuregrid');
