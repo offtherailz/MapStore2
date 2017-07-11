@@ -9,12 +9,17 @@
 const Rx = require('rxjs');
 const {changeLayerProperties} = require('../actions/layers');
 const {CREATION_ERROR_LAYER} = require('../actions/map');
+const {SELECT_FEATURES} = require('../actions/featuregrid');
+const {changeDrawingStatus} = require('../actions/draw');
 const {currentBackgroundLayerSelector, allBackgroundLayerSelector, getLayerFromId} = require('../selectors/layers');
 const {mapTypeSelector} = require('../selectors/maptype');
 const {setControlProperty} = require('../actions/controls');
 const {isSupportedLayer} = require('../utils/LayersUtils');
+const {isSimpleGeomType, getSimpleGeomType} = require('../utils/MapUtils');
 const {warning} = require('../actions/notifications');
 const {head} = require('lodash');
+const {reprojectGeoJson/*, coordsOLtoLeaflet*/} = require('../utils/CoordinatesUtils');
+const assign = require('object-assign');
 
 const handleCreationBackgroundError = (action$, store) =>
     action$.ofType(CREATION_ERROR_LAYER)
@@ -61,7 +66,44 @@ const handleCreationLayerError = (action$, store) =>
         ]) : Rx.Observable.empty();
     });
 
+const startEditing = (action$, store) =>
+    action$.ofType(SELECT_FEATURES)
+    .filter(a => a.features && a.features.length > 0)
+    .switchMap(a => {
+        const isLeaflet = store.getState().maptype.mapType === "leaflet";
+        let newFeatures;
+        let feature = head(a.features);
+        let drawOptions = {
+            featureProjection: a.proj,
+            stopAfterDrawing: true,
+            editEnabled: true,
+            drawEnabled: false
+        };
+        if (!isLeaflet) {
+            feature = reprojectGeoJson(feature, a.proj, store.getState().map.present.projection);
+            // feature.geometry.projection = store.getState().map.present.projection;
+        } else {
+            if (!isSimpleGeomType(feature.geometry.type)) {
+                newFeatures = feature.geometry.coordinates.map((coords, idx) => {
+                    return assign({}, {
+                            type: 'Feature',
+                            properties: {...feature.properties},
+                            id: feature.geometry.type + idx,
+                            geometry: {
+                                coordinates: coords,
+                                type: getSimpleGeomType(feature.geometry.type)
+                            }
+                        });
+                });
+                return Rx.Observable.of(changeDrawingStatus("edit", feature.geometry.type, "featureGrid", isLeaflet ? [{type: "FeatureCollection", features: newFeatures}] : [feature.geometry], drawOptions));
+            }
+        }
+
+        return Rx.Observable.of(changeDrawingStatus("edit", feature.geometry.type, "featureGrid", isLeaflet ? [feature] : [feature.geometry], drawOptions));
+    });
+
 module.exports = {
     handleCreationLayerError,
-    handleCreationBackgroundError
+    handleCreationBackgroundError,
+    startEditing
 };
