@@ -6,6 +6,16 @@ const getSelectedId = state => get(state, "featuregrid.selectedLayer");
 const getCustomAttributeSettings = (state, att) => get(state, `featuregrid.attributes[${att.name || att.attribute}]`);
 const {attributesSelector} = require('./query');
 const selectedFeaturesSelector = state => state && state.featuregrid && state.featuregrid.select;
+const changesSelector = (state) => state && state.featuregrid && state.featuregrid.changes;
+/* eslint-disable */
+const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
+    ...changes,
+    [c.id]: {
+        ...changes[c.id],
+        ...c.updated
+    }
+}), {});
+/* eslint-enable */
 module.exports = {
   getTitleSelector: state => getTitle(
     getLayerById(
@@ -27,14 +37,9 @@ module.exports = {
     modeSelector: (state) => state && state.featuregrid && state.featuregrid.mode,
     selectedFeaturesSelector,
     selectedFeaturesCount: state => (selectedFeaturesSelector(state) || []).length,
-    /* eslint-disable */
-    changesMapSelector: (state) => state && state.featuregrid && state.featuregrid.changes && state.featuregrid.changes.reduce((changes, c) => ({
-        ...changes,
-        [c.id]: {
-            ...changes[c.id],
-            ...c.updated
-        }
-    }), {}),
+    changesSelector,
+    toChangesMap,
+    changesMapSelector: (state) => toChangesMap(changesSelector(state)),
     hasChangesSelector: state => state && state.featuregrid && state.featuregrid.changes && state.featuregrid.changes.length > 0
-    /* eslint-enable */
+
 };

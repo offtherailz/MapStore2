@@ -16,6 +16,7 @@ const FEATURES_MODIFIED = 'FEATUREGRID:FEATURES_MODIFIED';
 const SAVE_CHANGES = 'FEATUREGRID:SAVE_CHANGES';
 const SAVING = 'FEATUREGRID:SAVING';
 const SAVE_SUCCESS = "FEATUREGRID:SAVE_SUCCESS";
+const CLEAR_CHANGES = "FEATUREGRID:CLEAR_CHANGES";
 const SAVE_ERROR = "FEATUREGRID:SAVE_ERROR";
 const DELETE_SELECTED_FEATURES = "FEATUREGRID:DELETE_SELECTED_FEATURES";
 const DELETE_SELECTED_FEATURES_CONFIRM = "FEATUREGRID:DELETE_SELECTED_FEATURES_CONFIRM";
@@ -154,6 +155,11 @@ function featureSaving() {
         type: SAVING
     };
 }
+function clearChanges() {
+    return {
+        type: CLEAR_CHANGES
+    };
+}
 function saveError() {
     return {
         type: SAVE_ERROR
@@ -169,6 +175,7 @@ module.exports = {
     SET_FEATURES,
     FEATURES_MODIFIED,
     SAVE_CHANGES,
+    CLEAR_CHANGES,
     SAVE_SUCCESS,
     SAVE_ERROR,
     DELETE_SELECTED_FEATURES_CONFIRM,
@@ -191,6 +198,7 @@ module.exports = {
     featureModified,
     saveChanges,
     featureSaving,
+    clearChanges,
     saveSuccess,
     saveError,
     deleteFeaturesConfirm,

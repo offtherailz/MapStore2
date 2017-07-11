@@ -16,7 +16,7 @@ const {
     SAVING,
     SAVE_SUCCESS,
     SAVE_ERROR,
-    DELETE_SELECTED_FEATURES_CONFIRM,
+    CLEAR_CHANGES,
     DOCK_SIZE_FEATURES,
     SET_LAYER, TOGGLE_TOOL,
     CUSTOMIZE_ATTRIBUTE,
@@ -37,14 +37,15 @@ const emptyResultsState = {
     features: [],
     dockSize: 0.35
 };
-const isPresent = (f1, features = []) => features.filter( f2 => f2 === f1 || (f1.id !== undefined && f1.id !== null && f1.id === f2.id) ).length > 0;
+const isSameFeature = (f1, f2) => f2 === f1 || (f1.id !== undefined && f1.id !== null && f1.id === f2.id);
+const isPresent = (f1, features = []) => features.filter( f2 => isSameFeature(f1, f2)).length > 0;
 function featuregrid(state = emptyResultsState, action) {
     switch (action.type) {
     case SELECT_FEATURES:
         if (state.multiselect && action.append) {
             return assign({}, state, {select: action.append ? [...state.select, ...action.features] : action.features});
         }
-        if (action.features && state.select && action.features[0] === state.select[0]) {
+        if (action.features && state.select && state.select[0] && action.features[0] && isSameFeature(action.features[0], state.select[0])) {
             return state;
         }
         return assign({}, state, {select: (action.features || []).splice(0, 1)});
@@ -92,9 +93,7 @@ function featuregrid(state = emptyResultsState, action) {
     }
     case FEATURES_MODIFIED: {
         return assign({}, state, {
-            changes: [...(state && state.changes || []), ...(action.features.filter(f => {
-                return Object.keys(action.updated || {}).filter(k => f.properties[k] !== action.updated[k]).length > 0;
-            }).map(f => ({
+            changes: [...(state && state.changes || []), ...(action.features.map(f => ({
                 id: f.id,
                 updated: action.updated
             })))]
@@ -108,10 +107,16 @@ function featuregrid(state = emptyResultsState, action) {
     }
     case SAVE_SUCCESS: {
         return assign({}, state, {
-            changes: [],
             deleteConfirm: false,
+            saved: true,
             saving: false,
             loading: false
+        });
+    }
+    case CLEAR_CHANGES: {
+        return assign({}, state, {
+            saved: false,
+            changes: []
         });
     }
     case SAVE_ERROR: {

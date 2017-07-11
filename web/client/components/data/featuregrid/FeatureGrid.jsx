@@ -8,7 +8,7 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const AdaptiveGrid = require('../../misc/AdaptiveGrid');
-
+const editors = require('./editors');
 const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents} = require('../../../utils/FeatureGridUtils');
 require("./featuregrid.css");
 /**
@@ -80,7 +80,9 @@ class FeatureGrid extends React.Component {
         };
         // bind proper events and setup the colums array
         const columns = getToolColumns(this.props.tools, rowGetter, this.props.describeFeatureType, this.props.actionOpts)
-            .concat(featureTypeToGridColumns(this.props.describeFeatureType, this.props.columnSettings, this.props.editable));
+            .concat(featureTypeToGridColumns(this.props.describeFeatureType, this.props.columnSettings, this.props.editable, {
+                getEditor: ({localType=""} = {}) => editors[localType]
+            }));
         // bind and get proper grid events from gridEvents object
         let {
             onRowsSelected = () => {},

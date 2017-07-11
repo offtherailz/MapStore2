@@ -1,50 +1,56 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const { editors } = require('react-data-grid');
-const ReactDOM = require('react-dom');
 
-class DropDownEditor extends editors.EditorBase {
+const processValue = (obj, func) => Object.keys(obj).reduce((acc, curr) => ({...acc, [curr]: func(obj[curr])}), {});
+const parsers = {
+    "int": v => parseInt(v, 10),
+    "number": v => parseFloat(v, 10)
+};
+class NumberEditor extends editors.EditorBase {
     static propTypes = {
-      value: PropTypes.symbol,
+      value: PropTypes.number,
       onBlur: PropTypes.func,
-      options: PropTypes.arrayOf(React.PropTypes.oneOfType([
-            PropTypes.string,
-            PropTypes.shape({
-              id: PropTypes.string,
-              title: PropTypes.string,
-              value: PropTypes.string,
-              text: PropTypes.string
-            })
-        ])).isRequired
+      inputProps: PropTypes.object,
+      dataType: PropTypes.string,
+      isValid: PropTypes.func,
+      column: PropTypes.object
     };
-
-    onClick() {
-        this.getInputNode().focus();
-    }
-
-    onDoubleClick() {
-        this.getInputNode().focus();
-    }
-    getInputNode() {
-        return ReactDOM.findDOMNode(this);
-    }
-    renderOptions() {
-        let options = [];
-        this.props.options.forEach(function(name) {
-            if (typeof name === 'string') {
-                options.push(<option key={name} value={name}>{name}</option>);
-            } else {
-                options.push(<option key={name.id} value={name.value} title={name.title} >{name.text || name.value}</option>);
+    static defaultProps = {
+        isValid: () => true,
+        dataType: "number"
+    };
+    constructor(props) {
+        super(props);
+        this.validate = (value) => {
+            try {
+                if (parsers[this.props.dataType] || parsers.number) {
+                    return this.props.isValid(value[this.props.column && this.props.column.key]);
+                }
+            } catch (e) {
+                return false;
             }
-        }, this);
-        return options;
+        };
+        this.getValue = () => {
+            const updated = super.getValue();
+            try {
+                return processValue(updated, parsers[this.props.dataType] || parsers.number);
+            } catch (e) {
+                return updated;
+            }
+        };
     }
+
     render() {
-        return (<select style={this.getStyle()} defaultValue={this.props.value} onBlur={this.props.onBlur} onChange={this.onChange} >
-            {this.renderOptions()}
-            </select>);
+        return (<input
+            {...this.props.inputProps}
+            ref={(node) => this.input = node}
+            type="number"
+            onBlur={this.props.onBlur}
+            className="form-control"
+            defaultValue={this.props.value}
+             />);
     }
 }
 
-
-module.exports = DropDownEditor;
+module.exports = NumberEditor;

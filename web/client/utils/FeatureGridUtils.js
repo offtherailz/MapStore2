@@ -1,14 +1,17 @@
+
 const {getFeatureTypeProperties, isGeometryType} = require('./ogc/WFS/base');
 const getRow = (i, rows) => rows[i];
+
 module.exports = {
-    featureTypeToGridColumns: (describe, columnSettings = {}, editing) =>
+    featureTypeToGridColumns: (describe, columnSettings = {}, editing, {getEditor = () => {}} = {}) =>
         (getFeatureTypeProperties(describe) || []).filter( e => !isGeometryType(e)).filter(e => !(columnSettings[e.name] && columnSettings[e.name].hide)).map( (desc) => ({
                 sortable: true,
                 key: desc.name,
                 width: 200,
                 name: desc.name,
                 resizable: true,
-                editable: editing // todo provide editing column settings
+                editable: editing,
+                editor: getEditor(desc)
         })),
     getRow,
     /**
