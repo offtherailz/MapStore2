@@ -11,6 +11,7 @@ const axios = require('../libs/ajax');
 const {fidFilter} = require('../utils/ogc/Filter/filter');
 const requestBuilder = require('../utils/ogc/WFST/RequestBuilder');
 const {toggleControl} = require('../actions/controls');
+const {changeDrawingStatus} = require('../actions/draw');
 const {query, QUERY_CREATE, QUERY_RESULT, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
 const {parseString} = require('xml2js');
 const {stripPrefix} = require('xml2js/lib/processors');
@@ -31,8 +32,7 @@ const interceptOGCError = (observable) => observable.switchMap(response => {
 });
 
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES,
-    featureSaving, saveSuccess, saveError, clearChanges,
-    setLayer, clearSelection, toggleViewMode} = require('../actions/featuregrid');
+    featureSaving, saveSuccess, saveError, clearChanges, TOGGLE_MODE, setLayer, clearSelection, toggleViewMode} = require('../actions/featuregrid');
 
 const {error} = require('../actions/notifications');
 const {selectedFeaturesSelector, changesMapSelector} = require('../selectors/featuregrid');
@@ -159,7 +159,13 @@ module.exports = {
                         uid: "saveError"
                       })))
                 )
-        )
-
+        ),
+    exitEditMode: (action$) =>
+        action$.ofType(TOGGLE_MODE)
+        .filter(a => !a.mode )
+        .switchMap( () => {
+            return Rx.Observable.of(changeDrawingStatus("clean", "", "featureeditor", [], {}));
+        }
+    )
 
 };
