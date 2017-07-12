@@ -8,7 +8,7 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
 const Header = require('../Header');
-const ViewTools = require('../toolbars/ViewTools');
+const Toolbar = require('../toolbars/Toolbar');
 const expect = require('expect');
 
 describe('Test for TopToolbar component', () => {
@@ -28,7 +28,7 @@ describe('Test for TopToolbar component', () => {
         expect(el).toExist();
     });
     it('render with ViewTools', () => {
-        ReactDOM.render(<Header toolbar={ViewTools}/>, document.getElementById("container"));
+        ReactDOM.render(<Header toolbar={Toolbar}/>, document.getElementById("container"));
         const el = document.getElementsByClassName("data-grid-top-toolbar")[0];
         expect(el).toExist();
     });
