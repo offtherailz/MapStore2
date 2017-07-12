@@ -1,10 +1,10 @@
-/**
- * Copyright 2016, GeoSolutions Sas.
+/*
+ * Copyright 2017, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
- */
+*/
 const assign = require("object-assign");
 const {
     SELECT_FEATURES,
@@ -17,6 +17,7 @@ const {
     SAVE_SUCCESS,
     SAVE_ERROR,
     CLEAR_CHANGES,
+    DELETE_SELECTED_FEATURES_CONFIRM,
     DOCK_SIZE_FEATURES,
     SET_LAYER, TOGGLE_TOOL,
     CUSTOMIZE_ATTRIBUTE,
@@ -56,6 +57,8 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {
             select: state.select.filter(f1 => !isPresent(f1, action.features))
             });
+    case DELETE_SELECTED_FEATURES_CONFIRM: // TODO implement this reducer
+        return state;
     case SET_SELECTION_OPTIONS: {
         return assign({}, state, {multiselect: action.multiselect});
     }
