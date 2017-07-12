@@ -9,7 +9,7 @@
 const Rx = require('rxjs');
 const {changeLayerProperties} = require('../actions/layers');
 const {CREATION_ERROR_LAYER} = require('../actions/map');
-const {SELECT_FEATURES} = require('../actions/featuregrid');
+const {FEATURE_EDITING} = require('../actions/featuregrid');
 const {changeDrawingStatus} = require('../actions/draw');
 const {currentBackgroundLayerSelector, allBackgroundLayerSelector, getLayerFromId} = require('../selectors/layers');
 const {mapTypeSelector} = require('../selectors/maptype');
@@ -67,20 +67,21 @@ const handleCreationLayerError = (action$, store) =>
     });
 
 const startEditing = (action$, store) =>
-    action$.ofType(SELECT_FEATURES)
-    .filter(a => a.features && a.features.length > 0)
-    .switchMap(a => {
+    action$.ofType(FEATURE_EDITING)
+    .filter(() => store.getState().featuregrid && store.getState().featuregrid.select && store.getState().featuregrid.select.length > 0)
+    .switchMap(() => {
         const isLeaflet = store.getState().maptype.mapType === "leaflet";
+        const defaultFeatureProj = "EPSG:4326";
         let newFeatures;
-        let feature = head(a.features);
+        let feature = head(store.getState().featuregrid.select); // just to be sure there is one feature selected for the editing
         let drawOptions = {
-            featureProjection: a.proj,
+            featureProjection: defaultFeatureProj,
             stopAfterDrawing: true,
             editEnabled: true,
             drawEnabled: false
         };
         if (!isLeaflet) {
-            feature = reprojectGeoJson(feature, a.proj, store.getState().map.present.projection);
+            feature = reprojectGeoJson(feature, defaultFeatureProj, store.getState().map.present.projection);
             // feature.geometry.projection = store.getState().map.present.projection;
         } else {
             if (!isSimpleGeomType(feature.geometry.type)) {

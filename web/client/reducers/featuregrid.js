@@ -1,10 +1,10 @@
-/**
- * Copyright 2016, GeoSolutions Sas.
+/*
+ * Copyright 2017, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
- */
+*/
 const assign = require("object-assign");
 const {
     SELECT_FEATURES,
@@ -16,7 +16,7 @@ const {
     SAVING,
     SAVE_SUCCESS,
     SAVE_ERROR,
-    DELETE_SELECTED_FEATURES_CONFIRM,
+    // DELETE_SELECTED_FEATURES_CONFIRM,
     DOCK_SIZE_FEATURES,
     SET_LAYER, TOGGLE_TOOL,
     CUSTOMIZE_ATTRIBUTE,

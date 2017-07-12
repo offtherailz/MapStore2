@@ -11,10 +11,11 @@ const axios = require('../libs/ajax');
 const {fidFilter} = require('../utils/ogc/Filter/filter');
 const requestBuilder = require('../utils/ogc/WFST/RequestBuilder');
 const {toggleControl} = require('../actions/controls');
+const {changeDrawingStatus} = require('../actions/draw');
 const {query, QUERY_CREATE, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
 
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES,
-    featureSaving, saveSuccess, saveError,
+    featureSaving, saveSuccess, saveError, TOGGLE_MODE,
     setLayer, clearSelection, toggleViewMode} = require('../actions/featuregrid');
 const {selectedFeaturesSelector, changesMapSelector} = require('../selectors/featuregrid');
 const {describeSelector} = require('../selectors/query');
@@ -136,7 +137,13 @@ module.exports = {
                     ).map(() => saveSuccess())
                     .catch(() => saveError())
                 )
-        )
-
+        ),
+    exitEditMode: (action$) =>
+        action$.ofType(TOGGLE_MODE)
+        .filter(a => !a.mode )
+        .switchMap( () => {
+            return Rx.Observable.of(changeDrawingStatus("clean", "", "featureeditor", [], {}));
+        }
+    )
 
 };

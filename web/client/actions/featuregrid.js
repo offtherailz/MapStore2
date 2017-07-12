@@ -15,6 +15,7 @@ const TOGGLE_FEATURES_SELECTION = 'FEATUREGRID:TOGGLE_FEATURES_SELECTION';
 const FEATURES_MODIFIED = 'FEATUREGRID:FEATURES_MODIFIED';
 const SAVE_CHANGES = 'FEATUREGRID:SAVE_CHANGES';
 const SAVING = 'FEATUREGRID:SAVING';
+const FEATURE_EDITING = 'FEATUREGRID:FEATURE_EDITING';
 const SAVE_SUCCESS = "FEATUREGRID:SAVE_SUCCESS";
 const SAVE_ERROR = "FEATUREGRID:SAVE_ERROR";
 const DELETE_SELECTED_FEATURES = "FEATUREGRID:DELETE_SELECTED_FEATURES";
@@ -35,6 +36,11 @@ function selectFeatures(features, append) {
         type: SELECT_FEATURES,
         features,
         append
+    };
+}
+function editFeature() {
+    return {
+        type: FEATURE_EDITING
     };
 }
 function deselectFeatures(features) {
@@ -181,6 +187,8 @@ module.exports = {
     CUSTOMIZE_ATTRIBUTE,
     TOGGLE_MODE,
     MODES,
+    FEATURE_EDITING,
+    editFeature,
     setLayer,
     selectFeatures,
     deselectFeatures,
