@@ -13,6 +13,7 @@ const {
     CLEAR_SELECTION,
     SET_FEATURES,
     FEATURES_MODIFIED,
+    CREATE_NEW_FEATURE,
     SAVING,
     SAVE_SUCCESS,
     SAVE_ERROR,
@@ -24,6 +25,7 @@ const {
     TOGGLE_MODE,
     MODES
 } = require('../actions/featuregrid');
+const uuid = require('uuid');
 
 const emptyResultsState = {
     mode: MODES.VIEW,
@@ -34,11 +36,23 @@ const emptyResultsState = {
     },
     select: [],
     multiselect: false,
+    newFeatures: [],
     features: [],
     dockSize: 0.35
 };
 const isSameFeature = (f1, f2) => f2 === f1 || (f1.id !== undefined && f1.id !== null && f1.id === f2.id);
 const isPresent = (f1, features = []) => features.filter( f2 => isSameFeature(f1, f2)).length > 0;
+
+const applyUpdate = (f, updates) => ({
+    ...f,
+    properties: {
+        ...f.properties,
+        ...updates
+    }
+});
+const applyNewChanges = (features, changedFeatures, updates) =>
+    features.map(f => isPresent(f, changedFeatures) ? applyUpdate(f, updates) : f);
+
 function featuregrid(state = emptyResultsState, action) {
     switch (action.type) {
     case SELECT_FEATURES:
@@ -92,8 +106,10 @@ function featuregrid(state = emptyResultsState, action) {
         });
     }
     case FEATURES_MODIFIED: {
+        const newFeaturesChanges = action.features.filter(f => f._new) || [];
         return assign({}, state, {
-            changes: [...(state && state.changes || []), ...(action.features.map(f => ({
+            newFeatures: newFeaturesChanges.length > 0 ? applyNewChanges(state.newFeatures, newFeaturesChanges, action.updated) : state.newFeatures,
+            changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
                 id: f.id,
                 updated: action.updated
             })))]
@@ -116,7 +132,14 @@ function featuregrid(state = emptyResultsState, action) {
     case CLEAR_CHANGES: {
         return assign({}, state, {
             saved: false,
+            deleteConfirm: false,
+            newFeatures: [],
             changes: []
+        });
+    }
+    case CREATE_NEW_FEATURE: {
+        return assign({}, state, {
+            newFeatures: action.features.map(f => ({...f, _new: true, id: uuid.v1() }) )
         });
     }
     case SAVE_ERROR: {

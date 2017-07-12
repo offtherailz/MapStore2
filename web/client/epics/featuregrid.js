@@ -14,6 +14,19 @@ const {toggleControl} = require('../actions/controls');
 const {query, QUERY_CREATE, QUERY_RESULT, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
 const {parseString} = require('xml2js');
 const {stripPrefix} = require('xml2js/lib/processors');
+
+const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES,
+    featureSaving, saveSuccess, saveError, clearChanges,
+    setLayer, clearSelection, toggleViewMode, toggleTool} = require('../actions/featuregrid');
+const {error} = require('../actions/notifications');
+const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector} = require('../selectors/featuregrid');
+const {describeSelector} = require('../selectors/query');
+
+/**
+ * Intercept OGC Exception (200 response with exceptionReport) to throw error in the stream
+ * @param  {observable} observable The observable that emits the server response
+ * @return {observable}            The observable that returns the response or throws the error.
+ */
 const interceptOGCError = (observable) => observable.switchMap(response => {
     if (typeof response.data === "string") {
         if (response.data.indexOf("ExceptionReport") > 0) {
@@ -30,15 +43,6 @@ const interceptOGCError = (observable) => observable.switchMap(response => {
     return Rx.Observable.of(response);
 });
 
-const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES,
-    featureSaving, saveSuccess, saveError, clearChanges,
-    setLayer, clearSelection, toggleViewMode} = require('../actions/featuregrid');
-
-const {error} = require('../actions/notifications');
-const {selectedFeaturesSelector, changesMapSelector} = require('../selectors/featuregrid');
-const {describeSelector} = require('../selectors/query');
-
-
 // pagination selector
 const getPagination = (state, {page, size} = {}) => {
     let currentPagination = get(state, "featuregrid.pagination");
@@ -54,8 +58,9 @@ const addPagination = (filterObj, pagination) => ({
     pagination
 });
 
-const createChangesTransaction = (changes, {update, propertyChange, transaction})=>
+const createChangesTransaction = (changes, newFeatures, {insert, update, propertyChange, transaction})=>
     transaction(
+        newFeatures.map(f => insert(f)),
         Object.keys(changes).map( id =>
             Object.keys(changes[id]).map(name =>
                 update([propertyChange(name, changes[id][name]), fidFilter("ogc", id)])
@@ -68,9 +73,9 @@ const createDeleteTransaction = (features, {transaction, deleteFeature}) => tran
 const save = (url, body) => Rx.Observable.defer(() => axios.post(url, body, {headers: { 'Content-Type': 'application/xml'}}))
     .let(interceptOGCError);
 
-const createSaveChangesFlow = (changes = {}, describeFeatureType, url) => save(
+const createSaveChangesFlow = (changes = {}, newFeatures = [], describeFeatureType, url) => save(
         url,
-        createChangesTransaction(changes, requestBuilder(describeFeatureType))
+        createChangesTransaction(changes, newFeatures, requestBuilder(describeFeatureType))
 );
 
 const createDeleteFlow = (features, describeFeatureType, url) => save(
@@ -132,6 +137,7 @@ module.exports = {
                 .concat(
                     createSaveChangesFlow(
                         changesMapSelector(store.getState()),
+                        newFeaturesSelector(store.getState()),
                         describeSelector(store.getState()),
                         get(store.getState(), "query.searchUrl")
                     ).map(() => saveSuccess())
@@ -153,11 +159,15 @@ module.exports = {
                         describeSelector(store.getState()),
                         get(store.getState(), "query.searchUrl")
                     ).map(() => saveSuccess())
+                    // close window
                     .catch((e) => Rx.Observable.of(saveError(), error({
                         title: "featuregrid.errorSaving",
                         message: e,
                         uid: "saveError"
-                      })))
+                      }))).concat(Rx.Observable.of(
+                          toggleTool("deleteConfirm" ),
+                          clearSelection()
+                      ))
                 )
         )
 

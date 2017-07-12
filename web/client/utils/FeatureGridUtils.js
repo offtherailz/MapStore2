@@ -1,5 +1,5 @@
 
-const {getFeatureTypeProperties, isGeometryType} = require('./ogc/WFS/base');
+const {getFeatureTypeProperties, isGeometryType, isValidValueForPropertyName, getPropertyDesciptor} = require('./ogc/WFS/base');
 const getRow = (i, rows) => rows[i];
 
 module.exports = {
@@ -39,6 +39,8 @@ module.exports = {
     getGridEvents: (gridEvents = {}, rowGetter, describe, actionOpts) => Object.keys(gridEvents).reduce((events, currentEventKey) => ({
         ...events,
         [currentEventKey]: (...args) => gridEvents[currentEventKey](...args, rowGetter, describe, actionOpts)
-    }), {})
+    }), {}),
+    isProperty: (k, d) => !!getPropertyDesciptor(k, d),
+    isValidValueForPropertyName
 
 };

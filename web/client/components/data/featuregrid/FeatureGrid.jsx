@@ -9,7 +9,7 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const AdaptiveGrid = require('../../misc/AdaptiveGrid');
 const editors = require('./editors');
-const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents} = require('../../../utils/FeatureGridUtils');
+const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents, isValidValueForPropertyName, isProperty} = require('../../../utils/FeatureGridUtils');
 require("./featuregrid.css");
 /**
  * A component that gets the describeFeatureType and the features to display
@@ -25,7 +25,7 @@ require("./featuregrid.css");
  * @prop {object[]} tools. a list of tools. the format is the react-data-grid column format but with the following differences:
  * - The events are automatically binded to call the related callback with the feature as first parameter, second argument is the same, no original event is passed. describeFeatureType as third
  */
-class FeatureGrid extends React.Component {
+class FeatureGrid extends React.PureComponent {
     static propTypes = {
         gridOpts: PropTypes.object,
         changes: PropTypes.object,
@@ -42,7 +42,9 @@ class FeatureGrid extends React.Component {
         gridEvents: PropTypes.object
     };
     static childContextTypes = {
-        isModified: React.PropTypes.func
+        isModified: React.PropTypes.func,
+        isValid: React.PropTypes.func,
+        isProperty: React.PropTypes.func
     };
     static defaultProps = {
         gridComponent: AdaptiveGrid,
@@ -56,20 +58,10 @@ class FeatureGrid extends React.Component {
         editable: false,
         showDragHandle: false
     };
-    getChildContext() {
-        return {
-            isModified: (id, key) => {
-                return this.props.changes.hasOwnProperty(id) &&
-                    this.props.changes[id].hasOwnProperty(key);
-            }
-        };
-    }
-    render() {
-        const dragHandle = this.props.showDragHandle ? 'feature-grid-drag-handle-show' : 'feature-grid-drag-handle-hide';
-        const Grid = this.props.gridComponent;
-        const rows = this.props.features;
-        const rowGetter = (i) => {
-            let feature = {...getRow(i, rows)};
+    constructor(props) {
+        super(props);
+        this.rowGetter = (i) => {
+            let feature = {...getRow(i, this.props.features)};
             feature.get = key => {
                 if (this.props.changes && this.props.changes[feature.id] && this.props.changes[feature.id][key]) {
                     return this.props.changes[feature.id][key];
@@ -78,8 +70,24 @@ class FeatureGrid extends React.Component {
             };
             return feature;
         };
+    }
+    getChildContext() {
+        return {
+            isModified: (id, key) => {
+                return this.props.changes.hasOwnProperty(id) &&
+                    this.props.changes[id].hasOwnProperty(key);
+            },
+            isProperty: (k) => isProperty(k, this.props.describeFeatureType),
+            isValid: (val, key) => isValidValueForPropertyName(val, key, this.props.describeFeatureType)
+        };
+    }
+    render() {
+        const dragHandle = this.props.showDragHandle ? 'feature-grid-drag-handle-show' : 'feature-grid-drag-handle-hide';
+        const Grid = this.props.gridComponent;
+        const rows = this.props.features;
+
         // bind proper events and setup the colums array
-        const columns = getToolColumns(this.props.tools, rowGetter, this.props.describeFeatureType, this.props.actionOpts)
+        const columns = getToolColumns(this.props.tools, this.rowGetter, this.props.describeFeatureType, this.props.actionOpts)
             .concat(featureTypeToGridColumns(this.props.describeFeatureType, this.props.columnSettings, this.props.editable, {
                 getEditor: ({localType=""} = {}) => editors[localType]
             }));
@@ -88,7 +96,7 @@ class FeatureGrid extends React.Component {
             onRowsSelected = () => {},
             onRowsDeselected = () => {},
             onRowsToggled = () => {},
-            ...gridEvents} = getGridEvents(this.props.gridEvents, rowGetter, this.props.describeFeatureType, this.props.actionOpts);
+            ...gridEvents} = getGridEvents(this.props.gridEvents, this.rowGetter, this.props.describeFeatureType, this.props.actionOpts);
 
         // setup gridOpts setting app selection events binded
         let {rowSelection, ...gridOpts} = this.props.gridOpts;
@@ -115,7 +123,7 @@ class FeatureGrid extends React.Component {
           {...gridOpts}
           columns={columns}
           minHeight={600}
-          rowGetter={rowGetter}
+          rowGetter={this.rowGetter}
           rowsCount={rows.length}
         />);
     }

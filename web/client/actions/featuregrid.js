@@ -13,6 +13,7 @@ const SET_SELECTION_OPTIONS = 'FEATUREGRID:SET_SELECTION_OPTIONS';
 const TOGGLE_MODE = 'FEATUREGRID:TOGGLE_MODE';
 const TOGGLE_FEATURES_SELECTION = 'FEATUREGRID:TOGGLE_FEATURES_SELECTION';
 const FEATURES_MODIFIED = 'FEATUREGRID:FEATURES_MODIFIED';
+const CREATE_NEW_FEATURE = "FEATUREGRID:NEW_FEATURE";
 const SAVE_CHANGES = 'FEATUREGRID:SAVE_CHANGES';
 const SAVING = 'FEATUREGRID:SAVING';
 const SAVE_SUCCESS = "FEATUREGRID:SAVE_SUCCESS";
@@ -129,7 +130,12 @@ function featureModified(features, updated) {
         updated
     };
 }
-
+function createNewFeatures(features) {
+    return {
+        type: CREATE_NEW_FEATURE,
+        features
+    };
+}
 function saveChanges() {
     return {
         type: SAVE_CHANGES
@@ -174,6 +180,7 @@ module.exports = {
     SET_SELECTION_OPTIONS,
     SET_FEATURES,
     FEATURES_MODIFIED,
+    CREATE_NEW_FEATURE,
     SAVE_CHANGES,
     CLEAR_CHANGES,
     SAVE_SUCCESS,
@@ -196,6 +203,7 @@ module.exports = {
     toggleSelection,
     setFeatures,
     featureModified,
+    createNewFeatures,
     saveChanges,
     featureSaving,
     clearChanges,

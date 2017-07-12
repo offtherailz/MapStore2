@@ -40,6 +40,7 @@ module.exports = {
     changesSelector,
     toChangesMap,
     changesMapSelector: (state) => toChangesMap(changesSelector(state)),
-    hasChangesSelector: state => state && state.featuregrid && state.featuregrid.changes && state.featuregrid.changes.length > 0
+    hasChangesSelector: state => state && state.featuregrid && state.featuregrid.changes && state.featuregrid.changes.length > 0,
+    newFeaturesSelector: state => state && state.featuregrid.newFeatures
 
 };
