@@ -23,9 +23,11 @@ const mapTypeSelector = (state) => state && state.maptype && state.maptype.mapTy
  */
 const isCesium = state => mapTypeSelector(state) === "cesium";
 const isLeaflet = state => mapTypeSelector(state) === "leaflet";
+const isOpenlayers = state => mapTypeSelector(state) === "openlayers";
 
 module.exports = {
     mapTypeSelector,
     isCesium,
-    isLeaflet
+    isLeaflet,
+    isOpenlayers
 };

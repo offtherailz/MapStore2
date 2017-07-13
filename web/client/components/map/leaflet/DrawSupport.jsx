@@ -55,7 +55,7 @@ class DrawSupport extends React.Component {
             switch (newProps.drawStatus) {
             case "create": this.addGeojsonLayer({features: newProps.features, projection: newProps.options && newProps.options.featureProjection || "EPSG:4326"}); break;
             case "start": this.addDrawInteraction(newProps); break;
-            case "edit": this.addEditInteraction(newProps); break;
+            case "drawOrEdit": this.addDrawOrEditInteractions(newProps); break;
             case "stop": {
                 this.removeDrawInteraction();
                 this.removeEditInteraction();
@@ -114,12 +114,6 @@ class DrawSupport extends React.Component {
             radius: radius,
             projection: projection
         };
-        /*if (this.props.options.editEnabled) {
-            let addedLayer = last(this.drawLayer.getLayers());
-            addedLayer.on('edit', (e) => this.onUpdateGeom(e.target, this.props));
-            addedLayer.on('moveend', (e) => this.onUpdateGeom(e.target, this.props));
-            addedLayer.editing.enable();
-        }*/
         if (this.props.options && this.props.options.stopAfterDrawing) {
             this.props.onChangeDrawingStatus('stop', this.props.drawMethod, this.props.drawOwner);
         }
@@ -181,19 +175,8 @@ class DrawSupport extends React.Component {
     };
 
     addDrawInteraction = (newProps) => {
-        /*if (!this.drawLayer) {
-            this.addLayer(newProps);
-        } else {
-            this.drawLayer.clearLayers();
-            this.addLayer(newProps);
-            if (newProps.features && newProps.features.length > 0) {
-                this.drawLayer.addData(this.convertFeaturesPolygonToPoint(newProps.features, this.props.drawMethod));
-            }
-        }*/
         this.addLayer(newProps);
-
         this.removeDrawInteraction();
-
         this.props.map.on('draw:created', this.onDrawCreated, this);
         this.props.map.on('draw:drawstart', this.onDrawStart, this);
 
@@ -258,12 +241,18 @@ class DrawSupport extends React.Component {
         this.drawControl.enable();
     };
 
+    addDrawOrEditInteractions = (newProps) => {
+        if (newProps.options.editEnabled) {
+            this.addEditInteraction(newProps);
+        }
+        if (newProps.options.drawEnabled) {
+            this.addDrawInteraction(newProps);
+        }
+    };
+
     addEditInteraction = (newProps) => {
         this.addGeojsonLayer({features: newProps.features, projection: newProps.options && newProps.options.featureProjection || "EPSG:4326"});
 
-        /*if (newProps.options.drawEnabled) {
-            this.addDrawInteraction(newProps);
-        }*/
         let allLayers = this.drawLayer.getLayers();
         allLayers.forEach(l => {
             l.on('edit', (e) => this.onUpdateGeom(e.target, newProps));
@@ -333,9 +322,6 @@ class DrawSupport extends React.Component {
             return {...f, type: "Point"};
         }) : features;
 
-    };
-    fromLeafletFeature = (feature) => {
-        return feature;
     };
 
     convertFeaturesToGeoJson = (featureEdited, props) => {

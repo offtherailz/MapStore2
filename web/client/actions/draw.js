@@ -4,11 +4,19 @@
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
- */
+*/
 
 const CHANGE_DRAWING_STATUS = 'CHANGE_DRAWING_STATUS';
 const END_DRAWING = 'END_DRAWING';
 const SET_CURRENT_STYLE = 'SET_CURRENT_STYLE';
+const GEOMETRY_CHANGED = 'GEOMETRY_CHANGED';
+
+function geometryChanged(features) {
+    return {
+        type: GEOMETRY_CHANGED,
+        features
+    };
+}
 
 function changeDrawingStatus(status, method, owner, features, options) {
     return {
@@ -37,10 +45,8 @@ function setCurrentStyle(style) {
 }
 
 module.exports = {
-    CHANGE_DRAWING_STATUS,
-    END_DRAWING,
-    SET_CURRENT_STYLE,
-    changeDrawingStatus,
-    endDrawing,
-    setCurrentStyle
+    CHANGE_DRAWING_STATUS, changeDrawingStatus,
+    END_DRAWING, endDrawing,
+    SET_CURRENT_STYLE, setCurrentStyle,
+    GEOMETRY_CHANGED, geometryChanged
 };

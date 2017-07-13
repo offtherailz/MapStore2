@@ -20,7 +20,7 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges} = {}) 
             <Button key="add-feature" style={getStyle(mode === "EDIT" && selectedCount <= 0)} className="square-button" onClick={events.createFeature}><Glyphicon glyph="row-add"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-feature">Edit feature</Tooltip>}>
-            <Button key="edit-feature" style={getStyle(mode === "EDIT" && selectedCount === 1)} className="square-button" onClick={events.startEditingGeometry}><Glyphicon glyph="pencil-edit"/></Button>
+            <Button key="edit-feature" style={getStyle(mode === "EDIT" && selectedCount === 1)} className="square-button" onClick={events.startEditingFeature}><Glyphicon glyph="pencil-edit"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-remove-features">Remove feature</Tooltip>}>
             <Button key="remove-features" style={getStyle(mode === "EDIT" && selectedCount > 0)} className="square-button" onClick={events.deleteFeatures}><Glyphicon glyph="trash-square"/></Button>

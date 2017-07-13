@@ -16,9 +16,8 @@ const FEATURES_MODIFIED = 'FEATUREGRID:FEATURES_MODIFIED';
 const CREATE_NEW_FEATURE = "FEATUREGRID:NEW_FEATURE";
 const SAVE_CHANGES = 'FEATUREGRID:SAVE_CHANGES';
 const SAVING = 'FEATUREGRID:SAVING';
+const START_EDITING_FEATURE = 'FEATUREGRID:START_EDITING_FEATURE';
 const START_EDITING_GEOMETRY = 'FEATUREGRID:START_EDITING_GEOMETRY';
-const START_EDITING = 'FEATUREGRID:START_EDITING';
-const STOP_EDITING = 'FEATUREGRID:STOP_EDITING';
 const SAVE_SUCCESS = "FEATUREGRID:SAVE_SUCCESS";
 const CLEAR_CHANGES = "FEATUREGRID:CLEAR_CHANGES";
 const SAVE_ERROR = "FEATUREGRID:SAVE_ERROR";
@@ -50,14 +49,9 @@ function startEditingGeometry(feature, options) {
         options
     };
 }
-function startEditing() {
+function startEditingFeature() {
     return {
-        type: START_EDITING
-    };
-}
-function stopEditing() {
-    return {
-        type: STOP_EDITING
+        type: START_EDITING_FEATURE
     };
 }
 function deselectFeatures(features) {
@@ -216,9 +210,9 @@ module.exports = {
     CUSTOMIZE_ATTRIBUTE,
     TOGGLE_MODE,
     MODES,
-    START_EDITING, startEditing,
-    STOP_EDITING, stopEditing,
+    SAVING,
     START_EDITING_GEOMETRY, startEditingGeometry,
+    START_EDITING_FEATURE, startEditingFeature,
     setLayer,
     selectFeatures,
     deselectFeatures,

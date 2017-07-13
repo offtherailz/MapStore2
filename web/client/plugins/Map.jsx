@@ -301,6 +301,6 @@ const selector = createSelector(
 );
 module.exports = {
     MapPlugin: connect(selector)(MapPlugin),
-    reducers: { draw: require('../reducers/draw'), featureeditor: require('../reducers/featureeditor') },
+    reducers: { draw: require('../reducers/draw') },
     epics: assign({}, {handleCreationLayerError, handleCreationBackgroundError, startEditing})
 };

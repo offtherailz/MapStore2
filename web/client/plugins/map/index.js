@@ -15,7 +15,7 @@ const {changeMeasurementState} = require('../../actions/measurement');
 const {changeSelectionState} = require('../../actions/selection');
 const {changeLocateState, onLocateError} = require('../../actions/locate');
 const {changeDrawingStatus, endDrawing, setCurrentStyle} = require('../../actions/draw');
-const {geometryChanged} = require('../../actions/featureeditor');
+const {geometryChanged} = require('../../actions/draw');
 const {updateHighlighted} = require('../../actions/highlight');
 
 const {connect} = require('react-redux');

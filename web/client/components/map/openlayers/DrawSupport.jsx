@@ -57,7 +57,7 @@ class DrawSupport extends React.Component {
         switch (newProps.drawStatus) {
             case "create": this.addLayer(newProps); break;
             case "start":/* only starts draw*/ this.addInteractions(newProps); break;
-            case "edit": this.addDrawAndEditInteractions(newProps); break;
+            case "drawOrEdit": this.addDrawOrEditInteractions(newProps); break;
             case "stop": /* only stops draw*/ this.removeDrawInteraction(); break;
             case "replace": this.replaceFeatures(newProps); break;
             case "clean": this.clean(); break;
@@ -350,7 +350,7 @@ class DrawSupport extends React.Component {
         }
     };
 
-    addDrawAndEditInteractions = (newProps) => {
+    addDrawOrEditInteractions = (newProps) => {
         if (!this.drawLayer) {
             this.addLayer(newProps);
         } else {

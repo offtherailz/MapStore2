@@ -11,7 +11,9 @@ const {
     CHANGE_DRAWING_STATUS,
     END_DRAWING,
     changeDrawingStatus,
-    endDrawing
+    endDrawing,
+    geometryChanged,
+    GEOMETRY_CHANGED
 } = require('../draw');
 
 describe('Test correctness of the draw actions', () => {
@@ -42,5 +44,21 @@ describe('Test correctness of the draw actions', () => {
         expect(retval.type).toBe(END_DRAWING);
         expect(retval.geometry).toBe("geometry");
         expect(retval.owner).toBe("queryform");
+    });
+
+    it('Test geometryChanged action creator', () => {
+        const features = [{
+            geometry: {
+                type: "Point",
+                coordinates: []
+            }
+        }];
+
+        const retval = geometryChanged(features);
+
+        expect(retval).toExist();
+        expect(retval.type).toBe(GEOMETRY_CHANGED);
+        expect(retval.features).toExist();
+        expect(retval.features).toBe(features);
     });
 });
