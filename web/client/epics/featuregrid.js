@@ -9,9 +9,9 @@ const Rx = require('rxjs');
 const {get} = require('lodash');
 const axios = require('../libs/ajax');
 const {fidFilter} = require('../utils/ogc/Filter/filter');
+const {drawSupportStartEditingGeometry, drawSupportReset} = require('../utils/FeatureGridUtils');
 const requestBuilder = require('../utils/ogc/WFST/RequestBuilder');
 const {toggleControl} = require('../actions/controls');
-const {changeDrawingStatus} = require('../actions/draw');
 const {query, QUERY_CREATE, QUERY_RESULT, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
 const {parseString} = require('xml2js');
 const {stripPrefix} = require('xml2js/lib/processors');
@@ -31,13 +31,13 @@ const interceptOGCError = (observable) => observable.switchMap(response => {
     return Rx.Observable.of(response);
 });
 
-const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES,
-    featureSaving, saveSuccess, saveError, clearChanges, TOGGLE_MODE, setLayer, clearSelection, toggleViewMode} = require('../actions/featuregrid');
+const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES, featureSaving, CLEAR_CHANGES,
+    saveSuccess, saveError, clearChanges, TOGGLE_MODE, setLayer, clearSelection, MODES, stopEditing,
+    toggleViewMode, START_EDITING, START_EDITING_GEOMETRY, STOP_EDITING} = require('../actions/featuregrid');
 
 const {error} = require('../actions/notifications');
 const {selectedFeaturesSelector, changesMapSelector} = require('../selectors/featuregrid');
 const {describeSelector} = require('../selectors/query');
-
 
 // pagination selector
 const getPagination = (state, {page, size} = {}) => {
@@ -160,12 +160,34 @@ module.exports = {
                       })))
                 )
         ),
-    exitEditMode: (action$) =>
+    enterEditMode: (action$, store) =>
         action$.ofType(TOGGLE_MODE)
-        .filter(a => !a.mode )
+        .filter(a => a.mode === MODES.EDIT )
         .switchMap( () => {
-            return Rx.Observable.of(changeDrawingStatus("clean", "", "featureeditor", [], {}));
-        }
-    )
-
+            return (action$.ofType(START_EDITING_GEOMETRY))
+                .switchMap(() => {
+                    // dispath action to start editing
+                    return drawSupportStartEditingGeometry(store.getState());
+                })
+            .takeUntil(action$.ofType(CLEAR_CHANGES, SAVE_SUCCESS))
+            .switchMap(() => {
+                return drawSupportReset();
+            });
+        }),
+    exitEditMode: (action$) =>
+        action$.ofType(TOGGLE_MODE, CLEAR_CHANGES, SAVE_SUCCESS)
+        .filter(a => a.type === TOGGLE_MODE ? !a.mode : true )
+        .switchMap( () => {
+            return Rx.Observable.of(stopEditing());
+        }),
+    manageEditingFlow: (action$, store) =>
+        action$.ofType(START_EDITING)
+            .concat(action$.ofType(START_EDITING_GEOMETRY))
+            .switchMap(() => {
+                return drawSupportStartEditingGeometry(store.getState());
+            })
+        .concat(action$.ofType(STOP_EDITING))
+        .switchMap(() => {
+            return drawSupportReset();
+        })
 };

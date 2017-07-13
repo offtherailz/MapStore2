@@ -18,7 +18,7 @@ const {isSupportedLayer} = require('../utils/LayersUtils');
 const {isSimpleGeomType, getSimpleGeomType} = require('../utils/MapUtils');
 const {warning} = require('../actions/notifications');
 const {head} = require('lodash');
-const {reprojectGeoJson/*, coordsOLtoLeaflet*/} = require('../utils/CoordinatesUtils');
+const {reprojectGeoJson} = require('../utils/CoordinatesUtils');
 const assign = require('object-assign');
 
 const handleCreationBackgroundError = (action$, store) =>

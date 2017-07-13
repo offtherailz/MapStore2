@@ -22,8 +22,10 @@ const mapTypeSelector = (state) => state && state.maptype && state.maptype.mapTy
  * @return {boolean}
  */
 const isCesium = state => mapTypeSelector(state) === "cesium";
+const isLeaflet = state => mapTypeSelector(state) === "leaflet";
 
 module.exports = {
     mapTypeSelector,
-    isCesium
+    isCesium,
+    isLeaflet
 };
