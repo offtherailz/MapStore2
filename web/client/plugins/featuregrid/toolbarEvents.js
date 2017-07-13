@@ -1,6 +1,6 @@
 const {toggleControl} = require('../../actions/controls');
 const {closeResponse} = require('../../actions/wfsquery');
-const {toggleTool, toggleEditMode, toggleViewMode, saveChanges, clearChanges, createNewFeatures} = require('../../actions/featuregrid');
+const {toggleTool, toggleEditMode, toggleViewMode, saveChanges, clearChanges, createNewFeatures, startEditingGeometry} = require('../../actions/featuregrid');
 
 module.exports = {
     createFeature: () => createNewFeatures([{}]),
@@ -10,6 +10,7 @@ module.exports = {
     download: () => toggleControl("wfsdownload"),
     settings: () => toggleTool("settings"),
     switchEditMode: () => toggleEditMode(),
+    startEditingGeometry: () => startEditingGeometry(),
     switchViewMode: () => toggleViewMode(),
     onClose: () => closeResponse()
 };

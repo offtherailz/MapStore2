@@ -36,6 +36,7 @@ module.exports = {
     },
     modeSelector: (state) => state && state.featuregrid && state.featuregrid.mode,
     selectedFeaturesSelector,
+    selectedFeatureSelector: state => head(selectedFeaturesSelector(state)),
     selectedFeaturesCount: state => (selectedFeaturesSelector(state) || []).length,
     changesSelector,
     toChangesMap,
