@@ -17,7 +17,7 @@ const CREATE_NEW_FEATURE = "FEATUREGRID:NEW_FEATURE";
 const SAVE_CHANGES = 'FEATUREGRID:SAVE_CHANGES';
 const SAVING = 'FEATUREGRID:SAVING';
 const START_EDITING_FEATURE = 'FEATUREGRID:START_EDITING_FEATURE';
-const START_EDITING_GEOMETRY = 'FEATUREGRID:START_EDITING_GEOMETRY';
+const START_DRAWING_FEATURE = 'FEATUREGRID:START_DRAWING_FEATURE';
 const SAVE_SUCCESS = "FEATUREGRID:SAVE_SUCCESS";
 const CLEAR_CHANGES = "FEATUREGRID:CLEAR_CHANGES";
 const SAVE_ERROR = "FEATUREGRID:SAVE_ERROR";
@@ -42,16 +42,14 @@ function selectFeatures(features, append) {
         append
     };
 }
-function startEditingGeometry(feature, options) {
-    return {
-        type: START_EDITING_GEOMETRY,
-        feature,
-        options
-    };
-}
 function startEditingFeature() {
     return {
         type: START_EDITING_FEATURE
+    };
+}
+function startDrawingFeature() {
+    return {
+        type: START_DRAWING_FEATURE
     };
 }
 function deselectFeatures(features) {
@@ -211,8 +209,8 @@ module.exports = {
     TOGGLE_MODE,
     MODES,
     SAVING,
-    START_EDITING_GEOMETRY, startEditingGeometry,
     START_EDITING_FEATURE, startEditingFeature,
+    START_DRAWING_FEATURE, startDrawingFeature,
     setLayer,
     selectFeatures,
     deselectFeatures,

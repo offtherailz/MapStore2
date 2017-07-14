@@ -3,7 +3,7 @@ const {connect} = require('react-redux');
 const {bindActionCreators} = require('redux');
 const {createSelector, createStructuredSelector} = require('reselect');
 const {paginationInfo, featureLoadingSelector} = require('../../../selectors/query');
-const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector} = require('../../../selectors/featuregrid');
+const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector} = require('../../../selectors/featuregrid');
 const {deleteFeatures, toggleTool} = require('../../../actions/featuregrid');
 const {toolbarEvents, pageEvents} = require('../index');
 
@@ -11,6 +11,7 @@ const Toolbar = connect(
     createStructuredSelector({
         mode: modeSelector,
         hasChanges: hasChangesSelector,
+        hasGeometry: hasGeometrySelector,
         selectedCount: selectedFeaturesCount
     }),
     (dispatch) => ({events: bindActionCreators(toolbarEvents, dispatch)})

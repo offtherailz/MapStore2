@@ -17,8 +17,8 @@ const {parseString} = require('xml2js');
 const {stripPrefix} = require('xml2js/lib/processors');
 
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES, featureSaving,
-    saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool, startEditingGeometry,
-    CLEAR_CHANGES, START_EDITING_FEATURE, START_EDITING_GEOMETRY, TOGGLE_MODE, MODES} = require('../actions/featuregrid');
+    saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool,
+    CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES} = require('../actions/featuregrid');
 const {error} = require('../actions/notifications');
 const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector} = require('../selectors/featuregrid');
 const {describeSelector} = require('../selectors/query');
@@ -75,8 +75,8 @@ const save = (url, body) => Rx.Observable.defer(() => axios.post(url, body, {hea
     .let(interceptOGCError);
 
 const createSaveChangesFlow = (changes = {}, newFeatures = [], describeFeatureType, url) => save(
-        url,
-        createChangesTransaction(changes, newFeatures, requestBuilder(describeFeatureType))
+    url,
+    createChangesTransaction(changes, newFeatures, requestBuilder(describeFeatureType))
 );
 
 const createDeleteFlow = (features, describeFeatureType, url) => save(
@@ -166,32 +166,29 @@ module.exports = {
                         message: e,
                         uid: "saveError"
                       }))).concat(Rx.Observable.of(
-                          toggleTool("deleteConfirm" ),
+                          toggleTool("deleteConfirm"),
                           clearSelection()
                       ))
                 )
         ),
-    enterEditMode: (action$, store) =>
-        action$.ofType(START_EDITING_FEATURE)
+    handlEditFeature: (action$, store) => action$.ofType(START_EDITING_FEATURE)
         .switchMap( () => {
             const state = store.getState();
             const defaultFeatureProj = getDefaultFeatureProjection();
+            const feature = selectedFeatureSelector(state);
             const drawOptions = {
                 featureProjection: defaultFeatureProj,
                 stopAfterDrawing: false,
                 editEnabled: true,
                 drawEnabled: false
             };
-            let feature = selectedFeatureSelector(state);
-            return Rx.Observable.of(startEditingGeometry(feature, drawOptions, state));
-        }),
-    editingGeometry: (action$, store) =>
-        action$.ofType(START_EDITING_GEOMETRY)
-        .switchMap((a) => drawSupportStartEditingGeometry(a.feature, a.options, store.getState())),
-    exitEditMode: (action$) =>
-        action$.ofType(TOGGLE_MODE, CLEAR_CHANGES, SAVE_SUCCESS)
-        .filter(a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
-        .switchMap( () => {
-            return drawSupportReset();
+            return Rx.Observable.concat(
+                drawSupportStartEditingGeometry(feature, drawOptions, store.getState()),
+                action$.ofType(TOGGLE_MODE, CLEAR_CHANGES, SAVE_SUCCESS)
+                    .filter(a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
+                    .switchMap( () => {
+                        return Rx.Observable.of(drawSupportReset());
+                    })
+            );
         })
 };

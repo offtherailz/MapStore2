@@ -1,11 +1,11 @@
+/*
+* Copyright 2017, GeoSolutions Sas.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 const PropTypes = require('prop-types');
-/**
- * Copyright 2016, GeoSolutions Sas.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
- */
 
 const React = require('react');
 const {connect} = require('react-redux');
@@ -19,7 +19,7 @@ const {updateMap} = require('../actions/maps');
 const ConfirmModal = require('../components/maps/modals/ConfirmModal');
 const ConfigUtils = require('../utils/ConfigUtils');
 
-const {mapSelector} = require('../selectors/map');
+const {mapSelector, canSaveMap} = require('../selectors/map');
 const {layersSelector} = require('../selectors/layers');
 const stateSelector = state => state;
 
@@ -120,23 +120,8 @@ module.exports = {
                 text: <Message msgId="save"/>,
                 icon: <Glyphicon glyph="floppy-open"/>,
                 action: toggleControl.bind(null, 'save', null),
-            // display the BurgerMenu button only if the map can be edited
-                selector: (state) => {
-                    let map = state.map && state.map.present || state.map || state.config && state.config.map || null;
-                    if (map && map.mapId && state && state.security && state.security.user) {
-                        if (state.maps && state.maps.results) {
-                            let mapId = map.mapId;
-                            let currentMap = state.maps.results.filter(item=> item && '' + item.id === mapId);
-                            if (currentMap && currentMap.length > 0 && currentMap[0].canEdit) {
-                                return { };
-                            }
-                        }
-                        if (map.info && map.info.canEdit) {
-                            return { };
-                        }
-                    }
-                    return { style: {display: "none"} };
-                }
+                // display the BurgerMenu button only if the map can be edited
+                selector: (state) => canSaveMap(state) ? { } : { style: {display: "none"} }
             }
         }))
 };

@@ -72,7 +72,5 @@ module.exports = {
         }
         return Rx.Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", isLeaflet(state) ? [feature] : [newFeature.geometry], options));
     },
-    drawSupportReset: () => {
-        return Rx.Observable.of(changeDrawingStatus("clean", "", "featureeditor", [], {}));
-    }
+    drawSupportReset: () => changeDrawingStatus("clean", "", "featureeditor", [], {})
 };
