@@ -9,7 +9,8 @@ const Rx = require('rxjs');
 const {get} = require('lodash');
 const axios = require('../libs/ajax');
 const {fidFilter} = require('../utils/ogc/Filter/filter');
-const {drawSupportStartEditingGeometry, drawSupportReset, getDefaultFeatureProjection} = require('../utils/FeatureGridUtils');
+const {getDefaultFeatureProjection} = require('../utils/FeatureGridUtils');
+const {changeDrawingStatus, DRAW_SUPPORT_STOPPED} = require('../actions/draw');
 const requestBuilder = require('../utils/ogc/WFST/RequestBuilder');
 const {toggleControl} = require('../actions/controls');
 const {query, QUERY_CREATE, QUERY_RESULT, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
@@ -19,10 +20,10 @@ const {stripPrefix} = require('xml2js/lib/processors');
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES, featureSaving,
     saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool,
     CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES} = require('../actions/featuregrid');
-const {error} = require('../actions/notifications');
+const {error, success} = require('../actions/notifications');
 const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector} = require('../selectors/featuregrid');
 const {describeSelector} = require('../selectors/query');
-
+const drawSupportReset = () => changeDrawingStatus("clean", "", "featureeditor", [], {});
 /**
  * Intercept OGC Exception (200 response with exceptionReport) to throw error in the stream
  * @param  {observable} observable The observable that emits the server response
@@ -183,12 +184,20 @@ module.exports = {
                 drawEnabled: false
             };
             return Rx.Observable.concat(
-                drawSupportStartEditingGeometry(feature, drawOptions, store.getState()),
+                Rx.Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", [feature], drawOptions)),
                 action$.ofType(TOGGLE_MODE, CLEAR_CHANGES, SAVE_SUCCESS)
                     .filter(a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
                     .switchMap( () => {
                         return Rx.Observable.of(drawSupportReset());
                     })
             );
-        })
+        })/*,
+        doSomethingWhen: (action$) => action$.ofType(DRAW_SUPPORT_STOPPED)
+        .switchMap( () => {
+            return Rx.Observable.of(success({
+                title: "draw support stopped",
+                message: "draw support stopped",
+                position: "tc"
+            }));
+        })*/
 };

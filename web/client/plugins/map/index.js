@@ -15,7 +15,7 @@ const {changeMeasurementState} = require('../../actions/measurement');
 const {changeSelectionState} = require('../../actions/selection');
 const {changeLocateState, onLocateError} = require('../../actions/locate');
 const {changeDrawingStatus, endDrawing, setCurrentStyle} = require('../../actions/draw');
-const {geometryChanged} = require('../../actions/draw');
+const {geometryChanged, drawStopped} = require('../../actions/draw');
 const {updateHighlighted} = require('../../actions/highlight');
 
 const {connect} = require('react-redux');
@@ -62,6 +62,7 @@ module.exports = (mapType, actions) => {
             onChangeDrawingStatus: changeDrawingStatus,
             onEndDrawing: endDrawing,
             onGeometryChanged: geometryChanged,
+            onDrawStopped: drawStopped,
             setCurrentStyle: setCurrentStyle
         })( components.DrawSupport || Empty);
 

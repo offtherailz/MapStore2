@@ -1,9 +1,11 @@
 const PropTypes = require('prop-types');
 const React = require('react');
+const {head} = require('lodash');
 const L = require('leaflet');
 // const {head, last} = require('lodash');
 require('leaflet-draw');
-const {isSimpleGeomType} = require('../../../utils/MapUtils');
+const {isSimpleGeomType, getSimpleGeomType} = require('../../../utils/MapUtils');
+const assign = require('object-assign');
 
 const CoordinatesUtils = require('../../../utils/CoordinatesUtils');
 
@@ -31,6 +33,7 @@ class DrawSupport extends React.Component {
         features: PropTypes.array,
         onChangeDrawingStatus: PropTypes.func,
         onGeometryChanged: PropTypes.func,
+        onDrawStopped: PropTypes.func,
         onEndDrawing: PropTypes.func,
         messages: PropTypes.object
     };
@@ -41,8 +44,12 @@ class DrawSupport extends React.Component {
         drawStatus: null,
         drawMethod: null,
         features: null,
+        options: {
+            stopAfterDrawing: true
+        },
         onChangeDrawingStatus: () => {},
         onGeometryChanged: () => {},
+        onDrawStopped: () => {},
         onEndDrawing: () => {}
     };
 
@@ -57,8 +64,7 @@ class DrawSupport extends React.Component {
             case "start": this.addDrawInteraction(newProps); break;
             case "drawOrEdit": this.addDrawOrEditInteractions(newProps); break;
             case "stop": {
-                this.removeDrawInteraction();
-                this.removeEditInteraction();
+                this.removeAllInteractions();
             } break;
             case "replace": this.replaceFeatures(newProps); break;
             case "clean": this.clean(); break;
@@ -116,6 +122,7 @@ class DrawSupport extends React.Component {
         };
         if (this.props.options && this.props.options.stopAfterDrawing) {
             this.props.onChangeDrawingStatus('stop', this.props.drawMethod, this.props.drawOwner);
+            this.props.onDrawStopped();
         }
         this.props.onEndDrawing(geometry, this.props.drawOwner);
     };
@@ -242,11 +249,28 @@ class DrawSupport extends React.Component {
     };
 
     addDrawOrEditInteractions = (newProps) => {
+        let newFeature = head(newProps.features);
+
+        if (!isSimpleGeomType(newFeature.geometry.type)) {
+            const newFeatures = newFeature.geometry.coordinates.map((coords, idx) => {
+                return assign({}, {
+                        type: 'Feature',
+                        properties: {...newFeature.properties},
+                        id: newFeature.geometry.type + idx,
+                        geometry: {
+                            coordinates: coords,
+                            type: getSimpleGeomType(newFeature.geometry.type)
+                        }
+                    });
+            });
+            newFeature = {type: "FeatureCollection", features: newFeatures};
+        }
+        const props = assign({}, newProps, {features: [newFeature]});
         if (newProps.options.editEnabled) {
-            this.addEditInteraction(newProps);
+            this.addEditInteraction(props);
         }
         if (newProps.options.drawEnabled) {
-            this.addDrawInteraction(newProps);
+            this.addDrawInteraction(props);
         }
     };
 
@@ -277,11 +301,18 @@ class DrawSupport extends React.Component {
             });
     }
 
+    removeAllInteractions = () => {
+        this.removeEditInteraction();
+        this.removeDrawInteraction();
+        this.props.onDrawStopped();
+    }
+
     removeDrawInteraction = () => {
         if (this.drawControl !== null && this.drawControl !== undefined) {
             // Needed if missing disable() isn't warking
             if (this.props.options && this.props.options.stopAfterDrawing) {
                 this.drawControl.setOptions({repeatMode: false});
+                this.props.onDrawStopped();
             }
             this.drawControl.disable();
             this.drawControl = null;
@@ -303,8 +334,7 @@ class DrawSupport extends React.Component {
     };
 
     clean = () => {
-        this.removeEditInteraction();
-        this.removeDrawInteraction();
+        this.removeAllInteractions();
 
         if (this.drawLayer) {
             this.drawLayer.clearLayers();

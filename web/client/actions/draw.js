@@ -10,11 +10,17 @@ const CHANGE_DRAWING_STATUS = 'CHANGE_DRAWING_STATUS';
 const END_DRAWING = 'END_DRAWING';
 const SET_CURRENT_STYLE = 'SET_CURRENT_STYLE';
 const GEOMETRY_CHANGED = 'GEOMETRY_CHANGED';
+const DRAW_SUPPORT_STOPPED = 'DRAW_SUPPORT_STOPPED';
 
 function geometryChanged(features) {
     return {
         type: GEOMETRY_CHANGED,
         features
+    };
+}
+function drawStopped() {
+    return {
+        type: DRAW_SUPPORT_STOPPED
     };
 }
 
@@ -48,5 +54,6 @@ module.exports = {
     CHANGE_DRAWING_STATUS, changeDrawingStatus,
     END_DRAWING, endDrawing,
     SET_CURRENT_STYLE, setCurrentStyle,
+    DRAW_SUPPORT_STOPPED, drawStopped,
     GEOMETRY_CHANGED, geometryChanged
 };

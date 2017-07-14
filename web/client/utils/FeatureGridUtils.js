@@ -1,14 +1,7 @@
 
 const {getFeatureTypeProperties, isGeometryType, isValidValueForPropertyName, getPropertyDesciptor} = require('./ogc/WFS/base');
 const getRow = (i, rows) => rows[i];
-const {changeDrawingStatus} = require('../actions/draw');
 
-const {isOpenlayers, isLeaflet} = require('../selectors/maptype');
-
-const {reprojectGeoJson} = require('./CoordinatesUtils');
-const {isSimpleGeomType, getSimpleGeomType} = require('./MapUtils');
-const assign = require('object-assign');
-const Rx = require('rxjs');
 module.exports = {
     featureTypeToGridColumns: (describe, columnSettings = {}, editing, {getEditor = () => {}} = {}) =>
         (getFeatureTypeProperties(describe) || []).filter( e => !isGeometryType(e)).filter(e => !(columnSettings[e.name] && columnSettings[e.name].hide)).map( (desc) => ({
@@ -49,28 +42,5 @@ module.exports = {
     }), {}),
     isProperty: (k, d) => !!getPropertyDesciptor(k, d),
     isValidValueForPropertyName,
-    getDefaultFeatureProjection: () => "EPSG:4326",
-    drawSupportStartEditingGeometry: (feature, options, state) => {
-        let newFeature;
-        if (isOpenlayers(state)) {
-            newFeature = reprojectGeoJson(feature, options.defaultFeatureProj, state.map.present.projection);
-        } else {
-            if (!isSimpleGeomType(feature.geometry.type)) {
-                const newFeatures = feature.geometry.coordinates.map((coords, idx) => {
-                    return assign({}, {
-                            type: 'Feature',
-                            properties: {...feature.properties},
-                            id: feature.geometry.type + idx,
-                            geometry: {
-                                coordinates: coords,
-                                type: getSimpleGeomType(feature.geometry.type)
-                            }
-                        });
-                });
-                return Rx.Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", isLeaflet(state) ? [{type: "FeatureCollection", features: newFeatures}] : [newFeature.geometry], options));
-            }
-        }
-        return Rx.Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", isLeaflet(state) ? [feature] : [newFeature.geometry], options));
-    },
-    drawSupportReset: () => changeDrawingStatus("clean", "", "featureeditor", [], {})
+    getDefaultFeatureProjection: () => "EPSG:4326"
 };

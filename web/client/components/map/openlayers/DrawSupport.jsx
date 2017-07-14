@@ -13,6 +13,7 @@ const PropTypes = require('prop-types');
 const assign = require('object-assign');
 const uuid = require('uuid');
 const {isSimpleGeomType, getSimpleGeomType} = require('../../../utils/MapUtils');
+const {reprojectGeoJson} = require('../../../utils/CoordinatesUtils');
 
 /**
  * Comment that allows to draw and edit geometries as (Point, LineString, Polygon, Circle, Multi(Polygon-LineString-Point)
@@ -28,6 +29,7 @@ class DrawSupport extends React.Component {
         features: PropTypes.array,
         onChangeDrawingStatus: PropTypes.func,
         onGeometryChanged: PropTypes.func,
+        onDrawStopped: PropTypes.func,
         onEndDrawing: PropTypes.func
     };
 
@@ -42,6 +44,7 @@ class DrawSupport extends React.Component {
         },
         onChangeDrawingStatus: () => {},
         onGeometryChanged: () => {},
+        onDrawStopped: () => {},
         onEndDrawing: () => {}
     };
 
@@ -57,7 +60,11 @@ class DrawSupport extends React.Component {
         switch (newProps.drawStatus) {
             case "create": this.addLayer(newProps); break;
             case "start":/* only starts draw*/ this.addInteractions(newProps); break;
-            case "drawOrEdit": this.addDrawOrEditInteractions(newProps); break;
+            case "drawOrEdit": {
+                if (this.props.features !== newProps.features) {
+                    this.addDrawOrEditInteractions(newProps);
+                }
+            } break;
             case "stop": /* only stops draw*/ this.removeDrawInteraction(); break;
             case "replace": this.replaceFeatures(newProps); break;
             case "clean": this.clean(); break;
@@ -147,6 +154,7 @@ class DrawSupport extends React.Component {
             this.props.onEndDrawing(feature, this.props.drawOwner);
             if (this.props.options.stopAfterDrawing) {
                 this.props.onChangeDrawingStatus('stop', this.props.drawMethod, this.props.drawOwner, this.props.features.concat([feature]));
+                this.props.onDrawStopped();
             }
             if (this.selectInteraction) {
                 // TODO update also the selected features
@@ -197,6 +205,7 @@ class DrawSupport extends React.Component {
             this.props.onEndDrawing(feature, this.props.drawOwner);
             if (this.props.options.stopAfterDrawing) {
                 this.props.onChangeDrawingStatus('stop', this.props.drawMethod, this.props.drawOwner, this.props.features.concat([feature]));
+                this.props.onDrawStopped();
             }
             if (this.selectInteraction) {
                 // TODO update also the selected features
@@ -351,11 +360,14 @@ class DrawSupport extends React.Component {
     };
 
     addDrawOrEditInteractions = (newProps) => {
+
+        const newFeature = reprojectGeoJson(head(newProps.features), newProps.options.featureProjection, this.props.map.getView().getProjection().getCode());
+        const props = assign({}, newProps, {features: [newFeature.geometry]});
         if (!this.drawLayer) {
-            this.addLayer(newProps);
+            this.addLayer(props);
         } else {
             this.drawSource.clear();
-            this.addFeatures(newProps);
+            this.addFeatures(props);
         }
         if (newProps.options.editEnabled) {
             this.addModifyInteraction();
@@ -411,6 +423,7 @@ class DrawSupport extends React.Component {
         if (this.translateInteraction) {
             this.props.map.removeInteraction(this.translateInteraction);
         }
+        this.props.onDrawStopped();
     };
 
     clean = () => {
@@ -543,7 +556,12 @@ class DrawSupport extends React.Component {
                 features: new ol.Collection(this.drawLayer.getSource().getFeatures())
             });
         this.modifyInteraction.on('modifyend', (e) => {
-            let features = e.features.getArray().map((f) => this.fromOLFeature(f.clone(), null));
+
+            const geojsonFormat = new ol.format.GeoJSON();
+            let features = e.features.getArray().map((f) => {
+                return reprojectGeoJson(geojsonFormat.writeFeatureObject(f.clone()), this.props.map.getView().getProjection().getCode(), this.props.options.featureProjection);
+            });
+
             this.props.onGeometryChanged(features);
         });
         this.props.map.addInteraction(this.modifyInteraction);

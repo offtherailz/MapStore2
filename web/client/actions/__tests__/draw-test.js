@@ -13,6 +13,7 @@ const {
     changeDrawingStatus,
     endDrawing,
     geometryChanged,
+    drawStopped, DRAW_SUPPORT_STOPPED,
     GEOMETRY_CHANGED
 } = require('../draw');
 
@@ -60,5 +61,10 @@ describe('Test correctness of the draw actions', () => {
         expect(retval.type).toBe(GEOMETRY_CHANGED);
         expect(retval.features).toExist();
         expect(retval.features).toBe(features);
+    });
+    it('Test drawStopped action creator', () => {
+        const retval = drawStopped();
+        expect(retval).toExist();
+        expect(retval.type).toBe(DRAW_SUPPORT_STOPPED);
     });
 });
