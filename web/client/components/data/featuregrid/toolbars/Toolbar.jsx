@@ -8,7 +8,7 @@ const hideStyle = {
 const normalStyle = {
 };
 const getStyle = (visible) => visible ? normalStyle : hideStyle;
-module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges} = {}) =>
+module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry} = {}) =>
     (<ButtonGroup id="featuregrid-toolbar" className="featuregrid-toolbar-margin">
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-mode">Edit mode</Tooltip>}>
             <Button key="edit-mode" style={getStyle(mode === "VIEW")} className="square-button" onClick={events.switchEditMode}><Glyphicon glyph="pencil"/></Button>
@@ -20,7 +20,10 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges} = {}) 
             <Button key="add-feature" style={getStyle(mode === "EDIT" && selectedCount <= 0)} className="square-button" onClick={events.createFeature}><Glyphicon glyph="row-add"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-feature">Edit feature</Tooltip>}>
-            <Button key="edit-feature" style={getStyle(mode === "EDIT" && selectedCount === 1)} className="square-button" onClick={events.editFeature}><Glyphicon glyph="pencil-edit"/></Button>
+            <Button key="edit-feature" style={getStyle(mode === "EDIT" && selectedCount === 1 && hasGeometry)} className="square-button" onClick={events.startEditingFeature}><Glyphicon glyph="pencil-edit"/></Button>
+        </OverlayTrigger>
+        <OverlayTrigger placement="top" overlay={<Tooltip id="fe-draw-feature">Draw feature</Tooltip>}>
+            <Button key="draw-feature" style={getStyle(mode === "EDIT" && selectedCount === 1 && !hasGeometry)} className="square-button" onClick={events.startDrawingFeature}><Glyphicon glyph="pencil-add"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-remove-features">Remove feature</Tooltip>}>
             <Button key="remove-features" style={getStyle(mode === "EDIT" && selectedCount > 0)} className="square-button" onClick={events.deleteFeatures}><Glyphicon glyph="trash-square"/></Button>

@@ -41,6 +41,6 @@ module.exports = {
         [currentEventKey]: (...args) => gridEvents[currentEventKey](...args, rowGetter, describe, actionOpts)
     }), {}),
     isProperty: (k, d) => !!getPropertyDesciptor(k, d),
-    isValidValueForPropertyName
-
+    isValidValueForPropertyName,
+    getDefaultFeatureProjection: () => "EPSG:4326"
 };

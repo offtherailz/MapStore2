@@ -7,7 +7,8 @@
  */
 const expect = require('expect');
 const featuregrid = require('../featuregrid');
-const {setFeatures, dockSizeFeatures, setLayer, toggleTool, customizeAttribute, selectFeatures, deselectFeatures, toggleSelection, clearSelection} = require('../../actions/featuregrid');
+const {setFeatures, dockSizeFeatures, setLayer, toggleTool, customizeAttribute, selectFeatures, deselectFeatures, createNewFeatures,
+    featureSaving, toggleSelection, clearSelection, MODES, toggleEditMode, toggleViewMode, saveSuccess, clearChanges, saveError} = require('../../actions/featuregrid');
 const museam = require('json-loader!../../test-resources/wfs/museam.json');
 describe('Test the featuregrid reducer', () => {
 
@@ -25,7 +26,7 @@ describe('Test the featuregrid reducer', () => {
     it('selectFeature', () => {
         let state = featuregrid( {}, selectFeatures([1, 2]));
         expect(state.select).toExist();
-        expect(state.select.length).toBe(1);
+        expect(state.select.length).toBe(2);
         expect(state.select[0]).toBe(1);
 
         // check multiselect
@@ -76,6 +77,47 @@ describe('Test the featuregrid reducer', () => {
     it('dockSizeFeatures', () => {
         let state = featuregrid( {}, dockSizeFeatures(200));
         expect(state.dockSize).toBe(200);
+    });
+    it('toggleEditMode', () => {
+        let state = featuregrid( {}, toggleEditMode());
+        expect(state.multiselect).toBeTruthy();
+        expect(state.mode).toBe(MODES.EDIT);
+    });
+    it('toggleViewMode', () => {
+        let state = featuregrid( {}, toggleViewMode());
+        expect(state.multiselect).toBeFalsy();
+        expect(state.mode).toBe(MODES.VIEW);
+    });
+    it('featureSaving', () => {
+        let state = featuregrid( {}, featureSaving());
+        expect(state.saving).toBeTruthy();
+        expect(state.loading).toBeTruthy();
+    });
+    it('saveSuccess', () => {
+        let state = featuregrid( {}, saveSuccess());
+        expect(state.deleteConfirm).toBeFalsy();
+        expect(state.saved).toBeTruthy();
+        expect(state.saving).toBeFalsy();
+        expect(state.loading).toBeFalsy();
+    });
+    it('clearChanges', () => {
+        let state = featuregrid( {}, clearChanges());
+        expect(state.deleteConfirm).toBeFalsy();
+        expect(state.saved).toBeFalsy();
+        expect(state.newFeatures.length).toBe(0);
+        expect(state.changes.length).toBe(0);
+    });
+    it('createNewFeatures', () => {
+        let state = featuregrid( {}, createNewFeatures([1]));
+        expect(state.deleteConfirm).toBeFalsy();
+        expect(state.saved).toBeFalsy();
+        expect(state.newFeatures.length).toBe(1);
+    });
+    it('saveError', () => {
+        let state = featuregrid( {}, saveError());
+        expect(state.deleteConfirm).toBeFalsy();
+        expect(state.saving).toBeFalsy();
+        expect(state.loading).toBeFalsy();
     });
     it('setLayer', () => {
         let state = featuregrid( {}, setLayer("TEST_ID"));
