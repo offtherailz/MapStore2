@@ -56,6 +56,9 @@ const applyNewChanges = (features, changedFeatures, updates) =>
 function featuregrid(state = emptyResultsState, action) {
     switch (action.type) {
     case SELECT_FEATURES:
+        if (!state.allowMultiChange && state.changes.length > 0) {
+            return state;
+        }
         if (state.multiselect && action.append) {
             return assign({}, state, {select: action.append ? [...state.select, ...action.features] : action.features});
         }
@@ -64,9 +67,15 @@ function featuregrid(state = emptyResultsState, action) {
         }
         return assign({}, state, {select: (action.features || []).splice(0, 1)});
     case TOGGLE_FEATURES_SELECTION:
+        if (!state.allowMultiChange && state.changes.length > 0) {
+            return state;
+        }
         let newArr = state.select.filter( f => !isPresent(f, action.features)).concat( (action.features || []).filter( f => !isPresent(f, state.select)));
         return assign({}, state, {select: newArr.filter( f => isPresent(f, action.features)).splice(0, 1)});
     case DESELECT_FEATURES:
+        if (!state.allowMultiChange && state.changes.length > 0) {
+            return state;
+        }
         return assign({}, state, {
             select: state.select.filter(f1 => !isPresent(f1, action.features))
             });

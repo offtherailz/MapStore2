@@ -3,6 +3,7 @@ const {Button, ButtonGroup, Glyphicon, Tooltip, OverlayTrigger} = require('react
 require("./toolbar.css");
 const hideStyle = {
     width: 0,
+    padding: 0,
     borderWidth: 0
 };
 const normalStyle = {
