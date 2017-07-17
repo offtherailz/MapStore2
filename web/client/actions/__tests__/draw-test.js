@@ -1,20 +1,17 @@
-/**
- * Copyright 2016, GeoSolutions Sas.
+/*
+ * Copyright 2017, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
- */
+*/
 
 const expect = require('expect');
 const {
-    CHANGE_DRAWING_STATUS,
-    END_DRAWING,
-    changeDrawingStatus,
-    endDrawing,
-    geometryChanged,
-    drawStopped, DRAW_SUPPORT_STOPPED,
-    GEOMETRY_CHANGED
+    CHANGE_DRAWING_STATUS, changeDrawingStatus,
+    END_DRAWING, endDrawing,
+    geometryChanged, GEOMETRY_CHANGED,
+    drawStopped, DRAW_SUPPORT_STOPPED
 } = require('../draw');
 
 describe('Test correctness of the draw actions', () => {

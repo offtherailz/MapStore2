@@ -63,7 +63,7 @@ function featuregrid(state = emptyResultsState, action) {
             return state;
         }
         return assign({}, state, {select: (action.features || []).splice(0, 1)});
-    case TOGGLE_FEATURES_SELECTION: // TODO FIX THIS, TEST FAILING
+    case TOGGLE_FEATURES_SELECTION:
         let newArr = state.select.filter( f => !isPresent(f, action.features)).concat( (action.features || []).filter( f => !isPresent(f, state.select)));
         return assign({}, state, {select: newArr.filter( f => isPresent(f, action.features)).splice(0, 1)});
     case DESELECT_FEATURES:

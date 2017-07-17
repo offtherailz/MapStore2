@@ -1,8 +1,14 @@
+/*
+ * Copyright 2017, GeoSolutions Sas.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree.
+*/
 const PropTypes = require('prop-types');
 const React = require('react');
 const {head} = require('lodash');
 const L = require('leaflet');
-// const {head, last} = require('lodash');
 require('leaflet-draw');
 const {isSimpleGeomType, getSimpleGeomType} = require('../../../utils/MapUtils');
 const assign = require('object-assign');
@@ -21,6 +27,22 @@ const defaultStyle = {
     }
 };
 
+/**
+ * Component that allows to draw and edit geometries as (Point, LineString, Polygon, Rectangle, Circle, MultiGeometries)
+ * @class DrawSupport
+ * @memberof components.map
+ * @prop {object} map the map usedto drawing on
+ * @prop {string} drawOwner the owner of the drawn features
+ * @prop {string} drawStatus the status that allows to do different things. see componentWillReceiveProps method
+ * @prop {string} drawMethod the method used to draw different geometries. can be Circle,BBOX, or a geomType from Point to MultiPolygons
+ * @prop {object} options it contains the params used to enable the interactions or simply stop the DrawSupport after a ft is drawn
+ * @prop {object[]} features an array of geojson features used as a starting point for drawing new shapes or edit them
+ * @prop {func} onChangeDrawingStatus method use to change the status of the DrawSupport
+ * @prop {func} onGeometryChanged when a features is edited or drawn this methos is fired
+ * @prop {func} onDrawStopped action fired if the DrawSupport stops
+ * @prop {func} onEndDrawing action fired when a shape is drawn
+ * @prop {object} messages the localized messages that can be used to customize the tooltip text
+*/
 class DrawSupport extends React.Component {
     static displayName = 'DrawSupport';
 
@@ -53,6 +75,18 @@ class DrawSupport extends React.Component {
         onEndDrawing: () => {}
     };
 
+    /**
+     * Inside this lyfecycle method the status is checked to manipulate the behaviour of the DrawSupport.<br>
+     * Here is the list of all status:<br>
+     * create allows to create features<br>
+     * start allows to start drawing features<br>
+     * drawOrEdit allows to start drawing or editing the passed features or both<br>
+     * stop allows to stop drawing features<br>
+     * replace allows to replace all the features drawn by Drawsupport with new ones<br>
+     * clean it cleans the drawn features and stop the drawsupport
+     * @memberof components.map.DrawSupport
+     * @function componentWillReceiveProps
+    */
     componentWillReceiveProps(newProps) {
         let drawingStrings = this.props.messages || this.context.messages ? this.context.messages.drawLocal : false;
         if (drawingStrings) {

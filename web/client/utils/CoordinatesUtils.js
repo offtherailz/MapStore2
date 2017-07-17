@@ -381,8 +381,11 @@ const CoordinatesUtils = {
                     return c.map(point => point.reverse());
                 });
             }
-            case "LineString": case "Point": {
+            case "LineString": {
                 return coordinates.map(point => point.reverse());
+            }
+            case "Point": {
+                return coordinates.reverse();
             }
             default: return [];
         }

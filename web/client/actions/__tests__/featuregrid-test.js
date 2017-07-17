@@ -11,7 +11,6 @@ const {
     SELECT_FEATURES, selectFeatures,
     changePage, CHANGE_PAGE,
     sort, SORT_BY,
-    startEditingGeometry, START_EDITING_GEOMETRY,
     setSelectionOptions, SET_SELECTION_OPTIONS,
     MODES, TOGGLE_MODE, toggleEditMode, toggleViewMode,
     featureModified, FEATURES_MODIFIED,
@@ -63,14 +62,6 @@ describe('Test correctness of featurgrid actions', () => {
         expect(retval.type).toBe(SORT_BY);
         expect(retval.sortBy).toBe("attr");
         expect(retval.sortOrder).toBe("ASC");
-    });
-    it('Test startEditingGeometry', () => {
-        const retval = startEditingGeometry(feature, options);
-        expect(retval).toExist();
-        expect(retval.type).toBe(START_EDITING_GEOMETRY);
-        expect(retval.feature).toExist();
-        expect(retval.feature.id).toBe(idFeature);
-        expect(retval.options).toBe(options);
     });
     it('Test startEditingFeature', () => {
         const retval = startEditingFeature(feature, options);

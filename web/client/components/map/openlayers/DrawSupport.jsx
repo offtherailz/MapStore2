@@ -4,7 +4,7 @@
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
- */
+*/
 
 const React = require('react');
 const ol = require('openlayers');
@@ -16,7 +16,19 @@ const {isSimpleGeomType, getSimpleGeomType} = require('../../../utils/MapUtils')
 const {reprojectGeoJson} = require('../../../utils/CoordinatesUtils');
 
 /**
- * Comment that allows to draw and edit geometries as (Point, LineString, Polygon, Circle, Multi(Polygon-LineString-Point)
+ * Component that allows to draw and edit geometries as (Point, LineString, Polygon, Rectangle, Circle, MultiGeometries)
+ * @class DrawSupport
+ * @memberof components
+ * @prop {object} map the map usedto drawing on
+ * @prop {string} drawOwner the owner of the drawn features
+ * @prop {string} drawStatus the status that allows to do different things. see componentWillReceiveProps method
+ * @prop {string} drawMethod the method used to draw different geometries. can be Circle,BBOX, or a geomType from Point to MultiPolygons
+ * @prop {object} options it contains the params used to enable the interactions or simply stop the DrawSupport after a ft is drawn
+ * @prop {object[]} features an array of geojson features used as a starting point for drawing new shapes or edit them
+ * @prop {func} onChangeDrawingStatus method use to change the status of the DrawSupport
+ * @prop {func} onGeometryChanged when a features is edited or drawn this methos is fired
+ * @prop {func} onDrawStopped action fired if the DrawSupport stops
+ * @prop {func} onEndDrawing action fired when a shape is drawn
 */
 
 class DrawSupport extends React.Component {
@@ -48,6 +60,17 @@ class DrawSupport extends React.Component {
         onEndDrawing: () => {}
     };
 
+/** Inside this lyfecycle method the status is checked to manipulate the behaviour of the DrawSupport.
+ * @function componentWillReceiveProps
+ * Here is the list of all status
+ * create allows to create features
+ * start allows to start drawing features
+ * drawOrEdit allows to start drawing or editing the passed features or both
+ * stop allows to stop drawing features
+ * replace allows to replace all the features drawn by Drawsupport with new ones
+ * clean it cleans the drawn features and stop the drawsupport
+ * cleanAndContinueDrawing it cleares the drawn features and allows to continue drawing features
+*/
     componentWillReceiveProps(newProps) {
         if (this.drawLayer) {
             this.updateFeatureStyles(newProps.features);
