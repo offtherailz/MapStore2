@@ -8,7 +8,7 @@ const hideStyle = {
 const normalStyle = {
 };
 const getStyle = (visible) => visible ? normalStyle : hideStyle;
-module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry} = {}) =>
+module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, isSimpleGeom, isEditingGeom} = {}) =>
     (<ButtonGroup id="featuregrid-toolbar" className="featuregrid-toolbar-margin">
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-mode">Edit mode</Tooltip>}>
             <Button key="edit-mode" style={getStyle(mode === "VIEW")} className="square-button" onClick={events.switchEditMode}><Glyphicon glyph="pencil"/></Button>
@@ -20,7 +20,8 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeo
             <Button key="add-feature" style={getStyle(mode === "EDIT" && selectedCount <= 0)} className="square-button" onClick={events.createFeature}><Glyphicon glyph="row-add"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-feature">Edit feature</Tooltip>}>
-            <Button key="edit-feature" style={getStyle(mode === "EDIT" && selectedCount === 1 && hasGeometry)} className="square-button" onClick={events.startEditingFeature}><Glyphicon glyph="pencil-edit"/></Button>
+            <Button key="edit-feature" style={getStyle(selectedCount === 1 && hasGeometry && (!isEditingGeom || isEditingGeom && !isSimpleGeom))}
+                className="square-button" onClick={events.startEditingFeature}><Glyphicon glyph="pencil-edit"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-draw-feature">Draw feature</Tooltip>}>
             <Button key="draw-feature" style={getStyle(mode === "EDIT" && selectedCount === 1 && !hasGeometry)} className="square-button" onClick={events.startDrawingFeature}><Glyphicon glyph="pencil-add"/></Button>
@@ -29,13 +30,14 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeo
             <Button key="remove-features" style={getStyle(mode === "EDIT" && selectedCount > 0)} className="square-button" onClick={events.deleteFeatures}><Glyphicon glyph="trash-square"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-save-features">Save feature</Tooltip>}>
-            <Button key="save-feature" style={getStyle(hasChanges)} className="square-button" onClick={events.saveChanges}><Glyphicon glyph="floppy-disk"/></Button>
+            <Button key="save-feature" style={getStyle(hasChanges || isEditingGeom || mode === "CREATING_FEATURE")} className="square-button" onClick={events.saveChanges}><Glyphicon glyph="floppy-disk"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-cancel-editing">Cancel editing</Tooltip>}>
-            <Button key="cancel-editing" style={getStyle(hasChanges)} className="square-button" onClick={events.clearFeatureEditing}><Glyphicon glyph="1-close"/></Button>
+            <Button key="cancel-editing" style={getStyle(hasChanges || isEditingGeom || mode === "CREATING_FEATURE")}
+                className="square-button" onClick={events.clearFeatureEditing}><Glyphicon glyph="1-close"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-delete-geometry">Delete geometry</Tooltip>}>
-            <Button key="delete-geometry" style={getStyle(mode === "EDITING_FEATURE" || mode === "CREATING_FEATURE")} className="square-button" onClick={events.deleteGeometry}><Glyphicon glyph="polygon-trash"/></Button>
+            <Button key="delete-geometry" style={getStyle(isEditingGeom || mode === "CREATING_FEATURE")} className="square-button" onClick={events.deleteGeometry}><Glyphicon glyph="polygon-trash"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-download-grid">Download grid data</Tooltip>}>
             <Button key="download-grid" style={getStyle(mode === "VIEW")} className="square-button" onClick={events.download}><Glyphicon glyph="features-grid-download"/></Button>

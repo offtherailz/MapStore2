@@ -27,6 +27,7 @@ const SET_FEATURES = 'SET_FEATURES';
 const SORT_BY = 'FEATUREGRID:SORT_BY';
 const SET_LAYER = 'FEATUREGRID:SET_LAYER';
 const CHANGE_PAGE = 'FEATUREGRID:CHANGE_PAGE';
+const GEOMETRY_CHANGED = 'FEATUREGRID:GEOMETRY_CHANGED';
 const DOCK_SIZE_FEATURES = 'DOCK_SIZE_FEATURES';
 const TOGGLE_TOOL = 'FEATUREGRID:TOGGLE_TOOL';
 const CUSTOMIZE_ATTRIBUTE = 'FEATUREGRID:CUSTOMIZE_ATTRIBUTE';
@@ -40,6 +41,13 @@ function selectFeatures(features, append) {
         type: SELECT_FEATURES,
         features,
         append
+    };
+}
+function geometryChanged(features, owner) {
+    return {
+        type: SELECT_FEATURES,
+        features,
+        owner
     };
 }
 function startEditingFeature() {
@@ -211,6 +219,7 @@ module.exports = {
     SAVING,
     START_EDITING_FEATURE, startEditingFeature,
     START_DRAWING_FEATURE, startDrawingFeature,
+    GEOMETRY_CHANGED, geometryChanged,
     setLayer,
     selectFeatures,
     deselectFeatures,

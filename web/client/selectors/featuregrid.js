@@ -7,8 +7,11 @@ const getCustomAttributeSettings = (state, att) => get(state, `featuregrid.attri
 const {attributesSelector} = require('./query');
 const selectedFeaturesSelector = state => state && state.featuregrid && state.featuregrid.select;
 const changesSelector = state => state && state.featuregrid && state.featuregrid.changes;
+const newFeaturesSelector = state => state && state.featuregrid && state.featuregrid.newFeatures;
+const changedGeometriesSelector = state => state && state.draw && state.draw.tempFeatures;
 const selectedFeatureSelector = state => head(selectedFeaturesSelector(state));
-
+const geomTypeSelectedFeatureSelector = state => selectedFeatureSelector(state) && selectedFeatureSelector(state).geometry && selectedFeatureSelector(state).geometry.type;
+const {isSimpleGeomType} = require('../utils/MapUtils');
 /* eslint-disable */
 const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
     ...changes,
@@ -45,6 +48,10 @@ module.exports = {
     changesMapSelector: (state) => toChangesMap(changesSelector(state)),
     hasChangesSelector: state => changesSelector(state) && changesSelector(state).length > 0,
     hasGeometrySelector: state => selectedFeatureSelector(state) && !!selectedFeatureSelector(state).geometry,
-    newFeaturesSelector: state => state && state.featuregrid.newFeatures
-
+    newFeaturesSelector: state => newFeaturesSelector(state),
+    isCreatingSelector: state => newFeaturesSelector(state).length === 0,
+    changedGeometriesSelector: state => changedGeometriesSelector(state),
+    isEditingGeomSelector: state => changedGeometriesSelector(state).length > 0,
+    geomTypeSelectedFeatureSelector: state => geomTypeSelectedFeatureSelector(state),
+    isSimpleGeomSelector: state => isSimpleGeomType(geomTypeSelectedFeatureSelector(state))
 };

@@ -197,7 +197,7 @@ class DrawSupport extends React.Component {
     };
 
     addGeojsonLayer = ({features, projection}) => {
-        this.clean();
+        // this.clean();
         let geoJsonLayerGroup = L.geoJson(features, {style: defaultStyle, pointToLayer: (f, latLng) => {
             let center = CoordinatesUtils.reproject({x: latLng.lng, y: latLng.lat}, projection, "EPSG:4326");
             return L.marker(L.latLng(center.y, center.x));

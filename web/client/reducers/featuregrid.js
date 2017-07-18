@@ -23,7 +23,8 @@ const {
     CUSTOMIZE_ATTRIBUTE,
     SET_SELECTION_OPTIONS,
     TOGGLE_MODE,
-    MODES
+    MODES,
+    GEOMETRY_CHANGED
 } = require('../actions/featuregrid');
 const uuid = require('uuid');
 
@@ -147,6 +148,11 @@ function featuregrid(state = emptyResultsState, action) {
             deleteConfirm: false,
             saving: false,
             loading: false
+        });
+    }
+    case GEOMETRY_CHANGED: {
+        return assign({}, state, {
+            featuresGeomChanged: action.features
         });
     }
     default:
