@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 const assign = require("object-assign");
+const {head} = require("lodash");
 const {
     SELECT_FEATURES,
     DESELECT_FEATURES,
@@ -161,7 +162,10 @@ function featuregrid(state = emptyResultsState, action) {
     }
     case GEOMETRY_CHANGED: {
         return assign({}, state, {
-            featuresGeomChanged: action.features
+            changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
+                id: f.id,
+                geometry: head(action.features).geometry
+            })))]
         });
     }
     default:

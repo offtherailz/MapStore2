@@ -192,7 +192,7 @@ module.exports = {
                     })
             );
         }),
-        saveChangedGeometries: (action$) => action$.ofType(GEOMETRY_CHANGED)
+    saveChangedGeometries: (action$) => action$.ofType(GEOMETRY_CHANGED)
         .filter(a => a.owner === "featureGrid")
         .switchMap( (a) => {
             return Rx.Observable.of(geometryChanged(a.features));

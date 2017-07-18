@@ -17,7 +17,8 @@ const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
     ...changes,
     [c.id]: {
         ...changes[c.id],
-        ...c.updated
+        ...c.updated,
+        geometry: c.geometry
     }
 }), {});
 /* eslint-enable */
@@ -39,19 +40,19 @@ module.exports = {
             return att;
         });
     },
-    modeSelector: (state) => state && state.featuregrid && state.featuregrid.mode,
+    modeSelector: state => state && state.featuregrid && state.featuregrid.mode,
     selectedFeaturesSelector,
     selectedFeatureSelector,
     selectedFeaturesCount: state => (selectedFeaturesSelector(state) || []).length,
     changesSelector,
     toChangesMap,
-    changesMapSelector: (state) => toChangesMap(changesSelector(state)),
+    changesMapSelector: state => toChangesMap(changesSelector(state)),
     hasChangesSelector: state => changesSelector(state) && changesSelector(state).length > 0,
     hasGeometrySelector: state => selectedFeatureSelector(state) && !!selectedFeatureSelector(state).geometry,
-    newFeaturesSelector: state => newFeaturesSelector(state),
+    newFeaturesSelector,
     isCreatingSelector: state => newFeaturesSelector(state).length === 0,
-    changedGeometriesSelector: state => changedGeometriesSelector(state),
+    changedGeometriesSelector,
     isEditingGeomSelector: state => changedGeometriesSelector(state).length > 0,
-    geomTypeSelectedFeatureSelector: state => geomTypeSelectedFeatureSelector(state),
+    geomTypeSelectedFeatureSelector,
     isSimpleGeomSelector: state => isSimpleGeomType(geomTypeSelectedFeatureSelector(state))
 };

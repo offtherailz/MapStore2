@@ -1,11 +1,12 @@
 const {toggleControl} = require('../../actions/controls');
 const {closeResponse} = require('../../actions/wfsquery');
-const {toggleTool, toggleEditMode, toggleViewMode, saveChanges, clearChanges, createNewFeatures, startEditingFeature, startDrawingFeature} = require('../../actions/featuregrid');
+const {toggleTool, toggleEditMode, toggleViewMode, saveChanges, clearChanges, createNewFeatures, startEditingFeature, startDrawingFeature, deleteGeometry} = require('../../actions/featuregrid');
 
 module.exports = {
     createFeature: () => createNewFeatures([{}]),
     saveChanges: () => saveChanges(),
     clearFeatureEditing: () => clearChanges(),
+    deleteGeometry: () => deleteGeometry(),
     deleteFeatures: () => toggleTool("deleteConfirm"),
     download: () => toggleControl("wfsdownload"),
     settings: () => toggleTool("settings"),
