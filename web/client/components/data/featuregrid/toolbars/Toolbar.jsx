@@ -9,7 +9,7 @@ const hideStyle = {
 const normalStyle = {
 };
 const getStyle = (visible) => visible ? normalStyle : hideStyle;
-module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, isSimpleGeom, isEditingGeom} = {}) =>
+module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, isSimpleGeom} = {}) =>
     (<ButtonGroup id="featuregrid-toolbar" className="featuregrid-toolbar-margin">
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-mode">Edit mode</Tooltip>}>
             <Button key="edit-mode" style={getStyle(mode === "VIEW")} className="square-button" onClick={events.switchEditMode}><Glyphicon glyph="pencil"/></Button>
