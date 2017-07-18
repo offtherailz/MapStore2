@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-const {CHANGE_DRAWING_STATUS, SET_CURRENT_STYLE, GEOMETRY_CHANGED} = require('../actions/draw');
+const {CHANGE_DRAWING_STATUS, SET_CURRENT_STYLE, GEOMETRY_CHANGED, DRAW_SUPPORT_STOPPED} = require('../actions/draw');
 
 const assign = require('object-assign');
 
@@ -35,6 +35,8 @@ function draw(state = initialState, action) {
             });
         case GEOMETRY_CHANGED:
             return assign({}, state, {tempFeatures: action.features});
+        case DRAW_SUPPORT_STOPPED:
+            return assign({}, state, {tempFeatures: []});
         default:
             return state;
     }

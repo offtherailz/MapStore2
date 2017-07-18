@@ -10,7 +10,7 @@ const {get} = require('lodash');
 const axios = require('../libs/ajax');
 const {fidFilter} = require('../utils/ogc/Filter/filter');
 const {getDefaultFeatureProjection} = require('../utils/FeatureGridUtils');
-const {changeDrawingStatus} = require('../actions/draw');
+const {changeDrawingStatus, GEOMETRY_CHANGED} = require('../actions/draw');
 const requestBuilder = require('../utils/ogc/WFST/RequestBuilder');
 const {toggleControl} = require('../actions/controls');
 const {query, QUERY_CREATE, QUERY_RESULT, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
@@ -19,7 +19,7 @@ const {stripPrefix} = require('xml2js/lib/processors');
 
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES, featureSaving,
     saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool,
-    CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES} = require('../actions/featuregrid');
+    CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES, geometryChanged} = require('../actions/featuregrid');
 const {error} = require('../actions/notifications');
 const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector} = require('../selectors/featuregrid');
 const {describeSelector} = require('../selectors/query');
@@ -191,7 +191,13 @@ module.exports = {
                         return Rx.Observable.of(drawSupportReset());
                     })
             );
-        })/*,
+        }),
+        saveChangedGeometries: (action$) => action$.ofType(GEOMETRY_CHANGED)
+        .filter(a => a.owner === "featureGrid")
+        .switchMap( (a) => {
+            return Rx.Observable.of(geometryChanged(a.features));
+        })
+        /*,
         doSomethingWhenDrawStops: (action$) => action$.ofType(DRAW_SUPPORT_STOPPED)
         .switchMap( () => {
             return Rx.Observable.of(anyAction()));
