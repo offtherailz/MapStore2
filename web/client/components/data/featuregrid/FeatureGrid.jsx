@@ -61,12 +61,22 @@ class FeatureGrid extends React.PureComponent {
     constructor(props) {
         super(props);
         this.rowGetter = (i) => {
-            let feature = {...getRow(i, this.props.features)};
-            feature.get = key => {
-                if (this.props.changes && this.props.changes[feature.id] && this.props.changes[feature.id][key]) {
-                    return this.props.changes[feature.id][key];
+            const orig = getRow(i, this.props.features);
+            const featureChanges = this.props.changes && this.props.changes[orig.id] || {};
+            const propChanges = Object.keys(featureChanges).filter(k => k !== "geometry").reduce((acc, cur) => ({
+                ...acc,
+                [cur]: featureChanges[cur]
+            }), {});
+            let feature = {
+                ...orig,
+                geometry: featureChanges.geometry || orig.geometry,
+                properties: {
+                    ...(orig.properties || {}),
+                    ...propChanges
+                },
+                get: key => {
+                    return feature.properties && feature.properties[key] ? feature.properties[key] : feature[key];
                 }
-                return feature.properties && feature.properties[key] ? feature.properties[key] : feature[key];
             };
             return feature;
         };

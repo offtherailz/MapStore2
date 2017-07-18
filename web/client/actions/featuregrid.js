@@ -18,6 +18,7 @@ const SAVE_CHANGES = 'FEATUREGRID:SAVE_CHANGES';
 const SAVING = 'FEATUREGRID:SAVING';
 const START_EDITING_FEATURE = 'FEATUREGRID:START_EDITING_FEATURE';
 const START_DRAWING_FEATURE = 'FEATUREGRID:START_DRAWING_FEATURE';
+const DELETE_GEOMETRY = "FEATUREGRID:DELETE_GEOMETRY";
 const SAVE_SUCCESS = "FEATUREGRID:SAVE_SUCCESS";
 const CLEAR_CHANGES = "FEATUREGRID:CLEAR_CHANGES";
 const SAVE_ERROR = "FEATUREGRID:SAVE_ERROR";
@@ -27,6 +28,7 @@ const SET_FEATURES = 'SET_FEATURES';
 const SORT_BY = 'FEATUREGRID:SORT_BY';
 const SET_LAYER = 'FEATUREGRID:SET_LAYER';
 const CHANGE_PAGE = 'FEATUREGRID:CHANGE_PAGE';
+const GEOMETRY_CHANGED = 'FEATUREGRID:GEOMETRY_CHANGED';
 const DOCK_SIZE_FEATURES = 'DOCK_SIZE_FEATURES';
 const TOGGLE_TOOL = 'FEATUREGRID:TOGGLE_TOOL';
 const CUSTOMIZE_ATTRIBUTE = 'FEATUREGRID:CUSTOMIZE_ATTRIBUTE';
@@ -40,6 +42,12 @@ function selectFeatures(features, append) {
         type: SELECT_FEATURES,
         features,
         append
+    };
+}
+function geometryChanged(features) {
+    return {
+        type: GEOMETRY_CHANGED,
+        features
     };
 }
 function startEditingFeature() {
@@ -56,6 +64,12 @@ function deselectFeatures(features) {
     return {
         type: DESELECT_FEATURES,
         features
+    };
+}
+function deleteGeometry(feature) {
+    return {
+        type: DELETE_GEOMETRY,
+        feature
     };
 }
 function clearSelection() {
@@ -211,6 +225,8 @@ module.exports = {
     SAVING,
     START_EDITING_FEATURE, startEditingFeature,
     START_DRAWING_FEATURE, startDrawingFeature,
+    GEOMETRY_CHANGED, geometryChanged,
+    DELETE_GEOMETRY, deleteGeometry,
     setLayer,
     selectFeatures,
     deselectFeatures,

@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 const assign = require("object-assign");
+const {head} = require("lodash");
 const {
     SELECT_FEATURES,
     DESELECT_FEATURES,
@@ -23,7 +24,8 @@ const {
     CUSTOMIZE_ATTRIBUTE,
     SET_SELECTION_OPTIONS,
     TOGGLE_MODE,
-    MODES
+    MODES,
+    GEOMETRY_CHANGED
 } = require('../actions/featuregrid');
 const uuid = require('uuid');
 
@@ -156,6 +158,14 @@ function featuregrid(state = emptyResultsState, action) {
             deleteConfirm: false,
             saving: false,
             loading: false
+        });
+    }
+    case GEOMETRY_CHANGED: {
+        return assign({}, state, {
+            changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
+                id: f.id,
+                geometry: head(action.features).geometry
+            })))]
         });
     }
     default:

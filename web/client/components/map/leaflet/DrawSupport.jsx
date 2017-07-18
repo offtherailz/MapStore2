@@ -101,7 +101,7 @@ class DrawSupport extends React.Component {
                 this.removeAllInteractions();
             } break;
             case "replace": this.replaceFeatures(newProps); break;
-            case "clean": this.clean(); break;
+            case "clean": this.cleanAndStop(); break;
             default :
                 return;
             }
@@ -163,7 +163,7 @@ class DrawSupport extends React.Component {
 
     onUpdateGeom = (feature, props) => {
         const newGeoJsonFt = this.convertFeaturesToGeoJson(feature, props);
-        props.onGeometryChanged([newGeoJsonFt]);
+        props.onGeometryChanged([newGeoJsonFt], props.drawOwner);
     };
 
     render() {
@@ -367,8 +367,19 @@ class DrawSupport extends React.Component {
         }
     };
 
-    clean = () => {
+    cleanAndStop = () => {
         this.removeAllInteractions();
+
+        if (this.drawLayer) {
+            this.drawLayer.clearLayers();
+            this.props.map.removeLayer(this.drawLayer);
+            this.drawLayer = null;
+        }
+    };
+
+    clean = () => {
+        this.removeEditInteraction();
+        this.removeDrawInteraction();
 
         if (this.drawLayer) {
             this.drawLayer.clearLayers();
@@ -401,7 +412,7 @@ class DrawSupport extends React.Component {
         } else {
             geom = featureEdited.toGeoJSON().geometry;
         }
-        return {geometry: geom, type: "Feature"};
+        return assign({}, featureEdited.toGeoJSON(), {geometry: geom});
     };
 }
 
