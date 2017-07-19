@@ -45,5 +45,23 @@ module.exports = {
     }), {}),
     isProperty: (k, d) => !!getPropertyDesciptor(k, d),
     isValidValueForPropertyName: (v, k, d) => isValidValueForPropertyName(v, getPropertyName(k, d), d),
-    getDefaultFeatureProjection: () => "EPSG:4326"
+    getDefaultFeatureProjection: () => "EPSG:4326",
+    applyChanges: (feature, changes) => {
+        const propChanges = Object.keys(changes).filter(k => k !== "geometry").reduce((acc, cur) => ({
+            ...acc,
+            [cur]: changes[cur]
+        }), {});
+        const geomChanges = Object.keys(changes).filter(k => k === "geometry").reduce((acc, cur) => ({
+            ...acc,
+            [cur]: changes[cur]
+        }), {});
+        return {
+            ...feature,
+            ...geomChanges,
+            properties: {
+                ...(feature.properties || {}),
+                ...propChanges
+            }
+        };
+    }
 };
