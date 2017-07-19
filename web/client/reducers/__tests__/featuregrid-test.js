@@ -24,13 +24,15 @@ describe('Test the featuregrid reducer', () => {
         expect(state.features).toExist();
     });
     it('selectFeature', () => {
-        let state = featuregrid( {}, selectFeatures([1, 2]));
+        // single select
+        let state = featuregrid( undefined, selectFeatures([1, 2]));
         expect(state.select).toExist();
-        expect(state.select.length).toBe(2);
+        expect(state.select.length).toBe(1);
         expect(state.select[0]).toBe(1);
 
         // check multiselect
-        state = featuregrid( {multiselect: true}, selectFeatures([1, 2]));
+        state = featuregrid(undefined, {type: 'UNKNOWN'});
+        state = featuregrid({...state, multiselect: true}, selectFeatures([1, 2]));
         expect(state.select).toExist();
         expect(state.select.length).toBe(2);
         expect(state.select[0]).toBe(1);
@@ -41,31 +43,31 @@ describe('Test the featuregrid reducer', () => {
         expect(state.select[2]).toBe(3);
     });
     it('clearSelection', () => {
-        let state = featuregrid( {select: [1, 2]}, clearSelection());
+        let state = featuregrid({select: [1, 2]}, clearSelection());
         expect(state.select).toExist();
         expect(state.select.length).toBe(0);
     });
     it('deselectFeature', () => {
-        let state = featuregrid( {select: [1, 2]}, deselectFeatures([1]));
+        let state = featuregrid( {select: [1, 2], changes: []}, deselectFeatures([1]));
         expect(state.select).toExist();
         expect(state.select[0]).toBe(2);
     });
     it('toggleSelection', () => {
-        let state = featuregrid( {select: [1, 2], multiselect: true}, toggleSelection([1, 3, 4]));
+        let state = featuregrid( {select: [1, 2], multiselect: true, changes: []}, toggleSelection([1]));
         expect(state.select).toExist();
-        expect(state.select.length).toBe(3);
-        state = featuregrid( state, toggleSelection([2, 3, 4]));
+        expect(state.select.length).toBe(1);
+        state = featuregrid( state, toggleSelection([2]));
         expect(state.select.length).toBe(0);
         state = featuregrid( state, toggleSelection([1]));
-        expect(state.select.length).toBe(1);
+        expect(state.select.length).toBe(0);
         expect(state.select[0]).toBe(1);
         state = featuregrid( state, toggleSelection([1]));
         expect(state.select.length).toBe(0);
         // single select
         state = featuregrid( {select: [2], multiselect: false}, toggleSelection([1, 3, 4]));
-        expect(state.select.length).toBe(1);
+        expect(state.select.length).toBe(0);
         state = featuregrid( {select: [], multiselect: false}, toggleSelection([1]));
-        expect(state.select.length).toBe(1);
+        expect(state.select.length).toBe(0);
         state = featuregrid( state, toggleSelection([1]));
         expect(state.select.length).toBe(0);
     });

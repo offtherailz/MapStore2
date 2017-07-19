@@ -60,12 +60,12 @@ const addPagination = (filterObj, pagination) => ({
     pagination
 });
 
-const createChangesTransaction = (changes, newFeatures, {insert, update, propertyChange, transaction})=>
+const createChangesTransaction = (changes, newFeatures, {insert, update, propertyChange, getPropertyName, transaction})=>
     transaction(
         newFeatures.map(f => insert(f)),
         Object.keys(changes).map( id =>
             Object.keys(changes[id]).map(name =>
-                update([propertyChange(name, changes[id][name]), fidFilter("ogc", id)])
+                update([propertyChange(getPropertyName(name), changes[id][name]), fidFilter("ogc", id)])
             )
         )
     );
@@ -186,7 +186,7 @@ module.exports = {
             return Rx.Observable.concat(
                 Rx.Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", [feature], drawOptions)),
                 action$.ofType(TOGGLE_MODE, CLEAR_CHANGES, SAVE_SUCCESS)
-                    .filter(a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
+                    .filter( a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
                     .switchMap( () => {
                         return Rx.Observable.of(drawSupportReset());
                     })

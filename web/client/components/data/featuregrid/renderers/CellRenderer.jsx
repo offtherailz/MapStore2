@@ -17,8 +17,9 @@ class CellRenderer extends React.Component {
         this.setScrollLeft = (scrollBy) => this.refs.cell.setScrollLeft(scrollBy);
     }
     render() {
-        const isModified = (this.props.rowData._new && this.context.isProperty(this.props.column.key)) || this.context.isModified(this.props.rowData.id, this.props.column.key);
-        const isValid = isModified && this.context.isValid(this.props.rowData.get(this.props.column.key), this.props.column.key);
+        const isProperty = this.context.isProperty(this.props.column.key);
+        const isModified = (this.props.rowData._new && isProperty) || this.context.isModified(this.props.rowData.id, this.props.column.key);
+        const isValid = isProperty ? this.context.isValid(this.props.rowData.get(this.props.column.key), this.props.column.key) : true;
         const className = (isModified ? ['modified'] : [])
             .concat(isValid ? [] : ['invalid']).join(" ");
         return <Cell {...this.props} ref="cell" className={className}/>;

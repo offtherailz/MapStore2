@@ -51,7 +51,7 @@ const getPropertyDesciptor = (propName, describeFeatureType) =>
  */
 const schemaLocation = (d) => d.targetNamespace;
 const isGeometryType = (pd) => pd.type.indexOf("gml:") === 0;
-const isValidValue = (v, pd) => !v && !pd.nillable; // TODO check type
+const isValidValue = (v, pd) => pd.nillable || v !== undefined; // TODO validate type
 const isValidProperty = ({geom, properties} = {}, pd) => isValidValue(isGeometryType(pd) ? geom : properties[pd.name], pd);
 /**
  * Base utilities for WFS.

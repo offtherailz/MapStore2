@@ -1,8 +1,11 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const { editors } = require('react-data-grid');
-
-const processValue = (obj, func) => Object.keys(obj).reduce((acc, curr) => ({...acc, [curr]: func(obj[curr])}), {});
+const nanToNull = v => isNaN(v) ? undefined : v;
+const processValue = (obj, func) => Object.keys(obj).reduce((acc, curr) => ({
+    ...acc,
+    [curr]: nanToNull(func(obj[curr]))}),
+{});
 const parsers = {
     "int": v => parseInt(v, 10),
     "number": v => parseFloat(v, 10)

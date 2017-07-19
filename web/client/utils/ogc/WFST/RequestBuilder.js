@@ -21,6 +21,7 @@ const WFSVersionNotSupportedException = function(wfsVersion) {
 const getTypeName = dft => get(dft, "featureTypes[0].typeName");
 const getFullQualifiedTypeName = dft => dft.targetPrefix ? `${dft.targetPrefix}:${getTypeName(dft)}` : getTypeName(dft);
 const getGeometryName = (f, describe) => f.geometry_name || findGeometryProperty(describe).name;
+const getPropertyName = (name, describe) => name === "geometry" || name === getGeometryName({}, describe) ? getGeometryName({}, describe) : name;
 /**
  * RequestBuilder for WFS-T. Returns the proper method to create request bodies
  * @memberof utils.ogc.WFST
@@ -70,10 +71,16 @@ module.exports = function(describe, {wfsVersion = "1.1.0", wfsNS="wfs", ...other
         insert: (features, ...rest) => insert(wfsNS,
             Array.isArray(mergeArray(features, rest)) ? mergeArray(features, rest).map(toFeatures) : toFeatures(features)
         ),
+        /**
+         * Returns the name of the attribute for the name of the geoJSON entry. This means that it translates "geometry" into the correct geometry name
+         * @param  {string} name The name of the geoJSON attribute, or "geometry"
+         * @return {string}      The original attribute name
+         */
+        getPropertyName: (name) => getPropertyName(name, describe),
         deleteByFilter: (filter) => deleteFeaturesByFilter(wfsNS, filter, getFullQualifiedTypeName(describe)),
         deleteFeature: (f) => deleteFeature(wfsNS, f, getFullQualifiedTypeName(describe)),
         update: (content, ...rest) => update(wfsNS, getFullQualifiedTypeName(describe), mergeArray(content, rest) ),
-        propertyChange: propertyChange.bind(null, wfsNS),
+        propertyChange: (name, value) => propertyChange(wfsNS, name, getValue(value, name, describe)),
         transaction: (content, ...rest) => transaction(mergeArray(content, rest), featureTypeSchema(describe), wfsVersion, wfsNS)
     };
 };

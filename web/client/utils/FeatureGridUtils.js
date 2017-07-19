@@ -1,5 +1,8 @@
 
-const {getFeatureTypeProperties, isGeometryType, isValidValueForPropertyName, getPropertyDesciptor} = require('./ogc/WFS/base');
+const {getFeatureTypeProperties, isGeometryType, isValidValueForPropertyName, findGeometryProperty, getPropertyDesciptor} = require('./ogc/WFS/base');
+const getGeometryName = (describe) => findGeometryProperty(describe).name;
+const getPropertyName = (name, describe) => name === "geometry" ? getGeometryName(describe) : name;
+
 const getRow = (i, rows) => rows[i];
 
 module.exports = {
@@ -41,6 +44,6 @@ module.exports = {
         [currentEventKey]: (...args) => gridEvents[currentEventKey](...args, rowGetter, describe, actionOpts)
     }), {}),
     isProperty: (k, d) => !!getPropertyDesciptor(k, d),
-    isValidValueForPropertyName,
+    isValidValueForPropertyName: (v, k, d) => isValidValueForPropertyName(v, getPropertyName(k, d), d),
     getDefaultFeatureProjection: () => "EPSG:4326"
 };
