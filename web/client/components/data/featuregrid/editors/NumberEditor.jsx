@@ -1,7 +1,7 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const { editors } = require('react-data-grid');
-const nanToNull = v => isNaN(v) ? undefined : v;
+const nanToNull = v => isNaN(v) ? null : v;
 const processValue = (obj, func) => Object.keys(obj).reduce((acc, curr) => ({
     ...acc,
     [curr]: nanToNull(func(obj[curr]))}),
@@ -12,7 +12,9 @@ const parsers = {
 };
 class NumberEditor extends editors.EditorBase {
     static propTypes = {
-      value: PropTypes.number,
+      value: PropTypes.oneOfType([
+          PropTypes.string,
+          PropTypes.number]),
       onBlur: PropTypes.func,
       inputProps: PropTypes.object,
       dataType: PropTypes.string,
