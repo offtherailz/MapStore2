@@ -8,7 +8,7 @@ const {attributesSelector} = require('./query');
 const selectedFeaturesSelector = state => state && state.featuregrid && state.featuregrid.select;
 const changesSelector = state => state && state.featuregrid && state.featuregrid.changes;
 const newFeaturesSelector = state => state && state.featuregrid && state.featuregrid.newFeatures;
-const changedGeometriesSelector = state => state && state.draw && state.draw.tempFeatures;
+const drawStatusSelector = state => state && state.featuregrid && state.featuregrid.drawStatus;
 const selectedFeatureSelector = state => head(selectedFeaturesSelector(state));
 const geomTypeSelectedFeatureSelector = state => selectedFeatureSelector(state) && selectedFeatureSelector(state).geometry && selectedFeatureSelector(state).geometry.type;
 const {isSimpleGeomType} = require('../utils/MapUtils');
@@ -17,11 +17,23 @@ const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
     ...changes,
     [c.id]: {
         ...changes[c.id],
-        ...c.updated,
-        geometry: c.geometry
+        ...c.updated
     }
 }), {});
 /* eslint-enable */
+
+const hasGeometrySelectedFeature = (state) => {
+    let ft = selectedFeatureSelector(state);
+    if (ft) {
+        let changes = toChangesMap(changesSelector(state));
+        if (changes[ft.id] && changes[ft.id].geometry === null) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+};
+
 module.exports = {
   getTitleSelector: state => getTitle(
     getLayerById(
@@ -48,11 +60,10 @@ module.exports = {
     toChangesMap,
     changesMapSelector: state => toChangesMap(changesSelector(state)),
     hasChangesSelector: state => changesSelector(state) && changesSelector(state).length > 0,
-    hasGeometrySelector: state => selectedFeatureSelector(state) && !!selectedFeatureSelector(state).geometry,
+    hasGeometrySelector: state => hasGeometrySelectedFeature(state),
     newFeaturesSelector,
     isCreatingSelector: state => newFeaturesSelector(state).length === 0,
-    changedGeometriesSelector,
-    isEditingGeomSelector: state => changedGeometriesSelector(state).length > 0,
+    drawStatusSelector,
     geomTypeSelectedFeatureSelector,
     isSimpleGeomSelector: state => isSimpleGeomType(geomTypeSelectedFeatureSelector(state))
 };

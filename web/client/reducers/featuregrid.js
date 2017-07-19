@@ -25,7 +25,8 @@ const {
     SET_SELECTION_OPTIONS,
     TOGGLE_MODE,
     MODES,
-    GEOMETRY_CHANGED
+    GEOMETRY_CHANGED,
+    DELETE_GEOMETRY_FEATURE
 } = require('../actions/featuregrid');
 const uuid = require('uuid');
 
@@ -58,9 +59,9 @@ const applyNewChanges = (features, changedFeatures, updates) =>
 function featuregrid(state = emptyResultsState, action) {
     switch (action.type) {
     case SELECT_FEATURES:
-        if (!state.allowMultiChange && state.changes.length > 0) {
+        /*if (!state.allowMultiChange && state.changes.length > 0) {
             return state;
-        }
+        }*/
         if (state.multiselect && action.append) {
             return assign({}, state, {select: action.append ? [...state.select, ...action.features] : action.features});
         }
@@ -69,15 +70,15 @@ function featuregrid(state = emptyResultsState, action) {
         }
         return assign({}, state, {select: (action.features || []).splice(0, 1)});
     case TOGGLE_FEATURES_SELECTION:
-        if (!state.allowMultiChange && state.changes.length > 0) {
+        /*if (!state.allowMultiChange && state.changes.length > 0) {
             return state;
-        }
+        }*/
         let newArr = state.select.filter( f => !isPresent(f, action.features)).concat( (action.features || []).filter( f => !isPresent(f, state.select)));
         return assign({}, state, {select: newArr.filter( f => isPresent(f, action.features)).splice(0, 1)});
     case DESELECT_FEATURES:
-        if (!state.allowMultiChange && state.changes.length > 0) {
+        /*if (!state.allowMultiChange && state.changes.length > 0) {
             return state;
-        }
+        }*/
         return assign({}, state, {
             select: state.select.filter(f1 => !isPresent(f1, action.features))
             });
@@ -164,7 +165,15 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {
             changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
                 id: f.id,
-                geometry: head(action.features).geometry
+                updated: {geometry: head(action.features).geometry}
+            })))]
+        });
+    }
+    case DELETE_GEOMETRY_FEATURE: {
+        return assign({}, state, {
+            changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
+                id: f.id,
+                updated: {geometry: null}
             })))]
         });
     }

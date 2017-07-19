@@ -9,7 +9,7 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const AdaptiveGrid = require('../../misc/AdaptiveGrid');
 const editors = require('./editors');
-const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents, isValidValueForPropertyName, isProperty} = require('../../../utils/FeatureGridUtils');
+const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents, isValidValueForPropertyName, isProperty, applyChanges} = require('../../../utils/FeatureGridUtils');
 require("./featuregrid.css");
 /**
  * A component that gets the describeFeatureType and the features to display
@@ -62,23 +62,13 @@ class FeatureGrid extends React.PureComponent {
         super(props);
         this.rowGetter = (i) => {
             const orig = getRow(i, this.props.features);
-            const featureChanges = this.props.changes && this.props.changes[orig.id] || {};
-            const propChanges = Object.keys(featureChanges).filter(k => k !== "geometry").reduce((acc, cur) => ({
-                ...acc,
-                [cur]: featureChanges[cur]
-            }), {});
-            let feature = {
-                ...orig,
-                geometry: featureChanges.geometry || orig.geometry,
-                properties: {
-                    ...(orig.properties || {}),
-                    ...propChanges
-                },
+            const featureChanges = orig && this.props.changes && this.props.changes[orig.id] || {};
+            const result = applyChanges(orig, featureChanges);
+            return {...result,
                 get: key => {
-                    return feature.properties && feature.properties[key] ? feature.properties[key] : feature[key];
+                    return result.properties && result.properties[key] ? result.properties[key] : result[key];
                 }
             };
-            return feature;
         };
     }
     getChildContext() {

@@ -6,12 +6,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 const Rx = require('rxjs');
-const {get} = require('lodash');
+const {get, head} = require('lodash');
 const axios = require('../libs/ajax');
 const {fidFilter} = require('../utils/ogc/Filter/filter');
 const {getDefaultFeatureProjection} = require('../utils/FeatureGridUtils');
+const {isSimpleGeomType} = require('../utils/MapUtils');
+const assign = require('object-assign');
 const {changeDrawingStatus, GEOMETRY_CHANGED} = require('../actions/draw');
 const requestBuilder = require('../utils/ogc/WFST/RequestBuilder');
+const {findGeometryProperty} = require('../utils/ogc/WFS/base');
 const {toggleControl} = require('../actions/controls');
 const {query, QUERY_CREATE, QUERY_RESULT, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
 const {parseString} = require('xml2js');
@@ -19,11 +22,12 @@ const {stripPrefix} = require('xml2js/lib/processors');
 
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES, featureSaving,
     saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool,
-    CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES, geometryChanged} = require('../actions/featuregrid');
+    CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES, geometryChanged, DELETE_GEOMETRY, deleteGeometryFeature,
+    SELECT_FEATURES, DESELECT_FEATURES} = require('../actions/featuregrid');
 const {error} = require('../actions/notifications');
-const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector} = require('../selectors/featuregrid');
+const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector, selectedFeaturesCount} = require('../selectors/featuregrid');
 const {describeSelector} = require('../selectors/query');
-const drawSupportReset = () => changeDrawingStatus("clean", "", "featureeditor", [], {});
+const drawSupportReset = () => changeDrawingStatus("clean", "", "featureGrid", [], {});
 /**
  * Intercept OGC Exception (200 response with exceptionReport) to throw error in the stream
  * @param  {observable} observable The observable that emits the server response
@@ -44,6 +48,34 @@ const interceptOGCError = (observable) => observable.switchMap(response => {
     }
     return Rx.Observable.of(response);
 });
+
+const setupDrawSupport = (state) => {
+    const defaultFeatureProj = getDefaultFeatureProjection();
+    let drawOptions; let geomType;
+    let feature = assign({}, selectedFeatureSelector(state));
+    if (feature) {
+        geomType = findGeometryProperty(state.query.featureTypes[state.query.filterObj.featureTypeName].original).localType;
+        drawOptions = {
+            featureProjection: defaultFeatureProj,
+            stopAfterDrawing: isSimpleGeomType(geomType),
+            editEnabled: !!feature.geometry,
+            drawEnabled: !feature.geometry,
+            ftId: feature.id
+        };
+        let changes = changesMapSelector(state);
+        if (changes[feature.id] && changes[feature.id] && changes[feature.id].geometry) {
+            feature.geometry = changes[feature.id].geometry;
+        }
+        if (selectedFeaturesCount(state) === 1) {
+            return Rx.Observable.from([
+                changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions)
+            ]);
+        }
+    }
+    return Rx.Observable.from([
+        changeDrawingStatus("clean", "", "featureGrid", [], {})
+    ]);
+};
 
 // pagination selector
 const getPagination = (state, {page, size} = {}) => {
@@ -172,7 +204,7 @@ module.exports = {
                       ))
                 )
         ),
-    handlEditFeature: (action$, store) => action$.ofType(START_EDITING_FEATURE)
+    handleEditFeature: (action$, store) => action$.ofType(START_EDITING_FEATURE)
         .switchMap( () => {
             const state = store.getState();
             const defaultFeatureProj = getDefaultFeatureProjection();
@@ -192,14 +224,40 @@ module.exports = {
                     })
             );
         }),
-    saveChangedGeometries: (action$) => action$.ofType(GEOMETRY_CHANGED)
+    saveChangedGeometries: (action$, store) => action$.ofType(GEOMETRY_CHANGED)
         .filter(a => a.owner === "featureGrid")
         .switchMap( (a) => {
-            return Rx.Observable.of(geometryChanged(a.features));
-        })
-        /*,
-        doSomethingWhenDrawStops: (action$) => action$.ofType(DRAW_SUPPORT_STOPPED)
+            const state = store.getState();
+            let feature = assign({}, head(a.features), {id: selectedFeatureSelector(state).id});
+            return Rx.Observable.of(geometryChanged([feature]));
+        }),
+    deleteGeometryFeature: (action$, store) => action$.ofType(DELETE_GEOMETRY)
         .switchMap( () => {
-            return Rx.Observable.of(anyAction()));
-        })*/
+            const state = store.getState();
+            const defaultFeatureProj = getDefaultFeatureProjection();
+            const geomType = selectedFeatureSelector(state).geometry.type; // TODO check this out
+            let feature = assign({}, selectedFeatureSelector(state), {geometry: null});
+            const drawOptions = {
+                featureProjection: defaultFeatureProj,
+                stopAfterDrawing: isSimpleGeomType(geomType),
+                editEnabled: false,
+                drawEnabled: true,
+                ftId: feature.id
+            };
+            return Rx.Observable.from([
+                deleteGeometryFeature(selectedFeaturesSelector(state)),
+                changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions)
+            ]);
+        }),
+    triggerDrawSupportOnSelectionChange: (action$, store) => action$.ofType(SELECT_FEATURES, DESELECT_FEATURES, CLEAR_CHANGES, TOGGLE_MODE)
+        .filter(() => store.getState().featuregrid.mode === MODES.EDIT)
+        .switchMap( () => {
+            const state = store.getState();
+            return setupDrawSupport(state);
+        }),
+    stopDrawSupport: (action$) => action$.ofType(TOGGLE_MODE, )
+        .filter(a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
+        .switchMap( () => {
+            return Rx.Observable.of(drawSupportReset());
+        })
 };
