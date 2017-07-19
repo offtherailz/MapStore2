@@ -25,7 +25,8 @@ const {
     SET_SELECTION_OPTIONS,
     TOGGLE_MODE,
     MODES,
-    GEOMETRY_CHANGED
+    GEOMETRY_CHANGED,
+    DELETE_GEOMETRY_FEATURE
 } = require('../actions/featuregrid');
 const uuid = require('uuid');
 
@@ -58,7 +59,7 @@ const applyNewChanges = (features, changedFeatures, updates) =>
 function featuregrid(state = emptyResultsState, action) {
     switch (action.type) {
     case SELECT_FEATURES:
-        if (state.multiselect) {
+        if (state.multiselect && action.append) {
             return assign({}, state, {select: action.append ? [...state.select, ...action.features] : action.features});
         }
         if (action.features && state.select && state.select[0] && action.features[0] && isSameFeature(action.features[0], state.select[0])) {
@@ -155,7 +156,15 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {
             changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
                 id: f.id,
-                geometry: head(action.features).geometry
+                updated: {geometry: head(action.features).geometry}
+            })))]
+        });
+    }
+    case DELETE_GEOMETRY_FEATURE: {
+        return assign({}, state, {
+            changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
+                id: f.id,
+                updated: {geometry: null}
             })))]
         });
     }

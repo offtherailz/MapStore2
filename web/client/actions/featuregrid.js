@@ -1,12 +1,12 @@
-/**
- * Copyright 2016, GeoSolutions Sas.
+/*
+ * Copyright 2017, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
- */
+*/
 
-const SELECT_FEATURES = 'SELECT_FEATURES';
+const SELECT_FEATURES = 'FEATUREGRID:SELECT_FEATURES';
 const DESELECT_FEATURES = 'FEATUREGRID:DESELECT_FEATURES';
 const CLEAR_SELECTION = 'FEATUREGRID:CLEAR_SELECTION';
 const SET_SELECTION_OPTIONS = 'FEATUREGRID:SET_SELECTION_OPTIONS';
@@ -19,6 +19,7 @@ const SAVING = 'FEATUREGRID:SAVING';
 const START_EDITING_FEATURE = 'FEATUREGRID:START_EDITING_FEATURE';
 const START_DRAWING_FEATURE = 'FEATUREGRID:START_DRAWING_FEATURE';
 const DELETE_GEOMETRY = "FEATUREGRID:DELETE_GEOMETRY";
+const DELETE_GEOMETRY_FEATURE = "FEATUREGRID:DELETE_GEOMETRY_FEATURE";
 const SAVE_SUCCESS = "FEATUREGRID:SAVE_SUCCESS";
 const CLEAR_CHANGES = "FEATUREGRID:CLEAR_CHANGES";
 const SAVE_ERROR = "FEATUREGRID:SAVE_ERROR";
@@ -66,10 +67,16 @@ function deselectFeatures(features) {
         features
     };
 }
-function deleteGeometry(feature) {
+
+function deleteGeometry() {
     return {
-        type: DELETE_GEOMETRY,
-        feature
+        type: DELETE_GEOMETRY
+    };
+}
+function deleteGeometryFeature(features) {
+    return {
+        type: DELETE_GEOMETRY_FEATURE,
+        features
     };
 }
 function clearSelection() {
@@ -227,6 +234,7 @@ module.exports = {
     START_DRAWING_FEATURE, startDrawingFeature,
     GEOMETRY_CHANGED, geometryChanged,
     DELETE_GEOMETRY, deleteGeometry,
+    DELETE_GEOMETRY_FEATURE, deleteGeometryFeature,
     setLayer,
     selectFeatures,
     deselectFeatures,

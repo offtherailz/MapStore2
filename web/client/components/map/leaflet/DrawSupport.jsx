@@ -159,6 +159,7 @@ class DrawSupport extends React.Component {
             this.props.onDrawStopped();
         }
         this.props.onEndDrawing(geometry, this.props.drawOwner);
+        this.props.onGeometryChanged([geoJesonFt], this.props.drawOwner);
     };
 
     onUpdateGeom = (feature, props) => {
@@ -285,7 +286,7 @@ class DrawSupport extends React.Component {
     addDrawOrEditInteractions = (newProps) => {
         let newFeature = head(newProps.features);
 
-        if (!isSimpleGeomType(newFeature.geometry.type)) {
+        if (newFeature && newFeature.geometry && newFeature.geometry.type && !isSimpleGeomType(newFeature.geometry.type)) {
             const newFeatures = newFeature.geometry.coordinates.map((coords, idx) => {
                 return assign({}, {
                         type: 'Feature',
@@ -299,7 +300,7 @@ class DrawSupport extends React.Component {
             });
             newFeature = {type: "FeatureCollection", features: newFeatures};
         }
-        const props = assign({}, newProps, {features: [newFeature]});
+        const props = assign({}, newProps, {features: [newFeature ? newFeature : {}]});
         if (newProps.options.editEnabled) {
             this.addEditInteraction(props);
         }
