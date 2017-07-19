@@ -17,8 +17,7 @@ const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
     ...changes,
     [c.id]: {
         ...changes[c.id],
-        ...c.updated,
-        geometry: c.geometry
+        ...c.updated
     }
 }), {});
 /* eslint-enable */

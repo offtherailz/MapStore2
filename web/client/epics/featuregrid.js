@@ -62,6 +62,7 @@ const setupDrawSupport = (state) => {
             drawEnabled: !feature.geometry,
             ftId: feature.id
         };
+        // TODO check this WITH APPLY CHANGES
         let changes = changesMapSelector(state);
         if (changes[feature.id] && changes[feature.id] && changes[feature.id].geometry) {
             feature.geometry = changes[feature.id].geometry;

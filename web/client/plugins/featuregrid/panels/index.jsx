@@ -3,7 +3,7 @@ const {connect} = require('react-redux');
 const {bindActionCreators} = require('redux');
 const {createSelector, createStructuredSelector} = require('reselect');
 const {paginationInfo, featureLoadingSelector} = require('../../../selectors/query');
-const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isEditingGeomSelector, isSimpleGeomSelector} = require('../../../selectors/featuregrid');
+const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector} = require('../../../selectors/featuregrid');
 const {deleteFeatures, toggleTool} = require('../../../actions/featuregrid');
 const {toolbarEvents, pageEvents} = require('../index');
 
@@ -12,7 +12,6 @@ const Toolbar = connect(
         mode: modeSelector,
         hasChanges: hasChangesSelector,
         hasGeometry: hasGeometrySelector,
-        isEditingGeom: isEditingGeomSelector,
         isSimpleGeom: isSimpleGeomSelector,
         selectedCount: selectedFeaturesCount
     }),
