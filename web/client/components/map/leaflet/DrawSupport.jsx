@@ -156,10 +156,10 @@ class DrawSupport extends React.Component {
         };
         if (this.props.options && this.props.options.stopAfterDrawing) {
             this.props.onChangeDrawingStatus('stop', this.props.drawMethod, this.props.drawOwner);
-            this.props.onDrawStopped();
         }
+        const newGeoJsonFt = this.convertFeaturesToGeoJson(evt.layer, this.props);
         this.props.onEndDrawing(geometry, this.props.drawOwner);
-        this.props.onGeometryChanged([geoJesonFt], this.props.drawOwner);
+        this.props.onGeometryChanged([newGeoJsonFt], this.props.drawOwner, this.props.options && this.props.options.stopAfterDrawing ? "enterEditMode" : "");
     };
 
     onUpdateGeom = (feature, props) => {
@@ -217,8 +217,8 @@ class DrawSupport extends React.Component {
     };
 
     addDrawInteraction = (newProps) => {
+        this.removeAllInteractions();
         this.addLayer(newProps);
-        this.removeDrawInteraction();
         this.props.map.on('draw:created', this.onDrawCreated, this);
         this.props.map.on('draw:drawstart', this.onDrawStart, this);
 
@@ -310,6 +310,8 @@ class DrawSupport extends React.Component {
     };
 
     addEditInteraction = (newProps) => {
+        this.clean();
+
         this.addGeojsonLayer({features: newProps.features, projection: newProps.options && newProps.options.featureProjection || "EPSG:4326"});
 
         let allLayers = this.drawLayer.getLayers();
@@ -339,7 +341,7 @@ class DrawSupport extends React.Component {
     removeAllInteractions = () => {
         this.removeEditInteraction();
         this.removeDrawInteraction();
-        this.props.onDrawStopped();
+        // this.props.onDrawStopped();
     }
 
     removeDrawInteraction = () => {

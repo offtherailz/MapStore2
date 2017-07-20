@@ -59,7 +59,7 @@ module.exports = {
             ...feature,
             ...geomChanges,
             properties: {
-                ...(feature.properties || {}),
+                ...(feature && feature.properties || {}),
                 ...propChanges
             }
         };
