@@ -12,15 +12,8 @@ const drawStatusSelector = state => state && state.featuregrid && state.featureg
 const selectedFeatureSelector = state => head(selectedFeaturesSelector(state));
 const geomTypeSelectedFeatureSelector = state => selectedFeatureSelector(state) && selectedFeatureSelector(state).geometry && selectedFeatureSelector(state).geometry.type;
 const {isSimpleGeomType} = require('../utils/MapUtils');
-/* eslint-disable */
-const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
-    ...changes,
-    [c.id]: {
-        ...changes[c.id],
-        ...c.updated
-    }
-}), {});
-/* eslint-enable */
+const {toChangesMap} = require('../utils/FeatureGridUtils');
+
 
 const hasGeometrySelectedFeature = (state) => {
     let ft = selectedFeatureSelector(state);

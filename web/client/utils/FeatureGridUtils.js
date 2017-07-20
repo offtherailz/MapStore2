@@ -4,7 +4,16 @@ const getGeometryName = (describe) => findGeometryProperty(describe).name;
 const getPropertyName = (name, describe) => name === "geometry" ? getGeometryName(describe) : name;
 
 const getRow = (i, rows) => rows[i];
+/* eslint-disable */
 
+const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
+    ...changes,
+    [c.id]: {
+        ...changes[c.id],
+        ...c.updated
+    }
+}), {});
+/* eslint-enable */
 module.exports = {
     featureTypeToGridColumns: (describe, columnSettings = {}, editing, {getEditor = () => {}} = {}) =>
         (getFeatureTypeProperties(describe) || []).filter( e => !isGeometryType(e)).filter(e => !(columnSettings[e.name] && columnSettings[e.name].hide)).map( (desc) => ({
@@ -46,6 +55,8 @@ module.exports = {
     isProperty: (k, d) => !!getPropertyDesciptor(k, d),
     isValidValueForPropertyName: (v, k, d) => isValidValueForPropertyName(v, getPropertyName(k, d), d),
     getDefaultFeatureProjection: () => "EPSG:4326",
+    toChangesMap,
+    createNewAndEditingFilter: (hasChanges, newFeatures, changes) => f => newFeatures.length > 0 ? f._new : !hasChanges || hasChanges && !!toChangesMap(changes)[f.id],
     applyChanges: (feature, changes) => {
         const propChanges = Object.keys(changes).filter(k => k !== "geometry").reduce((acc, cur) => ({
             ...acc,

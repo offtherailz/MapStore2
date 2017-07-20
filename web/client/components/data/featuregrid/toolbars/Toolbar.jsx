@@ -9,7 +9,7 @@ const hideStyle = {
 const normalStyle = {
 };
 const getStyle = (visible) => visible ? normalStyle : hideStyle;
-module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, isSimpleGeom} = {}) =>
+module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, hasNewFeatures, isSimpleGeom} = {}) =>
     (<ButtonGroup id="featuregrid-toolbar" className="featuregrid-toolbar-margin">
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-mode">Edit mode</Tooltip>}>
             <Button key="edit-mode" style={getStyle(mode === "VIEW")} className="square-button" onClick={events.switchEditMode}><Glyphicon glyph="pencil"/></Button>
@@ -31,10 +31,10 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeo
             <Button key="remove-features" style={getStyle(mode === "EDIT" && selectedCount > 0)} className="square-button" onClick={events.deleteFeatures}><Glyphicon glyph="trash-square"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-save-features">Save changes</Tooltip>}>
-            <Button key="save-feature" style={getStyle(mode === "EDIT" && hasChanges)} className="square-button" onClick={events.saveChanges}><Glyphicon glyph="floppy-disk"/></Button>
+            <Button key="save-feature" style={getStyle(mode === "EDIT" && hasChanges || hasNewFeatures)} className="square-button" onClick={events.saveChanges}><Glyphicon glyph="floppy-disk"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-cancel-editing">Cancel changes</Tooltip>}>
-            <Button key="cancel-editing" style={getStyle(mode === "EDIT" && hasChanges)}
+            <Button key="cancel-editing" style={getStyle(mode === "EDIT" && hasChanges || hasNewFeatures)}
                 className="square-button" onClick={events.clearFeatureEditing}><Glyphicon glyph="1-close"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-delete-geometry">Delete geometry</Tooltip>}>
