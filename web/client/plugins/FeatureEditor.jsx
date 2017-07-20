@@ -14,7 +14,7 @@ const Dock = require('react-dock').default;
 const Grid = require('../components/data/featuregrid/FeatureGrid');
 const {resultsSelector, describeSelector} = require('../selectors/query');
 const {modeSelector, changesSelector, newFeaturesSelector, hasChangesSelector} = require('../selectors/featuregrid');
-const { toChangesMap, createNewAndEditingFilter} = require('../utils/FeatureGridUtils');
+const { toChangesMap} = require('../utils/FeatureGridUtils');
 const {getPanels, getHeader, getFooter, getDialogs} = require('./featuregrid/panels/index');
 const BorderLayout = require('../components/layout/BorderLayout');
 const EMPTY_ARR = [];
@@ -52,18 +52,8 @@ const FeatureDock = (props = {
             {getDialogs(props.tools)}
             <Grid
                 changes={props.changes}
-                editable={props.mode === "EDIT"}
-                gridOpts={{
-                    rowSelection: {
-                        showCheckbox: props.mode === "EDIT",
-                        selectBy: {
-                            keys: {
-                                rowKey: 'id',
-                                values: props.select.map(f => f.id)
-                            }
-                        }
-                    }
-                }}
+                mode={props.mode}
+                select={props.select}
                 key={"feature-grid-container"}
                 columnSettings={props.attributes}
                 gridEvents={props.gridEvents}
@@ -85,10 +75,11 @@ const selector = createSelector(
     changesSelector,
     newFeaturesSelector,
     hasChangesSelector,
-    () => true, // TODO add focusOnEdit selector and state to configure
-    (open, features = EMPTY_ARR, describe, attributes, tools, select, mode, changes, newFeatures = EMPTY_ARR, hasChanges, focusOnEdit) => ({
+    (open, features = EMPTY_ARR, describe, attributes, tools, select, mode, changes, newFeatures = EMPTY_ARR, hasChanges) => ({
         open,
-        features: (newFeatures.length > 0 ? [...newFeatures, ...features] : features).filter(focusOnEdit ? createNewAndEditingFilter(hasChanges, newFeatures, changes) : () => true),
+        hasChanges,
+        newFeatures,
+        features,
         describe,
         attributes,
         tools,

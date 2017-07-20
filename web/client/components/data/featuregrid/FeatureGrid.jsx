@@ -9,7 +9,9 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const AdaptiveGrid = require('../../misc/AdaptiveGrid');
 const editors = require('./editors');
-const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents, isValidValueForPropertyName, isProperty, applyChanges} = require('../../../utils/FeatureGridUtils');
+const {featuresToGrid} = require('./hocs/Editor');
+const rowRenderer = require('./renderers/RowRenderer');
+const {isValidValueForPropertyName, isProperty} = require('../../../utils/FeatureGridUtils');
 require("./featuregrid.css");
 /**
  * A component that gets the describeFeatureType and the features to display
@@ -31,7 +33,6 @@ class FeatureGrid extends React.PureComponent {
         changes: PropTypes.object,
         selectBy: PropTypes.object,
         features: PropTypes.array,
-        editable: PropTypes.bool,
         showDragHandle: PropTypes.bool,
         gridComponent: PropTypes.func,
         describeFeatureType: PropTypes.object,
@@ -55,21 +56,10 @@ class FeatureGrid extends React.PureComponent {
         columnSettings: {},
         features: [],
         tools: [],
-        editable: false,
         showDragHandle: false
     };
     constructor(props) {
         super(props);
-        this.rowGetter = (i) => {
-            const orig = getRow(i, this.props.features);
-            const featureChanges = orig && this.props.changes && this.props.changes[orig.id] || {};
-            const result = applyChanges(orig, featureChanges);
-            return {...result,
-                get: key => {
-                    return result.properties && result.properties[key] ? result.properties[key] : result[key];
-                }
-            };
-        };
     }
     getChildContext() {
         return {
@@ -82,50 +72,13 @@ class FeatureGrid extends React.PureComponent {
         };
     }
     render() {
-        const dragHandle = this.props.showDragHandle ? 'feature-grid-drag-handle-show' : 'feature-grid-drag-handle-hide';
         const Grid = this.props.gridComponent;
-        const rows = this.props.features;
-
-        // bind proper events and setup the colums array
-        const columns = getToolColumns(this.props.tools, this.rowGetter, this.props.describeFeatureType, this.props.actionOpts)
-            .concat(featureTypeToGridColumns(this.props.describeFeatureType, this.props.columnSettings, this.props.editable, {
-                getEditor: ({localType=""} = {}) => editors[localType]
-            }));
-        // bind and get proper grid events from gridEvents object
-        let {
-            onRowsSelected = () => {},
-            onRowsDeselected = () => {},
-            onRowsToggled = () => {},
-            ...gridEvents} = getGridEvents(this.props.gridEvents, this.rowGetter, this.props.describeFeatureType, this.props.actionOpts);
-
-        // setup gridOpts setting app selection events binded
-        let {rowSelection, ...gridOpts} = this.props.gridOpts;
-
-        gridOpts = {
-            ...gridOpts,
-            rowSelection: rowSelection ? {
-                ...rowSelection,
-                onRowsSelected,
-                onRowsDeselected
-            } : null
-        };
-
-        // set selection by row click if checkbox are not present is enabled
-        if (rowSelection) {
-            gridEvents.onRowClick = (rowIdx, row) => onRowsToggled([{rowIdx, row}]);
-        }
         return (<Grid
-          rowRenderer={require('./renderers/RowRenderer')}
-          className={dragHandle}
-          enableCellSelect={this.props.editable}
-          selectBy={this.props.selectBy}
-          {...gridEvents}
-          {...gridOpts}
-          columns={columns}
-          minHeight={600}
-          rowGetter={this.rowGetter}
-          rowsCount={rows.length}
+            rowRenderer={rowRenderer}
+            editors={editors}
+            className={dragHandle}
+            {...this.props}
         />);
     }
 }
-module.exports = FeatureGrid;
+module.exports = featuresToGrid(FeatureGrid);
