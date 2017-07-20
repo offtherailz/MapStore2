@@ -8,7 +8,9 @@ module.exports = [{
         width: 35,
         locked: true,
         events: {
-            onClick: (p, opts, describe, {crs}= {}) => zoomToExtent(bbox(p), crs || "EPSG:4326")
+            onClick: (p, opts, describe, {crs}= {}) => {
+                return p.geometry ? zoomToExtent(bbox(p), crs || "EPSG:4326") : {type: "NONE"};
+            }
         },
         formatter: ({value} = {}) => value ? <Glyphicon glyph="zoom-to" /> : <Glyphicon glyph="plus" />
 }];
