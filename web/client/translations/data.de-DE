@@ -804,6 +804,19 @@
                 "of":   "von",
                 "to":   "bis",
                 "more": "viele"
+            },
+            "toolbar": {
+                "editMode": "Bearbeitungsmodus",
+                "quitEditMode": "Beenden Sie den Bearbeitungsmodus",
+                "addNewFeatures": "Neue Funktion hinzufügen",
+                "editFeature": "Bearbeiten Sie die Funktion",
+                "drawFeature": "Zeichen zeichnen",
+                "deleteSelectedFeatures": "Ausgewählte Funktionen löschen",
+                "saveChanges": "Änderungen speichern",
+                "cancelChanges": "Änderungen abbrechen",
+                "deleteGeometry": "Geometrie löschen",
+                "downloadGridData": "Daten herunterladen",
+                "hideShowColumns": "Spalten ausblenden / anzeigen"
             }
         },
         "wfsdownload": {

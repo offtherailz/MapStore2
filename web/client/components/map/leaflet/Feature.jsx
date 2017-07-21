@@ -153,33 +153,35 @@ class Feature extends React.Component {
     componentDidMount() {
         if (this.props.container) {
             let style = this.props.style;
-            this._layer = geometryToLayer({
-                type: this.props.type,
-                geometry: this.props.geometry,
-                properties: this.props.properties,
-                id: this.props.msId
-            }, {
-                style: style,
-                pointToLayer: this.props.styleName !== "marker" ? function(feature, latlng) {
-                    return L.circleMarker(latlng, style || {
-                        radius: 5,
-                        color: "red",
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0
-                    });
-                } : null
+            if (this.props.geometry && this.props.properties) {
+                this._layer = geometryToLayer({
+                    type: this.props.type,
+                    geometry: this.props.geometry,
+                    properties: this.props.properties,
+                    id: this.props.msId
+                }, {
+                    style: style,
+                    pointToLayer: this.props.styleName !== "marker" ? function(feature, latlng) {
+                        return L.circleMarker(latlng, style || {
+                            radius: 5,
+                            color: "red",
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0
+                        });
+                    } : null
+                });
+                this.props.container.addLayer(this._layer);
+
+                this._layer.on('click', (event) => {
+                    if (this.props.onClick) {
+                        this.props.onClick({
+                            pixel: event.containerPoint,
+                            latlng: event.latlng
+                        });
+                    }
+                });
             }
-            );
-            this.props.container.addLayer(this._layer);
-            this._layer.on('click', (event) => {
-                if (this.props.onClick) {
-                    this.props.onClick({
-                        pixel: event.containerPoint,
-                        latlng: event.latlng
-                    });
-                }
-            });
         }
     }
 
