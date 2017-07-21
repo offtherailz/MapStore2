@@ -34,6 +34,7 @@ const{
 const uuid = require('uuid');
 
 const emptyResultsState = {
+    focusOnEdit: true,
     mode: MODES.VIEW,
     changes: [],
     pagination: {

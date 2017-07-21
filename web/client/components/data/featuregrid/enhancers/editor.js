@@ -1,7 +1,14 @@
 const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents, applyChanges, createNewAndEditingFilter} = require('../../../../utils/FeatureGridUtils');
 const {compose, withPropsOnChange, withHandlers, defaultProps} = require('recompose');
 const featuresToGrid = compose(
-    defaultProps({columns: [], features: [], newFeatures: [], changes: {}, editors: {}, focusOnEdit: true}),
+    defaultProps({
+        columns: [],
+        features: [],
+        newFeatures: [],
+        changes: {},
+        focusOnEdit: true,
+        editors: require('../editors')
+    }),
     withPropsOnChange("showDragHandle", ({showDragHandle = false} = {}) => ({
         className: showDragHandle ? 'feature-grid-drag-handle-show' : 'feature-grid-drag-handle-hide'
     })),

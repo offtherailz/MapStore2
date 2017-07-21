@@ -48,9 +48,10 @@ const FeatureDock = (props = {
             key={"feature-grid-container"}
             header={getHeader()}
             columns={getPanels(props.tools)}
-            footer={getFooter()}>
+            footer={getFooter(props)}>
             {getDialogs(props.tools)}
             <Grid
+                focusOnEdit={props.focusOnEdit}
                 newFeatures={props.newFeatures}
                 changes={props.changes}
                 mode={props.mode}
@@ -76,7 +77,8 @@ const selector = createSelector(
     changesSelector,
     newFeaturesSelector,
     hasChangesSelector,
-    (open, features = EMPTY_ARR, describe, attributes, tools, select, mode, changes, newFeatures = EMPTY_ARR, hasChanges) => ({
+    state => get(state, 'featuregrid.focusOnEdit') || [],
+    (open, features = EMPTY_ARR, describe, attributes, tools, select, mode, changes, newFeatures = EMPTY_ARR, hasChanges, focusOnEdit) => ({
         open,
         hasChanges,
         newFeatures,
@@ -86,6 +88,7 @@ const selector = createSelector(
         tools,
         select,
         mode,
+        focusOnEdit,
         changes: toChangesMap(changes)
     })
 );

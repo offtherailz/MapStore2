@@ -26,7 +26,8 @@ const hasGeometrySelectedFeature = (state) => {
     }
     return false;
 };
-
+const hasChangesSelector = state => changesSelector(state) && changesSelector(state).length > 0;
+const isCreatingSelector = state => newFeaturesSelector(state).length === 0;
 module.exports = {
   getTitleSelector: state => getTitle(
     getLayerById(
@@ -52,11 +53,12 @@ module.exports = {
     changesSelector,
     toChangesMap,
     changesMapSelector: state => toChangesMap(changesSelector(state)),
-    hasChangesSelector: state => changesSelector(state) && changesSelector(state).length > 0,
+    hasChangesSelector,
     hasGeometrySelector: state => hasGeometrySelectedFeature(state),
     newFeaturesSelector,
-    isCreatingSelector: state => newFeaturesSelector(state).length === 0,
+    isCreatingSelector,
     drawStatusSelector,
     geomTypeSelectedFeatureSelector,
+    hasNewFeaturesOrChanges: state => isCreatingSelector(state) || hasChangesSelector(state),
     isSimpleGeomSelector: state => isSimpleGeomType(geomTypeSelectedFeatureSelector(state))
 };

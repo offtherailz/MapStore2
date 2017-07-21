@@ -8,8 +8,8 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const AdaptiveGrid = require('../../misc/AdaptiveGrid');
-const editors = require('./editors');
-const {featuresToGrid} = require('./hocs/Editor');
+
+const {featuresToGrid} = require('./enhancers/editor');
 const rowRenderer = require('./renderers/RowRenderer');
 const {isValidValueForPropertyName, isProperty} = require('../../../utils/FeatureGridUtils');
 require("./featuregrid.css");
@@ -75,7 +75,6 @@ class FeatureGrid extends React.PureComponent {
         const Grid = this.props.gridComponent;
         return (<Grid
             rowRenderer={rowRenderer}
-            editors={editors}
             {...this.props}
         />);
     }

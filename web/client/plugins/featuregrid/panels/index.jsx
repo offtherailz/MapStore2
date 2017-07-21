@@ -6,7 +6,6 @@ const {paginationInfo, featureLoadingSelector} = require('../../../selectors/que
 const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector, newFeaturesSelector} = require('../../../selectors/featuregrid');
 const {deleteFeatures, toggleTool} = require('../../../actions/featuregrid');
 const {toolbarEvents, pageEvents} = require('../index');
-
 const Toolbar = connect(
     createStructuredSelector({
         mode: modeSelector,
@@ -70,8 +69,8 @@ module.exports = {
     getHeader: () => {
         return <Header ><Toolbar /></Header>;
     },
-    getFooter: () => {
-        return <Footer />;
+    getFooter: (props) => {
+        return (props.focusOnEdit && props.hasChanges || props.newFeatures.length > 0) ? null : <Footer />;
     },
     getDialogs: (tools = {}) => {
         return Object.keys(tools)
