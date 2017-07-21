@@ -76,7 +76,6 @@ class FeatureGrid extends React.PureComponent {
         return (<Grid
             rowRenderer={rowRenderer}
             editors={editors}
-            className={dragHandle}
             {...this.props}
         />);
     }

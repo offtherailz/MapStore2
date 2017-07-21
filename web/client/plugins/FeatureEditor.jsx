@@ -51,6 +51,7 @@ const FeatureDock = (props = {
             footer={getFooter()}>
             {getDialogs(props.tools)}
             <Grid
+                newFeatures={props.newFeatures}
                 changes={props.changes}
                 mode={props.mode}
                 select={props.select}

@@ -1,12 +1,15 @@
 const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents, applyChanges, createNewAndEditingFilter} = require('../../../../utils/FeatureGridUtils');
-const {compose, withPropsOnChange, defaultProps} = require('recompose');
+const {compose, withPropsOnChange, withHandlers, defaultProps} = require('recompose');
 const featuresToGrid = compose(
     defaultProps({columns: [], features: [], newFeatures: [], changes: {}, editors: {}, focusOnEdit: true}),
+    withPropsOnChange("showDragHandle", ({showDragHandle = false} = {}) => ({
+        className: showDragHandle ? 'feature-grid-drag-handle-show' : 'feature-grid-drag-handle-hide'
+    })),
     withPropsOnChange(
-        ["features", "newFeatures", "changes", "focusOnEdit"],
+        ["features", "newFeatures", "changes"],
         props => ({
             rows: ( [...props.newFeatures, ...props.features] : props.features)
-                .filter(props.focusOnEdit ? createNewAndEditingFilter(props.hasChanges, props.newFeatures, props.changes) : () => true)
+                .filter(props.focusOnEdit ? createNewAndEditingFilter(props.changes && Object.keys(props.changes).length > 0, props.newFeatures, props.changes) : () => true)
                 .map(orig => {
                     const featureChanges = orig && props.changes && props.changes[orig.id] || {};
                     const result = applyChanges(orig, featureChanges);
@@ -21,12 +24,12 @@ const featuresToGrid = compose(
     withPropsOnChange(
         ["features", "newFeatures", "changes", "focusOnEdit"],
         props => ({
-            rowsCount: props.rows && props.rows.length || 0,
-            rowGetter: i => getRow(i, props.rows)
+            rowsCount: props.rows && props.rows.length || 0
         })
     ),
+    withHandlers({rowGetter: props => i => getRow(i, props.rows)}),
     withPropsOnChange(
-        ["describeFeatureType", "columnSettings", "tools", "actionOpts", "mode", "rowGetter"],
+        ["describeFeatureType", "columnSettings", "tools", "actionOpts", "mode"],
         props => ({
             columns: getToolColumns(props.tools, props.rowGetter, props.describeFeatureType, props.actionOpts)
                 .concat(featureTypeToGridColumns(props.describeFeatureType, props.columnSettings, props.mode === "EDIT", {
@@ -35,7 +38,7 @@ const featuresToGrid = compose(
             })
     ),
     withPropsOnChange(
-        ["gridOpts", "rowGetter", "describeFeatureType", "actionOpts", "mode", "select"],
+        ["gridOpts", "describeFeatureType", "actionOpts", "mode", "select"],
         props => {
             // bind proper events and setup the colums array
             // bind and get proper grid events from gridEvents object

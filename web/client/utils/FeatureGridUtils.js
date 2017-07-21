@@ -56,7 +56,7 @@ module.exports = {
     isValidValueForPropertyName: (v, k, d) => isValidValueForPropertyName(v, getPropertyName(k, d), d),
     getDefaultFeatureProjection: () => "EPSG:4326",
     toChangesMap,
-    createNewAndEditingFilter: (hasChanges, newFeatures, changes) => f => newFeatures.length > 0 ? f._new : !hasChanges || hasChanges && !!toChangesMap(changes)[f.id],
+    createNewAndEditingFilter: (hasChanges, newFeatures, changes) => f => newFeatures.length > 0 ? f._new : !hasChanges || hasChanges && !!changes[f.id],
     applyChanges: (feature, changes) => {
         const propChanges = Object.keys(changes).filter(k => k !== "geometry").reduce((acc, cur) => ({
             ...acc,
