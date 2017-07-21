@@ -804,6 +804,19 @@
                 "of":   "of",
                 "to":   "to",
                 "more": "more"
+            },
+            "toolbar": {
+                "editMode": "Edit mode",
+                "quitEditMode": "Quit edit mode",
+                "addNewFeatures": "Add New feature",
+                "editFeature": "Edit feature",
+                "drawFeature": "Draw feature",
+                "deleteSelectedFeatures": "Delete selected features",
+                "saveChanges": "Save changes",
+                "cancelChanges": "Cancel changes",
+                "deleteGeometry": "Delete geometry",
+                "downloadGridData": "Download grid data",
+                "hideShowColumns": "Hide/show columns"
             }
         },
         "wfsdownload": {

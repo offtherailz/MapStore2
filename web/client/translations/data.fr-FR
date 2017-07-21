@@ -807,6 +807,19 @@
                 "of":   "de",
                 "to":   "à",
                 "more": "plus"
+            },
+            "toolbar": {
+                "editMode": "Mode édition",
+                "quitEditMode": "Quitter le mode d'édition",
+                "addNewFeatures": "Ajouter un nouvel élément",
+                "editFeature": "Élément d'édition",
+                "drawFeature": "Élément de dessin",
+                "deleteSelectedFeatures": "Supprimer les fonctionnalités sélectionnées",
+                "saveChanges": "Sauvegarder les modifications",
+                "cancelChanges": "Annuler les modifications",
+                "deleteGeometry": "Supprimer la géométrie",
+                "downloadGridData": "Télécharger les données",
+                "hideShowColumns": "Masquer / afficher les colonnes"
             }
         },
         "wfsdownload": {

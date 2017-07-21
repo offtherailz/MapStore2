@@ -28,6 +28,9 @@ const {
     GEOMETRY_CHANGED,
     DELETE_GEOMETRY_FEATURE
 } = require('../actions/featuregrid');
+const{
+    FEATURE_TYPE_LOADED
+} = require('../actions/wfsquery');
 const uuid = require('uuid');
 
 const emptyResultsState = {
@@ -63,6 +66,9 @@ function featuregrid(state = emptyResultsState, action) {
             return assign({}, state, {select: action.append ? [...state.select, ...action.features] : action.features});
         }
         if (action.features && state.select && state.select[0] && action.features[0] && isSameFeature(action.features[0], state.select[0])) {
+            return state;
+        }
+        if (action.features.length > 0 && action.features[0] && !action.features[0].type) {
             return state;
         }
         return assign({}, state, {select: (action.features || []).splice(0, 1)});
@@ -133,16 +139,27 @@ function featuregrid(state = emptyResultsState, action) {
         });
     }
     case CLEAR_CHANGES: {
+
+        // remove from selectred the new feature
+
         return assign({}, state, {
             saved: false,
             deleteConfirm: false,
             newFeatures: [],
-            changes: []
+            changes: [],
+            select: state.select.filter(f => !f._new)
         });
     }
     case CREATE_NEW_FEATURE: {
+        let id = uuid.v1();
         return assign({}, state, {
-            newFeatures: action.features.map(f => ({...f, _new: true, id: uuid.v1() }) )
+            newFeatures: action.features.map(f => ({...f, _new: true, id: id, type: "Feature",
+                geometry: null
+            })),
+            changes: [...(state && state.changes || []), ...(action.features.map(() => ({
+                id: id,
+                updated: {geometry: null}
+            })))]
         });
     }
     case SAVE_ERROR: {
@@ -162,10 +179,15 @@ function featuregrid(state = emptyResultsState, action) {
     }
     case DELETE_GEOMETRY_FEATURE: {
         return assign({}, state, {
-            changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
+            changes: [...(state && state.changes || []), ...(action.features.map(f => ({
                 id: f.id,
                 updated: {geometry: null}
             })))]
+        });
+    }
+    case FEATURE_TYPE_LOADED: {
+        return assign({}, state, {
+            localType: action.featureType.original.featureTypes[0].properties[1].localType
         });
     }
     default:

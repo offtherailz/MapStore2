@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 const Rx = require('rxjs');
-const {get, head} = require('lodash');
+const {get, head, isEmpty} = require('lodash');
 const axios = require('../libs/ajax');
 const {fidFilter} = require('../utils/ogc/Filter/filter');
 const {getDefaultFeatureProjection} = require('../utils/FeatureGridUtils');
@@ -23,10 +23,10 @@ const {stripPrefix} = require('xml2js/lib/processors');
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES, featureSaving,
     saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool,
     CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES, geometryChanged, DELETE_GEOMETRY, deleteGeometryFeature,
-    SELECT_FEATURES, DESELECT_FEATURES} = require('../actions/featuregrid');
+    SELECT_FEATURES, DESELECT_FEATURES, START_DRAWING_FEATURE} = require('../actions/featuregrid');
 const {error} = require('../actions/notifications');
 const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector, selectedFeaturesCount} = require('../selectors/featuregrid');
-const {describeSelector} = require('../selectors/query');
+const {describeSelector, getFeatureById} = require('../selectors/query');
 const drawSupportReset = () => changeDrawingStatus("clean", "", "featureGrid", [], {});
 /**
  * Intercept OGC Exception (200 response with exceptionReport) to throw error in the stream
@@ -49,24 +49,29 @@ const interceptOGCError = (observable) => observable.switchMap(response => {
     return Rx.Observable.of(response);
 });
 
-const setupDrawSupport = (state) => {
+const setupDrawSupport = (state, original) => {
     const defaultFeatureProj = getDefaultFeatureProjection();
     let drawOptions; let geomType;
-    let feature = assign({}, selectedFeatureSelector(state));
-    if (feature) {
+    let feature = assign({}, selectedFeatureSelector(state), {type: "Feature"});
+    if (!isEmpty(feature)) {
         geomType = findGeometryProperty(state.query.featureTypes[state.query.filterObj.featureTypeName].original).localType;
+
+        // TODO check this WITH APPLY CHANGES
+        let changes = changesMapSelector(state);
+        if (changes[feature.id] && (changes[feature.id].geometry || changes[feature.id].geometry === null)) {
+            feature.geometry = changes[feature.id].geometry;
+        }
+        if (original) {
+            feature.geometry = getFeatureById(state, feature.id) ? getFeatureById(state, feature.id).geometry : null;
+        }
+
         drawOptions = {
             featureProjection: defaultFeatureProj,
             stopAfterDrawing: isSimpleGeomType(geomType),
             editEnabled: !!feature.geometry,
-            drawEnabled: !feature.geometry,
+            drawEnabled: false,
             ftId: feature.id
         };
-        // TODO check this WITH APPLY CHANGES
-        let changes = changesMapSelector(state);
-        if (changes[feature.id] && changes[feature.id] && changes[feature.id].geometry) {
-            feature.geometry = changes[feature.id].geometry;
-        }
         if (selectedFeaturesCount(state) === 1) {
             return Rx.Observable.from([
                 changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions)
@@ -209,52 +214,67 @@ module.exports = {
         .switchMap( () => {
             const state = store.getState();
             const defaultFeatureProj = getDefaultFeatureProjection();
-            const feature = selectedFeatureSelector(state);
+            const geomType = findGeometryProperty(state.query.featureTypes[state.query.filterObj.featureTypeName].original).localType;
             const drawOptions = {
                 featureProjection: defaultFeatureProj,
                 stopAfterDrawing: false,
                 editEnabled: true,
                 drawEnabled: false
             };
-            return Rx.Observable.concat(
-                Rx.Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", [feature], drawOptions)),
-                action$.ofType(TOGGLE_MODE, CLEAR_CHANGES, SAVE_SUCCESS)
-                    .filter( a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
-                    .switchMap( () => {
-                        return Rx.Observable.of(drawSupportReset());
-                    })
-            );
+            let feature = assign({}, selectedFeatureSelector(state), {type: "Feature"});
+            let changes = changesMapSelector(state);
+            if (changes[feature.id] && changes[feature.id] && changes[feature.id].geometry) {
+                feature.geometry = changes[feature.id].geometry;
+            }
+            return Rx.Observable.of(changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions));
+        }),
+    handleDrawFeature: (action$, store) => action$.ofType(START_DRAWING_FEATURE)
+        .switchMap( () => {
+            const state = store.getState();
+            const defaultFeatureProj = getDefaultFeatureProjection();
+            const geomType = findGeometryProperty(state.query.featureTypes[state.query.filterObj.featureTypeName].original).localType;
+            let feature = assign({}, selectedFeatureSelector(state), {type: "Feature"});
+            let changes = changesMapSelector(state);
+            if (changes[feature.id] && (changes[feature.id].geometry || changes[feature.id].geometry === null)) {
+                feature.geometry = changes[feature.id].geometry;
+            }
+            const drawOptions = {
+                featureProjection: defaultFeatureProj,
+                stopAfterDrawing: isSimpleGeomType(geomType),
+                editEnabled: false,
+                drawEnabled: true
+            };
+            return Rx.Observable.of(changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions));
         }),
     saveChangedGeometries: (action$, store) => action$.ofType(GEOMETRY_CHANGED)
         .filter(a => a.owner === "featureGrid")
         .switchMap( (a) => {
             const state = store.getState();
-            let feature = assign({}, head(a.features), {id: selectedFeatureSelector(state).id});
-            return Rx.Observable.of(geometryChanged([feature]));
+            const defaultFeatureProj = getDefaultFeatureProjection();
+            const drawOptions = {
+                featureProjection: defaultFeatureProj,
+                stopAfterDrawing: false,
+                editEnabled: true,
+                drawEnabled: false
+            };
+            let feature = assign({}, head(a.features), {id: selectedFeatureSelector(state).id, type: "Feature"});
+            let enableEdit = a.enableEdit === "enterEditMode" ? Rx.Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", [feature], drawOptions)) : Rx.Observable.empty();
+            return Rx.Observable.of(geometryChanged([feature])).concat(enableEdit);
         }),
     deleteGeometryFeature: (action$, store) => action$.ofType(DELETE_GEOMETRY)
         .switchMap( () => {
             const state = store.getState();
-            const defaultFeatureProj = getDefaultFeatureProjection();
-            const geomType = selectedFeatureSelector(state).geometry.type; // TODO check this out
-            let feature = assign({}, selectedFeatureSelector(state), {geometry: null});
-            const drawOptions = {
-                featureProjection: defaultFeatureProj,
-                stopAfterDrawing: isSimpleGeomType(geomType),
-                editEnabled: false,
-                drawEnabled: true,
-                ftId: feature.id
-            };
             return Rx.Observable.from([
                 deleteGeometryFeature(selectedFeaturesSelector(state)),
-                changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions)
+                drawSupportReset()
             ]);
         }),
     triggerDrawSupportOnSelectionChange: (action$, store) => action$.ofType(SELECT_FEATURES, DESELECT_FEATURES, CLEAR_CHANGES, TOGGLE_MODE)
         .filter(() => store.getState().featuregrid.mode === MODES.EDIT)
-        .switchMap( () => {
+        .switchMap( (a) => {
             const state = store.getState();
-            return setupDrawSupport(state);
+            let useOriginal = a.type === CLEAR_CHANGES;
+            return setupDrawSupport(state, useOriginal);
         }),
     stopDrawSupport: (action$) => action$.ofType(TOGGLE_MODE, )
         .filter(a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
