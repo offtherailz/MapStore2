@@ -804,6 +804,19 @@
                 "of":   "di",
                 "to":   "a",
                 "more": "molte"
+            },
+            "toolbar": {
+                "editMode": "Entra in modalità editing",
+                "quitEditMode": "Esci dalla modalità editing",
+                "addNewFeatures": "Aggiungi una nuova feature",
+                "editFeature": "Modifica la feature",
+                "drawFeature": "Disegna sulla mappa una nuova geometria",
+                "deleteSelectedFeatures": "Elimina le feature selezionate",
+                "saveChanges": "Salva i cambiamenti",
+                "cancelChanges": "Annulla i cambiamenti",
+                "deleteGeometry": "Elimina la geometria",
+                "downloadGridData": "Esporta i dati della griglia",
+                "hideShowColumns": "Nascondi/mostra colonne"
             }
         },
         "wfsdownload": {

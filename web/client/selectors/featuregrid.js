@@ -10,18 +10,10 @@ const changesSelector = state => state && state.featuregrid && state.featuregrid
 const newFeaturesSelector = state => state && state.featuregrid && state.featuregrid.newFeatures;
 const drawStatusSelector = state => state && state.featuregrid && state.featuregrid.drawStatus;
 const selectedFeatureSelector = state => head(selectedFeaturesSelector(state));
-const geomTypeSelectedFeatureSelector = state => selectedFeatureSelector(state) && selectedFeatureSelector(state).geometry && selectedFeatureSelector(state).geometry.type;
+const {findGeometryProperty} = require('../utils/ogc/WFS/base');
+const geomTypeSelectedFeatureSelector = state => findGeometryProperty(state.query.featureTypes[state.query.filterObj.featureTypeName].original).localType;
 const {isSimpleGeomType} = require('../utils/MapUtils');
 const {toChangesMap} = require('../utils/FeatureGridUtils');
-/* eslint-disable */
-const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
-    ...changes,
-    [c.id]: {
-        ...changes[c.id],
-        ...c.updated
-    }
-}), {});
-/* eslint-enable */
 
 const hasGeometrySelectedFeature = (state) => {
     let ft = selectedFeatureSelector(state);

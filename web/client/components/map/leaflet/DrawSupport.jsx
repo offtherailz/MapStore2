@@ -218,7 +218,11 @@ class DrawSupport extends React.Component {
 
     addDrawInteraction = (newProps) => {
         this.removeAllInteractions();
-        this.addLayer(newProps);
+        if (newProps.drawMethod === "Point" || newProps.drawMethod === "MultiPoint") {
+            this.addGeojsonLayer({features: newProps.features, projection: newProps.options && newProps.options.featureProjection || "EPSG:4326"});
+        } else {
+            this.addLayer(newProps);
+        }
         this.props.map.on('draw:created', this.onDrawCreated, this);
         this.props.map.on('draw:drawstart', this.onDrawStart, this);
 
