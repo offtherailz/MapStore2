@@ -2,7 +2,7 @@ const {head, get} = require('lodash');
 const {layersSelector} = require('./layers');
 const getLayerById = (state, id) => head(layersSelector(state).filter(l => l.id === id));
 const getTitle = (layer = {}) => layer.title || layer.name;
-const getSelectedId = state => get(state, "featuregrid.selectedLayer");
+const selectedLayerIdSelector = state => get(state, "featuregrid.selectedLayer");
 const getCustomAttributeSettings = (state, att) => get(state, `featuregrid.attributes[${att.name || att.attribute}]`);
 const {attributesSelector} = require('./query');
 const selectedFeaturesSelector = state => state && state.featuregrid && state.featuregrid.select;
@@ -29,10 +29,11 @@ const hasGeometrySelectedFeature = (state) => {
 const hasChangesSelector = state => changesSelector(state) && changesSelector(state).length > 0;
 const isCreatingSelector = state => newFeaturesSelector(state).length === 0;
 module.exports = {
+  selectedLayerIdSelector,
   getTitleSelector: state => getTitle(
     getLayerById(
         state,
-        getSelectedId(state)
+        selectedLayerIdSelector(state)
     )),
     getCustomizedAttributes: state => {
         return (attributesSelector(state) || []).map(att => {
