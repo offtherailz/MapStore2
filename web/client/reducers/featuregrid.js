@@ -26,7 +26,8 @@ const {
     TOGGLE_MODE,
     MODES,
     GEOMETRY_CHANGED,
-    DELETE_GEOMETRY_FEATURE
+    DELETE_GEOMETRY_FEATURE,
+    START_DRAWING_FEATURE
 } = require('../actions/featuregrid');
 const{
     FEATURE_TYPE_LOADED
@@ -43,6 +44,7 @@ const emptyResultsState = {
     },
     select: [],
     multiselect: false,
+    drawing: false,
     newFeatures: [],
     features: [],
     dockSize: 0.35
@@ -50,15 +52,25 @@ const emptyResultsState = {
 const isSameFeature = (f1, f2) => f2 === f1 || (f1.id !== undefined && f1.id !== null && f1.id === f2.id);
 const isPresent = (f1, features = []) => features.filter( f2 => isSameFeature(f1, f2)).length > 0;
 
-const applyUpdate = (f, updates) => ({
-    ...f,
+const applyUpdate = (f, updates, updatesGeom) => {
+    if (updatesGeom) {
+        return {...f,
+            properties: {
+                ...f.properties,
+                ...updates
+            },
+            geometry: updatesGeom.geometry
+        };
+    }
+    return {...f,
     properties: {
         ...f.properties,
         ...updates
-    }
-});
-const applyNewChanges = (features, changedFeatures, updates) =>
-    features.map(f => isPresent(f, changedFeatures) ? applyUpdate(f, updates) : f);
+    }};
+
+};
+const applyNewChanges = (features, changedFeatures, updates, updatesGeom) =>
+    features.map(f => isPresent(f, changedFeatures) ? applyUpdate(f, updates, updatesGeom) : f);
 
 function featuregrid(state = emptyResultsState, action) {
     switch (action.type) {
@@ -112,13 +124,14 @@ function featuregrid(state = emptyResultsState, action) {
     case TOGGLE_MODE: {
         return assign({}, state, {
             mode: action.mode,
-            multiselect: action.mode === MODES.EDIT
+            multiselect: action.mode === MODES.EDIT,
+            drawing: false
         });
     }
     case FEATURES_MODIFIED: {
         const newFeaturesChanges = action.features.filter(f => f._new) || [];
         return assign({}, state, {
-            newFeatures: newFeaturesChanges.length > 0 ? applyNewChanges(state.newFeatures, newFeaturesChanges, action.updated) : state.newFeatures,
+            newFeatures: newFeaturesChanges.length > 0 ? applyNewChanges(state.newFeatures, newFeaturesChanges, action.updated, null) : state.newFeatures,
             changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
                 id: f.id,
                 updated: action.updated
@@ -136,6 +149,7 @@ function featuregrid(state = emptyResultsState, action) {
             deleteConfirm: false,
             saved: true,
             saving: false,
+            drawing: false,
             loading: false
         });
     }
@@ -146,6 +160,7 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {
             saved: false,
             deleteConfirm: false,
+            drawing: false,
             newFeatures: [],
             changes: [],
             select: state.select.filter(f => !f._new)
@@ -156,31 +171,33 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {
             newFeatures: action.features.map(f => ({...f, _new: true, id: id, type: "Feature",
                 geometry: null
-            })),
-            changes: [...(state && state.changes || []), ...(action.features.map(() => ({
-                id: id,
-                updated: {geometry: null}
-            })))]
+            }))
         });
     }
     case SAVE_ERROR: {
         return assign({}, state, {
             deleteConfirm: false,
             saving: false,
-            loading: false
+            loading: false,
+            drawing: false
         });
     }
     case GEOMETRY_CHANGED: {
+        const newFeaturesChanges = action.features.filter(f => f._new) || [];
         return assign({}, state, {
+            newFeatures: newFeaturesChanges.length > 0 ? applyNewChanges(state.newFeatures, newFeaturesChanges, null, {geometry: {...head(newFeaturesChanges).geometry} }) : state.newFeatures,
             changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
                 id: f.id,
                 updated: {geometry: head(action.features).geometry}
-            })))]
+            })))],
+            drawing: false
         });
     }
     case DELETE_GEOMETRY_FEATURE: {
+        const newFeaturesChanges = action.features.filter(f => f._new) || [];
         return assign({}, state, {
-            changes: [...(state && state.changes || []), ...(action.features.map(f => ({
+            newFeatures: newFeaturesChanges.length > 0 ? applyNewChanges(state.newFeatures, newFeaturesChanges, null, {geometry: null}) : state.newFeatures,
+            changes: [...(state && state.changes || []), ...(action.features.filter(f => !f._new).map(f => ({
                 id: f.id,
                 updated: {geometry: null}
             })))]
@@ -189,6 +206,11 @@ function featuregrid(state = emptyResultsState, action) {
     case FEATURE_TYPE_LOADED: {
         return assign({}, state, {
             localType: action.featureType.original.featureTypes[0].properties[1].localType
+        });
+    }
+    case START_DRAWING_FEATURE: {
+        return assign({}, state, {
+            drawing: !state.drawing
         });
     }
     default:
