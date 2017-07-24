@@ -24,8 +24,9 @@ const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURE
     saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool,
     CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES, geometryChanged, DELETE_GEOMETRY, deleteGeometryFeature,
     SELECT_FEATURES, DESELECT_FEATURES, START_DRAWING_FEATURE} = require('../actions/featuregrid');
+const {refreshLayerVersion} = require('../actions/layers');
 const {error} = require('../actions/notifications');
-const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector, selectedFeaturesCount} = require('../selectors/featuregrid');
+const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector, selectedFeaturesCount, selectedLayerIdSelector} = require('../selectors/featuregrid');
 const {describeSelector, getFeatureById} = require('../selectors/query');
 const drawSupportReset = () => changeDrawingStatus("clean", "", "featureGrid", [], {});
 /**
@@ -160,14 +161,18 @@ module.exports = {
         ),
     featureGridReloadPageOnSaveSuccess: (action$, store) =>
         action$.ofType(SAVE_SUCCESS).switchMap( ({page, size} = {}) =>
-            Rx.Observable.of( query(
+            Rx.Observable.of(
+                query(
                     get(store.getState(), "query.searchUrl"),
                     addPagination({
                             ...get(store.getState(), "query.filterObj")
                         },
                         getPagination(store.getState(), {page, size})
                     )
-            )).merge(
+                ),
+                refreshLayerVersion(selectedLayerIdSelector(store.getState()))
+
+            ).merge(
                 action$.ofType(QUERY_RESULT).map(() => clearChanges())
             )
         ),
