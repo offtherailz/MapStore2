@@ -29,6 +29,12 @@ const featuresToGrid = compose(
         })
     ),
     withPropsOnChange(
+        ["newFeatures", "changes", "focusOnEdit"],
+        props => ({
+            isFocused: props.focusOnEdit && (props.changes && Object.keys(props.changes).length > 0 || props.newFeatures && props.newFeatures.length > 0 )
+        })
+    ),
+    withPropsOnChange(
         ["features", "newFeatures", "changes", "focusOnEdit"],
         props => ({
             rowsCount: props.rows && props.rows.length || 0
@@ -36,10 +42,13 @@ const featuresToGrid = compose(
     ),
     withHandlers({rowGetter: props => i => getRow(i, props.rows)}),
     withPropsOnChange(
-        ["describeFeatureType", "columnSettings", "tools", "actionOpts", "mode"],
+        ["describeFeatureType", "columnSettings", "tools", "actionOpts", "mode", "isFocused"],
         props => ({
             columns: getToolColumns(props.tools, props.rowGetter, props.describeFeatureType, props.actionOpts)
-                .concat(featureTypeToGridColumns(props.describeFeatureType, props.columnSettings, props.mode === "EDIT", {
+                .concat(featureTypeToGridColumns(props.describeFeatureType, props.columnSettings, {
+                    editable: props.mode === "EDIT",
+                    sortable: !props.isFocused
+                }, {
                     getEditor: ({localType=""} = {}) => props.editors[localType]
                 }))
             })
@@ -74,8 +83,11 @@ const featuresToGrid = compose(
             };
 
             // set selection by row click if checkbox are not present is enabled
-            gridEvents.onRowClick = (rowIdx, row) => onRowsToggled([{rowIdx, row}]);
-
+            gridEvents.onRowClick = (rowIdx, row) => {
+                if (rowIdx >= 0) {
+                    onRowsToggled([{rowIdx, row}]);
+                }
+            };
             return {
                 ...gridEvents,
                 ...gridOpts

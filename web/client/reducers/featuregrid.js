@@ -19,6 +19,7 @@ const {
     SAVE_SUCCESS,
     SAVE_ERROR,
     CLEAR_CHANGES,
+    CHANGE_PAGE,
     DOCK_SIZE_FEATURES,
     SET_LAYER, TOGGLE_TOOL,
     CUSTOMIZE_ATTRIBUTE,
@@ -39,8 +40,8 @@ const emptyResultsState = {
     mode: MODES.VIEW,
     changes: [],
     pagination: {
-        startIndex: 0,
-        maxFeatures: 20
+        page: 0,
+        size: 20
     },
     select: [],
     multiselect: false,
@@ -74,6 +75,14 @@ const applyNewChanges = (features, changedFeatures, updates, updatesGeom) =>
 
 function featuregrid(state = emptyResultsState, action) {
     switch (action.type) {
+    case CHANGE_PAGE: {
+        return assign({}, state, {
+            pagination: {
+                page: action.page !== undefined ? action.page : state.pagination.page,
+                size: action.size !== undefined ? action.size : state.pagination.size
+            }
+        });
+    }
     case SELECT_FEATURES:
         if (state.multiselect && action.append) {
             return assign({}, state, {select: action.append ? [...state.select, ...action.features] : action.features});

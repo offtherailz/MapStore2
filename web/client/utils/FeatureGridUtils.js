@@ -15,14 +15,14 @@ const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
 }), {});
 /* eslint-enable */
 module.exports = {
-    featureTypeToGridColumns: (describe, columnSettings = {}, editing, {getEditor = () => {}} = {}) =>
+    featureTypeToGridColumns: (describe, columnSettings = {}, {editable=false, sortable=true, resizable=true} = {}, {getEditor = () => {}} = {}) =>
         (getFeatureTypeProperties(describe) || []).filter( e => !isGeometryType(e)).filter(e => !(columnSettings[e.name] && columnSettings[e.name].hide)).map( (desc) => ({
-                sortable: true,
+                sortable,
                 key: desc.name,
-                width: 200,
+                width: columnSettings[desc.name] && columnSettings[desc.name].width || 200,
                 name: desc.name,
-                resizable: true,
-                editable: editing,
+                resizable,
+                editable,
                 editor: getEditor(desc)
         })),
     getRow,

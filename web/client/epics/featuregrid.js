@@ -87,10 +87,9 @@ const setupDrawSupport = (state, original) => {
 // pagination selector
 const getPagination = (state, {page, size} = {}) => {
     let currentPagination = get(state, "featuregrid.pagination");
-    let maxFeatures = size !== undefined ? size : currentPagination.maxFeatures;
+    let maxFeatures = size !== undefined ? size : currentPagination.size;
     return {
-        ...currentPagination,
-        startIndex: page !== undefined ? page * maxFeatures : currentPagination.startIndex,
+        startIndex: page !== undefined ? page * maxFeatures : currentPagination.page * maxFeatures,
         maxFeatures
     };
 };
