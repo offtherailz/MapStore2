@@ -22,6 +22,9 @@ const hasGeometrySelectedFeature = (state) => {
         if (changes[ft.id] && changes[ft.id].geometry === null) {
             return false;
         }
+        if (ft._new && head(newFeaturesSelector(state)) && head(newFeaturesSelector(state)).geometry === null) {
+            return false;
+        }
         return true;
     }
     return false;
@@ -56,6 +59,7 @@ module.exports = {
     hasGeometrySelector: state => hasGeometrySelectedFeature(state),
     newFeaturesSelector,
     isCreatingSelector: state => newFeaturesSelector(state).length === 0,
+    isDrawingSelector: state => state && state.featuregrid && state.featuregrid.drawing,
     drawStatusSelector,
     geomTypeSelectedFeatureSelector,
     isSimpleGeomSelector: state => isSimpleGeomType(geomTypeSelectedFeatureSelector(state))

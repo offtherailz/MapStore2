@@ -10,7 +10,13 @@ const normalStyle = {
 };
 const Message = require('../../../I18N/Message');
 const getStyle = (visible) => visible ? normalStyle : hideStyle;
-module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, hasNewFeatures, isSimpleGeom} = {}) =>
+const getDrawFeatureTooltip = (isDrawing, isSimpleGeom) => {
+    if (isDrawing) {
+        return "featuregrid.toolbar.stopDrawGeom";
+    }
+    return isSimpleGeom ? "featuregrid.toolbar.drawGeom" : "featuregrid.toolbar.addGeom";
+};
+module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, hasNewFeatures, isSimpleGeom, isDrawing = false} = {}) =>
     (<ButtonGroup id="featuregrid-toolbar" className="featuregrid-toolbar-margin">
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-mode"><Message msgId="featuregrid.toolbar.editMode"/></Tooltip>}>
             <Button key="edit-mode" style={getStyle(mode === "VIEW")} className="square-button" onClick={events.switchEditMode}><Glyphicon glyph="pencil"/></Button>
@@ -22,11 +28,11 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeo
             <Button key="add-feature" style={getStyle(mode === "EDIT" && selectedCount <= 0)} className="square-button" onClick={events.createFeature}><Glyphicon glyph="row-add"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-feature"><Message msgId="featuregrid.toolbar.editFeature"/></Tooltip>}>
-            <Button key="edit-feature" style={getStyle(mode === "EDIT" && selectedCount === 1 && !isSimpleGeom)}
+            <Button key="edit-feature" style={getStyle(false/*mode === "EDIT" && selectedCount === 1 && !isSimpleGeom*/)}
                 className="square-button" onClick={events.startEditingFeature}><Glyphicon glyph="pencil-edit"/></Button>
         </OverlayTrigger>
-        <OverlayTrigger placement="top" overlay={<Tooltip id="fe-draw-feature"><Message msgId="featuregrid.toolbar.drawFeature"/></Tooltip>}>
-            <Button key="draw-feature" style={getStyle(mode === "EDIT" && selectedCount === 1 && (!hasGeometry || hasGeometry && !isSimpleGeom))} className="square-button" onClick={events.startDrawingFeature}><Glyphicon glyph="pencil-add"/></Button>
+        <OverlayTrigger placement="top" overlay={<Tooltip id="fe-draw-feature"><Message msgId={getDrawFeatureTooltip(isDrawing, isSimpleGeom)}/></Tooltip>}>
+            <Button key="draw-feature" style={getStyle(mode === "EDIT" && selectedCount === 1 && (!hasGeometry || hasGeometry && !isSimpleGeom))} className={ isDrawing ? "square-button btn-success" : "square-button"} onClick={events.startDrawingFeature}><Glyphicon glyph="pencil-add"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-remove-features"><Message msgId="featuregrid.toolbar.deleteSelectedFeatures"/></Tooltip>}>
             <Button key="remove-features" style={getStyle(mode === "EDIT" && selectedCount > 0)} className="square-button" onClick={events.deleteFeatures}><Glyphicon glyph="trash-square"/></Button>

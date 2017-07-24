@@ -3,8 +3,8 @@ const {connect} = require('react-redux');
 const {bindActionCreators} = require('redux');
 const {createSelector, createStructuredSelector} = require('reselect');
 const {paginationInfo, featureLoadingSelector} = require('../../../selectors/query');
-const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector, newFeaturesSelector} = require('../../../selectors/featuregrid');
-const {deleteFeatures, toggleTool} = require('../../../actions/featuregrid');
+const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector, newFeaturesSelector, isDrawingSelector} = require('../../../selectors/featuregrid');
+const {deleteFeatures, toggleTool, clearAndClose} = require('../../../actions/featuregrid');
 const {toolbarEvents, pageEvents} = require('../index');
 
 const Toolbar = connect(
@@ -13,6 +13,7 @@ const Toolbar = connect(
         hasChanges: hasChangesSelector,
         hasNewFeatures: s => newFeaturesSelector(s) && newFeaturesSelector(s).length > 0,
         hasGeometry: hasGeometrySelector,
+        isDrawing: isDrawingSelector,
         isSimpleGeom: isSimpleGeomSelector,
         selectedCount: selectedFeaturesCount
     }),
@@ -45,13 +46,19 @@ const DeleteDialog = connect(
     onClose: () => toggleTool("deleteConfirm"),
     onConfirm: () => deleteFeatures()
 })(require('../../../components/data/featuregrid/dialog/ConfirmDelete'));
+const ClearDialog = connect(
+    createSelector(selectedFeaturesCount, (count) => ({count})), {
+    onClose: () => toggleTool("clearConfirm"),
+    onConfirm: () => clearAndClose()
+})(require('../../../components/data/featuregrid/dialog/ConfirmClear'));
 
 const panels = {
     settings: require('./AttributeSelector')
 };
 
 const dialogs = {
-    deleteConfirm: DeleteDialog
+    deleteConfirm: DeleteDialog,
+    clearConfirm: ClearDialog
 };
 const panelDefaultProperties = {
     settings: {

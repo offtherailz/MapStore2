@@ -23,9 +23,9 @@ const {stripPrefix} = require('xml2js/lib/processors');
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES, featureSaving,
     saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool,
     CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES, geometryChanged, DELETE_GEOMETRY, deleteGeometryFeature,
-    SELECT_FEATURES, DESELECT_FEATURES, START_DRAWING_FEATURE} = require('../actions/featuregrid');
+    SELECT_FEATURES, DESELECT_FEATURES, START_DRAWING_FEATURE, CLEAR_AND_CLOSE} = require('../actions/featuregrid');
 const {error} = require('../actions/notifications');
-const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector, selectedFeaturesCount} = require('../selectors/featuregrid');
+const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector, selectedFeaturesCount, isDrawingSelector} = require('../selectors/featuregrid');
 const {describeSelector, getFeatureById} = require('../selectors/query');
 const drawSupportReset = () => changeDrawingStatus("clean", "", "featureGrid", [], {});
 /**
@@ -184,7 +184,8 @@ module.exports = {
                     .catch((e) => Rx.Observable.of(saveError(), error({
                         title: "featuregrid.errorSaving",
                         message: e,
-                        uid: "saveError"
+                        uid: "saveError",
+                        autoDismiss: 5
                       })))
                 )
 
@@ -238,13 +239,17 @@ module.exports = {
             if (changes[feature.id] && (changes[feature.id].geometry || changes[feature.id].geometry === null)) {
                 feature.geometry = changes[feature.id].geometry;
             }
+            if (feature._new) {
+                feature.geometry = head(newFeaturesSelector(state)).geometry;
+            }
             const drawOptions = {
                 featureProjection: defaultFeatureProj,
-                stopAfterDrawing: isSimpleGeomType(geomType),
-                editEnabled: false,
-                drawEnabled: true
+                stopAfterDrawing: true,
+                editEnabled: !isDrawingSelector(state),
+                drawEnabled: isDrawingSelector(state)
             };
             return Rx.Observable.of(changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions));
+
         }),
     saveChangedGeometries: (action$, store) => action$.ofType(GEOMETRY_CHANGED)
         .filter(a => a.owner === "featureGrid")
@@ -257,7 +262,7 @@ module.exports = {
                 editEnabled: true,
                 drawEnabled: false
             };
-            let feature = assign({}, head(a.features), {id: selectedFeatureSelector(state).id, type: "Feature"});
+            let feature = assign({}, head(a.features), {id: selectedFeatureSelector(state).id, _new: selectedFeatureSelector(state)._new, type: "Feature"});
             let enableEdit = a.enableEdit === "enterEditMode" ? Rx.Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", [feature], drawOptions)) : Rx.Observable.empty();
             return Rx.Observable.of(geometryChanged([feature])).concat(enableEdit);
         }),
@@ -276,9 +281,15 @@ module.exports = {
             let useOriginal = a.type === CLEAR_CHANGES;
             return setupDrawSupport(state, useOriginal);
         }),
-    stopDrawSupport: (action$) => action$.ofType(TOGGLE_MODE, )
+    stopDrawSupport: (action$) => action$.ofType(TOGGLE_MODE)
         .filter(a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
         .switchMap( () => {
             return Rx.Observable.of(drawSupportReset());
+        }),
+    clearAndClose: (action$) => action$.ofType(CLEAR_AND_CLOSE)
+        .switchMap( () => {
+            return Rx.Observable.of(
+                clearChanges(),
+                toggleTool("clearConfirm"));
         })
 };
