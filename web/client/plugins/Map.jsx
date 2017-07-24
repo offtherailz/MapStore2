@@ -17,7 +17,8 @@ require('./map/css/map.css');
 
 const Message = require('../components/I18N/Message');
 const ConfigUtils = require('../utils/ConfigUtils');
-const {isString, get} = require('lodash');
+
+const {isString} = require('lodash');
 let plugins;
 const {handleCreationLayerError, handleCreationBackgroundError} = require('../epics/map');
 /**
@@ -283,14 +284,12 @@ class MapPlugin extends React.Component {
 
 const {mapSelector} = require('../selectors/map');
 const {layerSelectorWithMarkers} = require('../selectors/layers');
-
-// const highlightSelector = (state) => state.highlight && state.highlight.select;
-
+const {selectedFeatures} = require('../selectors/highlight');
 const selector = createSelector(
     [
         mapSelector,
         layerSelectorWithMarkers,
-        (state) => get(state, state && state.highlight && state.highlight.featuresPath || "highlight.emptyFeatures"),
+        selectedFeatures,
         (state) => state.mapInitialConfig && state.mapInitialConfig.loadingError && state.mapInitialConfig.loadingError.data
     ], (map, layers, features, loadingError) => ({
         map,
@@ -301,6 +300,9 @@ const selector = createSelector(
 );
 module.exports = {
     MapPlugin: connect(selector)(MapPlugin),
-    reducers: { draw: require('../reducers/draw') },
+    reducers: {
+        draw: require('../reducers/draw'),
+        highlight: require('../reducers/highlight')
+     },
     epics: assign({}, {handleCreationLayerError, handleCreationBackgroundError})
 };

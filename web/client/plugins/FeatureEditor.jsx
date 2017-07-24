@@ -105,7 +105,6 @@ module.exports = {
      FeatureEditorPlugin: EditorPlugin,
      epics: require('../epics/featuregrid'),
      reducers: {
-         featuregrid: require('../reducers/featuregrid'),
-         highlight: require('../reducers/highlight')
+         featuregrid: require('../reducers/featuregrid')
      }
  };
