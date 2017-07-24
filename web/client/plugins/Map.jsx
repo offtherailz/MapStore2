@@ -1,12 +1,12 @@
-const PropTypes = require('prop-types');
 /*
  * Copyright 2017, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
- */
+*/
 
+const PropTypes = require('prop-types');
 const React = require('react');
 const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
@@ -17,7 +17,7 @@ require('./map/css/map.css');
 
 const Message = require('../components/I18N/Message');
 const ConfigUtils = require('../utils/ConfigUtils');
-const {isString} = require('lodash');
+const {isString, get} = require('lodash');
 let plugins;
 const {handleCreationLayerError, handleCreationBackgroundError} = require('../epics/map');
 /**
@@ -284,13 +284,13 @@ class MapPlugin extends React.Component {
 const {mapSelector} = require('../selectors/map');
 const {layerSelectorWithMarkers} = require('../selectors/layers');
 
-const highlightSelector = (state) => state.highlight && state.highlight.select;
+// const highlightSelector = (state) => state.highlight && state.highlight.select;
 
 const selector = createSelector(
     [
         mapSelector,
         layerSelectorWithMarkers,
-        highlightSelector,
+        (state) => get(state, state && state.highlight && state.highlight.featuresPath || "highlight.emptyFeatures"),
         (state) => state.mapInitialConfig && state.mapInitialConfig.loadingError && state.mapInitialConfig.loadingError.data
     ], (map, layers, features, loadingError) => ({
         map,
