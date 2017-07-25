@@ -7,13 +7,16 @@
 */
 
 const expect = require('expect');
+const assign = require('object-assign');
 const {
     hasGeometrySelector,
     selectedFeatureSelector,
     selectedFeaturesSelector,
     modeSelector,
     selectedFeaturesCount,
-    changesSelector
+    changesSelector,
+    isDrawingSelector,
+    isSimpleGeomSelector
 } = require('../featuregrid');
 
 const idFt1 = "idFt1";
@@ -41,23 +44,256 @@ let feature2 = {
         someProp: "someValue"
     }
 };
+
 let initialState = {
-    featuregrid: {
-        mode: modeEdit,
-        select: [feature1, feature2],
-        changes: [{id: feature2.id, updated: {geometry: null}}]
-    }
-};
+        query: {
+        featureTypes: {
+          'editing:poligoni': {
+            geometry: [
+              {
+                label: 'geometry',
+                attribute: 'geometry',
+                type: 'geometry',
+                valueId: 'id',
+                valueLabel: 'name',
+                values: []
+              }
+            ],
+            original: {
+              elementFormDefault: 'qualified',
+              targetNamespace: 'http://geoserver.org/editing',
+              targetPrefix: 'editing',
+              featureTypes: [
+                {
+                  typeName: 'poligoni',
+                  properties: [
+                    {
+                      name: 'name',
+                      maxOccurs: 1,
+                      minOccurs: 0,
+                      nillable: true,
+                      type: 'xsd:string',
+                      localType: 'string'
+                    },
+                    {
+                      name: 'geometry',
+                      maxOccurs: 1,
+                      minOccurs: 0,
+                      nillable: true,
+                      type: 'gml:Polygon',
+                      localType: 'Polygon'
+                    }
+                  ]
+                }
+              ]
+            },
+            attributes: [
+              {
+                label: 'name',
+                attribute: 'name',
+                type: 'string',
+                valueId: 'id',
+                valueLabel: 'name',
+                values: []
+              }
+            ]
+          }
+        },
+        data: {},
+        result: {
+          type: 'FeatureCollection',
+          totalFeatures: 4,
+          features: [
+            {
+              type: 'Feature',
+              id: 'poligoni.1',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [
+                  [
+                    [
+                      -39,
+                      39
+                    ],
+                    [
+                      -39,
+                      38
+                    ],
+                    [
+                      -40,
+                      38
+                    ],
+                    [
+                      -39,
+                      39
+                    ]
+                  ]
+                ]
+              },
+              geometry_name: 'geometry',
+              properties: {
+                name: 'test'
+              }
+            },
+            {
+              type: 'Feature',
+              id: 'poligoni.2',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [
+                  [
+                    [
+                      -48.77929687,
+                      37.54457732
+                    ],
+                    [
+                      -49.43847656,
+                      36.06686213
+                    ],
+                    [
+                      -46.31835937,
+                      35.53222623
+                    ],
+                    [
+                      -44.47265625,
+                      37.40507375
+                    ],
+                    [
+                      -48.77929687,
+                      37.54457732
+                    ]
+                  ]
+                ]
+              },
+              geometry_name: 'geometry',
+              properties: {
+                name: 'poly2'
+              }
+            },
+            {
+              type: 'Feature',
+              id: 'poligoni.6',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [
+                  [
+                    [
+                      -50.16357422,
+                      28.90239723
+                    ],
+                    [
+                      -49.69116211,
+                      28.24632797
+                    ],
+                    [
+                      -48.2409668,
+                      28.56522549
+                    ],
+                    [
+                      -50.16357422,
+                      28.90239723
+                    ]
+                  ]
+                ]
+              },
+              geometry_name: 'geometry',
+              properties: {
+                name: 'ads'
+              }
+            },
+            {
+              type: 'Feature',
+              id: 'poligoni.7',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [
+                  [
+                    [
+                      -64.46777344,
+                      33.90689555
+                    ],
+                    [
+                      -66.22558594,
+                      31.95216224
+                    ],
+                    [
+                      -63.32519531,
+                      30.97760909
+                    ],
+                    [
+                      -64.46777344,
+                      33.90689555
+                    ]
+                  ]
+                ]
+              },
+              geometry_name: 'geometry',
+              properties: {
+                name: 'vvvv'
+              }
+            }
+          ],
+          crs: {
+            type: 'name',
+            properties: {
+              name: 'urn:ogc:def:crs:EPSG::4326'
+            }
+          }
+        },
+        resultError: null,
+        open: true,
+        isNew: false,
+        filterObj: {
+          featureTypeName: 'editing:poligoni',
+          groupFields: [
+            {
+              id: 1,
+              logic: 'OR',
+              index: 0
+            }
+          ],
+          filterFields: [],
+          spatialField: {
+            method: null,
+            attribute: 'geometry',
+            operation: 'INTERSECTS',
+            geometry: null
+          },
+          pagination: {
+            startIndex: 0,
+            maxFeatures: 20
+          },
+          filterType: 'OGC',
+          ogcVersion: '1.1.0',
+          sortOptions: null,
+          hits: false
+        },
+        searchUrl: 'http://localhost:8081/geoserver/wfs?',
+        typeName: 'editing:poligoni',
+        url: 'http://localhost:8081/geoserver/wfs?',
+        featureLoading: false
+      },
+      featuregrid: {
+          mode: modeEdit,
+          select: [feature1, feature2],
+          changes: [{id: feature2.id, updated: {geometry: null}}]
+      },
+        highlight: {
+            featuresPath: "featuregrid.select"
+        }
+    };
+
 
 describe('Test featuregrid selectors', () => {
     afterEach(() => {
-        initialState = {
+        initialState = assign({}, initialState, {
             featuregrid: {
+                drawing: true,
                 mode: modeEdit,
                 select: [feature1, feature2],
                 changes: [{id: feature2.id, updated: {geometry: null}}]
             }
-        };
+        });
     });
 
     it('test if the feature has some geometry (true)', () => {
@@ -94,6 +330,15 @@ describe('Test featuregrid selectors', () => {
         const ftChanged = changesSelector(initialState);
         expect(ftChanged).toExist();
         expect(ftChanged.length).toBe(1);
+    });
+    it('test isDrawingSelector ', () => {
+        const isdrawing = isDrawingSelector(initialState);
+        expect(isdrawing).toExist();
+        expect(isdrawing).toBe(true);
+    });
+    it('test isSimpleGeomSelector ', () => {
+        const geomType = isSimpleGeomSelector(initialState);
+        expect(geomType).toExist();
     });
 
 });

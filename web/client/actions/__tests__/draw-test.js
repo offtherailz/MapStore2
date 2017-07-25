@@ -11,7 +11,8 @@ const {
     CHANGE_DRAWING_STATUS, changeDrawingStatus,
     END_DRAWING, endDrawing,
     geometryChanged, GEOMETRY_CHANGED,
-    drawStopped, DRAW_SUPPORT_STOPPED
+    drawStopped, DRAW_SUPPORT_STOPPED,
+    setCurrentStyle, SET_CURRENT_STYLE
 } = require('../draw');
 
 describe('Test correctness of the draw actions', () => {
@@ -63,5 +64,11 @@ describe('Test correctness of the draw actions', () => {
         const retval = drawStopped();
         expect(retval).toExist();
         expect(retval.type).toBe(DRAW_SUPPORT_STOPPED);
+    });
+    it('Test setCurrentStyle action creator', () => {
+        const retval = setCurrentStyle("somestyle");
+        expect(retval).toExist();
+        expect(retval.type).toBe(SET_CURRENT_STYLE);
+        expect(retval.currentStyle).toBe("somestyle");
     });
 });

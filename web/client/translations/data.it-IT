@@ -810,6 +810,7 @@
             "noButton": "No",
             "deleteButton": "Elimina",
             "clear": "Sei sicuro di voler annullare tutte le modifiche fatte?",
+            "featureClose": "Sicuro di voler chiudere la griglia?",
             "delete": "Confermi di cancellare {count} feature?",
             "toolbar": {
                 "editMode": "Entra in modalità editing",

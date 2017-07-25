@@ -25,7 +25,7 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeo
             <Button key="back-view" style={getStyle(mode === "EDIT" && !hasChanges && !hasNewFeatures)} className="square-button" onClick={events.switchViewMode}><Glyphicon glyph="arrow-left"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-add-feature"><Message msgId="featuregrid.toolbar.addNewFeatures"/></Tooltip>}>
-            <Button key="add-feature" style={getStyle(mode === "EDIT" && !hasNewFeatures)} className="square-button" onClick={events.createFeature}><Glyphicon glyph="row-add"/></Button>
+            <Button key="add-feature" style={getStyle(mode === "EDIT" && !hasNewFeatures && !hasChanges)} className="square-button" onClick={events.createFeature}><Glyphicon glyph="row-add"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-feature"><Message msgId="featuregrid.toolbar.editFeature"/></Tooltip>}>
             <Button key="edit-feature" style={getStyle(false/*mode === "EDIT" && selectedCount === 1 && !isSimpleGeom*/)}

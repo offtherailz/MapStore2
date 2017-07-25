@@ -8,7 +8,6 @@ const {attributesSelector} = require('./query');
 const selectedFeaturesSelector = state => state && state.featuregrid && state.featuregrid.select;
 const changesSelector = state => state && state.featuregrid && state.featuregrid.changes;
 const newFeaturesSelector = state => state && state.featuregrid && state.featuregrid.newFeatures;
-const drawStatusSelector = state => state && state.featuregrid && state.featuregrid.drawStatus;
 const selectedFeatureSelector = state => head(selectedFeaturesSelector(state));
 const {findGeometryProperty} = require('../utils/ogc/WFS/base');
 const geomTypeSelectedFeatureSelector = state => findGeometryProperty(state.query.featureTypes[state.query.filterObj.featureTypeName].original).localType;
@@ -19,10 +18,16 @@ const hasGeometrySelectedFeature = (state) => {
     let ft = selectedFeatureSelector(state);
     if (ft) {
         let changes = toChangesMap(changesSelector(state));
+        if (changes[ft.id] && changes[ft.id].geometry !== null) {
+            return true;
+        }
         if (changes[ft.id] && changes[ft.id].geometry === null) {
             return false;
         }
-        if (ft._new && head(newFeaturesSelector(state)) && head(newFeaturesSelector(state)).geometry === null) {
+        if (ft._new && head(newFeaturesSelector(state)) && head(newFeaturesSelector(state)).geometry === null ) {
+            return false;
+        }
+        if (ft.geometry === null) {
             return false;
         }
         return true;
@@ -62,7 +67,6 @@ module.exports = {
     newFeaturesSelector,
     hasNewFeaturesSelector,
     isDrawingSelector: state => state && state.featuregrid && state.featuregrid.drawing,
-    drawStatusSelector,
     geomTypeSelectedFeatureSelector,
     hasNewFeaturesOrChanges: state => hasNewFeaturesSelector(state) || hasChangesSelector(state),
     isSimpleGeomSelector: state => isSimpleGeomType(geomTypeSelectedFeatureSelector(state))

@@ -810,6 +810,7 @@
             "noButton": "nein",
             "deleteButton": "Löschen",
             "clear": "Sind Sie sicher, dass Sie alle vorgenommenen Änderungen rückgängig zu machen?",
+            "featureClose": "Wirklich wollen Sie das Raster schließen?",
             "delete": "Überprüfen Sie die Elemente entfernen?",
             "toolbar": {
                 "editMode": "Bearbeitungsmodus",
