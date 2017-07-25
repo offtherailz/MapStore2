@@ -117,7 +117,7 @@ function featuregrid(state = emptyResultsState, action) {
         return assign({}, state, {
             tools: {
                 ...state.tools,
-                [action.tool]: action.value || !(state.tools && state.tools[action.tool])
+                [action.tool]: action.value !== undefined ? !(state.tools && state.tools[action.tool]) : action.value
             }
 
         });
