@@ -169,7 +169,7 @@ function featuregrid(state = emptyResultsState, action) {
             drawing: false,
             newFeatures: [],
             changes: [],
-            select: state.select.filter(f => !f._new)
+            select: []
         });
     }
     case CREATE_NEW_FEATURE: {

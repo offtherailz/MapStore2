@@ -18,10 +18,16 @@ const hasGeometrySelectedFeature = (state) => {
     let ft = selectedFeatureSelector(state);
     if (ft) {
         let changes = toChangesMap(changesSelector(state));
+        if (changes[ft.id] && changes[ft.id].geometry !== null) {
+            return true;
+        }
         if (changes[ft.id] && changes[ft.id].geometry === null) {
             return false;
         }
-        if (ft._new && head(newFeaturesSelector(state)) && head(newFeaturesSelector(state)).geometry === null) {
+        if (ft._new && head(newFeaturesSelector(state)) && head(newFeaturesSelector(state)).geometry === null ) {
+            return false;
+        }
+        if (ft.geometry === null) {
             return false;
         }
         return true;

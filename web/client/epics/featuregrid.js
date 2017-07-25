@@ -23,7 +23,7 @@ const {stripPrefix} = require('xml2js/lib/processors');
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES, featureSaving,
     saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool,
     CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES, geometryChanged, DELETE_GEOMETRY, deleteGeometryFeature,
-    SELECT_FEATURES, DESELECT_FEATURES, START_DRAWING_FEATURE, CLEAR_AND_CLOSE} = require('../actions/featuregrid');
+    SELECT_FEATURES, DESELECT_FEATURES, START_DRAWING_FEATURE, CLEAR_AND_CLOSE, CREATE_NEW_FEATURE} = require('../actions/featuregrid');
 const {refreshLayerVersion} = require('../actions/layers');
 const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, selectedFeatureSelector, selectedFeaturesCount, selectedLayerIdSelector, isDrawingSelector} = require('../selectors/featuregrid');
 const {error} = require('../actions/notifications');
@@ -74,6 +74,11 @@ const setupDrawSupport = (state, original) => {
             ftId: feature.id
         };
         if (selectedFeaturesCount(state) === 1) {
+            if (feature.geometry === null) {
+                return Rx.Observable.from([
+                    drawSupportReset()
+                ]);
+            }
             return Rx.Observable.from([
                 changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions)
             ]);
@@ -284,7 +289,7 @@ module.exports = {
             let useOriginal = a.type === CLEAR_CHANGES;
             return setupDrawSupport(state, useOriginal);
         }),
-    stopDrawSupport: (action$) => action$.ofType(TOGGLE_MODE)
+    stopDrawSupport: (action$) => action$.ofType(TOGGLE_MODE, CREATE_NEW_FEATURE)
         .filter(a => a.type === TOGGLE_MODE ? a.mode === MODES.VIEW : true )
         .switchMap( () => {
             return Rx.Observable.of(drawSupportReset());
