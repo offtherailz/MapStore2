@@ -1,5 +1,5 @@
-
-const {getFeatureTypeProperties, isGeometryType, isValidValueForPropertyName, findGeometryProperty, getPropertyDesciptor} = require('./ogc/WFS/base');
+const {find} = require('lodash');
+const {getFeatureTypeProperties, isGeometryType, isValid, isValidValueForPropertyName, findGeometryProperty, getPropertyDesciptor} = require('./ogc/WFS/base');
 const getGeometryName = (describe) => findGeometryProperty(describe).name;
 const getPropertyName = (name, describe) => name === "geometry" ? getGeometryName(describe) : name;
 
@@ -13,6 +13,24 @@ const toChangesMap = (changesArray) => changesArray.reduce((changes, c) => ({
         ...c.updated
     }
 }), {});
+const applyChanges = (feature, changes) => {
+    const propChanges = Object.keys(changes).filter(k => k !== "geometry").reduce((acc, cur) => ({
+        ...acc,
+        [cur]: changes[cur]
+    }), {});
+    const geomChanges = Object.keys(changes).filter(k => k === "geometry").reduce((acc, cur) => ({
+        ...acc,
+        [cur]: changes[cur]
+    }), {});
+    return {
+        ...feature,
+        ...geomChanges,
+        properties: {
+            ...(feature && feature.properties || {}),
+            ...propChanges
+        }
+    };
+};
 /* eslint-enable */
 module.exports = {
     featureTypeToGridColumns: (describe, columnSettings = {}, {editable=false, sortable=true, resizable=true} = {}, {getEditor = () => {}} = {}) =>
@@ -57,22 +75,13 @@ module.exports = {
     getDefaultFeatureProjection: () => "EPSG:4326",
     toChangesMap,
     createNewAndEditingFilter: (hasChanges, newFeatures, changes) => f => newFeatures.length > 0 ? f._new : !hasChanges || hasChanges && !!changes[f.id],
-    applyChanges: (feature, changes) => {
-        const propChanges = Object.keys(changes).filter(k => k !== "geometry").reduce((acc, cur) => ({
-            ...acc,
-            [cur]: changes[cur]
-        }), {});
-        const geomChanges = Object.keys(changes).filter(k => k === "geometry").reduce((acc, cur) => ({
-            ...acc,
-            [cur]: changes[cur]
-        }), {});
-        return {
-            ...feature,
-            ...geomChanges,
-            properties: {
-                ...(feature && feature.properties || {}),
-                ...propChanges
-            }
-        };
-    }
+    hasValidChanges: (features, changesMap, describeFeatureType) =>
+        Object.keys(changesMap)
+        .map(id => find(features.filter, {id}))
+        .map(f => applyChanges(f, changesMap[f.id]))
+        .map(f => isValid(f, describeFeatureType))
+        .reduce((acc, cur) => cur && acc, true),
+    hasValidNewFeatures: (newFeatures=[], describeFeatureType) => newFeatures.map(f => isValid(f, describeFeatureType)).reduce((acc, cur) => cur && acc, true),
+    applyAllChanges: (orig, changes = {}) => applyChanges(orig, changes[orig.id] || {}),
+    applyChanges
 };

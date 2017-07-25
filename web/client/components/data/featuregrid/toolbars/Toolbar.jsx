@@ -22,10 +22,10 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeo
             <Button key="edit-mode" style={getStyle(mode === "VIEW")} className="square-button" onClick={events.switchEditMode}><Glyphicon glyph="pencil"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-back-view"><Message msgId="featuregrid.toolbar.quitEditMode"/></Tooltip>}>
-            <Button key="back-view" style={getStyle(mode === "EDIT" && !hasChanges)} className="square-button" onClick={events.switchViewMode}><Glyphicon glyph="arrow-left"/></Button>
+            <Button key="back-view" style={getStyle(mode === "EDIT" && !hasChanges && !hasNewFeatures)} className="square-button" onClick={events.switchViewMode}><Glyphicon glyph="arrow-left"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-add-feature"><Message msgId="featuregrid.toolbar.addNewFeatures"/></Tooltip>}>
-            <Button key="add-feature" style={getStyle(mode === "EDIT" && selectedCount <= 0)} className="square-button" onClick={events.createFeature}><Glyphicon glyph="row-add"/></Button>
+            <Button key="add-feature" style={getStyle(mode === "EDIT" && !hasNewFeatures)} className="square-button" onClick={events.createFeature}><Glyphicon glyph="row-add"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-feature"><Message msgId="featuregrid.toolbar.editFeature"/></Tooltip>}>
             <Button key="edit-feature" style={getStyle(false/*mode === "EDIT" && selectedCount === 1 && !isSimpleGeom*/)}
@@ -35,7 +35,7 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeo
             <Button key="draw-feature" style={getStyle(mode === "EDIT" && selectedCount === 1 && (!hasGeometry || hasGeometry && !isSimpleGeom))} className={ isDrawing ? "square-button btn-success" : "square-button"} onClick={events.startDrawingFeature}><Glyphicon glyph="pencil-add"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-remove-features"><Message msgId="featuregrid.toolbar.deleteSelectedFeatures"/></Tooltip>}>
-            <Button key="remove-features" style={getStyle(mode === "EDIT" && selectedCount > 0)} className="square-button" onClick={events.deleteFeatures}><Glyphicon glyph="trash-square"/></Button>
+            <Button key="remove-features" style={getStyle(mode === "EDIT" && selectedCount > 0 && !hasChanges && !hasNewFeatures)} className="square-button" onClick={events.deleteFeatures}><Glyphicon glyph="trash-square"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-save-features"><Message msgId="featuregrid.toolbar.saveChanges"/></Tooltip>}>
             <Button key="save-feature" style={getStyle(mode === "EDIT" && hasChanges || hasNewFeatures)} className="square-button" onClick={events.saveChanges}><Glyphicon glyph="floppy-disk"/></Button>

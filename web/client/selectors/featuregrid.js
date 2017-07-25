@@ -30,7 +30,7 @@ const hasGeometrySelectedFeature = (state) => {
     return false;
 };
 const hasChangesSelector = state => changesSelector(state) && changesSelector(state).length > 0;
-const isCreatingSelector = state => newFeaturesSelector(state).length === 0;
+const hasNewFeaturesSelector = state => newFeaturesSelector(state) && newFeaturesSelector(state).length > 0;
 module.exports = {
   selectedLayerIdSelector,
   getTitleSelector: state => getTitle(
@@ -60,10 +60,10 @@ module.exports = {
     hasChangesSelector,
     hasGeometrySelector: state => hasGeometrySelectedFeature(state),
     newFeaturesSelector,
-    isCreatingSelector,
+    hasNewFeaturesSelector,
     isDrawingSelector: state => state && state.featuregrid && state.featuregrid.drawing,
     drawStatusSelector,
     geomTypeSelectedFeatureSelector,
-    hasNewFeaturesOrChanges: state => isCreatingSelector(state) || hasChangesSelector(state),
+    hasNewFeaturesOrChanges: state => hasNewFeaturesSelector(state) || hasChangesSelector(state),
     isSimpleGeomSelector: state => isSimpleGeomType(geomTypeSelectedFeatureSelector(state))
 };

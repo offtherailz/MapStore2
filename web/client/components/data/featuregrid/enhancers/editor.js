@@ -1,4 +1,4 @@
-const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents, applyChanges, createNewAndEditingFilter} = require('../../../../utils/FeatureGridUtils');
+const {featureTypeToGridColumns, getToolColumns, getRow, getGridEvents, applyAllChanges, createNewAndEditingFilter} = require('../../../../utils/FeatureGridUtils');
 const {compose, withPropsOnChange, withHandlers, defaultProps} = require('recompose');
 const featuresToGrid = compose(
     defaultProps({
@@ -17,15 +17,12 @@ const featuresToGrid = compose(
         props => ({
             rows: ( [...props.newFeatures, ...props.features] : props.features)
                 .filter(props.focusOnEdit ? createNewAndEditingFilter(props.changes && Object.keys(props.changes).length > 0, props.newFeatures, props.changes) : () => true)
-                .map(orig => {
-                    const featureChanges = orig && props.changes && props.changes[orig.id] || {};
-                    const result = applyChanges(orig, featureChanges);
-                    return {...result,
+                .map(orig => applyAllChanges(orig, props.changes)).map(result =>
+                    ({...result,
                         get: key => {
-                            return result.properties && result.properties[key] ? result.properties[key] : result[key];
+                            return result.properties && result.properties[key] ? result.properties[key] : (key === "id" || key === "geometry") && result[key];
                         }
-                    };
-                })
+                    }))
         })
     ),
     withPropsOnChange(
