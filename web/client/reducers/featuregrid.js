@@ -31,7 +31,8 @@ const {
     START_DRAWING_FEATURE
 } = require('../actions/featuregrid');
 const{
-    FEATURE_TYPE_LOADED
+    FEATURE_TYPE_LOADED,
+    FEATURE_CLOSE
 } = require('../actions/wfsquery');
 const uuid = require('uuid');
 
@@ -220,6 +221,20 @@ function featuregrid(state = emptyResultsState, action) {
     case START_DRAWING_FEATURE: {
         return assign({}, state, {
             drawing: !state.drawing
+        });
+    }
+    case FEATURE_CLOSE: {
+        return assign({}, state, {
+            pagination: {
+                page: 0,
+                size: state.pagination.size
+            },
+            saved: false,
+            deleteConfirm: false,
+            drawing: false,
+            newFeatures: [],
+            changes: [],
+            select: []
         });
     }
     default:
