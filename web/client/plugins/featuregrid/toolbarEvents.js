@@ -1,5 +1,4 @@
 const {toggleControl} = require('../../actions/controls');
-const {closeResponse} = require('../../actions/wfsquery');
 const {toggleTool, toggleEditMode, toggleViewMode, saveChanges, createNewFeatures, startEditingFeature, startDrawingFeature, deleteGeometry} = require('../../actions/featuregrid');
 
 module.exports = {
@@ -14,5 +13,5 @@ module.exports = {
     startEditingFeature: () => startEditingFeature(),
     startDrawingFeature: () => startDrawingFeature(),
     switchViewMode: () => toggleViewMode(),
-    onClose: () => closeResponse()
+    onClose: () => toggleTool("featureCloseConfirm")
 };
