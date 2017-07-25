@@ -1,5 +1,5 @@
-/**
-* Copyright 2016, GeoSolutions Sas.
+/*
+* Copyright 2017, GeoSolutions Sas.
 * All rights reserved.
 *
 * This source code is licensed under the BSD-style license found in the
@@ -41,22 +41,32 @@ let feature2 = {
         someProp: "someValue"
     }
 };
-const initialState = {
+let initialState = {
     featuregrid: {
         mode: modeEdit,
         select: [feature1, feature2],
-        changes: [feature2]
+        changes: [{id: feature2.id, updated: {geometry: null}}]
     }
 };
 
 describe('Test featuregrid selectors', () => {
+    afterEach(() => {
+        initialState = {
+            featuregrid: {
+                mode: modeEdit,
+                select: [feature1, feature2],
+                changes: [{id: feature2.id, updated: {geometry: null}}]
+            }
+        };
+    });
+
     it('test if the feature has some geometry (true)', () => {
         const bool = hasGeometrySelector(initialState);
         expect(bool).toExist();
         expect(bool).toBe(true);
     });
     it('test if the feature has not geometry (false)', () => {
-        feature1.geometry = null;
+        initialState.featuregrid.select = [feature2];
         const bool = hasGeometrySelector(initialState);
         expect(bool).toBe(false);
     });
