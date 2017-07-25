@@ -7,6 +7,12 @@
  */
 
 const {head, get} = require('lodash');
+// TODO missing escape of cdata entries (you should split the ]]> and put the two parts of it in adjacent CDATA sections).
+// e.g.
+// <![CDATA[Certain tokens like ]]> can be difficult and <invalid>]]>
+// should be written as
+// <![CDATA[Certain tokens like ]]]]><![CDATA[> can be difficult and <valid>]]>
+const toCData = (value) => /[<>&'"]/.test(value) ? `<![CDATA[${value}]]>` : value;
 const {processOGCGeometry} = require("../GML");
 const WFS_TO_GML = {
     "1.0.0": "2.0",
@@ -83,7 +89,12 @@ module.exports = {
                     coordinates: value.coordinates
               }) : "";
         }
-        return value === null ? "" : value;
+        if (value === null || value === undefined) {
+            return "";
+        } if (typeof value === 'string') {
+            return toCData(value);
+        }
+        return value;
     },
     getPropertyDesciptor,
     findGeometryProperty,
