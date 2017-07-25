@@ -164,22 +164,22 @@ function featuregrid(state = emptyResultsState, action) {
         });
     }
     case CLEAR_CHANGES: {
-
-        // remove from selectred the new feature
-
         return assign({}, state, {
             saved: false,
             deleteConfirm: false,
             drawing: false,
             newFeatures: [],
             changes: [],
-            select: state.select.filter(f => !f._new)
+            select: []
         });
     }
     case CREATE_NEW_FEATURE: {
         let id = uuid.v1();
         return assign({}, state, {
             newFeatures: action.features.map(f => ({...f, _new: true, id: id, type: "Feature",
+                geometry: null
+            })),
+            select: action.features.map(f => ({...f, _new: true, id: id, type: "Feature",
                 geometry: null
             }))
         });
