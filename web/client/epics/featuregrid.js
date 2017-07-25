@@ -253,7 +253,6 @@ module.exports = {
                 drawEnabled: isDrawingSelector(state)
             };
             return Rx.Observable.of(changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions));
-
         }),
     saveChangedGeometries: (action$, store) => action$.ofType(GEOMETRY_CHANGED)
         .filter(a => a.owner === "featureGrid")

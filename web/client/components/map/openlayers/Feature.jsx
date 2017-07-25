@@ -33,7 +33,7 @@ class Feature extends React.Component {
         const format = new ol.format.GeoJSON();
         const geometry = this.props.geometry && this.props.geometry.coordinates;
 
-        if (this.props.container && geometry && this.props.properties) {
+        if (this.props.container && geometry) {
             this._feature = format.readFeatures({
                 type: this.props.type,
                 properties: this.props.properties,

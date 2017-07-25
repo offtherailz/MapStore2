@@ -153,7 +153,7 @@ class Feature extends React.Component {
     componentDidMount() {
         if (this.props.container) {
             let style = this.props.style;
-            if (this.props.geometry && this.props.properties) {
+            if (this.props.geometry ) {
                 this._layer = geometryToLayer({
                     type: this.props.type,
                     geometry: this.props.geometry,
