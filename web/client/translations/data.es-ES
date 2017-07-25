@@ -809,6 +809,7 @@
             "noButton": "No",
             "deleteButton": "Borrar",
             "clear": "Seguro que desea deshacer todos los cambios realizados?",
+            "featureClose": "Realmente desea cerrar la parrilla?",
             "delete": "Confirmar para eliminar los elementos?",
             "toolbar": {
                 "editMode": "Modo de edición",

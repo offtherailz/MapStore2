@@ -813,6 +813,7 @@
             "noButton": "Non",
             "deleteButton": "Effacer",
             "clear": "Etes-vous sûr de vouloir annuler toutes les modifications apportées?",
+            "featureClose":"Vraiment, vous voulez fermer la grille?",
             "delete": "Valider pour supprimer les éléments?",
             "toolbar": {
                 "editMode": "Mode édition",

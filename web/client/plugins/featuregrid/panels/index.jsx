@@ -5,6 +5,8 @@ const {createSelector, createStructuredSelector} = require('reselect');
 const {paginationInfo, featureLoadingSelector} = require('../../../selectors/query');
 const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector, hasNewFeaturesSelector, isDrawingSelector} = require('../../../selectors/featuregrid');
 const {deleteFeatures, toggleTool, clearAndClose} = require('../../../actions/featuregrid');
+const {closeResponse} = require('../../../actions/wfsquery');
+
 const {toolbarEvents, pageEvents} = require('../index');
 const Toolbar = connect(
     createStructuredSelector({
@@ -50,6 +52,11 @@ const ClearDialog = connect(
     onClose: () => toggleTool("clearConfirm"),
     onConfirm: () => clearAndClose()
 })(require('../../../components/data/featuregrid/dialog/ConfirmClear'));
+const FeatureCloseDialog = connect(
+    createSelector(selectedFeaturesCount, (count) => ({count})), {
+    onClose: () => toggleTool("featureCloseConfirm"),
+    onConfirm: () => closeResponse()
+})(require('../../../components/data/featuregrid/dialog/ConfirmFeatureClose'));
 
 const panels = {
     settings: require('./AttributeSelector')
@@ -57,6 +64,7 @@ const panels = {
 
 const dialogs = {
     deleteConfirm: DeleteDialog,
+    featureCloseConfirm: FeatureCloseDialog,
     clearConfirm: ClearDialog
 };
 const panelDefaultProperties = {
