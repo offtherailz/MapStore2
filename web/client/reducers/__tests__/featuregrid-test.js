@@ -1,14 +1,41 @@
-/**
- * Copyright 2016, GeoSolutions Sas.
+/*
+ * Copyright 2017, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
- */
+*/
+
+const idFt1 = "idFt1";
+const idFt2 = "idFt2";
+let feature1 = {
+    type: "Feature",
+    geometry: {
+        type: "Point",
+        coordinates: [1, 2]
+    },
+    id: idFt1,
+    properties: {
+        someProp: "someValue"
+    }
+};
+let feature2 = {
+     type: "Feature",
+     geometry: {
+         type: "Point",
+         coordinates: [1, 2]
+     },
+     id: idFt2,
+     properties: {
+         someProp: "someValue"
+     }
+ };
 const expect = require('expect');
 const featuregrid = require('../featuregrid');
 const {setFeatures, dockSizeFeatures, setLayer, toggleTool, customizeAttribute, selectFeatures, deselectFeatures, createNewFeatures,
-    featureSaving, toggleSelection, clearSelection, MODES, toggleEditMode, toggleViewMode, saveSuccess, clearChanges, saveError} = require('../../actions/featuregrid');
+    featureSaving, toggleSelection, clearSelection, MODES, toggleEditMode, toggleViewMode, saveSuccess, clearChanges, saveError, startDrawingFeature} = require('../../actions/featuregrid');
+const {featureTypeLoaded} = require('../../actions/wfsquery');
+
 const museam = require('json-loader!../../test-resources/wfs/museam.json');
 describe('Test the featuregrid reducer', () => {
 
@@ -46,7 +73,19 @@ describe('Test the featuregrid reducer', () => {
         let state = featuregrid({select: [1, 2]}, clearSelection());
         expect(state.select).toExist();
         expect(state.select.length).toBe(0);
-    });
+    });/*
+    it('featureModified', () => {
+        const features = [feature1, feature2];
+        let updated = [{
+            geometry: null,
+            id: idFt2
+        }, {
+            name: "newName",
+            id: idFt1
+        }];
+        let state = featuregrid({select: [1, 2]}, featureModified(features, updated));
+        expect(state.select).toExist();
+    });*/
     it('deselectFeature', () => {
         let state = featuregrid( {select: [1, 2], changes: []}, deselectFeatures([1]));
         expect(state.select).toExist();
@@ -103,7 +142,7 @@ describe('Test the featuregrid reducer', () => {
         expect(state.loading).toBeFalsy();
     });
     it('clearChanges', () => {
-        let state = featuregrid( {}, clearChanges());
+        let state = featuregrid( {select: [feature1, feature2]}, clearChanges());
         expect(state.deleteConfirm).toBeFalsy();
         expect(state.saved).toBeFalsy();
         expect(state.newFeatures.length).toBe(0);
@@ -144,6 +183,23 @@ describe('Test the featuregrid reducer', () => {
         expect(state.attributes.attrA.test).toBe(false);
         state = featuregrid( state, customizeAttribute("attrA", "test", "value"));
         expect(state.attributes.attrA.test).toBe("value");
+    });
+    it('startDrawingFeature', () => {
+        let state = featuregrid( {drawing: true}, startDrawingFeature());
+        expect(state.drawing).toBe(false);
+
+    });
+    it('featureTypeLoaded', () => {
+        let state = featuregrid( {}, featureTypeLoaded("typeName", {
+            original: {featureTypes: [
+            {
+                properties: [
+                    {},
+                    {localType: "Point"}
+                ]
+            }]}}));
+        expect(state.localType).toBe("Point");
+
     });
 
 });
