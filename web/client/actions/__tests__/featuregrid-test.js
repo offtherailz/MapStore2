@@ -22,6 +22,11 @@ const {
     featureSaving, SAVING,
     saveError, SAVE_ERROR,
     clearChanges, CLEAR_CHANGES,
+    geometryChanged, GEOMETRY_CHANGED,
+    startDrawingFeature, START_DRAWING_FEATURE,
+    deleteGeometry, DELETE_GEOMETRY,
+    deleteGeometryFeature, DELETE_GEOMETRY_FEATURE,
+    clearAndClose, CLEAR_AND_CLOSE,
     deleteFeaturesConfirm, DELETE_SELECTED_FEATURES_CONFIRM
 } = require('../featuregrid');
 
@@ -41,6 +46,36 @@ const features = [feature, feature];
 const options = {editEnabled: true};
 describe('Test correctness of featurgrid actions', () => {
 
+    it('Test deleteGeometryFeature action creator', () => {
+        const retval = deleteGeometryFeature(features);
+        expect(retval).toExist();
+        expect(retval.features).toExist();
+        expect(retval.features.length).toBe(features.length);
+        expect(retval.type).toBe(DELETE_GEOMETRY_FEATURE);
+    });
+    it('Test deleteGeometry action creator', () => {
+        const retval = deleteGeometry();
+        expect(retval).toExist();
+        expect(retval.type).toBe(DELETE_GEOMETRY);
+    });
+    it('Test clearAndClose action creator', () => {
+        const retval = clearAndClose();
+        expect(retval).toExist();
+        expect(retval.type).toBe(CLEAR_AND_CLOSE);
+    });
+    it('Test startDrawingFeature action creator', () => {
+        const retval = startDrawingFeature();
+        expect(retval).toExist();
+        expect(retval.type).toBe(START_DRAWING_FEATURE);
+    });
+    it('Test geometryChanged action creator', () => {
+        const retval = geometryChanged([feature]);
+        expect(retval).toExist();
+        expect(retval.type).toBe(GEOMETRY_CHANGED);
+        expect(retval.features).toExist();
+        expect(retval.features[0].id).toBe(idFeature);
+        expect(retval.features.length).toBe(1);
+    });
     it('Test selectFeature action creator', () => {
         const someFeatures = [1, 2];
         const retval = selectFeatures(someFeatures);
