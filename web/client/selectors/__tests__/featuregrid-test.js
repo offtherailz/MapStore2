@@ -48,7 +48,7 @@ let feature2 = {
 let initialState = {
         query: {
         featureTypes: {
-          'editing:poligoni': {
+          'editing:polygons': {
             geometry: [
               {
                 label: 'geometry',
@@ -244,7 +244,7 @@ let initialState = {
         open: true,
         isNew: false,
         filterObj: {
-          featureTypeName: 'editing:poligoni',
+          featureTypeName: 'editing:polygons',
           groupFields: [
             {
               id: 1,
@@ -269,7 +269,7 @@ let initialState = {
           hits: false
         },
         searchUrl: 'http://localhost:8081/geoserver/wfs?',
-        typeName: 'editing:poligoni',
+        typeName: 'editing:polygons',
         url: 'http://localhost:8081/geoserver/wfs?',
         featureLoading: false
       },

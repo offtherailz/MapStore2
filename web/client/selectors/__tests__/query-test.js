@@ -47,7 +47,7 @@ let feature2 = {
 const initialState = {
     query: {
     featureTypes: {
-      'editing:poligoni': {
+      'editing:polygons': {
         geometry: [
           {
             label: 'geometry',
@@ -243,7 +243,7 @@ const initialState = {
     open: true,
     isNew: false,
     filterObj: {
-      featureTypeName: 'editing:poligoni',
+      featureTypeName: 'editing:polygons',
       groupFields: [
         {
           id: 1,
@@ -268,7 +268,7 @@ const initialState = {
       hits: false
     },
     searchUrl: 'http://localhost:8081/geoserver/wfs?',
-    typeName: 'editing:poligoni',
+    typeName: 'editing:polygons',
     url: 'http://localhost:8081/geoserver/wfs?',
     featureLoading: false
   },
@@ -291,7 +291,7 @@ describe('Test query selectors', () => {
     it('test wfsFilter selector', () => {
         const filterObj = wfsFilter(initialState);
         expect(filterObj).toExist();
-        expect(filterObj.featureTypeName).toBe("editing:poligoni");
+        expect(filterObj.featureTypeName).toBe("editing:polygons");
     });
     it('test resultsSelector selector', () => {
         const res = resultsSelector(initialState);
