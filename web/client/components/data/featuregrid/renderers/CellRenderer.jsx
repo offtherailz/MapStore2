@@ -4,6 +4,7 @@ const {Cell} = require('react-data-grid');
 
 class CellRenderer extends React.Component {
     static propTypes = {
+        value: PropTypes.any,
         rowData: PropTypes.object,
         column: PropTypes.object
     };

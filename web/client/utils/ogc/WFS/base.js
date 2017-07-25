@@ -51,7 +51,7 @@ const getPropertyDesciptor = (propName, describeFeatureType) =>
  */
 const schemaLocation = (d) => d.targetNamespace;
 const isGeometryType = (pd) => pd.type.indexOf("gml:") === 0;
-const isValidValue = (v, pd) => pd.nillable || v !== undefined; // TODO validate type
+const isValidValue = (v, pd) => pd.nillable || (v !== undefined && v !== null); // TODO validate type
 const isValidProperty = ({geom, properties} = {}, pd) => isValidValue(isGeometryType(pd) ? geom : properties[pd.name], pd);
 /**
  * Base utilities for WFS.
@@ -81,9 +81,9 @@ module.exports = {
             return value ? processOGCGeometry(version, {
                     type: value.type,
                     coordinates: value.coordinates
-              }) : value;
+              }) : "";
         }
-        return value;
+        return value === null ? "" : value;
     },
     getPropertyDesciptor,
     findGeometryProperty,

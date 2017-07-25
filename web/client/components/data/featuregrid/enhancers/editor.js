@@ -20,7 +20,7 @@ const featuresToGrid = compose(
                 .map(orig => applyAllChanges(orig, props.changes)).map(result =>
                     ({...result,
                         get: key => {
-                            return result.properties && result.properties[key] !== undefined ? result.properties[key] : (key === "id" || key === "geometry") && result[key];
+                            return (key === "id" || key === "geometry" || key === "_new") ? result[key] : result.properties && result.properties[key];
                         }
                     }))
         })
