@@ -2,12 +2,18 @@ const React = require('react');
 const {connect} = require('react-redux');
 const {bindActionCreators} = require('redux');
 const {createSelector, createStructuredSelector} = require('reselect');
+
 const {paginationInfo, featureLoadingSelector} = require('../../../selectors/query');
 const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector, hasNewFeaturesSelector, isDrawingSelector} = require('../../../selectors/featuregrid');
 const {deleteFeatures, toggleTool, clearAndClose} = require('../../../actions/featuregrid');
 const {closeResponse} = require('../../../actions/wfsquery');
 
 const {toolbarEvents, pageEvents} = require('../index');
+
+const EmptyRowsView = connect(createStructuredSelector({
+    loading: featureLoadingSelector
+}))(require('../../../components/data/featuregrid/EmptyRowsView'));
+
 const Toolbar = connect(
     createStructuredSelector({
         mode: modeSelector,
@@ -44,17 +50,17 @@ const Footer = connect(
 )(require('../../../components/data/featuregrid/Footer'));
 const DeleteDialog = connect(
     createSelector(selectedFeaturesCount, (count) => ({count})), {
-    onClose: () => toggleTool("deleteConfirm"),
+    onClose: () => toggleTool("deleteConfirm", false),
     onConfirm: () => deleteFeatures()
 })(require('../../../components/data/featuregrid/dialog/ConfirmDelete'));
 const ClearDialog = connect(
     createSelector(selectedFeaturesCount, (count) => ({count})), {
-    onClose: () => toggleTool("clearConfirm"),
+    onClose: () => toggleTool("clearConfirm", false),
     onConfirm: () => clearAndClose()
 })(require('../../../components/data/featuregrid/dialog/ConfirmClear'));
-const FeatureCloseDialog = connect(
-    createSelector(selectedFeaturesCount, (count) => ({count})), {
-    onClose: () => toggleTool("featureCloseConfirm"),
+const FeatureCloseDialog = connect(() => {}
+    , {
+    onClose: () => toggleTool("featureCloseConfirm", false),
     onConfirm: () => closeResponse()
 })(require('../../../components/data/featuregrid/dialog/ConfirmFeatureClose'));
 
@@ -86,6 +92,9 @@ module.exports = {
     },
     getFooter: (props) => {
         return (props.focusOnEdit && props.hasChanges || props.newFeatures.length > 0) ? null : <Footer />;
+    },
+    getEmptyRowsView: () => {
+        return EmptyRowsView;
     },
     getDialogs: (tools = {}) => {
         return Object.keys(tools)

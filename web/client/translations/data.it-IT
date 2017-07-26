@@ -793,18 +793,22 @@
             "single": "Banda Singola"
         },
         "featuregrid": {
+            "columns": "Colonne",
             "header": "Elenco risultati ricerca",
             "tools": "Gestione tabella",
             "export": "Esporta risultati",
             "selectall": "Seleziona tutti",
             "deselectall": "Deseleziona tutti",
             "backtosearch": "Ritorna alla ricerca",
+            "resultInfo": "{total, plural, =0 {Nessun elemento} =1 {{total} di {total}} other {{start}-{end} di {total}}}",
+            "pageInfo": "{totalPages, plural, =0 {Nessuna pagina} =1 {Pagina {totalPages} di {totalPages}} other {Pagina {page} di {totalPages}}}",
             "pagination": {
                 "page": "Pagina",
                 "of":   "di",
                 "to":   "a",
                 "more": "molte"
             },
+            "noFeaturesAvailable": "Nessun risultato disponibile",
             "errorSaving": "C'è stato un errore durante il salvataggio",
             "yesButton": "Si",
             "noButton": "No",

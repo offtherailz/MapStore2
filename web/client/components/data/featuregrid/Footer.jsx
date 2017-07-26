@@ -1,4 +1,5 @@
 const React = require('react');
+const Message = require('../../I18N/Message');
 const {Button, Glyphicon, Grid, Row, Col} = require('react-bootstrap');
 const Spinner = require('react-spinkit');
 const toPage = ({startIndex = 0, maxFeatures = 1, totalFeatures = 0, resultSize} = {}) => ({
@@ -15,7 +16,7 @@ module.exports = (props = {
     return (<Grid className="bg-body data-grid-bottom-toolbar" fluid style={{width: "100%"}}>
         <Row className="featuregrid-toolbar-margin">
             <Col md={3}>
-                <span>{ page * size + 1 } - {page * size + resultSize} of {total}</span>
+                <span><Message msgId="featuregrid.resultInfo" msgParams={{start: page * size + 1, end: page * size + resultSize, total}} /></span>
             </Col>
             <Col className="text-center" md={6}>
                 <Button
@@ -28,7 +29,7 @@ module.exports = (props = {
                     onClick={() => props.onPageChange(page - 1)}
                     disabled={page === 0}
                     className="no-border prev-page"><Glyphicon glyph="chevron-left"/></Button>
-                <span key="page-info">Page {page + 1} of {maxPages + 1} </span>
+                <span key="page-info"><Message msgId="featuregrid.pageInfo" msgParams={{page: page + 1, totalPages: maxPages + 1}} /></span>
                 <Button
                     key="next-page"
                     onClick={() => props.onPageChange(page + 1)}

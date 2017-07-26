@@ -10,12 +10,12 @@ const Rx = require('rxjs');
 const axios = require('../libs/ajax');
 const {changeSpatialAttribute, SELECT_VIEWPORT_SPATIAL_METHOD, updateGeometrySpatialField} = require('../actions/queryform');
 const {CHANGE_MAP_VIEW} = require('../actions/map');
-const {FEATURE_TYPE_SELECTED, QUERY, featureLoading, featureTypeLoaded, featureTypeError, querySearchResponse, queryError, featureClose} = require('../actions/wfsquery');
+const {FEATURE_TYPE_SELECTED, QUERY, featureLoading, featureTypeLoaded, featureTypeError, querySearchResponse, queryError} = require('../actions/wfsquery');
 const {paginationInfo} = require('../selectors/query');
 const FilterUtils = require('../utils/FilterUtils');
 const assign = require('object-assign');
 const {isString} = require('lodash');
-const {TOGGLE_CONTROL, setControlProperty} = require('../actions/controls');
+const {setControlProperty} = require('../actions/controls');
 // this is a workaround for https://osgeo-org.atlassian.net/browse/GEOS-7233. can be removed when fixed
 const workaroundGEOS7233 = ({totalFeatures, features, ...rest}, {startIndex, maxFeatures}, originalSize) => {
     if (originalSize > totalFeatures && originalSize === startIndex + features.length && totalFeatures === features.length) {
@@ -239,19 +239,6 @@ const wfsQueryEpic = (action$, store) =>
             );
         });
 
-/**
- * Closes the feature grid when the drawer menu button has been toggled
- * @memberof epics.wfsquery
- * @param {external:Observable} action$ manages `TOGGLE_CONTROL`
- * @return {external:Observable}
- */
-
-const closeFeatureEpic = action$ =>
-    action$.ofType(TOGGLE_CONTROL)
-        .switchMap(action => {
-            return action.control && action.control === 'drawer' ? Rx.Observable.of(featureClose()) : Rx.Observable.empty();
-        });
-
 function validateExtent(extent) {
     if (extent[0] <= -180.0 || extent[2] >= 180.0) {
         extent[0] = -180.0;
@@ -295,7 +282,6 @@ const viewportSelectedEpic = (action$, store) =>
 module.exports = {
     featureTypeSelectedEpic,
     wfsQueryEpic,
-    closeFeatureEpic,
     viewportSelectedEpic,
     getWFSFilterData
 };

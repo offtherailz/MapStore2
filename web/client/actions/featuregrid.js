@@ -33,6 +33,7 @@ const GEOMETRY_CHANGED = 'FEATUREGRID:GEOMETRY_CHANGED';
 const DOCK_SIZE_FEATURES = 'DOCK_SIZE_FEATURES';
 const TOGGLE_TOOL = 'FEATUREGRID:TOGGLE_TOOL';
 const CUSTOMIZE_ATTRIBUTE = 'FEATUREGRID:CUSTOMIZE_ATTRIBUTE';
+const CLOSE_GRID = 'FEATUREGRID:CLOSE_GRID';
 const CLEAR_AND_CLOSE = 'FEATUREGRID:CLEAR_AND_CLOSE';
 const MODES = {
     EDIT: "EDIT",
@@ -211,7 +212,11 @@ function saveError() {
         type: SAVE_ERROR
     };
 }
-
+function closeFeatureGrid() {
+    return {
+        type: CLOSE_GRID
+    };
+}
 module.exports = {
     SELECT_FEATURES,
     DESELECT_FEATURES,
@@ -242,6 +247,7 @@ module.exports = {
     DELETE_GEOMETRY, deleteGeometry,
     DELETE_GEOMETRY_FEATURE, deleteGeometryFeature,
     CLEAR_AND_CLOSE, clearAndClose,
+    CLOSE_GRID, closeFeatureGrid,
     setLayer,
     selectFeatures,
     deselectFeatures,

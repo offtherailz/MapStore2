@@ -15,7 +15,7 @@ const Grid = require('../components/data/featuregrid/FeatureGrid');
 const {resultsSelector, describeSelector} = require('../selectors/query');
 const {modeSelector, changesSelector, newFeaturesSelector, hasChangesSelector} = require('../selectors/featuregrid');
 const { toChangesMap} = require('../utils/FeatureGridUtils');
-const {getPanels, getHeader, getFooter, getDialogs} = require('./featuregrid/panels/index');
+const {getPanels, getHeader, getFooter, getDialogs, getEmptyRowsView} = require('./featuregrid/panels/index');
 const BorderLayout = require('../components/layout/BorderLayout');
 const EMPTY_ARR = [];
 const EMPTY_OBJ = [];
@@ -31,14 +31,10 @@ const FeatureDock = (props = {
         dockSize: 0.35,
         fluid: true,
         isVisible: props.open,
-        maxDockSize: 1.0,
+        maxDockSize: 0.7,
         minDockSize: 0.1,
         position: "bottom",
         setDockSize: () => {},
-        toolbar: null,
-        toolbarHeight: 40,
-        wrappedComponent: {},
-        toolbarEvents: {},
         zIndex: 1030
     };
     // columns={[<aside style={{backgroundColor: "red", flex: "0 0 12em"}}>column-selector</aside>]}
@@ -51,6 +47,7 @@ const FeatureDock = (props = {
             footer={getFooter(props)}>
             {getDialogs(props.tools)}
             <Grid
+                emptyRowsView={getEmptyRowsView()}
                 focusOnEdit={props.focusOnEdit}
                 newFeatures={props.newFeatures}
                 changes={props.changes}
