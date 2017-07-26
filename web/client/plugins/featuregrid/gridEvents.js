@@ -5,9 +5,9 @@ module.exports = {
     onGridSort: (sortBy, sortOrder) => sort(sortBy, sortOrder),
     onGridRowsUpdated: ({fromRow, toRow, updated}, rowGetter) => {
 
-        let features = range(fromRow, toRow).map(r => rowGetter(r))/*.filter(f =>
+        let features = range(fromRow, toRow).map(r => rowGetter(r)).filter(f =>
             Object.keys(updated || {}).filter(k => f.properties[k] !== updated[k]).length > 0
-        )*/;
+        );
         return featureModified(features, updated);
     },
     onRowsToggled: (rows, rowGetter) => selectFeatures(rows.map(r => rowGetter(r.rowIdx)), false),

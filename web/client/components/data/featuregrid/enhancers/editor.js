@@ -5,6 +5,7 @@ const featuresToGrid = compose(
         columns: [],
         features: [],
         newFeatures: [],
+        select: [],
         changes: {},
         focusOnEdit: true,
         editors: require('../editors')
