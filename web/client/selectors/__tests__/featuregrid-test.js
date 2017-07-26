@@ -9,6 +9,10 @@
 const expect = require('expect');
 const assign = require('object-assign');
 const {
+    hasChangesSelector,
+    getTitleSelector,
+    newFeaturesSelector,
+    hasNewFeaturesSelector,
     hasGeometrySelector,
     selectedFeatureSelector,
     selectedFeaturesSelector,
@@ -16,7 +20,8 @@ const {
     selectedFeaturesCount,
     changesSelector,
     isDrawingSelector,
-    isSimpleGeomSelector
+    isSimpleGeomSelector,
+    getCustomizedAttributes
 } = require('../featuregrid');
 
 const idFt1 = "idFt1";
@@ -274,9 +279,16 @@ let initialState = {
         featureLoading: false
       },
       featuregrid: {
+          selectedLayer: "TEST_LAYER",
           mode: modeEdit,
           select: [feature1, feature2],
           changes: [{id: feature2.id, updated: {geometry: null}}]
+      },
+      layers: {
+          flat: [{
+              id: "TEST_LAYER",
+              title: "Test Layer"
+          }]
       },
         highlight: {
             featuresPath: "featuregrid.select"
@@ -288,14 +300,52 @@ describe('Test featuregrid selectors', () => {
     afterEach(() => {
         initialState = assign({}, initialState, {
             featuregrid: {
+                selectedLayer: "TEST_LAYER",
                 drawing: true,
                 mode: modeEdit,
                 select: [feature1, feature2],
-                changes: [{id: feature2.id, updated: {geometry: null}}]
+                changes: [{id: feature2.id, updated: {geometry: null}}],
+                attributes: {
+                name: {
+                  hide: true
+                }
+              }
             }
         });
     });
-
+    it('test feature changes', () => {
+        let hasChanges = hasChangesSelector(initialState);
+        expect(hasChanges).toBe(true);
+        hasChanges = hasChangesSelector({
+            featuregrid: {
+                ...initialState.featuregrid,
+                changes: []
+            }
+        });
+        expect(hasChanges).toBe(false);
+    });
+    it('test newFeatures', () => {
+        expect(hasNewFeaturesSelector(initialState)).toBeFalsy();
+        const newFeaturesState = {
+            featuregrid: {
+                ...initialState.featuregrid,
+                newFeatures: [{id: "test"}]
+            }
+        };
+        expect(hasChangesSelector(newFeaturesState)).toBe(true);
+        expect(newFeaturesSelector(newFeaturesState).length).toBe(1);
+    });
+    it('test if the feature has changes', () => {
+        let hasChanges = hasChangesSelector(initialState);
+        expect(hasChanges).toBe(true);
+        hasChanges = hasChangesSelector({
+            featuregrid: {
+                ...initialState.featuregrid,
+                changes: []
+            }
+        });
+        expect(hasChanges).toBe(false);
+    });
     it('test if the feature has some geometry (true)', () => {
         const bool = hasGeometrySelector(initialState);
         expect(bool).toExist();
@@ -305,6 +355,12 @@ describe('Test featuregrid selectors', () => {
         initialState.featuregrid.select = [feature2];
         const bool = hasGeometrySelector(initialState);
         expect(bool).toBe(false);
+        initialState.featuregrid.select = [{id: "A", _new: true, geometry: null}];
+        initialState.featuregrid.newFeatures = [{id: "A", _new: true, geometry: null}];
+        initialState.featuregrid.changes = [];
+        expect(hasGeometrySelector(initialState)).toBe(false);
+        initialState.featuregrid.newFeatures = [{id: "A", _new: true, geometry: {}}];
+        expect(hasGeometrySelector(initialState)).toBe(true);
     });
     it('test selectedFeatureSelector ', () => {
         const feature = selectedFeatureSelector(initialState);
@@ -339,6 +395,12 @@ describe('Test featuregrid selectors', () => {
     it('test isSimpleGeomSelector ', () => {
         const geomType = isSimpleGeomSelector(initialState);
         expect(geomType).toExist();
+    });
+    it('test titleSelector ', () => {
+        expect(getTitleSelector(initialState)).toBe("Test Layer");
+    });
+    it('test customized Atrributes ', () => {
+        expect(getCustomizedAttributes(initialState)[0].hide).toBe(true);
     });
 
 });

@@ -175,7 +175,7 @@ module.exports = {
     RESET_QUERY, resetQuery,
     QUERY, query,
     FEATURE_LOADING, featureLoading,
-    FEATURE_LOADED,
+    FEATURE_LOADED, featureLoaded,
     loadFeature,
     toggleQueryPanel,
     closeResponse

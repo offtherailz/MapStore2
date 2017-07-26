@@ -13,7 +13,7 @@ const {get} = require('lodash');
 const Dock = require('react-dock').default;
 const Grid = require('../components/data/featuregrid/FeatureGrid');
 const {resultsSelector, describeSelector} = require('../selectors/query');
-const {modeSelector, changesSelector, newFeaturesSelector, hasChangesSelector} = require('../selectors/featuregrid');
+const {modeSelector, changesSelector, newFeaturesSelector, hasChangesSelector, selectedFeaturesSelector} = require('../selectors/featuregrid');
 const { toChangesMap} = require('../utils/FeatureGridUtils');
 const {getPanels, getHeader, getFooter, getDialogs, getEmptyRowsView} = require('./featuregrid/panels/index');
 const BorderLayout = require('../components/layout/BorderLayout');
@@ -69,7 +69,7 @@ const selector = createSelector(
     describeSelector,
     state => get(state, "featuregrid.attributes"),
     state => get(state, "featuregrid.tools"),
-    state => get(state, 'featuregrid.select') || [],
+    selectedFeaturesSelector,
     modeSelector,
     changesSelector,
     newFeaturesSelector,
