@@ -5,6 +5,7 @@ const {createSelector, createStructuredSelector} = require('reselect');
 
 const {paginationInfo, featureLoadingSelector} = require('../../../selectors/query');
 const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector, hasNewFeaturesSelector, isDrawingSelector} = require('../../../selectors/featuregrid');
+const {isAdminUserSelector} = require('../../../selectors/security');
 const {deleteFeatures, toggleTool, clearAndClose} = require('../../../actions/featuregrid');
 const {closeResponse} = require('../../../actions/wfsquery');
 
@@ -22,7 +23,8 @@ const Toolbar = connect(
         hasGeometry: hasGeometrySelector,
         isDrawing: isDrawingSelector,
         isSimpleGeom: isSimpleGeomSelector,
-        selectedCount: selectedFeaturesCount
+        selectedCount: selectedFeaturesCount,
+        isEditingAllowed: isAdminUserSelector
     }),
     (dispatch) => ({events: bindActionCreators(toolbarEvents, dispatch)})
 )(require('../../../components/data/featuregrid/toolbars/Toolbar'));

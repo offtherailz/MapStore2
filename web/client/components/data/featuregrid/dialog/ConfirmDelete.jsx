@@ -12,5 +12,5 @@ module.exports = ({
     onConfirm={onConfirm}
     confirmButtonContent={<Message msgId="featuregrid.deleteButton" />}
     confirmButtonDisabled={saving}>
-    <Message msgId="featuregrid.delete" msgParams={count}/>
+    <Message msgId="featuregrid.delete" msgParams={{count: count}}/>
 </Confirm>);

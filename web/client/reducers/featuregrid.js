@@ -34,6 +34,9 @@ const{
     FEATURE_TYPE_LOADED,
     FEATURE_CLOSE
 } = require('../actions/wfsquery');
+const{
+    CHANGE_DRAWING_STATUS
+} = require('../actions/draw');
 const uuid = require('uuid');
 
 const emptyResultsState = {
@@ -236,6 +239,14 @@ function featuregrid(state = emptyResultsState, action) {
             changes: [],
             select: []
         });
+    }
+    case CHANGE_DRAWING_STATUS: {
+        if (action.status === "clean") {
+            return assign({}, state, {
+                drawing: false
+            });
+        }
+        return state;
     }
     default:
         return state;
