@@ -16,10 +16,10 @@ const getDrawFeatureTooltip = (isDrawing, isSimpleGeom) => {
     }
     return isSimpleGeom ? "featuregrid.toolbar.drawGeom" : "featuregrid.toolbar.addGeom";
 };
-module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, hasNewFeatures, isSimpleGeom, isDrawing = false} = {}) =>
+module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, hasNewFeatures, isSimpleGeom, isDrawing = false, isEditingAllowed} = {}) =>
     (<ButtonGroup id="featuregrid-toolbar" className="featuregrid-toolbar-margin">
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-mode"><Message msgId="featuregrid.toolbar.editMode"/></Tooltip>}>
-            <Button key="edit-mode" style={getStyle(mode === "VIEW")} className="square-button" onClick={events.switchEditMode}><Glyphicon glyph="pencil"/></Button>
+            <Button key="edit-mode" style={getStyle(mode === "VIEW" && isEditingAllowed)} className="square-button" onClick={events.switchEditMode}><Glyphicon glyph="pencil"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-back-view"><Message msgId="featuregrid.toolbar.quitEditMode"/></Tooltip>}>
             <Button key="back-view" style={getStyle(mode === "EDIT" && !hasChanges && !hasNewFeatures)} className="square-button" onClick={events.switchViewMode}><Glyphicon glyph="arrow-left"/></Button>

@@ -27,6 +27,9 @@ const hasGeometrySelectedFeature = (state) => {
         if (ft._new && head(newFeaturesSelector(state)) && head(newFeaturesSelector(state)).geometry === null ) {
             return false;
         }
+        if (ft._new && head(newFeaturesSelector(state)) && head(newFeaturesSelector(state)).geometry !== null ) {
+            return true;
+        }
         if (ft.geometry === null) {
             return false;
         }

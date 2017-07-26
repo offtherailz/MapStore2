@@ -15,7 +15,7 @@ const spyOn = expect.spyOn;
 const museam = require('json-loader!../../../../test-resources/wfs/museam.json');
 const describePois = require('json-loader!../../../../test-resources/wfs/describe-pois.json');
 
-
+// TODO FIX ALL THESE TESTS (recompose)
 describe('Test for FeatureGrid component', () => {
     beforeEach((done) => {
         document.body.innerHTML = '<div id="container" style="height:500px"></div>';

@@ -16,14 +16,13 @@ const {changeDrawingStatus, GEOMETRY_CHANGED} = require('../actions/draw');
 const requestBuilder = require('../utils/ogc/WFST/RequestBuilder');
 const {findGeometryProperty} = require('../utils/ogc/WFS/base');
 const {toggleControl} = require('../actions/controls');
-const {query, featureClose, QUERY_CREATE, QUERY_RESULT, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE} = require('../actions/wfsquery');
+const {query, QUERY_CREATE, QUERY_RESULT, LAYER_SELECTED_FOR_SEARCH, FEATURE_CLOSE, closeResponse} = require('../actions/wfsquery');
 const {parseString} = require('xml2js');
 const {stripPrefix} = require('xml2js/lib/processors');
-
 const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURES, featureSaving,
     saveSuccess, saveError, clearChanges, setLayer, clearSelection, toggleViewMode, toggleTool,
     CLEAR_CHANGES, START_EDITING_FEATURE, TOGGLE_MODE, MODES, geometryChanged, DELETE_GEOMETRY, deleteGeometryFeature,
-    SELECT_FEATURES, DESELECT_FEATURES, START_DRAWING_FEATURE, CLEAR_AND_CLOSE, CREATE_NEW_FEATURE, CLOSE_GRID, closeFeatureGrid} = require('../actions/featuregrid');
+    SELECT_FEATURES, DESELECT_FEATURES, START_DRAWING_FEATURE, CREATE_NEW_FEATURE, CLOSE_GRID, closeFeatureGrid, CLEAR_AND_CLOSE} = require('../actions/featuregrid');
 
 const {TOGGLE_CONTROL} = require('../actions/controls');
 const {refreshLayerVersion} = require('../actions/layers');
@@ -303,15 +302,14 @@ module.exports = {
      * @return {external:Observable}
      */
     autoCloseFeatureGridEpicOnDrowerOpen: action$ =>
-        action$
-            .ofType(TOGGLE_CONTROL)
-            .switchMap(action => action.control && action.control === 'drawer' ? Rx.Observable.of(closeFeatureGrid()) : Rx.Observable.empty()),
+        action$.ofType(TOGGLE_CONTROL)
+        .switchMap(action => action.control && action.control === 'drawer' ? Rx.Observable.of(closeFeatureGrid()) : Rx.Observable.empty()),
     askChangesConfirmOnFeatureGridClose: (action$, store) => action$.ofType(CLOSE_GRID).switchMap( () => {
         const state = store.getState();
         if (hasChangesSelector(state) || hasNewFeaturesSelector(state)) {
             return Rx.Observable.of(toggleTool("featureCloseConfirm", true));
         }
-        return Rx.Observable.of(featureClose());
+        return Rx.Observable.of(closeResponse());
     }),
     clearAndClose: (action$) => action$.ofType(CLEAR_AND_CLOSE, FEATURE_CLOSE)
         .switchMap( () => Rx.Observable.of(clearChanges(), toggleTool("clearConfirm", false)))

@@ -51,6 +51,7 @@ describe('Test the featuregrid reducer', () => {
         expect(state.features).toExist();
     });
     it('selectFeature', () => {
+        // TODO FIX this test or the reducer
         // single select
         let state = featuregrid( undefined, selectFeatures([1, 2]));
         expect(state.select).toExist();
@@ -92,6 +93,7 @@ describe('Test the featuregrid reducer', () => {
         expect(state.select[0]).toBe(2);
     });
     it('toggleSelection', () => {
+        // TODO FIX this test or the reducer
         let state = featuregrid( {select: [1, 2], multiselect: true, changes: []}, toggleSelection([1]));
         expect(state.select).toExist();
         expect(state.select.length).toBe(1);
