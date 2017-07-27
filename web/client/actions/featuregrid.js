@@ -35,6 +35,7 @@ const TOGGLE_TOOL = 'FEATUREGRID:TOGGLE_TOOL';
 const CUSTOMIZE_ATTRIBUTE = 'FEATUREGRID:CUSTOMIZE_ATTRIBUTE';
 const CLOSE_GRID = 'FEATUREGRID:CLOSE_GRID';
 const CLEAR_AND_CLOSE = 'FEATUREGRID:CLEAR_AND_CLOSE';
+const CLOSE_DIALOG_AND_DRAWER = 'FEATUREGRID:CLOSE_DIALOG_AND_DRAWER';
 const MODES = {
     EDIT: "EDIT",
     VIEW: "VIEW"
@@ -43,6 +44,11 @@ const MODES = {
 function clearAndClose() {
     return {
         type: CLEAR_AND_CLOSE
+    };
+}
+function closeDialogAndDrawer() {
+    return {
+        type: CLOSE_DIALOG_AND_DRAWER
     };
 }
 function selectFeatures(features, append) {
@@ -248,6 +254,7 @@ module.exports = {
     DELETE_GEOMETRY_FEATURE, deleteGeometryFeature,
     CLEAR_AND_CLOSE, clearAndClose,
     CLOSE_GRID, closeFeatureGrid,
+    CLOSE_DIALOG_AND_DRAWER, closeDialogAndDrawer,
     setLayer,
     selectFeatures,
     deselectFeatures,

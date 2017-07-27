@@ -5,7 +5,7 @@ const {createSelector, createStructuredSelector} = require('reselect');
 const {paginationInfo, featureLoadingSelector} = require('../../../selectors/query');
 const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector, hasNewFeaturesSelector, isSavingSelector, isSavedSelector, isDrawingSelector} = require('../../../selectors/featuregrid');
 const {isAdminUserSelector} = require('../../../selectors/security');
-const {deleteFeatures, toggleTool, clearAndClose} = require('../../../actions/featuregrid');
+const {deleteFeatures, toggleTool, clearAndClose, closeDialogAndDrawer} = require('../../../actions/featuregrid');
 const {closeResponse} = require('../../../actions/wfsquery');
 const {toolbarEvents, pageEvents} = require('../index');
 
@@ -61,7 +61,7 @@ const ClearDialog = connect(
 })(require('../../../components/data/featuregrid/dialog/ConfirmClear'));
 const FeatureCloseDialog = connect(() => {}
     , {
-    onClose: () => toggleTool("featureCloseConfirm", false),
+    onClose: () => closeDialogAndDrawer(),
     onConfirm: () => closeResponse()
 })(require('../../../components/data/featuregrid/dialog/ConfirmFeatureClose'));
 

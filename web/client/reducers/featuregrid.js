@@ -91,16 +91,16 @@ function featuregrid(state = emptyResultsState, action) {
         if (state.multiselect && action.append) {
             return assign({}, state, {select: action.append ? [...state.select, ...action.features] : action.features});
         }
-        if (action.features && state.select && state.select[0] && action.features[0] && isSameFeature(action.features[0], state.select[0])) {
-            return state;
-        }
-        if (action.features.length > 0 && action.features[0] && !action.features[0].type) {
+        if (action.features && state.select && state.select[0] && action.features[0] && state.select.length === 1 && isSameFeature(action.features[0], state.select[0])) {
             return state;
         }
         return assign({}, state, {select: (action.features || []).splice(0, 1)});
     case TOGGLE_FEATURES_SELECTION:
-        let newArr = state.select.filter( f => !isPresent(f, action.features)).concat( (action.features || []).filter( f => !isPresent(f, state.select)));
-        return assign({}, state, {select: newArr.filter( f => isPresent(f, action.features)).splice(0, 1)});
+        let keepValues = state.select.filter( f => !isPresent(f, action.features));
+        // let removeValues = state.select.filter( f => isPresent(f, action.features));
+        let newValues = action.features.filter( f => !isPresent(f, state.select));
+        let res = keepValues.concat( (newValues || []));
+        return assign({}, state, {select: res});
     case DESELECT_FEATURES:
         return assign({}, state, {
             select: state.select.filter(f1 => !isPresent(f1, action.features))
