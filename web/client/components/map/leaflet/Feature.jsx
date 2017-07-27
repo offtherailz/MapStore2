@@ -182,6 +182,19 @@ class Feature extends React.Component {
                     }
                 });
             }
+            );
+            this.props.container.addLayer(this._layer);
+            this._layer.on('click', (event) => {
+                if (this.props.onClick) {
+                    this.props.onClick({
+                        pixel: {
+                            x: event.originalEvent && event.originalEvent.x,
+                            y: event.originalEvent && event.originalEvent.y
+                        },
+                        latlng: event.latlng
+                    });
+                }
+            });
         }
     }
 
