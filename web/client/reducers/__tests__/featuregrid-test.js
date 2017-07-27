@@ -30,11 +30,25 @@ let feature2 = {
          someProp: "someValue"
      }
  };
+let newfeature3 = {
+     type: "Feature",
+     geometry: {
+         type: "Point",
+         coordinates: [1, 2]
+     },
+     _new: true,
+     id: idFt2,
+     properties: {
+         someProp: "someValue"
+     }
+ };
 const expect = require('expect');
 const featuregrid = require('../featuregrid');
-const {setFeatures, dockSizeFeatures, setLayer, toggleTool, customizeAttribute, /*selectFeatures, */deselectFeatures, createNewFeatures,
-    featureSaving, /*toggleSelection, */clearSelection, MODES, toggleEditMode, toggleViewMode, saveSuccess, clearChanges, saveError, startDrawingFeature} = require('../../actions/featuregrid');
-const {featureTypeLoaded} = require('../../actions/wfsquery');
+const {setFeatures, dockSizeFeatures, setLayer, toggleTool, customizeAttribute, selectFeatures, deselectFeatures, createNewFeatures,
+    featureSaving, toggleSelection, clearSelection, MODES, toggleEditMode, toggleViewMode, saveSuccess, clearChanges, saveError, startDrawingFeature,
+    deleteGeometryFeature, geometryChanged, setSelectionOptions, changePage, featureModified} = require('../../actions/featuregrid');
+const {featureTypeLoaded, featureClose} = require('../../actions/wfsquery');
+const {changeDrawingStatus} = require('../../actions/draw');
 
 const museam = require('json-loader!../../test-resources/wfs/museam.json');
 describe('Test the featuregrid reducer', () => {
@@ -49,7 +63,7 @@ describe('Test the featuregrid reducer', () => {
         expect(state.pagination).toExist();
         expect(state.select).toExist();
         expect(state.features).toExist();
-    });/*
+    });
 
     it('selectFeature', () => {
         // TODO FIX this test or the reducer
@@ -58,25 +72,29 @@ describe('Test the featuregrid reducer', () => {
         expect(state.select).toExist();
         expect(state.select.length).toBe(1);
         expect(state.select[0]).toBe(1);
-
-        // check multiselect
-        state = featuregrid(undefined, {type: 'UNKNOWN'});
-        state = featuregrid({...state, multiselect: true}, selectFeatures([1, 2]));
+        state = featuregrid( state, selectFeatures([1, 2]));
         expect(state.select).toExist();
-        expect(state.select.length).toBe(2);
+        expect(state.select.length).toBe(1);
         expect(state.select[0]).toBe(1);
-        // check append mode with multiselect on
+        // check multiselect true, append false
+        state = featuregrid(undefined, {type: 'UNKNOWN'});
+        state = featuregrid({...state, multiselect: true}, selectFeatures([1, 2], false));
+        expect(state.select).toExist();
+        expect(state.select.length).toBe(1);
+        expect(state.select[0]).toBe(1);
+
+        // check multiselect true, append true
         state = featuregrid( state, selectFeatures([3], true));
         expect(state.select).toExist();
-        expect(state.select.length).toBe(3);
-        expect(state.select[2]).toBe(3);
+        expect(state.select.length).toBe(2);
+        expect(state.select[1]).toBe(3);
     });
-    */
+
     it('clearSelection', () => {
         let state = featuregrid({select: [1, 2]}, clearSelection());
         expect(state.select).toExist();
         expect(state.select.length).toBe(0);
-    });/*
+    });
     it('featureModified', () => {
         const features = [feature1, feature2];
         let updated = [{
@@ -87,35 +105,29 @@ describe('Test the featuregrid reducer', () => {
             id: idFt1
         }];
         let state = featuregrid({select: [1, 2]}, featureModified(features, updated));
+        expect(state.changes.length).toBe(2);
         expect(state.select).toExist();
-    });*/
+    });
     it('deselectFeature', () => {
         let state = featuregrid( {select: [1, 2], changes: []}, deselectFeatures([1]));
         expect(state.select).toExist();
         expect(state.select[0]).toBe(2);
     });
-    /*
+
     it('toggleSelection', () => {
-        // TODO FIX this test or the reducer
         let state = featuregrid( {select: [1, 2], multiselect: true, changes: []}, toggleSelection([1]));
         expect(state.select).toExist();
+        expect(state.select[0]).toBe(2);
         expect(state.select.length).toBe(1);
         state = featuregrid( state, toggleSelection([2]));
         expect(state.select.length).toBe(0);
-        state = featuregrid( state, toggleSelection([1]));
-        expect(state.select.length).toBe(0);
-        expect(state.select[0]).toBe(1);
-        state = featuregrid( state, toggleSelection([1]));
-        expect(state.select.length).toBe(0);
-        // single select
-        state = featuregrid( {select: [2], multiselect: false}, toggleSelection([1, 3, 4]));
-        expect(state.select.length).toBe(0);
-        state = featuregrid( {select: [], multiselect: false}, toggleSelection([1]));
-        expect(state.select.length).toBe(0);
-        state = featuregrid( state, toggleSelection([1]));
+        state = featuregrid( state, toggleSelection([6]));
+        expect(state.select.length).toBe(1);
+        expect(state.select[0]).toBe(6);
+        state = featuregrid( state, toggleSelection([6]));
         expect(state.select.length).toBe(0);
     });
-    */
+
     it('setFeatures', () => {
         let state = featuregrid( {}, setFeatures(museam.features));
         expect(state.features).toExist();
@@ -193,6 +205,46 @@ describe('Test the featuregrid reducer', () => {
     it('startDrawingFeature', () => {
         let state = featuregrid( {drawing: true}, startDrawingFeature());
         expect(state.drawing).toBe(false);
+    });
+    it('setSelectionOptions({multiselect= false} = {})', () => {
+        let state = featuregrid( {}, setSelectionOptions({}));
+        expect(state.multiselect).toBe(false);
+    });
+    it('changePage', () => {
+        let state = featuregrid( {}, changePage(1, 4));
+        expect(state.pagination.size).toBe(4);
+        expect(state.pagination.page).toBe(1);
+    });
+    it('featureClose', () => {
+        let state = featuregrid( {pagination: {size: 3}}, featureClose());
+        expect(state.drawing).toBe(false);
+        expect(state.deleteConfirm).toBe(false);
+        expect(state.pagination.size).toBe(3);
+        expect(state.newFeatures.length).toBe(0);
+        expect(state.changes.length).toBe(0);
+        expect(state.select.length).toBe(0);
+    });
+    it('CHANGE_DRAWING_STATUS', () => {
+        let state = featuregrid( {}, changeDrawingStatus("clean"));
+        expect(state.drawing).toBe(false);
+        state = featuregrid( {drawing: true, pagination: {size: 3}}, changeDrawingStatus("stop"));
+        expect(state.drawing).toBe(true);
+        expect(state.pagination.size).toBe(3);
+    });
+    it('DELETE_GEOMETRY_FEATURE', () => {
+        let state = featuregrid( {newFeatures: []}, deleteGeometryFeature([feature1]));
+        expect(state.changes.length).toBe(1);
+        expect(state.newFeatures.length).toBe(0);
+        state = featuregrid( {newFeatures: [newfeature3], changes: []}, deleteGeometryFeature([newfeature3]));
+        expect(state.changes.length).toBe(0);
+        expect(state.newFeatures.length).toBe(1);
+    });
+    it('GEOMETRY_CHANGED', () => {
+        let state = featuregrid( {newFeatures: []}, geometryChanged([feature1]));
+        expect(state.changes.length).toBe(1);
+        expect(state.newFeatures.length).toBe(0);
+        state = featuregrid( state, geometryChanged([feature1]));
+        expect(state.changes.length).toBe(2);
 
     });
     it('featureTypeLoaded', () => {

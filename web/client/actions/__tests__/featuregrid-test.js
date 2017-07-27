@@ -27,7 +27,8 @@ const {
     deleteGeometry, DELETE_GEOMETRY,
     deleteGeometryFeature, DELETE_GEOMETRY_FEATURE,
     clearAndClose, CLEAR_AND_CLOSE,
-    deleteFeaturesConfirm, DELETE_SELECTED_FEATURES_CONFIRM
+    deleteFeaturesConfirm, DELETE_SELECTED_FEATURES_CONFIRM,
+    closeDialogAndDrawer, CLOSE_DIALOG_AND_DRAWER
 } = require('../featuregrid');
 
 const idFeature = "2135";
@@ -57,6 +58,11 @@ describe('Test correctness of featurgrid actions', () => {
         const retval = deleteGeometry();
         expect(retval).toExist();
         expect(retval.type).toBe(DELETE_GEOMETRY);
+    });
+    it('Test closeDialogAndDrawer action creator', () => {
+        const retval = closeDialogAndDrawer();
+        expect(retval).toExist();
+        expect(retval.type).toBe(CLOSE_DIALOG_AND_DRAWER);
     });
     it('Test clearAndClose action creator', () => {
         const retval = clearAndClose();
