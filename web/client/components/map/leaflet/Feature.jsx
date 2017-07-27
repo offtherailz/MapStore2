@@ -151,36 +151,24 @@ class Feature extends React.Component {
     };
 
     componentDidMount() {
-        if (this.props.container) {
+        if (this.props.container && this.props.geometry) {
             let style = this.props.style;
-            if (this.props.geometry ) {
-                this._layer = geometryToLayer({
-                    type: this.props.type,
-                    geometry: this.props.geometry,
-                    properties: this.props.properties,
-                    id: this.props.msId
-                }, {
-                    style: style,
-                    pointToLayer: this.props.styleName !== "marker" ? function(feature, latlng) {
-                        return L.circleMarker(latlng, style || {
-                            radius: 5,
-                            color: "red",
-                            weight: 1,
-                            opacity: 1,
-                            fillOpacity: 0
-                        });
-                    } : null
-                });
-                this.props.container.addLayer(this._layer);
-
-                this._layer.on('click', (event) => {
-                    if (this.props.onClick) {
-                        this.props.onClick({
-                            pixel: event.containerPoint,
-                            latlng: event.latlng
-                        });
-                    }
-                });
+            this._layer = geometryToLayer({
+                type: this.props.type,
+                geometry: this.props.geometry,
+                properties: this.props.properties,
+                id: this.props.msId
+            }, {
+                style: style,
+                pointToLayer: this.props.styleName !== "marker" ? function(feature, latlng) {
+                    return L.circleMarker(latlng, style || {
+                        radius: 5,
+                        color: "red",
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0
+                    });
+                } : null
             }
             );
             this.props.container.addLayer(this._layer);
