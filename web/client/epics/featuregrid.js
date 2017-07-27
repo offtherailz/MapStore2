@@ -26,9 +26,9 @@ const {SORT_BY, CHANGE_PAGE, SAVE_CHANGES, SAVE_SUCCESS, DELETE_SELECTED_FEATURE
 
 const {TOGGLE_CONTROL} = require('../actions/controls');
 const {refreshLayerVersion} = require('../actions/layers');
-const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, hasChangesSelector, hasNewFeaturesSelector, selectedFeatureSelector, selectedFeaturesCount, selectedLayerIdSelector, isDrawingSelector} = require('../selectors/featuregrid');
+const {selectedFeaturesSelector, changesMapSelector, newFeaturesSelector, hasChangesSelector, hasNewFeaturesSelector, selectedFeatureSelector, selectedFeaturesCount, selectedLayerIdSelector, isDrawingSelector, modeSelector} = require('../selectors/featuregrid');
 const {error} = require('../actions/notifications');
-const {describeSelector, getFeatureById} = require('../selectors/query');
+const {describeSelector, getFeatureById, wfsURL, wfsFilter} = require('../selectors/query');
 const drawSupportReset = () => changeDrawingStatus("clean", "", "featureGrid", [], {});
 /**
  * Intercept OGC Exception (200 response with exceptionReport) to throw error in the stream
@@ -56,7 +56,7 @@ const setupDrawSupport = (state, original) => {
     let drawOptions; let geomType;
     let feature = assign({}, selectedFeatureSelector(state), {type: "Feature"});
     if (!isEmpty(feature)) {
-        geomType = findGeometryProperty(state.query.featureTypes[state.query.filterObj.featureTypeName].original).localType;
+        geomType = findGeometryProperty(describeSelector(state)).localType;
 
         // TODO check this WITH APPLY CHANGES
         let changes = changesMapSelector(state);
@@ -144,9 +144,9 @@ module.exports = {
     featureGridSort: (action$, store) =>
         action$.ofType(SORT_BY).switchMap( ({sortBy, sortOrder}) =>
             Rx.Observable.of( query(
-                    get(store.getState(), "query.searchUrl"),
+                    wfsURL(store.getState()),
                     addPagination({
-                            ...get(store.getState(), "query.filterObj"),
+                            ...wfsFilter(store.getState()),
                             sortOptions: {sortBy, sortOrder}
                         },
                         getPagination(store.getState())
@@ -156,9 +156,9 @@ module.exports = {
     featureGridChangePage: (action$, store) =>
         action$.ofType(CHANGE_PAGE).switchMap( ({page, size} = {}) =>
             Rx.Observable.of( query(
-                    get(store.getState(), "query.searchUrl"),
+                    wfsURL(store.getState()),
                     addPagination({
-                            ...get(store.getState(), "query.filterObj")
+                            ...wfsFilter(store.getState())
                         },
                         getPagination(store.getState(), {page, size})
                     )
@@ -168,9 +168,9 @@ module.exports = {
         action$.ofType(SAVE_SUCCESS).switchMap( ({page, size} = {}) =>
             Rx.Observable.of(
                 query(
-                    get(store.getState(), "query.searchUrl"),
+                    wfsURL(store.getState()),
                     addPagination({
-                            ...get(store.getState(), "query.filterObj")
+                            ...wfsFilter(store.getState())
                         },
                         getPagination(store.getState(), {page, size})
                     )
@@ -189,7 +189,7 @@ module.exports = {
                         changesMapSelector(store.getState()),
                         newFeaturesSelector(store.getState()),
                         describeSelector(store.getState()),
-                        get(store.getState(), "query.searchUrl")
+                        wfsURL(store.getState())
                     ).map(() => saveSuccess())
                     .catch((e) => Rx.Observable.of(saveError(), error({
                         title: "featuregrid.errorSaving",
@@ -208,7 +208,7 @@ module.exports = {
                     createDeleteFlow(
                         selectedFeaturesSelector(store.getState()),
                         describeSelector(store.getState()),
-                        get(store.getState(), "query.searchUrl")
+                        wfsURL(store.getState())
                     ).map(() => saveSuccess())
                     // close window
                     .catch((e) => Rx.Observable.of(saveError(), error({
@@ -224,8 +224,9 @@ module.exports = {
     handleEditFeature: (action$, store) => action$.ofType(START_EDITING_FEATURE)
         .switchMap( () => {
             const state = store.getState();
+            const describe = describeSelector(state);
             const defaultFeatureProj = getDefaultFeatureProjection();
-            const geomType = findGeometryProperty(state.query.featureTypes[state.query.filterObj.featureTypeName].original).localType;
+            const geomType = findGeometryProperty(describe).localType;
             const drawOptions = {
                 featureProjection: defaultFeatureProj,
                 stopAfterDrawing: false,
@@ -242,8 +243,9 @@ module.exports = {
     handleDrawFeature: (action$, store) => action$.ofType(START_DRAWING_FEATURE)
         .switchMap( () => {
             const state = store.getState();
+            const describe = describeSelector(state);
             const defaultFeatureProj = getDefaultFeatureProjection();
-            const geomType = findGeometryProperty(state.query.featureTypes[state.query.filterObj.featureTypeName].original).localType;
+            const geomType = findGeometryProperty(describe).localType;
             let feature = assign({}, selectedFeatureSelector(state), {type: "Feature"});
             let changes = changesMapSelector(state);
             if (changes[feature.id] && (changes[feature.id].geometry || changes[feature.id].geometry === null)) {
@@ -284,7 +286,7 @@ module.exports = {
             ]);
         }),
     triggerDrawSupportOnSelectionChange: (action$, store) => action$.ofType(SELECT_FEATURES, DESELECT_FEATURES, CLEAR_CHANGES, TOGGLE_MODE)
-        .filter(() => store.getState().featuregrid.mode === MODES.EDIT)
+        .filter(() => modeSelector(store.getState()) === MODES.EDIT)
         .switchMap( (a) => {
             const state = store.getState();
             let useOriginal = a.type === CLEAR_CHANGES;
