@@ -69,6 +69,8 @@ module.exports = {
     hasGeometrySelector: state => hasGeometrySelectedFeature(state),
     newFeaturesSelector,
     hasNewFeaturesSelector,
+    isSavingSelector: state => state && state.featuregrid && state.featuregrid.saving,
+    isSavedSelector: state => state && state.featuregrid && state.featuregrid.saved,
     isDrawingSelector: state => state && state.featuregrid && state.featuregrid.drawing,
     geomTypeSelectedFeatureSelector,
     hasNewFeaturesOrChanges: state => hasNewFeaturesSelector(state) || hasChangesSelector(state),

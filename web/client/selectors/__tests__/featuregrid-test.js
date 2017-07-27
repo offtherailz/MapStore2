@@ -21,7 +21,9 @@ const {
     changesSelector,
     isDrawingSelector,
     isSimpleGeomSelector,
-    getCustomizedAttributes
+    getCustomizedAttributes,
+    isSavingSelector,
+    isSavedSelector
 } = require('../featuregrid');
 
 const idFt1 = "idFt1";
@@ -300,6 +302,8 @@ describe('Test featuregrid selectors', () => {
     afterEach(() => {
         initialState = assign({}, initialState, {
             featuregrid: {
+                saving: false,
+                saved: false,
                 selectedLayer: "TEST_LAYER",
                 drawing: true,
                 mode: modeEdit,
@@ -399,8 +403,16 @@ describe('Test featuregrid selectors', () => {
     it('test titleSelector ', () => {
         expect(getTitleSelector(initialState)).toBe("Test Layer");
     });
-    it('test customized Atrributes ', () => {
+    it('test customized Attributes ', () => {
         expect(getCustomizedAttributes(initialState)[0].hide).toBe(true);
+    });
+    it('test isSavingSelector', () => {
+        expect(isSavingSelector(initialState)).toBe(false);
+        expect(isSavingSelector({...initialState, featuregrid: { saving: true}})).toBe(true);
+    });
+    it('test isSavedSelector', () => {
+        expect(isSavedSelector(initialState)).toBe(false);
+        expect(isSavedSelector({...initialState, featuregrid: { saved: true}})).toBe(true);
     });
 
 });

@@ -9,6 +9,7 @@ const hideStyle = {
 const normalStyle = {
 };
 const Message = require('../../../I18N/Message');
+
 const getStyle = (visible) => visible ? normalStyle : hideStyle;
 const getDrawFeatureTooltip = (isDrawing, isSimpleGeom) => {
     if (isDrawing) {
@@ -16,7 +17,14 @@ const getDrawFeatureTooltip = (isDrawing, isSimpleGeom) => {
     }
     return isSimpleGeom ? "featuregrid.toolbar.drawGeom" : "featuregrid.toolbar.addGeom";
 };
-module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, hasNewFeatures, isSimpleGeom, isDrawing = false, isEditingAllowed} = {}) =>
+const getSaveMessageId = ({saving, saved}) => {
+    if (saving || saved) {
+        return "featuregrid.toolbar.saving";
+    }
+    return "featuregrid.toolbar.saveChanges";
+};
+
+module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeometry, hasNewFeatures, isSimpleGeom, isDrawing = false, isEditingAllowed, saving = false, saved = false} = {}) =>
     (<ButtonGroup id="featuregrid-toolbar" className="featuregrid-toolbar featuregrid-toolbar-margin">
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-edit-mode"><Message msgId="featuregrid.toolbar.editMode"/></Tooltip>}>
             <Button key="edit-mode" id="fg-edit-mode" style={getStyle(mode === "VIEW" && isEditingAllowed)} className="square-button" onClick={events.switchEditMode}><Glyphicon glyph="pencil"/></Button>
@@ -33,8 +41,8 @@ module.exports = ({events = {}, mode = "VIEW", selectedCount, hasChanges, hasGeo
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-remove-features"><Message msgId="featuregrid.toolbar.deleteSelectedFeatures"/></Tooltip>}>
             <Button key="remove-features" id="fg-remove-features" style={getStyle(mode === "EDIT" && selectedCount > 0 && !hasChanges && !hasNewFeatures)} className="square-button" onClick={events.deleteFeatures}><Glyphicon glyph="trash-square"/></Button>
         </OverlayTrigger>
-        <OverlayTrigger placement="top" overlay={<Tooltip id="fe-save-features"><Message msgId="featuregrid.toolbar.saveChanges"/></Tooltip>}>
-            <Button key="save-feature" id="fg-save-features" style={getStyle(mode === "EDIT" && hasChanges || hasNewFeatures)} className="square-button" onClick={events.saveChanges}><Glyphicon glyph="floppy-disk"/></Button>
+        <OverlayTrigger placement="top" overlay={<Tooltip id="fe-save-features"><Message msgId={getSaveMessageId({saving, saved})}/></Tooltip>}>
+            <Button key="save-feature" disabled={saving || saved} bsStyle={saved ? "success" : "default"} id="fg-save-features" style={getStyle(mode === "EDIT" && hasChanges || hasNewFeatures)} className="square-button" onClick={events.saveChanges}><Glyphicon glyph="floppy-disk"/></Button>
         </OverlayTrigger>
         <OverlayTrigger placement="top" overlay={<Tooltip id="fe-cancel-editing"><Message msgId="featuregrid.toolbar.cancelChanges"/></Tooltip>}>
             <Button key="cancel-editing" id="fg-cancel-editing" style={getStyle(mode === "EDIT" && hasChanges || hasNewFeatures)}

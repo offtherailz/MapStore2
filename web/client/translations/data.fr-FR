@@ -830,6 +830,7 @@
                 "drawFeature": "Élément de dessin",
                 "deleteSelectedFeatures": "Supprimer les fonctionnalités sélectionnées",
                 "saveChanges": "Sauvegarder les modifications",
+                "saving": "sauvetage...",
                 "cancelChanges": "Annuler les modifications",
                 "deleteGeometry": "Supprimer la géométrie",
                 "downloadGridData": "Télécharger les données",

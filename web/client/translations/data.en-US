@@ -826,6 +826,7 @@
                 "addGeom": "Add a shape to the existing geometry",
                 "deleteSelectedFeatures": "Delete selected features",
                 "saveChanges": "Save changes",
+                "saving": "Saving...",
                 "cancelChanges": "Cancel changes",
                 "deleteGeometry": "Delete geometry",
                 "downloadGridData": "Download grid data",

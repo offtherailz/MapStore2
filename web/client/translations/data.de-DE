@@ -826,6 +826,7 @@
                 "addGeom": "Fügen Sie ein Element an die vorhandene Geometrie",
                 "deleteSelectedFeatures": "Ausgewählte Funktionen löschen",
                 "saveChanges": "Änderungen speichern",
+                "saving": "Speichern...",
                 "cancelChanges": "Änderungen abbrechen",
                 "deleteGeometry": "Geometrie löschen",
                 "downloadGridData": "Daten herunterladen",

@@ -2,21 +2,20 @@ const React = require('react');
 const {connect} = require('react-redux');
 const {bindActionCreators} = require('redux');
 const {createSelector, createStructuredSelector} = require('reselect');
-
 const {paginationInfo, featureLoadingSelector} = require('../../../selectors/query');
-const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector, hasNewFeaturesSelector, isDrawingSelector} = require('../../../selectors/featuregrid');
+const {getTitleSelector, modeSelector, selectedFeaturesCount, hasChangesSelector, hasGeometrySelector, isSimpleGeomSelector, hasNewFeaturesSelector, isSavingSelector, isSavedSelector, isDrawingSelector} = require('../../../selectors/featuregrid');
 const {isAdminUserSelector} = require('../../../selectors/security');
 const {deleteFeatures, toggleTool, clearAndClose} = require('../../../actions/featuregrid');
 const {closeResponse} = require('../../../actions/wfsquery');
-
 const {toolbarEvents, pageEvents} = require('../index');
 
 const EmptyRowsView = connect(createStructuredSelector({
     loading: featureLoadingSelector
 }))(require('../../../components/data/featuregrid/EmptyRowsView'));
-
 const Toolbar = connect(
     createStructuredSelector({
+        saving: isSavingSelector,
+        saved: isSavedSelector,
         mode: modeSelector,
         hasChanges: hasChangesSelector,
         hasNewFeatures: hasNewFeaturesSelector,

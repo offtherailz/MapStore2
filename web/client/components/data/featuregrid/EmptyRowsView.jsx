@@ -8,7 +8,6 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const Message = require('../../I18N/Message');
-const Spinner = require('react-spinkit');
 const nodataStyle = {
     width: "100%",
     height: "100%",
@@ -21,7 +20,7 @@ class EmptyRowsView extends React.PureComponent {
     }
     render() {
         return this.props.loading
-            ? (<div style={nodataStyle}><Spinner style={{"float": "right"}} spinnerName="circle" noFadeIn /><Message msgId="loading" /></div>) :
+            ? (<div style={nodataStyle}><Message msgId="loading" /></div>) :
             <div style={nodataStyle}><Message msgId="featuregrid.noFeaturesAvailable" /></div>;
     }
 }

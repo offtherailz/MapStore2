@@ -10,6 +10,7 @@ const toPage = ({startIndex = 0, maxFeatures = 1, totalFeatures = 0, resultSize}
     maxPages: Math.ceil(totalFeatures / maxFeatures) - 1
 });
 module.exports = (props = {
+    loading: false,
     onPageChange: () => {}
 }) => {
     const {page = 0, size = 0, resultSize = 0, maxPages = 0, total = 0} = toPage(props);
@@ -43,7 +44,7 @@ module.exports = (props = {
                     disabled={page >= maxPages}
                 ><Glyphicon glyph="step-forward"/></Button>
         </Col><Col md={3}>
-            {props.loading ? <Spinner style={{"float": "right"}} spinnerName="circle" noFadeIn/> : <div />}
+            {props.loading ? <span style={{"float": "right"}} ><Message msgId="loading" /><Spinner spinnerName="circle" style={{"float": "right"}}noFadeIn/></span> : null}
         </Col>
     </Row></Grid>);
 };

@@ -1,4 +1,3 @@
-const {find} = require('lodash');
 const {getFeatureTypeProperties, isGeometryType, isValid, isValidValueForPropertyName, findGeometryProperty, getPropertyDesciptor} = require('./ogc/WFS/base');
 const getGeometryName = (describe) => findGeometryProperty(describe).name;
 const getPropertyName = (name, describe) => name === "geometry" ? getGeometryName(describe) : name;
@@ -75,12 +74,6 @@ module.exports = {
     getDefaultFeatureProjection: () => "EPSG:4326",
     toChangesMap,
     createNewAndEditingFilter: (hasChanges, newFeatures, changes) => f => newFeatures.length > 0 ? f._new : !hasChanges || hasChanges && !!changes[f.id],
-    hasValidChanges: (features, changesMap, describeFeatureType) =>
-        Object.keys(changesMap)
-        .map(id => find(features.filter, {id}))
-        .map(f => applyChanges(f, changesMap[f.id]))
-        .map(f => isValid(f, describeFeatureType))
-        .reduce((acc, cur) => cur && acc, true),
     hasValidNewFeatures: (newFeatures=[], describeFeatureType) => newFeatures.map(f => isValid(f, describeFeatureType)).reduce((acc, cur) => cur && acc, true),
     applyAllChanges: (orig, changes = {}) => applyChanges(orig, changes[orig.id] || {}),
     applyChanges
