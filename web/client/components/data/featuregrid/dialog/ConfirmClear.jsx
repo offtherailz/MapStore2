@@ -9,7 +9,7 @@ module.exports = ({
     show
     onClose={onClose}
     onConfirm={onConfirm}
-    confirmButtonBSStyle={'default'}
+    confirmButtonBSStyle="default"
     closeGlyph="1-close"
     confirmButtonContent={<Message msgId="featuregrid.yesButton" />}
     confirmButtonDisabled={saving}

@@ -129,10 +129,10 @@ module.exports = {
     devServer: {
         proxy: {
             '/mapstore/rest/geostore': {
-                target: "http://localhost:8082/"
+                target: "http://dev.mapstore2.geo-solutions.it"
             },
             '/mapstore/proxy': {
-                target: "http://localhost:8082/"
+                target: "http://dev.mapstore2.geo-solutions.it"
             },
             '/docs': {
                 target: "http://localhost:8081",
