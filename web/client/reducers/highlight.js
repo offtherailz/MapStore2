@@ -27,7 +27,7 @@ function highlight(state = initialState, action) {
     switch (action.type) {
         case SET_HIGHLIGHT_FEATURES_PATH: {
             return assign({}, state, {
-                featuresPath: action.featuresPath
+                featuresPath: action.featuresPath || "highlight.emptyFeatures"
             });
         }
         case HIGHLIGHT_STATUS: {

@@ -139,6 +139,7 @@ module.exports = {
         action$.ofType(QUERY_CREATE)
             .switchMap(action => Rx.Observable.of(
                 toggleControl("featuregrid", "open", true),
+                toggleViewMode(),
                 query(action.searchUrl,
                     addPagination(action.filterObj, getPagination(store.getState())
                 ))
@@ -303,7 +304,7 @@ module.exports = {
             if (a.mode === MODES.VIEW) {
                 return Rx.Observable.of(drawSupportReset(), setHighlightFeaturesPath("featuregrid.select"));
             }
-            return Rx.Observable.of(setHighlightFeaturesPath("highlight.emptyFeatures"));
+            return Rx.Observable.of(setHighlightFeaturesPath());
         }),
     /**
      * Closes the feature grid when the drawer menu button has been toggled
@@ -311,12 +312,9 @@ module.exports = {
      * @param {external:Observable} action$ manages `TOGGLE_CONTROL`
      * @return {external:Observable}
      */
-    triggerToggleViewMode: (action$, store) => action$.ofType(TOGGLE_CONTROL)
-        .filter((action) => action.control && action.control === 'featuregrid' && isFeatureEditorOpen(store.getState()))
-        .switchMap(() => Rx.Observable.of(toggleViewMode())),
     autoCloseFeatureGridEpicOnDrowerOpen: (action$, store) => action$.ofType(TOGGLE_CONTROL)
         .filter(action => action.control && action.control === 'drawer' && isFeatureEditorOpen(store.getState()))
-        .switchMap(action => action.control && action.control === 'drawer' ? Rx.Observable.of(closeFeatureGrid()) : Rx.Observable.empty()),
+        .switchMap(() => Rx.Observable.of(closeFeatureGrid())),
     askChangesConfirmOnFeatureGridClose: (action$, store) => action$.ofType(CLOSE_GRID).switchMap( () => {
         const state = store.getState();
         if (hasChangesSelector(state) || hasNewFeaturesSelector(state)) {
