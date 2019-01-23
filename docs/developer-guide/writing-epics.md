@@ -111,7 +111,7 @@ Typical opeartor to start creating a complext data flow involves operators like:
 
 The base concept of all these solutions is to create one or more new streams (using a function passed as argument) and then emit the events on the final Observer.
 
-> Note: Creating ([Higher order observables](https://gianttoast.gitbooks.io/rxjs-observables/content/higher-order-observables.html), that are basically streams of streams) and merging their events is a common pattern in RxJs, so, mergeMap and switchMap are simpler shortcuts to increase readability and maintainability of the code:  
+> Note: Creating ([Higher order observables](https://gianttoast.gitbooks.io/rxjs-observables/content/higher-order-observables.html), that are basically streams of streams) and merging their events is a common pattern in RxJs, so, mergeMap and switchMap are simpler shortcuts to increase readability and maintainability of the code:
 > - mergeMap() is just map() + mergeAll()
 > - switchMap() is just map() + switch().
 
@@ -172,40 +172,56 @@ vvvvvvvvvvvvvvvvvvvvvvvvvv switchMap vvvvvvvvvvvvvvvvvvvvvvvvvv
 
 ```
 
-
 ## Doing AJAX
 
-Ajax calls in MapStore should all pass by `libs/ajax.js`. This is an `axios` instance that add the support for using proxies or CORS.
+All the Ajax calls in MapStore should use `libs/ajax.js`. `libs/ajax.js` is an wrapper of the [axios](https://github.com/axios/axios) client (that keeps the same interface), with some interceptors and enhancements to support:
 
-Axios is a library that uses es6 Promises to do ajax calls. Luckily RxJs allow to use Promises instead of streams in most of the cases. In the other cases, there are specific operators called `fromPromise` or `defer` that you can use to wrap your Promise into a stream.
+- Authentication/Authorization based on pre-configured MapStore2 rules
+- Usage of proxy or CORS (for cross origin requests)
 
-> NOTE: it is perfectly normal to consider the concept of Promise as a special case of a stream, that emit one value, then closes.
+### Axios and the Promise API
 
+Axios is a library that uses [es6 Promises](https://developer.mozilla.org/it/docs/Web/JavaScript/Reference/Global_Objects/Promise).
 
-So,everytime you have to do an ajax call, you will need to use axios:
-
-Example with `defer`:
+A promise is a representation of an uncompleted async operation, that will be completed in future. When you have a promise object returned by axios you add a single handler using the `then` operator, (and/or an handler for exceptions, using the `catch` operator, but this is not important for our purposes). This operator return a Promise, so it can be can be concatenated as you want.
+Example:
 
 ```javascript
+axios.get('myURL')
+    .then(response => axios(response.data.myOtherURL)) // concatenate with another async request
+    .then(response2 => doSomething(response2.data)); // do something with the data
+```
+
+### Axios Promises and RxJS
+
+The Promise looks something like a "special case" of a stream that simply emits only one value and closes. This is why RxJS allows to use Promises instead of streams in most of the cases. In the other cases, there are specific operators called `fromPromise` or `defer` that you can use to wrap your Promise into a stream.
+
+> NOTE: `fromPromise` will be removed in the future versions of RxJS. So you should always use `defer`. Deferring the creation of the Stream (Promise) allows also to use operators like `retry`, that can not be used with `fromPromise`, because the promise has been created on stream creation time (`defer` instead can re-execute the function passed as argument)
+
+So, every time you have to do an ajax call, you will need to use `libs/ajax.js`:
+
+Example:
+
+```javascript
+// my action, for instance in myactions.js
+const dataFetched = (data) => ({type: DATA_FETCHED, data})
+const fetchError = (error) => ({type: FETCH_ERROR, error})
+//...
 
 const axios = require('../libs/ajax');
 const fetchDataEpic = (action$, store) => action$
     .ofType(FETCH_DATA)
-    .switchMap(
-        Rx.Observable.defer(() => axios.get("MY_DATA")) // defer gets a function
-            map(response => dataFetched(response.data))
+    .switchMap( (action) => // note: implicit return
+        // defer gets a function as argument
+        Rx.Observable.defer(() => axios.get(action.url))
+            .map(response => dataFetched(response.data))
+            .catch(e => Rx.Observable.of(fetchError(e)))
     );
 ```
+When the `FETCH_DATA` action is performed (for instance clicking on a button), The new stream inside switchMap will start to emit actions.
+The response will be emitted
 
-Example with `fromPromise`
 
-```javascript
 
-const axios = require('../libs/ajax');
-const fetchDataEpic = (action$, store) => action$
-    .ofType(FETCH_DATA)
-    .switchMap(
-        Rx.Observable.fromPromise(axios.get("MY_DATA"))
-            map(response => dataFetched(response.data))
-    );
-```
+
+
