@@ -194,11 +194,24 @@ axios.get('myURL')
 
 ### Axios Promises and RxJS
 
-The Promise looks something like a "special case" of a stream that simply emits only one value and closes. This is why RxJS allows to use Promises instead of streams in most of the cases. In the other cases, there are specific operators called `fromPromise` or `defer` that you can use to wrap your Promise into a stream.
+The Promise looks something like a "special case" of a stream that simply emits only one value and closes. This is why RxJS allows to use Promises instead of streams in most of the cases.
+Example:
 
-> NOTE: `fromPromise` will be removed in the future versions of RxJS. So you should always use `defer`. Deferring the creation of the Stream (Promise) allows also to use operators like `retry`, that can not be used with `fromPromise`, because the promise has been created on stream creation time (`defer` instead can re-execute the function passed as argument)
+```javascript
+const axios = require('../libs/ajax');
+const fetchDataEpic = (action$, store) => action$
+    .ofType(FETCH_DATA)
+    .switchMap( (action) =>  axios.get(action.url) )
+    .map(response => dataFetched(response)) // emit the action for response
+    .catch(e => errorAction(e)) // emit the action for the error
 
-So, every time you have to do an ajax call, you will need to use `libs/ajax.js`:
+```
+
+In the other cases, there are specific operators called `fromPromise` or `defer` that you can use to wrap your Promise into a stream.
+
+> NOTE: `fromPromise` will be removed in the future versions of RxJS. So you should always use `defer`. Deferring the creation of the Promise also allows to use operators like `retry`. This is useful if you want to retry a web request after n-seconds.
+
+So, every time you have to do an ajax call, you will need to use `libs/ajax.js`. Doing it in a stream works like this:
 
 Example:
 
