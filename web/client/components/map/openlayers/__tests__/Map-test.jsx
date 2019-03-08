@@ -395,7 +395,7 @@ describe('OpenlayersMap', () => {
             "useForElevation": true
         };
         const map = ReactDOM.render(<OpenlayersMap center={{y: 43.9, x: 10.3}} zoom={11}>
-            <OpenlayersLayer type="wms" options={options} />
+            <OpenlayersLayer type="wms" srs="EPSG:3857" options={options} />
         </OpenlayersMap>, document.getElementById("map"));
         expect(map).toExist();
         expect(map.map.get('elevationLayer')).toExist();
@@ -489,6 +489,40 @@ describe('OpenlayersMap', () => {
         expect(center[0].toFixed(1)).toBe('10.0');
     });
 
+    it('check if the map reprojects the view coordinates when the projection is changed', () => {
+        proj.defs("EPSG:25830", "+proj=utm +zone=30 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+        const projectionDefs = [{
+            code: "EPSG:25830",
+            extent: [-1300000, 4000000, 1900000, 7500000],
+            worldExtent: [-6.0000, 35.9500, 0.0000, 63.9500]
+        }];
+
+        let map = ReactDOM.render(
+            <OpenlayersMap
+                projection="EPSG:900913"
+                projectionDefs={projectionDefs}
+                center={{y: 43.9, x: 10.3}}
+                zoom={11}
+                measurement={{}}
+            />
+        , document.getElementById("map"));
+        const firstView = map.map.getView().calculateExtent(map.map.getSize());
+        map = ReactDOM.render(
+            <OpenlayersMap
+            projection="EPSG:25830"
+                projectionDefs={projectionDefs}
+                center={{y: 43.9, x: 10.3}}
+                zoom={11}
+                measurement={{}}
+            />
+        , document.getElementById("map"));
+        const secondView = map.map.getView().calculateExtent(map.map.getSize());
+        expect(firstView.length).toBe(4);
+        expect(secondView.length).toBe(4);
+        expect(firstView[0].toFixed(0)).toNotEqual(secondView[0].toFixed(0));
+
+    });
+
     it('check result of "haveResolutionsChanged()" when receiving new props', () => {
         let map = ReactDOM.render(
             <OpenlayersMap
@@ -555,6 +589,7 @@ describe('OpenlayersMap', () => {
                 zoom={11.6}
                 measurement={{}}
                 mapOptions={{view: {resolutions: [10, 5, 2, 1]}}}
+                maxExtent= {[-180, -90, 180, 80]}
             />
         , document.getElementById("map"));
         expect( map.haveResolutionsChanged(testProps({mapOptions: undefined})) ).toBe(true);
@@ -654,7 +689,57 @@ describe('OpenlayersMap', () => {
         attributions = document.body.getElementsByClassName('ol-attribution');
         expect(attributions.length).toBe(0);
     });
+    it('test getResolutions default', () => {
+        const maxResolution = 2 * 20037508.34;
+        const tileSize = 256;
+        const expectedResolutions = Array.from(Array(29).keys()).map( k=> maxResolution / tileSize / Math.pow(2, k));
+        let map = ReactDOM.render(<OpenlayersMap id="ol-map" center={{ y: 43.9, x: 10.3 }} zoom={11} mapOptions={{ attribution: { container: 'body' } }} />, document.getElementById("map"));
+        expect(map.getResolutions().length).toBe(expectedResolutions.length);
+        // NOTE: round
+        expect(map.getResolutions().map(a => a.toFixed(4))).toEqual(expectedResolutions.map(a => a.toFixed(4)));
 
+    });
+    it('test getResolutions with custom projection', () => {
+        const projectionDefs = [
+            {
+                "code": "EPSG:3003",
+                "def": "+proj=tmerc +lat_0=0 +lon_0=9 +k=0.9996 +x_0=1500000 +y_0=0 +ellps=intl+towgs84=-104.1,-49.1,-9.9,0.971,-2.917,0.714,-11.68 +units=m +no_defs",
+                "extent": [
+                    1241482.0019432348,
+                    972767.2605398067,
+                    1847542.2626266503,
+                    5215189.085323715
+                ],
+                "worldExtent": [
+                    6.6500,
+                    8.8000,
+                    12.0000,
+                    47.0500
+                ]
+            }
+        ];
+        proj.defs(projectionDefs[0].code, projectionDefs[0].def);
+        const maxResolution = 1847542.2626266503 - 1241482.0019432348;
+        const tileSize = 256;
+        const expectedResolutions = Array.from(Array(29).keys()).map(k => maxResolution / tileSize / Math.pow(2, k));
+        let map = ReactDOM.render(<OpenlayersMap
+            id="ol-map"
+            center={{
+                x: 10.710054361528954,
+                y: 43.69814562139725,
+                crs: 'EPSG:4326'
+            }}
+            projectionDefs={projectionDefs}
+            zoom={11}
+            mapOptions={{ attribution: { container: 'body' } }}
+            projection={projectionDefs[0].code}
+            />, document.getElementById("map"));
+
+        expect(map.getResolutions()).toExist();
+        expect(map.getResolutions().length).toBe(expectedResolutions.length);
+        // NOTE: round
+        expect(map.getResolutions().map(a => a.toFixed(4))).toEqual(expectedResolutions.map(a => a.toFixed(4)));
+    });
     it('test double attribution on document', () => {
         let map = ReactDOM.render(
             <span>

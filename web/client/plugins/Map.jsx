@@ -23,7 +23,7 @@ const {errorLoadingFont} = require('../actions/map');
 
 const {isString} = require('lodash');
 let plugins;
-const {handleCreationLayerError, handleCreationBackgroundError, resetMapOnInit} = require('../epics/map');
+const {handleCreationLayerError, handleCreationBackgroundError, resetMapOnInit, resetLimitsOnInit} = require('../epics/map');
 /**
  * The Map plugin allows adding mapping library dependent functionality using support tools.
  * Some are already available for the supported mapping libraries (openlayers, leaflet, cesium), but it's possible to develop new ones.
@@ -130,6 +130,22 @@ const {handleCreationLayerError, handleCreationBackgroundError, resetMapOnInit} 
  *    }
  *  }
  * ```
+ * an additional feature is the ability to set the map restricted extent in the localConfig.json file using "mapConstraints" property e.g
+ * ```
+ * "mapConstraints": {
+ *  "minZoom": 12, // minimal allowed zoom used by default
+ *  "crs":"EPSG:3857",
+ *  "restrictedExtent":[
+ *    1060334.456371965,5228292.734706056,
+ *    1392988.403469052,5503466.036532691
+ *   ],
+ *   "projectionsConstraints": {
+ *       "EPSG:1234": { "minZoom": 5 } // customization of minZoom for different projections
+ *   }
+ *  }
+ * ```
+ * where crs refers to the reference system of the written coordinates, this property is located in the root of localConfig.json.
+ *  ```
  * For more info on metadata visit [fontfaceobserver](https://github.com/bramstein/fontfaceobserver)
  *
  * @memberof plugins
@@ -406,5 +422,5 @@ module.exports = {
         maptype: require('../reducers/maptype'),
         additionallayers: require('../reducers/additionallayers')
     },
-    epics: assign({}, {handleCreationLayerError, handleCreationBackgroundError, resetMapOnInit})
+    epics: assign({}, { handleCreationLayerError, handleCreationBackgroundError, resetMapOnInit, resetLimitsOnInit})
 };

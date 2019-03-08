@@ -13,9 +13,11 @@ const {isNil} = require('lodash');
 const objectAssign = require('object-assign');
 const CoordinatesUtils = require('../../../../utils/CoordinatesUtils');
 const ProxyUtils = require('../../../../utils/ProxyUtils');
-const {isArray} = require('lodash');
+const { isArray, castArray } = require('lodash');
 const {optionsToVendorParams} = require('../../../../utils/VendorParamsUtils');
 const SecurityUtils = require('../../../../utils/SecurityUtils');
+const { creditsToAttribution } = require('../../../../utils/LayersUtils');
+
 const mapUtils = require('../../../../utils/MapUtils');
 const ElevationUtils = require('../../../../utils/ElevationUtils');
 /**
@@ -112,6 +114,7 @@ function getElevation(pos) {
         return <Message msgId="elevationLoadingError" />;
     }
 }
+const toOLAttributions = credits => credits && creditsToAttribution(credits) ? castArray(creditsToAttribution(credits)) : undefined;
 
 Layers.registerType('wms', {
     create: (options, map) => {
@@ -125,6 +128,7 @@ Layers.registerType('wms', {
                 zIndex: options.zIndex,
                 source: new ol.source.ImageWMS({
                     url: urls[0],
+                    attributions: toOLAttributions(options.credits),
                     params: queryParameters,
                     ratio: options.ratio || 1
                 })
@@ -133,12 +137,17 @@ Layers.registerType('wms', {
         const mapSrs = map && map.getView() && map.getView().getProjection() && map.getView().getProjection().getCode() || 'EPSG:3857';
         const extent = ol.proj.get(CoordinatesUtils.normalizeSRS(options.srs || mapSrs, options.allowedSRS)).getExtent();
         const sourceOptions = addTileLoadFunction({
+            attributions: toOLAttributions(options.credits),
             urls: urls,
             params: queryParameters,
             tileGrid: new ol.tilegrid.TileGrid({
+                // TODO: custom grid sets with custom extent
                 extent: extent,
+                // TODO: custom grid sets resolutions and tile size (needed to generate resolutions)
                 resolutions: mapUtils.getResolutions(),
                 tileSize: options.tileSize ? options.tileSize : 256,
+                // TODO: GWC grid sets with `alignTopLeft=true` may require `extent[0], extent[3]`
+
                 origin: options.origin ? options.origin : [extent[0], extent[1]]
             })
         }, options);
@@ -179,9 +188,12 @@ Layers.registerType('wms', {
             if (oldOptions.srs !== newOptions.srs) {
                 const extent = ol.proj.get(CoordinatesUtils.normalizeSRS(newOptions.srs, newOptions.allowedSRS)).getExtent();
                 layer.getSource().tileGrid = new ol.tilegrid.TileGrid({
+                    // TODO: custom grid sets extents
                     extent: extent,
+                    // TODO: custom grid sets resolutions and tile size (needed to generate resolutions)
                     resolutions: mapUtils.getResolutions(),
                     tileSize: newOptions.tileSize ? newOptions.tileSize : 256,
+                    // TODO: GWC grid sets with `alignTopLeft=true` may require `extent[0], extent[3]`
                     origin: newOptions.origin ? newOptions.origin : [extent[0], extent[1]]
                 });
             }
@@ -193,7 +205,15 @@ Layers.registerType('wms', {
                     });
                 }, {})));
             }
-            if (oldOptions.singleTile !== newOptions.singleTile || oldOptions.securityToken !== newOptions.securityToken || oldOptions.ratio !== newOptions.ratio) {
+            if (oldOptions.credits !== newOptions.credits && newOptions.credits) {
+                layer.getSource().setAttributions(toOLAttributions(newOptions.credits));
+            }
+            if (oldOptions.singleTile !== newOptions.singleTile
+                || oldOptions.securityToken !== newOptions.securityToken
+                || oldOptions.ratio !== newOptions.ratio
+                 // no way to remove attribution when credits are removed, so have re-create the layer is needed. Seems to be solved in OL v5.3.0, due to the ol commit 9b8232f65b391d5d381d7a99a7cd070fc36696e9 (https://github.com/openlayers/openlayers/pull/7329)
+                || oldOptions.credits !== newOptions.credits && !newOptions.credits
+                ) {
                 // this forces cache empty, required when auth permission changed to avoid caching when unauthorized
                 // Moved here to avoid the layer disappearing during animations
                 if (changed) {
@@ -212,6 +232,7 @@ Layers.registerType('wms', {
                         visible: newOptions.visibility !== false,
                         zIndex: newOptions.zIndex,
                         source: new ol.source.ImageWMS({
+                            attributions: toOLAttributions(newOptions.credits),
                             url: urls[0],
                             params: queryParameters,
                             ratio: newOptions.ratio || 1
@@ -226,12 +247,16 @@ Layers.registerType('wms', {
                         visible: newOptions.visibility !== false,
                         zIndex: newOptions.zIndex,
                         source: new ol.source.TileWMS(objectAssign({
+                            attributions: toOLAttributions(newOptions.credits),
                             urls: urls,
                             params: queryParameters,
                             tileGrid: new ol.tilegrid.TileGrid({
+                                // TODO: custom grid sets extents
                                 extent: extent,
+                                // TODO: custom grid sets resolutions and tile size (needed to generate resolutions)
                                 resolutions: mapUtils.getResolutions(),
                                 tileSize: newOptions.tileSize ? newOptions.tileSize : 256,
+                                // TODO: GWC grid sets with `alignTopLeft=true` may require `extent[0], extent[3]`
                                 origin: newOptions.origin ? newOptions.origin : [extent[0], extent[1]]
                             })
                         }, newOptions.forceProxy ? {tileLoadFunction: proxyTileLoadFunction} : {}))

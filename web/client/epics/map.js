@@ -8,10 +8,12 @@
 
 const Rx = require('rxjs');
 const {changeLayerProperties} = require('../actions/layers');
-const {CREATION_ERROR_LAYER, INIT_MAP} = require('../actions/map');
+const { CREATION_ERROR_LAYER, INIT_MAP, CHANGE_MAP_CRS, changeMapLimits} = require('../actions/map');
+const { configuredExtentCrsSelector, configuredRestrictedExtentSelector, configuredMinZoomSelector} = require('../selectors/map');
 const {currentBackgroundLayerSelector, allBackgroundLayerSelector, getLayerFromId} = require('../selectors/layers');
 const {mapTypeSelector} = require('../selectors/maptype');
 const {setControlProperty} = require('../actions/controls');
+const {MAP_CONFIG_LOADED} = require('../actions/config');
 const {isSupportedLayer} = require('../utils/LayersUtils');
 const {warning} = require('../actions/notifications');
 const {resetControls} = require('../actions/controls');
@@ -71,8 +73,18 @@ const handleCreationLayerError = (action$, store) =>
 const resetMapOnInit = action$ =>
     action$.ofType(INIT_MAP).switchMap(() => Rx.Observable.of(removeAllAdditionalLayers(), resetControls(), clearLayers()));
 
+const resetLimitsOnInit = (action$, store) =>
+    action$.ofType(MAP_CONFIG_LOADED, CHANGE_MAP_CRS)
+    .switchMap(() => {
+        const confExtentCrs = configuredExtentCrsSelector(store.getState());
+        const restrictedExtent = configuredRestrictedExtentSelector(store.getState());
+        const minZoom = configuredMinZoomSelector(store.getState());
+        return Rx.Observable.of(changeMapLimits({ restrictedExtent, crs: confExtentCrs, minZoom}));
+    });
+
 module.exports = {
     handleCreationLayerError,
     handleCreationBackgroundError,
-    resetMapOnInit
+    resetMapOnInit,
+    resetLimitsOnInit
 };

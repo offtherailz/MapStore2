@@ -13,6 +13,8 @@ const {isEqual, find, castArray} = require('lodash');
 const {parseStyles} = require('./VectorStyle');
 const {transformPolygonToCircle} = require('../../../utils/DrawSupportUtils');
 const {createStylesAsync} = require('../../../utils/VectorStyleUtils');
+const CoordinatesUtils = require('../../../utils/CoordinatesUtils');
+
 
 class Feature extends React.Component {
     static propTypes = {
@@ -35,15 +37,15 @@ class Feature extends React.Component {
     componentDidMount() {
         this.addFeatures(this.props);
     }
-
     shouldComponentUpdate(nextProps) {
         // TODO check if shallow comparison is enough properties and geometry
-        return !isEqual(nextProps.properties, this.props.properties) || !isEqual(nextProps.geometry, this.props.geometry) || (nextProps.features !== this.props.features) || (nextProps.style !== this.props.style);
+        return !isEqual(nextProps.properties, this.props.properties) || !isEqual(nextProps.geometry, this.props.geometry) || (nextProps.features !== this.props.features) || (nextProps.style !== this.props.style) || !isEqual(nextProps.crs, this.props.crs);
     }
 
     componentWillUpdate(nextProps) {
         // TODO check if shallow comparison is enough properties and geometry
-        if (!isEqual(nextProps.properties, this.props.properties) || !isEqual(nextProps.geometry, this.props.geometry) || (nextProps.features !== this.props.features) || (nextProps.style !== this.props.style)) {
+        if (!isEqual(nextProps.properties, this.props.properties) || !isEqual(nextProps.geometry, this.props.geometry) || (nextProps.features !== this.props.features) || (nextProps.style !== this.props.style) || !isEqual(newProps.crs, this.props.crs))) {
+
             this.removeFromContainer();
             this.addFeatures(nextProps);
         }
@@ -59,7 +61,6 @@ class Feature extends React.Component {
 
     addFeatures = (props) => {
         const format = new ol.format.GeoJSON();
-
         let ftGeometry = null;
         let canRender = false;
 
@@ -73,17 +74,23 @@ class Feature extends React.Component {
         }
 
         if (props.container && canRender) {
-            this._feature = format.readFeatures({
-                type: props.type,
-                properties: props.properties,
-                id: props.msId,
-                ...ftGeometry
-            });
+            this._feature = format.readFeatures(
+                CoordinatesUtils.reprojectGeoJson({
+                        type: props.type,
+                        properties: props.properties,
+                        id: props.msId,
+                        ...ftGeometry
+                    },
+                    props.featuresCrs,
+                    props.crs
+                )
+            );
             this._feature.map(f => {
                 let newF = f;
                 if (f.getProperties().isCircle) {
                     newF = transformPolygonToCircle(f, props.crs || 'EPSG:3857');
                     newF.setGeometry(newF.getGeometry().transform(props.crs || 'EPSG:3857', props.featuresCrs));
+
                 }
                 return newF;
             }).forEach(
@@ -122,7 +129,7 @@ class Feature extends React.Component {
                 const layersSource = this.props.container.getSource();
                 this._feature.map((feature) => {
                     let featureId = feature.getId();
-                    if (featureId === undefined) {
+                    if (featureId === undefined || !layersSource.getFeatureById(featureId)) {
                         layersSource.removeFeature(feature);
                     } else {
                         layersSource.removeFeature(layersSource.getFeatureById(featureId));
