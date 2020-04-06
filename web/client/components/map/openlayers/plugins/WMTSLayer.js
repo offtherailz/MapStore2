@@ -11,6 +11,8 @@ import Layers from '../../../../utils/openlayers/Layers';
 import castArray from 'lodash/castArray';
 import head from 'lodash/head';
 import last from 'lodash/last';
+import sortBy from 'lodash/sortBy';
+import reverse from 'lodash/reverse';
 
 import SecurityUtils from '../../../../utils/SecurityUtils';
 import WMTSUtils from '../../../../utils/WMTSUtils';
@@ -45,7 +47,16 @@ function getWMSURLs(urls, requestEncoding) {
 const getTileMatrix = (options, srs) => {
     const tileMatrixSetName = WMTSUtils.getTileMatrixSet(options.tileMatrixSet, srs, options.allowedSRS, options.matrixIds);
     const tileMatrixSet = head(options.tileMatrixSet.filter(tM => tM['ows:Identifier'] === tileMatrixSetName));
-    return {tileMatrixSetName, tileMatrixSet};
+    return {
+        tileMatrixSetName,
+        tileMatrixSet: {
+            ...tileMatrixSet,
+            TileMatrix: reverse(sortBy(tileMatrixSet.TileMatrix.map(({ScaleDenominator, ...rest}) => ({
+                ...rest,
+                ScaleDenominator: Number(ScaleDenominator)
+            })), "ScaleDenominator"))
+        }
+    };
 };
 
 const createLayer = options => {
@@ -68,7 +79,10 @@ const createLayer = options => {
     const matrixResolutions = options.resolutions || scales && scales.map(scaleToResolution);
     const resolutions = matrixResolutions || mapResolutions;
 
-    const matrixIds = WMTSUtils.limitMatrix(options.matrixIds && WMTSUtils.getMatrixIds(options.matrixIds, tileMatrixSetName || srs) || WMTSUtils.getDefaultMatrixId(options), resolutions.length);
+    const matrixIds = WMTSUtils.limitMatrix(
+        options.matrixIds && WMTSUtils.getMatrixIds(options.matrixIds, tileMatrixSetName || srs) || WMTSUtils.getDefaultMatrixId(options),
+        resolutions.length
+    );
 
     /* - enu - the default easting, north-ing, elevation
     * - neu - north-ing, easting, up - useful for "lat/long" geographic coordinates, or south orientated transverse mercator
