@@ -28,6 +28,17 @@ module.exports = () =>
                 textId: "widgets.widget.menu.exportImage",
                 disabled: !data || !data.length,
                 // NOTE: the widget widget-chart-${id} must be the id of the div to export as image
+                onClick: () => exportImage({
+                    widgetDivId: `widget-chart-${id}  .recharts-wrapper svg`,
+                    title
+                })
+            }, {
+                glyph: "download",
+                target: "menu",
+                glyphClassName: "exportWidgetImage",
+                textId: "widgets.widget.menu.exportWidgetImage",
+                disabled: !data || !data.length,
+                // NOTE: the widget widget-chart-${id} must be the id of the div to export as image
                 onClick: () => exportImage({ widgetDivId: `widget-chart-${id}`, title })
             }
         ]

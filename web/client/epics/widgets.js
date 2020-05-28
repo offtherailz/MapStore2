@@ -7,6 +7,8 @@ const { EXPORT_CSV, EXPORT_IMAGE, INSERT, TOGGLE_CONNECTION, WIDGET_SELECTED, ED
 const {
     MAP_CONFIG_LOADED
 } = require('../actions/config');
+const html2canvas = require('html2canvas');
+
 
 const { availableDependenciesSelector, isWidgetSelectionActive, getDependencySelectorConfig } = require('../selectors/widgets');
 const { CHANGE_LAYER_PROPERTIES, LAYER_LOAD, LAYER_ERROR } = require('../actions/layers');
@@ -186,24 +188,19 @@ module.exports = {
     exportWidgetImage: action$ =>
         action$.ofType(EXPORT_IMAGE)
             .do( ({widgetDivId, title = "data"}) => {
-                let canvas = document.createElement('canvas');
-                const svg = document.querySelector(`#${widgetDivId} .recharts-wrapper svg`);
-                const svgString = svg.outerHTML ? svg.outerHTML : outerHTML(svg);
-                // svgOffsetX = svgOffsetX ? svgOffsetX : 0;
-                // svgOffsetY = svgOffsetY ? svgOffsetY : 0;
-                // svgCanv.setAttribute("width", Number.parseFloat(svgW) + left);
-                // svgCanv.setAttribute("height", svgH);
-                canvg(canvas, svgString, {
-                    renderCallback: () => {
-                        const context = canvas.getContext("2d");
-                        context.globalCompositeOperation = "destination-over";
-                        // set background color
-                        context.fillStyle = '#fff'; // <- background color
-                        // draw background / rect on entire canvas
-                        context.fillRect(0, 0, canvas.width, canvas.height);
-                        FileUtils.downloadCanvasDataURL(canvas.toDataURL('image/jpeg', 1.0), `${title}.jpg`, "image/jpeg");
-                    }
+
+                html2canvas(document.querySelector(`#${widgetDivId}`), {
+                    ignoreElements: e => e.className === "mapstore-widget-options" || e.className === "glyphicon-question-sign"
+                }).then(canvas => {
+                    const context = canvas.getContext("2d");
+                    context.globalCompositeOperation = "destination-over";
+                    // set background color
+                    context.fillStyle = '#fff'; // <- background color
+                    // draw background / rect on entire canvas
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                    FileUtils.downloadCanvasDataURL(canvas.toDataURL('image/jpeg', 1.0), `${title}.jpg`, "image/jpeg");
                 });
+
             })
             .filter( () => false),
     /**
