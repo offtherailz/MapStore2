@@ -9,6 +9,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import Layers from '../../../utils/openlayers/Layers';
+import {applyEffects} from '../../../utils/openlayers/effects';
 import CoordinatesUtils from '../../../utils/CoordinatesUtils';
 import assign from 'object-assign';
 import Rx from 'rxjs';
@@ -300,6 +301,7 @@ export default class OpenlayersLayer extends React.Component {
                     this.layer.getSource().updateParams(assign({}, options.params, {_refreshCounter: counter++}));
                 }, options.refresh);
             }
+            applyEffects(this.props.map, this.layer, options.effects, this.props);
         }
     };
 
