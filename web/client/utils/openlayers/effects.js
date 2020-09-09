@@ -53,11 +53,22 @@ function applySpy(map, layer, effect) {
     });
 }
 
-function applySwipe(map, layer, effect, props) {
-    let value = 50;
+function applySwipe(map, layer) {
+    const container = map.getTargetElement();
+    let mousePosition = null;
+
+    container.addEventListener('mousemove', function(event) {
+        mousePosition = map.getEventPixel(event);
+        map.render();
+    });
+
+    container.addEventListener('mouseout', function() {
+        mousePosition = null;
+        map.render();
+    });
     layer.on('precompose', function (event) {
         let ctx = event.context;
-        let width = ctx.canvas.width * (value / 100);
+        let width = mousePosition[0]; // ctx.canvas.width * (value / 100); // value is the 0-100  interval
 
         ctx.save();
         ctx.beginPath();
@@ -67,17 +78,37 @@ function applySwipe(map, layer, effect, props) {
 
     layer.on('postcompose', function (event) {
         let ctx = event.context;
+        // line
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        let width = mousePosition[0];
+        ctx.beginPath();
+        ctx.moveTo(width, 0);
+        ctx.lineTo(width, ctx.canvas.height);
+        ctx.stroke();
+
+        // handler
+        const handlerWidth = 40;
+        const handlerHeight = 80;
+        const handlerCenter = [width, ctx.canvas.height / 2];
+        ctx.fillStyle = "rgba(200,200,200,1)";
+        ctx.fillRect(
+            handlerCenter[0] - handlerWidth / 2,
+            handlerCenter[1] - handlerHeight / 2,
+            handlerWidth,
+            handlerHeight
+        );
         ctx.restore();
     });
 }
 
-export function applyEffect(map, layer, effect, props) {
+export function applyEffect(map, layer, effect) {
     switch (effect.type) {
     case SWIPE:
-        applySwipe(map, layer, effect, props);
+        applySwipe(map, layer, effect);
         break;
     case SPY:
-        applySpy(map, layer, effect, props);
+        applySpy(map, layer, effect);
         break;
     default:
         break;
