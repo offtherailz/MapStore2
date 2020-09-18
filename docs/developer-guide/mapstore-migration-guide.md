@@ -31,19 +31,19 @@ Now eslint configuration is shared in a separate npm module. To update your cust
 And add to `package.json` the following entry, in the root:
 
 ```json
-        eslintConfig: {
+        "eslintConfig": {
             "extends": [
                 "@mapstore/eslint-config-mapstore"
             ],
-            parserOptions: {
-                babelOptions: {
+            "parserOptions": {
+                "babelOptions": {
                     "configFile": "./MapStore2/build/babel.config.js"
                 }
             }
         },
 ```
 
-If you have aproject that includes MapStore as a dependency, you can run `npm run updateDevDeps` to finalize the update. Otherwise make you sure to include:
+If you have a project that includes MapStore as a dependency, you can run `npm run updateDevDeps` to finalize the update. Otherwise make you sure to include:
 
 - devDependencies:
   - add

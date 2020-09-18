@@ -33,7 +33,6 @@ const Button = tooltip(ButtonRB);
  */
 function CustomThemePicker({
     themeStyle,
-    disableBackgroundPicker = false,
     disableBackgroundAlpha,
     disableTextColor,
     disableShadow,
