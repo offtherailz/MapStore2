@@ -108,6 +108,7 @@ module.exports = {
         SnapshotPlugin: require('../plugins/Snapshot'),
         StyleEditorPlugin: require('../plugins/StyleEditor'),
         TOCItemsSettingsPlugin: require('../plugins/TOCItemsSettings').default,
+        SwipePlugin: require('../plugins/Swipe').default,
         TOCPlugin: require('../plugins/TOC'),
         ThematicLayerPlugin: require('../plugins/ThematicLayer'),
         ThemeSwitcherPlugin: require('../plugins/ThemeSwitcher'),

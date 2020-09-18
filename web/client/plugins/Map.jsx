@@ -189,6 +189,7 @@ class MapPlugin extends React.Component {
         loadingSpinner: PropTypes.bool,
         loadingError: PropTypes.string,
         tools: PropTypes.array,
+        items: PropTypes.array,
         fonts: PropTypes.array,
         options: PropTypes.object,
         mapOptions: PropTypes.object,
@@ -215,6 +216,7 @@ class MapPlugin extends React.Component {
         tools: ["measurement", "locate", "scalebar", "draw", "highlight", "popup"],
         options: {},
         mapOptions: {},
+        items: [],
         fonts: ['FontAwesome'],
         toolsOptions: {
             measurement: {},
@@ -359,7 +361,11 @@ class MapPlugin extends React.Component {
             const Tool = this.getTool(tool);
             const options = this.props.toolsOptions[Tool.name] && this.props.toolsOptions[Tool.name][this.props.mapType] || this.props.toolsOptions[Tool.name] || {};
             return <Tool.impl key={Tool.name} {...options}/>;
-        });
+        })
+            .concat(
+                this.props.items
+                    .filter(({ Component }) => !!Component)
+                    .map(({ Component, name }) => <Component key={name} />));
     };
 
     render() {
