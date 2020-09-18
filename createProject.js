@@ -46,22 +46,22 @@ function doWork(params) {
     const readdir = denodeify(fs.readdir);
 
     const options = {
-        name: params.projectName,
-        version: params.projectVersion,
-        description: params.projectDescription || params.projectName,
-        repository: params.repoURL,
-        eslintConfig: {
+        "name": params.projectName,
+        "version": params.projectVersion,
+        "description": params.projectDescription || params.projectName,
+        "repository": params.repoURL,
+        "eslintConfig": {
             "extends": [
                 "@mapstore/eslint-config-mapstore"
             ],
-            parserOptions: {
-                babelOptions: {
+            "parserOptions": {
+                "babelOptions": {
                     "configFile": "./MapStore2/build/babel.config.js"
                 }
             }
         },
-        scripts: require('./utility/projects/projectScripts.json'),
-        dependencies: {
+        "scripts": require('./utility/projects/projectScripts.json'),
+        "dependencies": {
             "mapstore2": "file:MapStore2"
         }
     };

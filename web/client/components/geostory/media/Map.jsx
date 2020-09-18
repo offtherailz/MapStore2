@@ -35,7 +35,8 @@ export default compose(
     height,
     size,
     showCaption,
-    caption: contentCaption
+    caption: contentCaption,
+    mapType = "leaflet" // default for when map MediaViewer is not connected to redux
 }) => {
 
     const { layers = [], mapOptions = {}, description, ...m} = (map.data ? map.data : map);
