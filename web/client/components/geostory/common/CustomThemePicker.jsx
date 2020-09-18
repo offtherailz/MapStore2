@@ -53,7 +53,6 @@ function CustomThemePicker({
 
     return (
         <>
-        {!disableBackgroundPicker && (
             <div className="ms-custom-theme-picker-field">
                 <div><Message msgId="geostory.customizeTheme.backgroundColorLabel"/></div>
                 <div>
@@ -81,8 +80,7 @@ function CustomThemePicker({
                         }}/>
                 </div>
             </div>
-        )}
-        {!disableTextColor &&
+            {!disableTextColor &&
         <div className="ms-custom-theme-picker-field">
             <div>
                 <div><Message msgId="geostory.customizeTheme.textColorLabel"/></div>
@@ -96,24 +94,24 @@ function CustomThemePicker({
                     placement="top"
                     content={
                         <>
-                        <HTML
-                            msgId="geostory.customizeTheme.alternativeTextColorPopover"
-                            msgParams={{
-                                color: mostReadableTextColor
-                            }}/>
-                        <Button
-                            bsSize="xs"
-                            bsStyle="primary"
-                            style={{
-                                margin: 'auto',
-                                display: 'block'
-                            }}
-                            onClick={() =>  {
-                                onChange({ ...themeStyle, color: mostReadableTextColor });
-                                trigger.current?.hide?.();
-                            }}>
-                            <Message msgId="geostory.customizeTheme.useAlternativeTextColor"/>
-                        </Button>
+                            <HTML
+                                msgId="geostory.customizeTheme.alternativeTextColorPopover"
+                                msgParams={{
+                                    color: mostReadableTextColor
+                                }}/>
+                            <Button
+                                bsSize="xs"
+                                bsStyle="primary"
+                                style={{
+                                    margin: 'auto',
+                                    display: 'block'
+                                }}
+                                onClick={() =>  {
+                                    onChange({ ...themeStyle, color: mostReadableTextColor });
+                                    trigger.current?.hide?.();
+                                }}>
+                                <Message msgId="geostory.customizeTheme.useAlternativeTextColor"/>
+                            </Button>
                         </>
                     }>
                     {mostReadableTextColor && <Button
@@ -140,7 +138,7 @@ function CustomThemePicker({
                     }}/>
             </div>
         </div>}
-        {!disableShadow &&
+            {!disableShadow &&
         <div className="ms-custom-theme-picker-field">
             <div><Message msgId="geostory.customizeTheme.shadowLabel"/></div>
             <div>
@@ -207,38 +205,38 @@ export function CustomThemePickerMenuItem({
 
     return (
         <>
-        {isActive ?
-            <div
-                className="ms-custom-theme-picker-menuitem-header">
-                <div><Message msgId="geostory.contentToolbar.customizeThemeLabel"/></div>
-                <Button
-                    tooltipId="geostory.contentToolbar.customizeThemeRemoveLabel"
-                    className="square-button-md no-border"
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        handleUpdateTheme('');
-                    }}>
-                    <Glyphicon glyph="trash"/>
-                </Button>
-            </div>
-            : <>
-            <MenuItem
-                active={isActive}
-                onClick={() => handleUpdateTheme(value, themeStyle)}>
-                <Message msgId="geostory.contentToolbar.customizeThemeLabel"/>
-            </MenuItem>
-            </>}
-        {isActive &&
-        <div className="ms-custom-theme-picker-menuitem">
-            <CustomThemePicker
-                disableBackgroundAlpha={disableBackgroundAlpha}
-                disableTextColor={disableTextColor}
-                disableShadow={disableShadow}
-                themeStyle={themeStyle}
-                onChange={(newTheme) => handleUpdateTheme(value, newTheme)}
-                onOpen={onActive}
-            />
-        </div>}
+            {isActive ?
+                <div
+                    className="ms-custom-theme-picker-menuitem-header">
+                    <div><Message msgId="geostory.contentToolbar.customizeThemeLabel"/></div>
+                    <Button
+                        tooltipId="geostory.contentToolbar.customizeThemeRemoveLabel"
+                        className="square-button-md no-border"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            handleUpdateTheme('');
+                        }}>
+                        <Glyphicon glyph="trash"/>
+                    </Button>
+                </div>
+                : <>
+                    <MenuItem
+                        active={isActive}
+                        onClick={() => handleUpdateTheme(value, themeStyle)}>
+                        <Message msgId="geostory.contentToolbar.customizeThemeLabel"/>
+                    </MenuItem>
+                </>}
+            {isActive &&
+                <div className="ms-custom-theme-picker-menuitem">
+                    <CustomThemePicker
+                        disableBackgroundAlpha={disableBackgroundAlpha}
+                        disableTextColor={disableTextColor}
+                        disableShadow={disableShadow}
+                        themeStyle={themeStyle}
+                        onChange={(newTheme) => handleUpdateTheme(value, newTheme)}
+                        onOpen={onActive}
+                    />
+                </div>}
         </>
     );
 }
