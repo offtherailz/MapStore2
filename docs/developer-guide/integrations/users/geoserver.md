@@ -122,8 +122,11 @@ These last steps are required to allow users logged in MapStore to be authentica
          http://mapstore.geo-solutions.it/mapstore/rest/geostore/session/username/{key}
          ```
 - Save.
-- Go into the authentication page and open default filter chain.
+![diagram](img/geoserver/authFilterAutkey.jpg);
+
+- Go into the "Authentication" page and open "default" filter chain. ![diagram](img/geoserver/filterChain.jpg)
 - Add 'geostore' into the 'Selected' filters and put it on top, and save.
+![diagram](img/geoserver/AuthOnTop.jpg)
 
 **Note**: in the User Groups and Roles Services available options there are "AuthKEY WebService Body Response - UserGroup Service from WebService Response Body" and "AuthKEY REST - Role service from REST endpoint". Ignore them as they are not supported from MapStore2.
 
