@@ -80,7 +80,7 @@ const getPagination = (filterObj = {}, options = {}) =>
         && {
             startIndex: options.startIndex,
             maxFeatures: options.maxFeatures
-    };
+        };
 
 const createFeatureCollection = (features) => (
     {
