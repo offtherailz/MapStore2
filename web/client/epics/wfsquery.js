@@ -5,7 +5,6 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
 import Rx from 'rxjs';
 
 import axios from '../libs/ajax';
@@ -58,6 +57,9 @@ import filterBuilder from '../utils/ogc/Filter/FilterBuilder';
 import fromObject from '../utils/ogc/Filter/fromObject';
 import { read } from '../utils/ogc/Filter/CQL/parser';
 
+import {selectedLayerSelector} from '../selectors/featuregrid';
+import {layerLoad} from '../actions/layers';
+
 const fb = filterBuilder({ gmlVersion: "3.1.1" });
 const toFilter = fromObject(fb);
 const {filter, and} = fb;
@@ -107,6 +109,39 @@ export const featureTypeSelectedEpic = (action$, store) =>
                 const geometry = info.geometry[0] && info.geometry[0].attribute ? info.geometry[0].attribute : 'the_geom';
                 return Rx.Observable.of(changeSpatialAttribute(geometry));
             }
+
+            const setedLayer = selectedLayerSelector(state);
+            if (setedLayer.type ==='vector') {
+                return Rx.Observable.defer( () =>axios.get(action.url))
+                    .map((response) => {
+
+                        var originalData={
+                            featureTypes: [response.data.featureTypes[0]]
+                        }
+                        var info = {
+                            geometry: originalData.featureTypes[0].properties
+                                .filter((attribute) => attribute.name.indexOf('geometry') === 0)
+                                .map((attribute) => attribute
+                                ),
+                            original: originalData,
+                            attributes: describeFeatureTypeToAttributes(originalData)
+                        }
+
+                        const geometry = info.geometry[0] && info.geometry[0].attribute ? info.geometry[0].attribute : 'the_geom';
+                        var changeSpatialAttributePromise = new Promise((resolve) => {
+                            resolve(changeSpatialAttribute(geometry))
+                        });
+                        var promiseFeatureType = changeSpatialAttributePromise.then(() => {
+                            return new Promise((resolve) => {
+                                resolve(featureTypeLoaded(action.typeName, info))
+                            });
+                        })
+                        return Rx.Observable.defer( () => promiseFeatureType);
+                    })
+                    .mergeAll()
+
+            }
+
             return Rx.Observable.defer( () => axios.get(ConfigUtils.filterUrlParams(action.url, authkeyParamNameSelector(store.getState())) + '?service=WFS&version=1.1.0&request=DescribeFeatureType&typeName=' + action.typeName + '&outputFormat=application/json'))
                 .map((response) => {
                     if (typeof response.data === 'object' && response.data.featureTypes && response.data.featureTypes[0]) {
@@ -143,11 +178,14 @@ export const featureTypeSelectedEpic = (action$, store) =>
 export const wfsQueryEpic = (action$, store) =>
     action$.ofType(QUERY)
         .switchMap(action => {
+            const state = store.getState();
             const sortOptions = getDefaultSortOptions(getFirstAttribute(store.getState()));
             const totalFeatures = paginationInfo.totalFeatures(store.getState());
             const searchUrl = ConfigUtils.filterUrlParams(action.searchUrl, authkeyParamNameSelector(store.getState()));
             // getSelected Layer and merge layerFilter and cql_filter in params  with action filter
             const layer = getSelectedLayer(store.getState()) || {};
+            const setedLayer = selectedLayerSelector(state);
+
             const {layerFilter, params} = layer;
             const cqlFilter = find(Object.keys(params || {}), (k = "") => k.toLowerCase() === "cql_filter");
             const cqlFilterRules = cqlFilter
@@ -167,11 +205,11 @@ export const wfsQueryEpic = (action$, store) =>
                 ...queryOptions
             };
             return Rx.Observable.merge(
-                (typeof filterObj === 'object' && getJSONFeatureWA(queryUrl, filterObj, options) || getLayerJSONFeature(layer, filterObj, options))
+                (typeof filterObj === 'object' && getJSONFeatureWA(queryUrl, filterObj, options, setedLayer) || getLayerJSONFeature(layer, filterObj, options))
                     .map(data => querySearchResponse(data, action.searchUrl, action.filterObj, action.queryOptions, action.reason))
                     .catch(error => Rx.Observable.of(queryError(error)))
                     .startWith(featureLoading(true))
-                    .concat(Rx.Observable.of(featureLoading(false)))
+                    .concat(Rx.Observable.of(featureLoading(false)),Rx.Observable.of(layerLoad(layer.id)))
             ).takeUntil(action$.ofType(UPDATE_QUERY));
         });
 

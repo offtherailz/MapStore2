@@ -89,7 +89,7 @@ const getPagination = (filterObj = {}, options = {}) =>
  * @param {number} totalFeatures optional number to use in case of a previews request, needed to workaround GEOS-7233.
  * @return {Observable} a stream that emits the GeoJSON or an error.
  */
-const getJSONFeature = (searchUrl, filterObj, options = {}) => {
+const getJSONFeature = (searchUrl, filterObj, options = {}, layer) => {
     const data = getWFSFilterData(filterObj, options);
 
     const urlParsedObj = Url.parse(searchUrl, true);
@@ -103,6 +103,20 @@ const getJSONFeature = (searchUrl, filterObj, options = {}) => {
         query: params
     });
 
+
+    if (layer.type === 'vector') {
+        return Rx.Observable.defer(() => new Promise((resolve) => {
+            if(!layer.originalFeatures || layer.originalFeatures[0].properties.contextDescriptionName !== layer.features[0].properties.contextDescriptionName){
+                layer.originalFeatures = layer.features;
+            }
+            let features =  createFeatureCollection(layer.originalFeatures);
+            let featuresFiltered = getFeaturesFiltered(features, filterObj);
+            if(featuresFiltered){
+                layer.features = featuresFiltered.features;
+            }
+            resolve(featuresFiltered);
+        }));
+    }
     return Rx.Observable.defer(() =>
         axios.post(queryString, data, {
             timeout: 60000,
@@ -122,8 +136,8 @@ const getJSONFeature = (searchUrl, filterObj, options = {}) => {
  * @param {object} options params that can contain `totalFeatures` and sort options
  * @return {Observable} a stream that emits the GeoJSON or an error.
  */
-const getJSONFeatureWA = (searchUrl, filterObj, { sortOptions = {}, ...options } = {}) =>
-    getJSONFeature(searchUrl, filterObj, options)
+const getJSONFeatureWA = (searchUrl, filterObj, { sortOptions = {}, ...options }, layer = {}) =>
+    getJSONFeature(searchUrl, filterObj, options, layer)
         .catch(error => {
             if (error.name === "OGCError" && error.code === 'NoApplicableCode') {
                 return getJSONFeature(searchUrl, {
@@ -197,3 +211,67 @@ module.exports = {
             }, callback))(response.data)
             )
 };
+
+const createFeatureCollection = (features) => (
+    {
+        crs: {type: "name", properties: {name: "urn:ogc:def:crs:EPSG::4326"}},
+        numberMatched: features.length,
+        numberReturned: features.length,
+        timeStamp: "2020-07-20T11:36:20.118Z",
+        totalFeatures: features.length,
+        type: 'FeatureCollection',
+        features: features
+    }
+)
+
+const getFeaturesFiltered = (features, filterObj) =>{
+    if(filterObj.filterFields && filterObj.filterFields.length !== 0) {
+        const featuresFiltered = features.features.filter(feature => filterFeatures(feature, filterObj.filterFields));
+
+        features.features = featuresFiltered;
+        features.numberMatched = featuresFiltered.length;
+        features.numberReturned = featuresFiltered.length;
+        features.totalFeatures = featuresFiltered.length;
+        return features;
+    }
+    return features;
+
+}
+
+const filterFeatures = (feature, filterFields) =>{
+
+    for(let i = 0; i< filterFields.length; i++){
+        if(feature.properties[filterFields[i].attribute] === undefined ){
+
+            return false;
+
+        }
+        if(filterFields[i].type === "string" &&
+            !feature.properties[filterFields[i].attribute].toLowerCase().includes(filterFields[i].value.toLowerCase())){
+
+            return false;
+
+        }
+
+        if(filterFields[i].type === "number" && !feature.properties[filterFields[i].attribute].includes(filterFields[i].value)){
+
+            return false;
+        }
+
+        if(filterFields[i].type === "date"){
+
+            let dateFeature = new Date(feature.properties[filterFields[i].attribute]);
+            let dateFilter = new Date(filterFields[i].value.startDate);
+
+            if(dateFeature.getFullYear() !== dateFilter.getFullYear() ||
+                dateFeature.getMonth() !== dateFilter.getMonth() ||
+                dateFeature.getDay() !== dateFilter.getDay() ){
+
+                return false;
+            }
+        }
+
+    }
+    return true;
+}
+
