@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+const {head} = require('lodash');
+
 const Rx = require('rxjs');
 const axios = require('../libs/ajax');
 
@@ -16,6 +18,9 @@ const {paginationInfo, isDescribeLoaded, layerDescribeSelector} = require('../se
 const {mapSelector} = require('../selectors/map');
 const {authkeyParamNameSelector} = require('../selectors/catalog');
 const {getSelectedLayer} = require('../selectors/layers');
+const {selectedLayerSelector} = require('../selectors/featuregrid');
+const {layerLoad} = require('../actions/layers');
+
 
 const CoordinatesUtils = require('../utils/CoordinatesUtils');
 const { addTimeParameter } = require('../utils/WFSTimeUtils');
@@ -86,6 +91,39 @@ const featureTypeSelectedEpic = (action$, store) =>
                 const geometry = info.geometry[0] && info.geometry[0].attribute ? info.geometry[0].attribute : 'the_geom';
                 return Rx.Observable.of(changeSpatialAttribute(geometry));
             }
+
+            const setedLayer = selectedLayerSelector(state);
+            if (setedLayer.type ==='vector') {
+                return Rx.Observable.defer( () =>axios.get(action.url))
+                    .map((response) => {
+
+                        var originalData={
+                            featureTypes: [response.data.featureTypes[0]]
+                        }
+                        var info = {
+                            geometry: originalData.featureTypes[0].properties
+                                .filter((attribute) => attribute.name.indexOf('geometry') === 0)
+                                .map((attribute) => attribute
+                                ),
+                            original: originalData,
+                            attributes: describeFeatureTypeToAttributes(originalData)
+                        }
+
+                        const geometry = info.geometry[0] && info.geometry[0].attribute ? info.geometry[0].attribute : 'the_geom';
+                        var changeSpatialAttributePromise = new Promise((resolve) => {
+                            resolve(changeSpatialAttribute(geometry))
+                        });
+                        var promiseFeatureType = changeSpatialAttributePromise.then(() => {
+                            return new Promise((resolve) => {
+                                resolve(featureTypeLoaded(action.typeName, info))
+                            });
+                        })
+                        return Rx.Observable.defer( () => promiseFeatureType);
+                    })
+                    .mergeAll()
+
+            }
+
             return Rx.Observable.defer( () => axios.get(ConfigUtils.filterUrlParams(action.url, authkeyParamNameSelector(store.getState())) + '?service=WFS&version=1.1.0&request=DescribeFeatureType&typeName=' + action.typeName + '&outputFormat=application/json'))
                 .map((response) => {
                     if (typeof response.data === 'object' && response.data.featureTypes && response.data.featureTypes[0]) {
@@ -122,11 +160,14 @@ const featureTypeSelectedEpic = (action$, store) =>
 const wfsQueryEpic = (action$, store) =>
     action$.ofType(QUERY)
         .switchMap(action => {
+            const state = store.getState();
             const sortOptions = getDefaultSortOptions(getFirstAttribute(store.getState()));
             const totalFeatures = paginationInfo.totalFeatures(store.getState());
             const searchUrl = ConfigUtils.filterUrlParams(action.searchUrl, authkeyParamNameSelector(store.getState()));
             // getSelected Layer and merge layerFilter and cql_filter in params  with action filter
             const layer = getSelectedLayer(store.getState()) || {};
+            const setedLayer = selectedLayerSelector(state);
+
             const {layerFilter, params} = layer;
             const cqlFilter = find(Object.keys(params || {}), (k = "") => k.toLowerCase() === "cql_filter");
             const cqlFilterRules = cqlFilter
@@ -146,11 +187,11 @@ const wfsQueryEpic = (action$, store) =>
                 ...queryOptions
             };
             return Rx.Observable.merge(
-                (typeof filterObj === 'object' && getJSONFeatureWA(queryUrl, filterObj, options) || getLayerJSONFeature(layer, filterObj, options))
+                (typeof filterObj === 'object' && getJSONFeatureWA(queryUrl, filterObj, options, setedLayer) || getLayerJSONFeature(layer, filterObj, options))
                     .map(data => querySearchResponse(data, action.searchUrl, action.filterObj, action.queryOptions, action.reason))
                     .catch(error => Rx.Observable.of(queryError(error)))
                     .startWith(featureLoading(true))
-                    .concat(Rx.Observable.of(featureLoading(false)))
+                    .concat(Rx.Observable.of(featureLoading(false)),Rx.Observable.of(layerLoad(layer.id)))
             ).takeUntil(action$.ofType(UPDATE_QUERY));
         });
 
