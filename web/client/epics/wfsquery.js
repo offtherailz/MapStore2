@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-const {head} = require('lodash');
-
 const Rx = require('rxjs');
 const axios = require('../libs/ajax');
 
@@ -93,13 +91,13 @@ const featureTypeSelectedEpic = (action$, store) =>
             }
 
             const setedLayer = selectedLayerSelector(state);
-            if (setedLayer.type ==='vector') {
+            if (setedLayer.type === 'vector') {
                 return Rx.Observable.defer( () =>axios.get(action.url))
                     .map((response) => {
 
-                        var originalData={
+                        var originalData = {
                             featureTypes: [response.data.featureTypes[0]]
-                        }
+                        };
                         var info = {
                             geometry: originalData.featureTypes[0].properties
                                 .filter((attribute) => attribute.name.indexOf('geometry') === 0)
@@ -107,20 +105,20 @@ const featureTypeSelectedEpic = (action$, store) =>
                                 ),
                             original: originalData,
                             attributes: describeFeatureTypeToAttributes(originalData)
-                        }
+                        };
 
                         const geometry = info.geometry[0] && info.geometry[0].attribute ? info.geometry[0].attribute : 'the_geom';
                         var changeSpatialAttributePromise = new Promise((resolve) => {
-                            resolve(changeSpatialAttribute(geometry))
+                            resolve(changeSpatialAttribute(geometry));
                         });
                         var promiseFeatureType = changeSpatialAttributePromise.then(() => {
                             return new Promise((resolve) => {
-                                resolve(featureTypeLoaded(action.typeName, info))
+                                resolve(featureTypeLoaded(action.typeName, info));
                             });
-                        })
+                        });
                         return Rx.Observable.defer( () => promiseFeatureType);
                     })
-                    .mergeAll()
+                    .mergeAll();
 
             }
 
