@@ -80,8 +80,8 @@ const getPagination = (filterObj = {}, options = {}) =>
         && {
             startIndex: options.startIndex,
             maxFeatures: options.maxFeatures
-};
-		
+    };
+
 const createFeatureCollection = (features) => (
     {
         crs: {type: "name", properties: {name: "urn:ogc:def:crs:EPSG::4326"}},
