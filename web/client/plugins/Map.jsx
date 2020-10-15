@@ -21,6 +21,9 @@ const ConfigUtils = require('../utils/ConfigUtils');
 const {errorLoadingFont, setMapResolutions} = require('../actions/map');
 
 const {isString} = require('lodash');
+
+const { createFeatureFilter } = require('../utils/FilterUtils');
+
 let plugins;
 /**
  * The Map plugin allows adding mapping library dependent functionality using support tools.
@@ -336,7 +339,7 @@ class MapPlugin extends React.Component {
 
     renderLayerContent = (layer, projection) => {
         if (layer.features && layer.type === "vector") {
-            return layer.features.map( (feature) => {
+            return layer.features.filter(createFeatureFilter(layer.filterObj)).map( (feature) => {
                 return (
                     <plugins.Feature
                         key={feature.id}

@@ -1040,7 +1040,46 @@ const FilterUtils = {
         }
         return filter;
     },
-    isCrossLayerFilterValid
+    isCrossLayerFilterValid,
+    /**
+     * Filter features (in geoJSON format) with the filterObject
+     * @returns {function} the function for filtering the features
+     */
+    createFeatureFilter: filterObj => feature => {
+        if (!filterObj) {
+            return true;
+        }
+        const { filterFields = [] } = filterObj;
+        for (let i = 0; i < filterFields.length; i++) {
+            if (feature.properties[filterFields[i].attribute] === undefined) {
+                return false;
+            }
+            if (filterFields[i].type === "string" &&
+                !feature.properties[filterFields[i].attribute].toLowerCase().includes(filterFields[i].value.toLowerCase())) {
+                return false;
+            }
+            /* TODO: support spatial, number, boolean, filter.
+               TODO: Also nested filters should be supported (AND, OR ...)
+            // this doesn't work <--
+            if (filterFields[i].type === "number" && !feature.properties[filterFields[i].attribute].includes(filterFields[i].value)) {
+                return false;
+            }
+            */
+
+            if (filterFields[i].type === "date") {
+
+                let dateFeature = new Date(feature.properties[filterFields[i].attribute]);
+                let dateFilter = new Date(filterFields[i].value.startDate);
+
+                if (dateFeature.getFullYear() !== dateFilter.getFullYear() ||
+                    dateFeature.getMonth() !== dateFilter.getMonth() ||
+                    dateFeature.getDay() !== dateFilter.getDay()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 };
 
 module.exports = FilterUtils;
