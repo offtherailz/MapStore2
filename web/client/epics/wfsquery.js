@@ -90,8 +90,8 @@ const featureTypeSelectedEpic = (action$, store) =>
                 return Rx.Observable.of(changeSpatialAttribute(geometry));
             }
 
-            const setedLayer = selectedLayerSelector(state);
-            if (setedLayer.type === 'vector') {
+            const selectedLayer = selectedLayerSelector(state);
+            if (selectedLayer.type === 'vector') {
                 return Rx.Observable.defer( () =>axios.get(action.url))
                     .map((response) => {
 
@@ -164,7 +164,7 @@ const wfsQueryEpic = (action$, store) =>
             const searchUrl = ConfigUtils.filterUrlParams(action.searchUrl, authkeyParamNameSelector(store.getState()));
             // getSelected Layer and merge layerFilter and cql_filter in params  with action filter
             const layer = getSelectedLayer(store.getState()) || {};
-            const setedLayer = selectedLayerSelector(state);
+            const selectedLayer = selectedLayerSelector(state);
 
             const {layerFilter, params} = layer;
             const cqlFilter = find(Object.keys(params || {}), (k = "") => k.toLowerCase() === "cql_filter");
@@ -185,7 +185,7 @@ const wfsQueryEpic = (action$, store) =>
                 ...queryOptions
             };
             return Rx.Observable.merge(
-                (typeof filterObj === 'object' && getJSONFeatureWA(queryUrl, filterObj, options, setedLayer) || getLayerJSONFeature(layer, filterObj, options))
+                (typeof filterObj === 'object' && getJSONFeatureWA(queryUrl, filterObj, options, selectedLayer) || getLayerJSONFeature(layer, filterObj, options))
                     .map(data => querySearchResponse(data, action.searchUrl, action.filterObj, action.queryOptions, action.reason))
                     .catch(error => Rx.Observable.of(queryError(error)))
                     .startWith(featureLoading(true))
