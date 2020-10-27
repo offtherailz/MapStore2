@@ -10,6 +10,18 @@ const {isObject, isNil} = require('lodash');
 const wpsAggregate = require('../../../observables/wps/aggregate');
 const propsStreamFactory = require('../../misc/enhancers/propsStreamFactory');
 const Rx = require('rxjs');
+/**
+ * Parses the response of the WPS Aggregate service to produce an array of objects.
+ * The object contain the values needed as data to produce the chart. for instance.
+ * ```json
+ * [{
+ *    STATE_NAME: "District of Columbia",
+ *    Sum(PERSONS): 1234567
+ * }]
+ * ```
+ * @param {object} aggregateResponse response of WPS aggregate in JSON format
+ * @returns array of objects, containing values for the chart
+ */
 const wpsAggregateToChartData = ({AggregationResults = [], GroupByAttributes = [], AggregationAttribute, AggregationFunctions} = {}) =>
     AggregationResults.map((res) => ({
         ...GroupByAttributes.reduce((a, p, i) => {
