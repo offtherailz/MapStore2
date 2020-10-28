@@ -18,6 +18,7 @@ const mapWidget = require('../enhancers/mapWidget');
 
 // Enhancers for ajax support
 const wpsChart = require('../enhancers/wpsChart');
+const wfsChart = require('../enhancers/wfsChart');
 const wpsCounter = require('../enhancers/wpsCounter');
 const wfsTable = require('../enhancers/wfsTable');
 
@@ -36,7 +37,7 @@ const ChartWidget = compose(
     dependenciesToWidget,
     dependenciesToFilter,
     dependenciesToOptions,
-    wpsChart,
+    wfsChart,
     chartWidget
 )(require('./ChartWidget'));
 

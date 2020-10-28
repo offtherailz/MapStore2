@@ -19,6 +19,7 @@ const ChartOptions = wfsChartOptions(require('./common/WPSWidgetOptions'));
 const WidgetOptions = require('./common/WidgetOptions');
 const sampleData = require('../../enhancers/sampleChartData');
 const wpsChart = require('../../enhancers/wpsChart');
+const wfsChart = require('../../enhancers/wfsChart');
 const dependenciesToWidget = require('../../enhancers/dependenciesToWidget');
 const dependenciesToFilter = require('../../enhancers/dependenciesToFilter');
 const dependenciesToOptions = require('../../enhancers/dependenciesToOptions');
@@ -29,7 +30,7 @@ const enhancePreview = compose(
     dependenciesToWidget,
     dependenciesToFilter,
     dependenciesToOptions,
-    wpsChart,
+    wfsChart,
     loadingState,
     errorChartState,
     emptyChartState
