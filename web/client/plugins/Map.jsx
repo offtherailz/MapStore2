@@ -27,6 +27,7 @@ import mapTypeReducer from "../reducers/maptype";
 import additionalLayersReducer from "../reducers/additionallayers";
 import mapEpics from "../epics/map";
 import pluginsCreator from "./map/index";
+import createFeatureFilter from '../utils/FilterUtils';
 
 /**
  * The Map plugin allows adding mapping library dependent functionality using support tools.

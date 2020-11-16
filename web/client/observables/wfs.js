@@ -17,7 +17,7 @@ const {stripPrefix} = require('xml2js/lib/processors');
 
 const {interceptOGCError} = require('../utils/ObservableUtils');
 const {getCapabilitiesUrl} = require('../utils/LayersUtils');
-const {getWFSFilterData} = require('../utils/FilterUtils');
+const {getWFSFilterData, createFeatureFilter} = require('../utils/FilterUtils');
 const requestBuilder = require('../utils/ogc/WFS/RequestBuilder');
 const {getFeature, query, sortBy, propertyName} = requestBuilder({ wfsVersion: "1.1.0" });
 
@@ -96,7 +96,7 @@ const createFeatureCollection = (features) => (
 
 const getFeaturesFiltered = (features, filterObj) => {
     if (filterObj.filterFields && filterObj.filterFields.length !== 0) {
-        const featuresFiltered = features.features.filter(FilterUtils.createFeatureFilter(filterObj));
+        const featuresFiltered = features.features.filter(createFeatureFilter(filterObj));
 
         features.features = featuresFiltered;
         features.numberMatched = featuresFiltered.length;
