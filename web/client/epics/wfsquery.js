@@ -48,7 +48,7 @@ import {
 } from '../selectors/queryform';
 
 import { changeDrawingStatus } from '../actions/draw';
-import { getJSONFeatureWA, getLayerJSONFeature } from '../observables/wfs';
+import { getLayerJSONFeature } from '../observables/wfs';
 import { describeFeatureTypeToAttributes } from '../utils/FeatureTypeUtils';
 import * as notifications from '../actions/notifications';
 import { find } from 'lodash';
@@ -63,6 +63,7 @@ import {layerLoad} from '../actions/layers';
 const fb = filterBuilder({ gmlVersion: "3.1.1" });
 const toFilter = fromObject(fb);
 const {filter, and} = fb;
+import { mergeFiltersToOGC } from '../utils/FilterUtils';
 
 const extractInfo = (data) => {
     return {
@@ -188,16 +189,9 @@ export const wfsQueryEpic = (action$, store) =>
 
             const {layerFilter, params} = layer;
             const cqlFilter = find(Object.keys(params || {}), (k = "") => k.toLowerCase() === "cql_filter");
-            const cqlFilterRules = cqlFilter
-                ? [toFilter(read(cqlFilter))]
-                : [];
 
-            const filterObj = (cqlFilterRules.length > 0 || (isFilterValid(layerFilter) && !layerFilter.disabled)) && filter(and(
-                ...cqlFilterRules,
-                ...(isFilterValid(layerFilter) && !layerFilter.disabled ? toOGCFilterParts(layerFilter, "1.1.0", "ogc") : []),
-                ...(isFilterValid(action.filterObj) ? toOGCFilterParts(action.filterObj, "1.1.0", "ogc") : [])))
-                || action.filterObj;
-            const { url: queryUrl, options: queryOptions } = addTimeParameter(searchUrl, action.queryOptions || {}, store.getState());
+            const ogcFilter = mergeFiltersToOGC({ogcVersion: '1.1.0'}, cqlFilter, layerFilter, action.filterObj);
+            const { url, options: queryOptions } = addTimeParameter(searchUrl, action.queryOptions || {}, store.getState());
             const options = {
                 ...action.filterObj.pagination,
                 totalFeatures,
@@ -205,7 +199,7 @@ export const wfsQueryEpic = (action$, store) =>
                 ...queryOptions
             };
             return Rx.Observable.merge(
-                (typeof filterObj === 'object' && getJSONFeatureWA(queryUrl, filterObj, options, selectedLayer) || getLayerJSONFeature(layer, filterObj, options))
+                (typeof filterObj === 'object' && getJSONFeatureWA(queryUrl, filterObj, options, selectedLayer) || getLayerJSONFeature({ ...layer, search: { ...layer.search, url } }, ogcFilter, options)
                     .map(data => querySearchResponse(data, action.searchUrl, action.filterObj, action.queryOptions, action.reason))
                     .catch(error => Rx.Observable.of(queryError(error)))
                     .startWith(featureLoading(true))

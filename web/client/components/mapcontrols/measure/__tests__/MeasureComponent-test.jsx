@@ -5,16 +5,18 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
 */
-const expect = require('expect');
-const assign = require('object-assign');
+import expect from 'expect';
+import assign from 'object-assign';
+import React from 'react';
+import {DragDropContext as dragDropContext} from 'react-dnd';
+import testBackend from 'react-dnd-test-backend';
+import ReactDOM from 'react-dom';
+import TestUtils from 'react-dom/test-utils';
 
-const React = require('react');
-const ReactDOM = require('react-dom');
-const dragDropContext = require('react-dnd').DragDropContext;
-const testBackend = require('react-dnd-test-backend');
-const MeasureComponent = dragDropContext(testBackend)(require('../MeasureComponent'));
-const TestUtils = require('react-dom/test-utils');
-const Message = require('../../../I18N/Message').default;
+import Message from '../../../I18N/Message';
+import MeasureComponentComp from '../MeasureComponent';
+
+const MeasureComponent = dragDropContext(testBackend)(MeasureComponentComp);
 
 describe("test the MeasureComponent", () => {
     beforeEach((done) => {
@@ -456,13 +458,13 @@ describe("test the MeasureComponent", () => {
 
         const buttons = document.querySelectorAll('button');
         expect(buttons.length).toBe(7);
-        expect(buttons[0].disabled).toBe(false);
-        expect(buttons[1].disabled).toBe(false);
-        expect(buttons[2].disabled).toBe(false);
-        expect(buttons[3].disabled).toBe(false);
-        expect(buttons[4].disabled).toBe(false);
-        expect(buttons[5].disabled).toBe(true); // Add as layer button
-        expect(buttons[6].disabled).toBe(false);
+        expect(buttons[0].classList.contains('disabled')).toBe(false);
+        expect(buttons[1].classList.contains('disabled')).toBe(false);
+        expect(buttons[2].classList.contains('disabled')).toBe(false);
+        expect(buttons[3].classList.contains('disabled')).toBe(false);
+        expect(buttons[4].classList.contains('disabled')).toBe(false);
+        expect(buttons[5].classList.contains('disabled')).toBe(true); // Add as layer button
+        expect(buttons[6].classList.contains('disabled')).toBe(false);
         expect(buttons[6].childNodes[0].className).toContain('floppy-disk');
 
         // Save annotation

@@ -5,16 +5,20 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Grid, Col, Row, Panel, Label, Button, Alert} = require('react-bootstrap');
-const Spinner = require('react-spinkit');
-const {DropdownList} = require('react-widgets');
-require('react-widgets/lib/less/react-widgets.less');
-const {Message} = require('../../I18N/I18N');
-const {getbsStyleForState} = require('../../../utils/ImporterUtils');
-const Layer = require('./Layer');
-const TransformsGrid = require('./TransformsGrid');
+
+import 'react-widgets/lib/less/react-widgets.less';
+
+import React from 'react';
+import PropTypes from 'prop-types';
+import { Grid, Col, Row, Panel, Label, Alert } from 'react-bootstrap';
+import Spinner from 'react-spinkit';
+import { DropdownList } from 'react-widgets';
+
+import Button from '../misc/Button';
+import { Message } from '../../I18N/I18N';
+import { getbsStyleForState } from '../../../utils/ImporterUtils';
+import Layer from './Layer';
+import TransformsGrid from './TransformsGrid';
 
 class Task extends React.Component {
     static propTypes = {
@@ -155,4 +159,4 @@ class Task extends React.Component {
     };
 }
 
-module.exports = Task;
+export default Task;

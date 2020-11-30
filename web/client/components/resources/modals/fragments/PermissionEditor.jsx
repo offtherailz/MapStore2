@@ -6,15 +6,17 @@
 * LICENSE file in the root directory of this source tree.
 */
 
-const React = require('react');
-const PropTypes = require('prop-types');
-const assign = require('object-assign');
-const _ = require('lodash');
-const Select = require('react-select').default;
-const Spinner = require('react-spinkit');
-const { Table, Button, Glyphicon } = require('react-bootstrap');
-const Message = require('../../../I18N/Message').default;
-const {getMessageById} = require('../../../../utils/LocaleUtils');
+import _ from 'lodash';
+import assign from 'object-assign';
+import PropTypes from 'prop-types';
+import React from 'react';
+import { Glyphicon, Table } from 'react-bootstrap';
+import Select from 'react-select';
+import Spinner from 'react-spinkit';
+
+import {getMessageById} from '../../../../utils/LocaleUtils';
+import Message from '../../../I18N/Message';
+import Button from '../../../misc/Button';
 
 class PermissionEditor extends React.Component {
     static propTypes = {
@@ -232,4 +234,4 @@ class PermissionEditor extends React.Component {
     };
 }
 
-module.exports = PermissionEditor;
+export default PermissionEditor;
