@@ -52,14 +52,14 @@ export const updateRouteOn3dSwitch = (action$, store) =>
                 return Rx.Observable.of(changeMapType(action.originalMapType !== "cesium" ? "cesium" : last2dMapType ));
             }
             const newPath = replaceMapType(hash, action.enable ? "cesium" : last2dMapType);
-            if (newPath) {
+            if (newPath !== hash) {
                 return Rx.Observable.from([push(newPath)]);
             }
-            return Rx.Observable.empty();
+            return Rx.Observable.of(changeMapType(action.originalMapType !== "cesium" ? "cesium" : last2dMapType));
         });
 export const updateLast2dMapTypeOnChangeEvents = (action$, store) => action$
     .ofType(LOCAL_CONFIG_LOADED).map(() => mapTypeSelector(store.getState()))
-    .merge(action$.ofType(MAP_TYPE_CHANGED, TOGGLE_3D).pluck('mapType').filter((mapType) => mapType && mapType !== "cesium"))
+    .merge(action$.ofType(MAP_TYPE_CHANGED, TOGGLE_3D).pluck('mapType')).filter((mapType) => mapType && mapType !== "cesium")
     .switchMap(type => Rx.Observable.of(updateLast2dMapType(type)));
 
 /**
