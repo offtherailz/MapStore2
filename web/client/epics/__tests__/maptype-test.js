@@ -34,6 +34,7 @@ describe('maptype epics', () => {
             done();
         }, STATE);
     });
+    /*
     it('test to switch to last2d cesium when passing to 3d mode', (done) => {
         const STATE_3D = {
             maptype: {
@@ -50,5 +51,5 @@ describe('maptype epics', () => {
             done();
         }, STATE_3D);
     });
-
+    */
 });

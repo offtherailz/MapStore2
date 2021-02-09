@@ -29,7 +29,7 @@ export const syncMapType = (action$, store) =>
         action$.ofType(LOCATION_CHANGE)
             .filter(action => {
                 const hashMapType = findMapType(action?.payload?.location?.pathname);
-                return hashMapType && hashMapType !== mapTypeSelector(store.getState())
+                return hashMapType && hashMapType !== mapTypeSelector(store.getState());
             })
             .switchMap((action) =>
                 Rx.Observable.of(changeMapType(findMapType(action.payload.location.pathname)))
@@ -43,7 +43,7 @@ export const syncMapType = (action$, store) =>
                 const hashMapType = findMapType(hash);
                 const currentMapType = mapTypeSelector(store.getState());
                 // if the URL hash contains the mapType and it is not in sync with the new path, syncronize
-                if(hashMapType && hashMapType !== currentMapType) {
+                if (hashMapType && hashMapType !== currentMapType) {
                     const newPath = replaceMapType(hash, currentMapType);
                     // in this case the URL change
                     if (newPath !== hash) {
@@ -68,14 +68,11 @@ export const updateLast2dMapTypeOnChangeEvents = (action$, store) => action$
  * in the URL.
  */
 export const restore2DMapTypeOnLocationChange = (action$, store)  => {
-    return action$.ofType(LOCATION_CHANGE).filter(action =>
-        !findMapType(action?.payload?.location?.pathname)
-            && isCesium(store.getState())
+    return action$.ofType(LOCATION_CHANGE).filter( action => !findMapType(action?.payload?.location?.pathname) && isCesium(store.getState()))
         .switchMap(() => {
             return Rx.Observable.of(changeMapType(last2dMapTypeSelector(store.getState())));
-        })
-    );
-}
+        });
+};
 /**
  * Epics for maptype switch functionalities
  * @name epics.maptype

@@ -14,8 +14,6 @@ import { changeMapType } from '../actions/maptype';
 import { last2dMapTypeSelector } from './../selectors/maptype';
 
 
-
-
 /**
  * Gets every `TOGGLE_3D` event.
  * @memberof epics.globeswitcher

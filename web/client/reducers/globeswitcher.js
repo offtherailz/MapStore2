@@ -6,9 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { MAP_TYPE_CHANGED } from '../actions/maptype';
+import { MAP_TYPE_CHANGED, UPDATE_LAST_2D_MAPTYPE } from '../actions/maptype';
 
-import { UPDATE_LAST_2D_MAPTYPE } from '../actions/maptype';
 /**
  * state for globeswitcher tooltip. holds the last 2d mapType.
  * @memberof reducers
