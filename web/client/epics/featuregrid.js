@@ -495,7 +495,10 @@ export const handleClickOnMap = (action$, store) =>
         .filter(({update = {}}) => update.type === 'geometry' && update.enabled)
         .switchMap(() =>
             action$.ofType(CLICK_ON_MAP).switchMap(({point}) => {
-                const {latlng, pixel, modifiers: {ctrl, metaKey}} = point;
+                const {latlng, pixel, modifiers: {ctrl, alt, metaKey}} = point;
+                if (alt && !ctrl) {
+                    return Rx.Observable.empty();
+                }
                 const currentFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry') || {};
 
                 const projection = projectionSelector(store.getState());

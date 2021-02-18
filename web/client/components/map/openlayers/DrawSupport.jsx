@@ -762,7 +762,7 @@ export default class DrawSupport extends React.Component {
             this.modifyInteraction = new Modify({
                 features: this.selectInteraction.getFeatures(),
                 condition: (e) => {
-                    return primaryAction(e) && !altKeyOnly(e);
+                    return primaryAction(e);
                 }
             });
 
@@ -1244,7 +1244,7 @@ export default class DrawSupport extends React.Component {
         this.modifyInteraction = new Modify({
             features: this.modifyFeatureColl,
             condition: (e) => {
-                return primaryAction(e) && !altKeyOnly(e);
+                return primaryAction(e);
             }
         });
 
@@ -1462,16 +1462,7 @@ export default class DrawSupport extends React.Component {
 
 
     addTranslateListener = () => {
-        document.addEventListener("keydown", (event) => {
-            if (event.altKey && event.code === "AltLeft") {
-                this.translateInteraction.setActive(true);
-            }
-        });
-        document.addEventListener("keyup", (event) => {
-            if (event.code === "AltLeft") {
-                this.translateInteraction.setActive(false);
-            }
-        });
+
     }
 }
 
