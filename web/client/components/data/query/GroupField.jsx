@@ -82,7 +82,7 @@ class GroupField extends React.Component {
             toggleMenu: () => {}
         },
         listOperators: ["="],
-        stringOperators: ["=", "like", "ilike", "isNull"],
+        stringOperators: ["=", '<>', "like", "ilike", "isNull"],
         booleanOperators: ["="],
         defaultOperators: ["=", ">", "<", ">=", "<=", "<>", "><"]
     };

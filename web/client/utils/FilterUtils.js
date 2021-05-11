@@ -149,7 +149,7 @@ export const  ogcStringField = (attribute, operator, value, nsplaceholder) => {
                         attribute +
                     propertyTagReference[nsplaceholder].endTag
                 );
-        } else if (operator === "=") {
+        } else if (operator === "=" || operator === "<>") {
             fieldFilter =
                 ogcComparisonOperators[operator](nsplaceholder,
                     propertyTagReference[nsplaceholder].startTag +
@@ -802,7 +802,7 @@ export const cqlStringField = function(attribute, operator, value) {
     if (!isNil(value)) {
         if (operator === "isNull") {
             fieldFilter = "isNull(" + wrappedAttr + ")=true";
-        } else if (operator === "=") {
+        } else if (operator === "=" || operator === "<>") {
             let val = "'" + escapeCQLStrings(value) + "'";
             fieldFilter = wrappedAttr + operator + val;
         } else if (operator === "ilike") {
