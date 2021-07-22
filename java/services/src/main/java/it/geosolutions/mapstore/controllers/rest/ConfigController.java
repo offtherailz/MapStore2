@@ -50,6 +50,7 @@ import com.github.fge.jsonpatch.JsonPatchException;
 import eu.medsea.mimeutil.MimeType;
 import eu.medsea.mimeutil.MimeUtil;
 import it.geosolutions.mapstore.utils.ResourceUtils;
+import it.geosolutions.mapstore.utils.Resource;
 
 /**
  * REST service for configuration files usage.
@@ -68,18 +69,13 @@ import it.geosolutions.mapstore.utils.ResourceUtils;
  */
 @Controller
 public class ConfigController {
-    public class Resource {
-        String data;
-        String type;
-        File file;
-    }
-    
+
+
     static {
     	MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector");
     }
 
-    private ObjectMapper jsonMapper = new ObjectMapper();
-    
+
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
     public class ResourceNotFoundException extends RuntimeException {
         public ResourceNotFoundException(String message) {
@@ -128,7 +124,9 @@ public class ConfigController {
    public byte[] loadAsset(String resourcePath) throws IOException {
 		return toBytes(readResource(resourcePath, false, ""));
    }
-   
+   private Resource readResource(String resourceName, boolean applyOverrides, String patchName) throws IOException {
+        resourceProvider.readResource();
+   }
 
     /**
      * Loads an asset from the datadir, if defined, from the webapp root folder otherwise.
@@ -143,7 +141,7 @@ public class ConfigController {
     		throw new IOException("Absolute paths are not allowed!");
     	}
         Resource resource = readResource(resourcePath, false, "");
-        response.setContentType(resource.type); 
+        response.setContentType(resource.type);
         IOUtils.copy(toStream(resource), response.getOutputStream());
     }
     private InputStream toStream(Resource resource) throws IOException {
@@ -162,127 +160,6 @@ public class ConfigController {
     private byte[] toBytes(Resource resource) throws UnsupportedEncodingException {
     	return resource.data.getBytes("UTF-8");
     }
-    private Resource readResource(String resourceName, boolean applyOverrides, String patchName) throws IOException {
-    	Optional<File> resource = ResourceUtils.findResource(dataDir, context, resourceName);
-    	Optional<File> resourcePatch = patchName.isEmpty() ? Optional.empty() : ResourceUtils.findResource(dataDir, context, patchName);
-        if (!resource.isPresent()) {
-            throw new ResourceNotFoundException(resourceName);
-        }
-        return readResourceFromFile(resource.get(), applyOverrides, resourcePatch);
-    }
-
-    private Resource readResourceFromFile(File file, boolean applyOverrides, Optional<File> patch) throws IOException {
-    	Resource resource = new Resource();
-        resource.file = file;
-        
-        MimeType type = MimeUtil.getMostSpecificMimeType(MimeUtil.getMimeTypes(file));
-        resource.type = type != null ? type.toString() : null;
-        try (Stream<String> stream =
-                Files.lines( Paths.get(file.getAbsolutePath()), StandardCharsets.UTF_8); ) {
-            Properties props = readOverrides();
-            if (applyOverrides && (!"".equals(mappings) && props != null || patch.isPresent())) {
-            	resource.data = resourceWithPatch(stream, props, patch); 
-                return resource;
-            }
-            
-            
-            try {
-            	StringBuilder contentBuilder = new StringBuilder();
-                stream.forEach(new Consumer<String>() {
-                    @Override
-                    public void accept(String s) {
-                        contentBuilder.append(s).append("\n"); // note: this adds a new line at the end of js files too.
-                    }
-                });
-                resource.data = contentBuilder.toString();
-            } catch (Exception e) {
-            	// if can not read the file line by line(e.g. images) pass the file.
-            	resource.file = file;
-            }
-            return resource;
-        }
-
-    }
-
-    private String resourceWithPatch(Stream<String> stream, Properties props, Optional<File> patch) throws IOException {
-        JsonNode jsonObject = readJsonConfig(stream);
-        if (patch.isPresent()) {
-            jsonObject = mergeJSON(jsonObject, jsonMapper.readValue(patch.get(), JsonPatch.class));
-        }
-        if (!"".equals(mappings) && props != null) {
-
-            for(String mapping : mappings.split(",")) {
-                jsonObject = fillMapping(mapping, props, jsonObject);
-            }
-        } 
-        return jsonObject.toString();
-    }
-
-    /**
-     * Applies the given patch to a JSON tree (orig)
-     *
-     * @param orig
-     * @param patch
-     * @return
-     * @throws IOException
-     */
-    private JsonNode mergeJSON(JsonNode orig, JsonPatch patch) throws IOException {
-        try {
-            return patch.apply(orig);
-        } catch (JsonPatchException e) {
-            throw new IOException("Error applying patch", e);
-        }
-    }
-
-    private Properties readOverrides() throws FileNotFoundException, IOException {
-        if (!"".equals(overrides)) {
-        	Optional<File> resource = ResourceUtils.findResource(dataDir, context, overrides);
-            if (resource.isPresent()) {
-                try (FileReader reader = new FileReader(resource.get())) {
-                    Properties props = new Properties();
-                    props.load(reader);
-                    return props;
-                }
-            }
-        }
-        return null;
-    }
-
-    private JsonNode readJsonConfig(Stream<String> stream) throws IOException {
-        StringBuilder contentBuilder = new StringBuilder();
-        stream.forEach(new Consumer<String>() {
-            @Override
-            public void accept(String s) {
-                contentBuilder.append(s).append("\n");
-            }
-        });
-        String json = contentBuilder.toString();
-        JsonNode jsonObject = jsonMapper.readTree(json);
-        return jsonObject;
-    }
-
-    private JsonNode fillMapping(String mapping, Properties props, JsonNode jsonObject) throws IOException {
-        String[] parts = mapping.split("=");
-        if (parts.length != 2 || parts[0].trim().isEmpty() || parts[1].trim().isEmpty()) {
-            return jsonObject;
-        } else {
-            String path = parts[0];
-            String propName = parts[1];
-            String value = props.getProperty(propName, "");
-            return setJsonProperty(jsonObject, path.split("\\."), value);
-        }
-    }
-
-    private JsonNode setJsonProperty(JsonNode jsonObject, String[] path, String value) throws IOException {
-        String propertyPath = "/" + StringUtils.join(path, "/");
-        JsonPatch patch = jsonMapper.readValue("[{\"op\":\"replace\",\"path\":\""+propertyPath+"\",\"value\":\""+value+"\"}]", JsonPatch.class);
-        try {
-            return mergeJSON(jsonObject, patch);
-        } catch(IOException e) {
-            // if the property cannot be set, we ignore it
-            return jsonObject;
-        }
-    }
 
     private boolean isAllowed(String resourceName) {
         return Stream.of(allowedResources.split(",")).anyMatch(new Predicate<String>() {
@@ -292,21 +169,5 @@ public class ConfigController {
             }
 
         });
-    }
-
-    public void setContext(ServletContext context) {
-        this.context = context;
-    }
-
-    public void setDataDir(String dataDir) {
-        this.dataDir = dataDir;
-    }
-
-    public void setMappings(String mappings) {
-        this.mappings = mappings;
-    }
-
-    public void setOverrides(String overrides) {
-        this.overrides = overrides;
     }
 }
