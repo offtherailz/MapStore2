@@ -12,10 +12,10 @@ import pointOnSurface from '@turf/point-on-surface';
 import assign from 'object-assign';
 import { sortBy, isNil } from 'lodash';
 
-import { queryableLayersSelector, getLayerFromName } from '../selectors/layers';
+import { queryableLayersSelector, getLayerFromName, centerToMarkerSelector } from '../selectors/layers';
 
 import { updateAdditionalLayer } from '../actions/additionallayers';
-import { showMapinfoMarker, featureInfoClick } from '../actions/mapInfo';
+import { showMapinfoMarker, featureInfoClick, updateCenterToMarker, LOAD_FEATURE_INFO, ERROR_FEATURE_INFO, EXCEPTIONS_FEATURE_INFO  } from '../actions/mapInfo';
 import { zoomToExtent, zoomToPoint } from '../actions/map';
 import { changeLayerProperties } from '../actions/layers';
 import {
@@ -153,7 +153,18 @@ export const searchItemSelected = (action$, store) =>
                                 forceVisibility = item.__SERVICE__.forceSearchLayerVisibility;
                                 filterNameList = [typeName];
                                 itemId = item.id;
-                                overrideParams = { [item.__SERVICE__.options.typeName]: { info_format: getInfoFormat(layerObj, state), featureid: itemId } };
+                                overrideParams = {
+                                    [item.__SERVICE__.options.typeName]: {
+                                        info_format: getInfoFormat(layerObj, state),
+                                        ...(itemId
+                                            ? {
+                                                featureid: itemId,
+                                                CQL_FILTER: undefined
+                                            }
+                                            : {}
+                                        )
+                                    }
+                                };
                             }
                             return [
                                 ...(forceVisibility && layerObj ? [changeLayerProperties(layerObj.id, {visibility: true})] : []),
@@ -196,24 +207,58 @@ export const searchItemSelected = (action$, store) =>
  */
 export const textSearchShowGFIEpic = (action$, store) =>
     action$.ofType(TEXT_SEARCH_SHOW_GFI)
+        .filter(({item = {}}) => !item?.__SERVICE__?.customGFI)
         .switchMap(({item}) => {
             const state = store.getState();
             const typeName = item?.__SERVICE__?.options?.typeName;
             const layerObj = typeName && getLayerFromName(state, typeName);
+
             const bbox = item.bbox || item.properties.bbox || toBbox(item);
+            const zoomToItem = bbox && (item?.__SERVICE__?.options?.zoomToItem ?? true);
+            const zoomAction = zoomToExtent([bbox[0], bbox[1], bbox[2], bbox[3]], "EPSG:4326", item?.__SERVICE__?.options?.maxZoomLevel || 21);
             const coord = pointOnSurface(item).geometry.coordinates;
             const latlng = { lng: coord[0], lat: coord[1] };
             const itemId = item.id;
-            return !!coord &&
-                showGFIForService(item?.__SERVICE__) && layerIsVisibleForGFI(layerObj, item?.__SERVICE__) ?
-                Rx.Observable.of(
+            return !!coord
+                && showGFIForService(item?.__SERVICE__)
+                && layerIsVisibleForGFI(layerObj, item?.__SERVICE__)
+                ? Rx.Observable.of(
                     ...(item?.__SERVICE__?.forceSearchLayerVisibility && layerObj ? [changeLayerProperties(layerObj.id, {visibility: true})] : []),
-                    featureInfoClick({ latlng }, typeName, [typeName], { [typeName]: { info_format: getInfoFormat(layerObj, state), featureid: itemId } }, itemId),
+                    // ...(zoomToItem ? [zoomAction] : []), // first action of zoom is required in order to allow a precise calculation of click point coordinates.
+                    featureInfoClick({ latlng }, typeName, [typeName], {
+                        [typeName]: {
+                            info_format: getInfoFormat(layerObj, state),
+                            ...(itemId
+                                ? {
+                                    featureid: itemId,
+                                    // GeoServer rises an error in case CQL_FILTER and featureId are present in the same time
+                                    // so we need to remove it (anyway featureid filter is enough)
+                                    CQL_FILTER: undefined
+                                }
+                                : {}
+                            )
+                        } }, itemId),
                     showMapinfoMarker(),
-                    zoomToExtent([bbox[0], bbox[1], bbox[2], bbox[3]], "EPSG:4326", item?.__SERVICE__?.options?.maxZoomLevel || 21),
-                    addMarker(item)
-                ) :
-                Rx.Observable.empty();
+                    addMarker(item))
+                    // wait for response received (so feature info panel open)
+                    // to zoom to extent, in order to center the geometry in the visible bounding box
+                    .merge(
+                        zoomToItem ?
+                            action$
+                                .ofType(LOAD_FEATURE_INFO)
+                                .take(1)
+                                .mapTo(zoomAction)
+                                .takeUntil(action$.ofType(EXCEPTIONS_FEATURE_INFO, ERROR_FEATURE_INFO))
+                            : Rx.Observable.empty()
+                    )
+                    // disable temporary centerToMarker when zoom is performed
+                    // to avoid multiple map adjustments and previous position restore when feature info closing (that will be wrong position)
+                    .let(stream$ => zoomToItem && centerToMarkerSelector(store.getState())
+                        ? stream$.startWith(updateCenterToMarker(false)).concat(Rx.Observable.of(updateCenterToMarker(true)))
+                        : stream$
+                    )
+
+                : Rx.Observable.empty();
         });
 
 /**

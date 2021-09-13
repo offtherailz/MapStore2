@@ -30,7 +30,7 @@ import {
 } from '../../actions/search';
 
 import { SHOW_NOTIFICATION } from '../../actions/notifications';
-import { FEATURE_INFO_CLICK, SHOW_MAPINFO_MARKER } from '../../actions/mapInfo';
+import { FEATURE_INFO_CLICK, SHOW_MAPINFO_MARKER, loadFeatureInfo } from '../../actions/mapInfo';
 import { ZOOM_TO_EXTENT, ZOOM_TO_POINT } from '../../actions/map';
 import { UPDATE_ADDITIONAL_LAYER } from '../../actions/additionallayers';
 import { searchEpic, searchItemSelected, zoomAndAddPointEpic, searchOnStartEpic, textSearchShowGFIEpic } from '../search';
@@ -235,17 +235,16 @@ describe('search Epics', () => {
         });
 
         const NUM_ACTIONS = 6;
-        testEpic(addTimeoutEpic(searchItemSelected, 100), NUM_ACTIONS, action, (actions) => {
-            expect(actions.length).toBe(NUM_ACTIONS);
-            expect(actions[0].type).toBe(TEXT_SEARCH_RESULTS_PURGE);
-            expect(actions[1].type).toBe(FEATURE_INFO_CLICK);
-            expect(actions[1].itemId).toEqual("Feature_1");
-            expect(actions[1].filterNameList).toEqual(["gs:layername"]);
-            expect(actions[1].overrideParams).toEqual({"gs:layername": {info_format: "text/html", featureid: "Feature_1"}});
-            expect(actions[2].type).toBe(SHOW_MAPINFO_MARKER);
-            expect(actions[3].type).toBe(ZOOM_TO_EXTENT);
-            expect(actions[4].type).toBe(TEXT_SEARCH_ADD_MARKER);
-            expect(actions[5].type).toBe(TEST_TIMEOUT);
+        testEpic(addTimeoutEpic(searchItemSelected, 90), NUM_ACTIONS, action, ([purgeAction, featureInfoClickAction, showMarkerAction, zoomToExtentAction, addMarkerAction, timeoutAction]) => {
+            expect(purgeAction.type).toBe(TEXT_SEARCH_RESULTS_PURGE);
+            expect(featureInfoClickAction.type).toBe(FEATURE_INFO_CLICK);
+            expect(featureInfoClickAction.itemId).toEqual("Feature_1");
+            expect(featureInfoClickAction.filterNameList).toEqual(["gs:layername"]);
+            expect(featureInfoClickAction.overrideParams).toEqual({"gs:layername": {info_format: "text/html", featureid: "Feature_1", CQL_FILTER: undefined}});
+            expect(showMarkerAction.type).toBe(SHOW_MAPINFO_MARKER);
+            expect(zoomToExtentAction.type).toBe(ZOOM_TO_EXTENT);
+            expect(addMarkerAction.type).toBe(TEXT_SEARCH_ADD_MARKER);
+            expect(timeoutAction.type).toBe(TEST_TIMEOUT);
             done();
         }, {layers: {flat: [{name: "gs:layername", url: "base/web/client/test-resources/wms/GetFeature.json", visibility: true, featureInfo: {format: "HTML"}, queryable: true, type: "wms"}]}});
     });
@@ -601,37 +600,69 @@ describe('search Epics', () => {
             done();
         }, {layers: {flat: [{name: "layerName", url: "base/web/client/test-resources/wms/GetFeature.json", visibility: true, queryable: true, type: "wms"}]}});
     });
-    it('textSearchShowGFIEpic, it sends info format taken from layer', (done) => {
-        let action = showGFI(
-            {
-                layer: "layerName",
-                type: "Feature",
-                bbox: [125, 10, 126, 11],
-                geometry: {
-                    type: "Point",
-                    coordinates: [125.6, 10.1]
-                },
-                id: "layer_01",
-                "__SERVICE__": {
-                    launchInfoPanel: "single_layer",
-                    openFeatureInfoButtonEnabled: true,
-                    options: {
-                        typeName: "layerName",
-                        maxZoomLevel: 20
+    describe('textSearchShowGFIEpic', () => {
+        it('Sends feature info actions with information taken from layer', (done) => {
+            let action = showGFI(
+                {
+                    layer: "layerName",
+                    type: "Feature",
+                    bbox: [125, 10, 126, 11],
+                    geometry: {
+                        type: "Point",
+                        coordinates: [125.6, 10.1]
+                    },
+                    id: "layer_01",
+                    "__SERVICE__": {
+                        launchInfoPanel: "single_layer",
+                        openFeatureInfoButtonEnabled: true,
+                        options: {
+                            typeName: "layerName",
+                            maxZoomLevel: 20
+                        }
                     }
-                }
-            });
-        const NUM_ACTIONS = 4;
-        testEpic(addTimeoutEpic(textSearchShowGFIEpic, 100), NUM_ACTIONS, action, (actions) => {
-            expect(actions).toExist();
-            expect(actions.length).toBe(NUM_ACTIONS);
-            expect(actions[0].type).toBe(FEATURE_INFO_CLICK);
-            expect(actions[0].overrideParams.layerName.info_format).toBe("text/html");
-            expect(actions[0].overrideParams.layerName.featureid).toBe("layer_01");
-            expect(actions[1].type).toBe(SHOW_MAPINFO_MARKER);
-            expect(actions[2].type).toBe(ZOOM_TO_EXTENT);
-            expect(actions[3].type).toBe(TEXT_SEARCH_ADD_MARKER);
-            done();
-        }, {layers: {flat: [{name: "layerName", url: "base/web/client/test-resources/wms/GetFeature.json", visibility: true, featureInfo: {format: "HTML"}, queryable: true, type: "wms"}]}});
+                });
+            const NUM_ACTIONS = 4;
+            testEpic(textSearchShowGFIEpic, NUM_ACTIONS, [action, loadFeatureInfo()], ([gfiClickAction, showMarkerAction, addMarkerAction, zoomToExtentAction]) => {
+                expect(gfiClickAction.type).toBe(FEATURE_INFO_CLICK);
+                expect(gfiClickAction.overrideParams.layerName.info_format).toBe("text/html");
+                expect(gfiClickAction.overrideParams.layerName.featureid).toBe("layer_01");
+                expect(showMarkerAction.type).toBe(SHOW_MAPINFO_MARKER);
+                expect(addMarkerAction.type).toBe(TEXT_SEARCH_ADD_MARKER);
+                expect(zoomToExtentAction.type).toBe(ZOOM_TO_EXTENT);
+                done();
+            }, {layers: {flat: [{name: "layerName", url: "base/web/client/test-resources/wms/GetFeature.json", visibility: true, featureInfo: {format: "HTML"}, queryable: true, type: "wms"}]}});
+        });
+        it('when <service>.options.zoomToItem=false, do not zoom', (done) => {
+            let action = showGFI(
+                {
+                    layer: "layerName",
+                    type: "Feature",
+                    bbox: [125, 10, 126, 11],
+                    geometry: {
+                        type: "Point",
+                        coordinates: [125.6, 10.1]
+                    },
+                    id: "layer_01",
+                    "__SERVICE__": {
+                        launchInfoPanel: "single_layer",
+                        openFeatureInfoButtonEnabled: true,
+                        options: {
+                            typeName: "layerName",
+                            maxZoomLevel: 20,
+                            zoomToItem: false
+                        }
+                    }
+                });
+            const NUM_ACTIONS = 4;
+            testEpic(addTimeoutEpic(textSearchShowGFIEpic, 50), NUM_ACTIONS, [action, loadFeatureInfo()], ([gfiClickAction, showMarkerAction, addMarkerAction, timeoutAction]) => {
+                expect(gfiClickAction.type).toBe(FEATURE_INFO_CLICK);
+                expect(gfiClickAction.overrideParams.layerName.info_format).toBe("text/html");
+                expect(gfiClickAction.overrideParams.layerName.featureid).toBe("layer_01");
+                expect(showMarkerAction.type).toBe(SHOW_MAPINFO_MARKER);
+                expect(addMarkerAction.type).toBe(TEXT_SEARCH_ADD_MARKER);
+                expect(timeoutAction.type).toBe(TEST_TIMEOUT);
+                done();
+            }, {layers: {flat: [{name: "layerName", url: "base/web/client/test-resources/wms/GetFeature.json", visibility: true, featureInfo: {format: "HTML"}, queryable: true, type: "wms"}]}});
+        });
     });
 });

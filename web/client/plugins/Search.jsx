@@ -286,6 +286,7 @@ An example to require the data api:
  * Note that, in the following cases, the point used for GFI request is a point on surface of the geometry of the selected record
  * - "single_layer", it performs the GFI request for one layer only with only that record as a result, info_format is forced to be application/json
  * - "all_layers", it performs the GFI for all layers, as a normal GFI triggered by clicking on the map
+ * When launchInfoPanel is active, the click on "i" button will open feature info and zoom to item. You can disable this option by setting on zoomToItem=false.
 
 * @prop {array|boolean} cfg.withToggle when boolean, true uses a toggle to display the searchbar. When array, e.g  `["max-width: 768px", "min-width: 768px"]`, `max-width` and `min-width` are the limits where to show/hide the toggle (useful for mobile)
  */
