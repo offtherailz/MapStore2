@@ -1,10 +1,10 @@
 # Writing Actions and Reducers
 
-> ┻┳|  
-> ┳┻| _  
-> ┻┳| •.•) 💬 *"Hey, Checkout this awesome documentation for actions and reducers!"*  
-> ┳┻|⊂ﾉ     
-> ┻┳|  
+> ┻┳|
+> ┳┻| _
+> ┻┳| •.•) 💬 *"Hey, Checkout this awesome documentation for actions and reducers!"*
+> ┳┻|⊂ﾉ
+> ┻┳|
 
 ## What are actions?
 Quoting the redux [documentation](https://redux.js.org/basics/actions) they are:
@@ -155,7 +155,7 @@ In order to speed up the unit test runner, you can:
 - change the path in tests.webpack.js (custom/standard project) or build\tests.webpack.js (framework) to point to the folder parent of __tests__
 for example `'/js/actions'` for custom/standard project or `'../web/client/actions'` for framework
 - then run this command:
-`npm run continuoustest`
+`npm run test:watch`
 
 This allows to run only the tests contained to the specified path.
 **Note:** When all tests are successfully passing remember to restore it to its original value.
@@ -180,7 +180,7 @@ describe('Test correctness of the map reducers', () => {
 
 Here for speedup testing you can again modify the tests.webpack.js (custom/standard project) or build\tests.webpack.js (framework)
 in order to point to the reducers folder and then running
-`npm run continuoustest`
+`npm run test:watch`
 
 ## Actions and epics
 Actions are not only used by redux to update the store (through the reducers),

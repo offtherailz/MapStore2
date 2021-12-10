@@ -42,7 +42,7 @@ To install docma:
 
 While developing you can generate the documentation to be accessible in the local machine by:
 
-`npm run doctest`
+`npm run doc:test`
 
 The resulting doc will be accessible from http://localhost:8081/mapstore/docs/
 
@@ -54,7 +54,7 @@ The documentation will be accessible from the */mapstore/docs/* path
 
 The generated folders can be removed with:
 
-`npm run cleandoc`
+`npm run doc:clean`
 
 ## Understanding frontend building tools
 
@@ -76,12 +76,11 @@ In particular:
 |--------------------------|--------------------------------------------------------------|
 | `npm install`            | download dependencies and init developer environment         |
 | `npm start`              | start development instance                                   |
-| `npm run compile`        | run single build / bundling                                  |
+| `npm run frontend:build` | run single build / bundling                                  |
 | `npm test`               | run test suite once                                          |
-| `npm run continuoustest` | run continuous test suite running (useful during developing) |
+| `npm run test:watch`     | run continuous test suite running (useful during developing) |
 | `npm run lint`           | run ESLint checks                                            |
-| `npm run mvntest`        | run tests from Maven                                         |
-| `npm run travis`         | run the test build used for travis                           |
+| `npm run i18n`           | checks missing strings in mandatory i18n files (ref to en-US)|
 
 ## Including the printing engine in your build
 

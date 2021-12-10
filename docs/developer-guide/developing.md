@@ -114,18 +114,15 @@ To run the MapStore frontend test suite you can use:
 
 You can also have a continuously running watching test runner, that will execute the complete suite each time a file is changed, launching:
 
-`npm run continuoustest`
+`npm run test:watch`
 
 Usually during the development you may need to execute less tests, when working on some specific files.
 
-You can reduce the tests invoked in `npm run continuoustest` execution by editing the file `tests.webpack.js` and modifying the directory (`/web`) and/or the regular expression that intercept the files to execute.
+You can reduce the tests invoked in `npm run test:watch` execution by editing the file `tests.webpack.js` and modifying the directory (`/web`) and/or the regular expression that intercept the files to execute.
 
 To run ESLint checks launch:
 
 `npm run lint`
-
-To run the same tests Travis will check (before a pull request):
-`npm run travis`
 
 More information on frontend building tools and configuration is available [here](frontend-building-tools-and-configuration)
 

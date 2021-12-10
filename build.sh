@@ -22,7 +22,7 @@ npm run compile
 
 echo "Cleanup Documentation"
 echo `date`
-npm run cleandoc
+npm run doc:clean
 
 echo "Checking syntax"
 echo `date`
@@ -59,4 +59,4 @@ fi
 
 echo "Final Cleanup"
 echo `date`
-npm run cleandoc
+npm run doc:clean
