@@ -6,7 +6,7 @@
   * LICENSE file in the root directory of this source tree.
   */
 import React, {useState} from 'react';
-import { head, get} from 'lodash';
+import { head, get, castArray} from 'lodash';
 import { Row, Col, Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap';
 import Message from '../../../../I18N/Message';
 import Select from 'react-select';
@@ -137,11 +137,13 @@ export default ({
                         </Col>
                         <Col sm={6}>
                             <Select
-                                value={data.options && data.options.aggregationAttribute}
+                                multi
+                                value={(options ?? []).filter(v => castArray(data?.options?.aggregationAttribute ?? []).includes(v?.value))}
                                 options={options}
                                 placeholder={placeHolder}
-                                onChange={(val) => {
-                                    onChange("options.aggregationAttribute", val && val.value);
+                                onChange={(event) => {
+                                    const value = event.map((entry) => entry.value);
+                                    onChange("options.aggregationAttribute", value);
                                 }}
                             />
                         </Col>

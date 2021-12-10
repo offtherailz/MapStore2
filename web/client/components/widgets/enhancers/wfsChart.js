@@ -58,7 +58,7 @@ const dataStreamFactory = ($props) =>
                     isAnimationActive: false,
                     error: undefined,
                     data: wfsToChartData(response, options),
-                    series: [{ dataKey: options.aggregationAttribute }],
+                    series: castArray(options.aggregationAttribute).map(v => ({ dataKey: v })),
                     classifications: {dataKey: options.classificationAttribute},
                     xAxis: { dataKey: options.groupByAttributes}
                 }))

@@ -6,41 +6,21 @@
  * LICENSE file in the root directory of this source tree.
  */
 import React from 'react';
-import { isNil } from 'lodash';
-import Select from 'react-select';
+import { isNil, castArray } from 'lodash';
 import { Col, FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 
 import Message from '../../../../I18N/Message';
-import HTML from '../../../../I18N/HTML';
 
 import Slider from '../../../../misc/Slider';
 import InfoPopover from '../../../widget/InfoPopover';
-import DisposablePopover from '../../../../misc/popover/DisposablePopover';
-import FormulaInput from './FormulaInput';
-
 
 import SwitchPanel from '../../../../misc/switch/SwitchPanel';
 import SwitchButton from '../../../../misc/switch/SwitchButton';
-import localizedProps from '../../../../misc/enhancers/localizedProps';
 
-const AxisTypeSelect = localizedProps('options')(Select);
+import {AXIS_TYPES, AxisTypeSelect} from './common.jsx';
+import YAxisEditor from './YAxisEditor';
+import FormulaInput from './FormulaInput';
 
-const AXIS_TYPES = [{
-    value: '-',
-    label: 'widgets.advanced.axisTypes.auto'
-}, {
-    value: 'linear',
-    label: 'widgets.advanced.axisTypes.linear'
-}, {
-    value: 'category',
-    label: 'widgets.advanced.axisTypes.category'
-}, {
-    value: 'log',
-    label: 'widgets.advanced.axisTypes.log'
-}, {
-    value: 'date',
-    label: 'widgets.advanced.axisTypes.date'
-}];
 
 const MAX_X_AXIS_LABELS = 200;
 
@@ -71,52 +51,12 @@ export default function ChartAdvancedOptions({
                 />
             </Col>
             {/* Y AXIS */}
-            <Col componentClass={"label"} sm={12}>
-                <Message msgId="widgets.advanced.yAxis" />
-            </Col>
-            <Col componentClass={ControlLabel} sm={6}>
-                <Message msgId="widgets.advanced.xAxisType" />
-            </Col>
-            <Col sm={6}>
-                <AxisTypeSelect
-                    value={data.yAxisOpts && data.yAxisOpts.type || '-'}
-                    options={AXIS_TYPES}
-                    onChange={(val) => {
-                        onChange("yAxisOpts.type", val && val.value);
-                    }}
-                />
-            </Col>
-            <Col componentClass={ControlLabel} sm={6}>
-                <Message msgId="widgets.advanced.hideLabels" />
-            </Col>
-            <Col sm={6}>
-                <SwitchButton
-                    checked={data.yAxis || data.yAxis === false ? !data.yAxis : true}
-                    onChange={(val) => { onChange("yAxis", !val); }}
-                />
-            </Col>
-            <Col componentClass={ControlLabel} sm={12}>
-                <Message msgId="widgets.advanced.format" />
-            </Col>
-            <Col sm={4}>
-                <ControlLabel>
-                    <Message msgId="widgets.advanced.prefix" />
-                    <FormControl placeholder="e.g.: ~" disabled={data.yAxis === false} value={data?.yAxisOpts?.tickPrefix} type="text" onChange={e => onChange("yAxisOpts.tickPrefix", e.target.value)} />
-                </ControlLabel>
-            </Col>
-            <Col sm={4}>
-                <ControlLabel>
-                    <Message msgId="widgets.advanced.format" />
-                </ControlLabel>
-                <DisposablePopover placement="top" title={<Message msgId="widgets.advanced.examples"/>} text={<HTML msgId="widgets.advanced.formatExamples" />} />
-                <FormControl placeholder="e.g.: .2s" disabled={data.yAxis === false} value={data?.yAxisOpts?.format} type="text" onChange={e => onChange("yAxisOpts.format", e.target.value)} />
-            </Col>
-            <Col sm={4}>
-                <ControlLabel><Message msgId="widgets.advanced.suffix" /></ControlLabel>
-                <FormControl placeholder="e.g.: W" disabled={data.yAxis === false} value={data?.yAxisOpts?.tickSuffix} type="text" onChange={e => onChange("yAxisOpts.tickSuffix", e.target.value)} />
-            </Col>
+            {
+                castArray(data?.yAxisOpts ?? [{}]).map((yAxisOpts) => <YAxisEditor data={data} yAxisOpts={yAxisOpts} onChange={onChange}/>) // TODO: transform onChange editor.
+            }
+            {/* FORMULA */ /* TODO: one for each value */}
             <Col sm={12}>
-                <FormulaInput disabled={data.yAxis === false} value={data.formula} type="text" onChange={e => onChange("formula", e.target.value)} />
+                <FormulaInput disabled={data?.yAxis === false} value={data.formula} type="text" onChange={e => onChange("formula", e.target.value)} />
             </Col>
             {/* X AXIS */}
             <Col componentClass={"label"} sm={12}>
