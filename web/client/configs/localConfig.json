@@ -2,15 +2,8 @@
     "proxyUrl": {
         "url": "proxy/?url=",
         "useCORS": [
-          "http://demo.geo-solutions.it/geoserver",
-          "https://demo.geo-solutions.it:443/geoserver",
-          "https://demo.geo-solutions.it/geoserver",
-          "https://nominatim.openstreetmap.org",
-          "http://cloudsdi.geo-solutions.it",
-          "https://gs-stable.geo-solutions.it/geoserver",
-          "https://gs-stable.geo-solutions.it:443/geoserver",
-          "http://gs-stable.geo-solutions.it/geoserver",
-          "http://gs-stable.geo-solutions.it:443/geoserver"
+
+          "https://nominatim.openstreetmap.org"
         ]
     },
     "geoStoreUrl": "rest/geostore/",
@@ -41,12 +34,7 @@
       }, {
         "urlPattern": ".*rest/config.*",
         "method": "bearer"
-      },
-      {
-        "urlPattern": "http(s)?\\:\\/\\/gs-stable\\.geo-solutions\\.it(\\:443|\\:80)?\\/geoserver/.*",
-        "authkeyParamName": "authkey",
-        "method": "authkey"
-    }],
+      }],
     "monitorState": [
       {"name": "router", "path": "router.location.pathname"},
       {"name": "browser", "path": "browser"},
@@ -70,83 +58,6 @@
         },
         "maptype": {
             "mapType": "{context.mode === 'desktop' ? 'openlayers' : 'leaflet'}"
-        },
-        "catalog": {
-          "default": {
-            "newService": {
-                "url": "",
-                "type": "wms",
-                "title": "",
-                "isNew": true,
-                "autoload": false
-            },
-            "selectedService": "gs_stable_csw",
-            "services": {
-              "gs_stable_csw": {
-                "url": "https://gs-stable.geo-solutions.it/geoserver/csw",
-                "type": "csw",
-                "title": "GeoSolutions GeoServer CSW",
-                "autoload": true
-              },
-              "gs_stable_wms": {
-                "url": "https://gs-stable.geo-solutions.it/geoserver/wms",
-                "type": "wms",
-                "title": "GeoSolutions GeoServer WMS",
-                "autoload": false
-              },
-              "gs_stable_wmts": {
-                "url": "https://gs-stable.geo-solutions.it/geoserver/gwc/service/wmts",
-                "type": "wmts",
-                "title": "GeoSolutions GeoServer WMTS",
-                "autoload": false
-              }
-            },
-            "staticServices": {
-              "default_map_backgrounds": {
-                "type": "backgrounds",
-                "title": "Default Backgrounds",
-                "titleMsgId": "defaultMapBackgroundsServiceTitle",
-                "autoload": true,
-                "backgrounds": [{
-                    "type": "osm",
-                    "title": "Open Street Map",
-                    "name": "mapnik",
-                    "source": "osm",
-                    "group": "background"
-                }, {
-                    "type": "tileprovider",
-                    "title": "NASAGIBS Night 2012",
-                    "provider": "NASAGIBS.ViirsEarthAtNight2012",
-                    "name": "Night2012",
-                    "source": "nasagibs",
-                    "group": "background"
-                }, {
-                    "type": "tileprovider",
-                    "title": "OpenTopoMap",
-                    "provider": "OpenTopoMap",
-                    "name": "OpenTopoMap",
-                    "source": "OpenTopoMap",
-                    "group": "background"
-                }, {
-                    "format": "image/jpeg",
-                    "group": "background",
-                    "name": "s2cloudless:s2cloudless",
-                    "opacity": 1,
-                    "title": "Sentinel 2 Cloudless",
-                    "type": "wms",
-                    "url": "https://1maps.geo-solutions.it/geoserver/wms",
-                    "source": "s2cloudless",
-                    "singleTile": false
-                }, {
-                    "source": "ol",
-                    "group": "background",
-                    "title": "Empty Background",
-                    "fixed": true,
-                    "type": "empty"
-                }]
-              }
-            }
-          }
         },
         "locales": {
           "supportedLocales": {
@@ -685,24 +596,6 @@
           {
           "name": "DashboardEditor",
           "cfg": {
-            "selectedService": "GeoSolutions GeoServer CSW",
-            "services": {
-              "GeoSolutions GeoServer CSW": {
-                "url": "https://gs-stable.geo-solutions.it/geoserver/csw",
-                "type": "csw",
-                "title": "GeoSolutions GeoServer CSW"
-              },
-              "GeoSolutions GeoServer WMS": {
-                "url": "https://gs-stable.geo-solutions.it/geoserver/wms",
-                "type": "wms",
-                "title": "GeoSolutions GeoServer WMS"
-              },
-              "GeoSolutions GeoServer WMTS": {
-                "url": "https://gs-stable.geo-solutions.it/geoserver/gwc/service/wmts",
-                "type": "wmts",
-                "title": "GeoSolutions GeoServer WMTS"
-              }
-            },
             "containerPosition": "columns"
           }
         }, {

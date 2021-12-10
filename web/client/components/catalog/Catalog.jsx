@@ -128,7 +128,7 @@ class Catalog extends React.Component {
     componentDidMount() {
         if (this.props.selectedService &&
             this.isValidServiceSelected() &&
-            this.props.services[this.props.selectedService].autoload) {
+            this.props.services[this.props.selectedService]?.autoload) {
             this.search({ services: this.props.services, selectedService: this.props.selectedService, searchText: this.props.searchText });
         }
     }
@@ -139,13 +139,13 @@ class Catalog extends React.Component {
                 nextProps.active && this.props.active &&
                 nextProps.selectedService &&
                 nextProps.services[nextProps.selectedService] &&
-                nextProps.services[nextProps.selectedService].autoload) {
+                nextProps.services[nextProps.selectedService]?.autoload) {
                 this.search({ services: nextProps.services, selectedService: nextProps.selectedService, searchText: nextProps.searchText });
             }
             if (nextProps.active && this.props.active === false &&
                 nextProps.selectedService &&
                 nextProps.services[nextProps.selectedService] &&
-                nextProps.services[nextProps.selectedService].autoload) {
+                nextProps.services[nextProps.selectedService]?.autoload) {
                 this.search({ services: nextProps.services, selectedService: nextProps.selectedService, searchText: nextProps.searchText });
             }
         }
@@ -254,10 +254,10 @@ class Catalog extends React.Component {
                 onAddBackgroundProperties={this.props.onAddBackgroundProperties}
                 source={this.props.source}
                 authkeyParamNames={this.props.authkeyParamNames}
-                catalogURL={this.isValidServiceSelected() && this.props.services[this.props.selectedService].url || ""}
+                catalogURL={this.isValidServiceSelected() && this.props.services[this.props.selectedService]?.url || ""}
                 service={this.props.services[this.props.selectedService]}
-                catalogType={this.props.services[this.props.selectedService] && this.props.services[this.props.selectedService].type}
-                showTemplate={this.props.services[this.props.selectedService].showTemplate}
+                catalogType={this.props.services[this.props.selectedService] && this.props.services[this.props.selectedService]?.type}
+                showTemplate={this.props.services[this.props.selectedService]?.showTemplate}
                 onLayerAdd={this.props.onLayerAdd}
                 onPropertiesChange={this.props.onPropertiesChange}
                 zoomToLayer={this.props.zoomToLayer}
@@ -269,7 +269,7 @@ class Catalog extends React.Component {
                 hideIdentifier={this.props.hideIdentifier}
                 hideExpand={this.props.hideExpand}
                 onAddBackground={this.props.onAddBackground}
-                defaultFormat={this.props.services[this.props.selectedService] && this.props.services[this.props.selectedService].format}
+                defaultFormat={this.props.services[this.props.selectedService] && this.props.services[this.props.selectedService]?.format}
                 formatOptions={this.props.services[this.props.selectedService]?.url === this.props.service?.url ? this.props.formatOptions : DEFAULT_FORMAT_WMS}
                 infoFormatOptions={this.props.services[this.props.selectedService]?.url === this.props.service?.url ? this.props.infoFormatOptions : getUniqueInfoFormats()}
                 layerBaseConfig={this.props.layerBaseConfig}
