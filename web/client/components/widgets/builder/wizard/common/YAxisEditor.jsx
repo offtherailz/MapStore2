@@ -12,15 +12,14 @@ import Message from '../../../../I18N/Message';
 import HTML from '../../../../I18N/HTML';
 
 import DisposablePopover from '../../../../misc/popover/DisposablePopover';
-import FormulaInput from './FormulaInput';
 import {AXIS_TYPES, AxisTypeSelect} from './common.jsx';
 
 import SwitchButton from '../../../../misc/switch/SwitchButton';
 
-export default (yAxisOpts, data, onChange = () => {}) => {
-    const {yAxis, formula} = data ?? {}; // TODO: think about multiple values and backward- compatibility.
+export default ({yAxisOpts, yAxisNumber, data, onChange = () => {}}) => {
+    const {yAxis} = data ?? {}; // TODO: think about multiple values and backward- compatibility.
     return (<><Col componentClass={"label"} sm={12}>
-        <Message msgId="widgets.advanced.yAxis" />
+        <Message msgId="widgets.advanced.yAxis" /> {yAxisNumber}
     </Col>
     <Col componentClass={ControlLabel} sm={6}>
         <Message msgId="widgets.advanced.xAxisType" />

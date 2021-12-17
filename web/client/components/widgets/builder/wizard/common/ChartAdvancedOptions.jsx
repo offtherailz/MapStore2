@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { isNil, castArray } from 'lodash';
-import { Col, FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
+import { Col, FormGroup, FormControl, ControlLabel, Glyphicon, Button } from 'react-bootstrap';
 
 import Message from '../../../../I18N/Message';
 
@@ -52,9 +52,13 @@ export default function ChartAdvancedOptions({
             </Col>
             {/* Y AXIS */}
             {
-                castArray(data?.yAxisOpts ?? [{}]).map((yAxisOpts) => <YAxisEditor data={data} yAxisOpts={yAxisOpts} onChange={onChange}/>) // TODO: transform onChange editor.
+                castArray(data?.yAxisOpts ?? [{}, {}]).map((yAxisOpts, i) => <YAxisEditor yAxisNumber={i + 1} data={data} yAxisOpts={yAxisOpts} onChange={onChange}/>) // TODO: transform onChange editor.
             }
+            <Button ><Glyphicon glyph="plus"/></Button>
             {/* FORMULA */ /* TODO: one for each value */}
+            <Col sm={12}>
+                <FormulaInput disabled={data?.yAxis === false} value={data.formula} type="text" onChange={e => onChange("formula", e.target.value)} />
+            </Col>
             <Col sm={12}>
                 <FormulaInput disabled={data?.yAxis === false} value={data.formula} type="text" onChange={e => onChange("formula", e.target.value)} />
             </Col>

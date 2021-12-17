@@ -59,6 +59,7 @@ function ColorRamp({
 
     return (
         <Select
+            placeholder="Color..."
             valueKey="name"
             className="color-ramp-selector"
             clearable={false}

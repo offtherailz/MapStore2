@@ -7,7 +7,7 @@
   */
 import React, {useState} from 'react';
 import { head, get, castArray} from 'lodash';
-import { Row, Col, Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap';
+import { Row, Col, Form, FormGroup, FormControl, ControlLabel, Glyphicon, Button} from 'react-bootstrap';
 import Message from '../../../../I18N/Message';
 import Select from 'react-select';
 import ColorRamp from '../../../../styleeditor/ColorRamp';
@@ -117,10 +117,10 @@ export default ({
                 <Form className="chart-options-form" horizontal>
                     {formOptions.showGroupBy ? (
                         <FormGroup controlId="groupByAttributes" className="mapstore-block-width">
-                            <Col componentClass={ControlLabel} sm={6}>
+                            <Col componentClass={ControlLabel} sm={12}>
                                 <Message msgId={getLabelMessageId("groupByAttributes", data)} />
                             </Col>
-                            <Col sm={6}>
+                            <Col sm={12} style={{padding: 1}}>
                                 <Select
                                     value={data.options && data.options.groupByAttributes}
                                     options={options}
@@ -132,52 +132,96 @@ export default ({
                             </Col>
                         </FormGroup>) : null}
                     <FormGroup controlId="aggregationAttribute" className="mapstore-block-width">
-                        <Col componentClass={ControlLabel} sm={6}>
+                        <Col componentClass={ControlLabel} sm={12}>
                             <Message msgId={getLabelMessageId("aggregationAttribute", data)} />
+                            <Button style={{"float": "right"}}><Glyphicon glyph="plus"/></Button>
                         </Col>
-                        <Col sm={6}>
+                        <Col sm={5} style={{padding: 1}}>
                             <Select
-                                multi
+                                value={(options ?? []).filter(v => castArray(data?.options?.aggregationAttribute?.[0] ?? []).includes(v?.value))}
+                                options={options}
+                                placeholder="Attribute.."
+                                onChange={(event) => {
+                                    const value = event.value;
+                                    onChange("options.aggregationAttribute[0]", value);
+                                }}
+                            />
+                        </Col>
+
+                        {hasAggregateProcess ?
+                            <Col sm={4} style={{padding: 1}}>
+                                <Select
+                                    value={data.options && data.options.aggregateFunction}
+                                    options={aggregationOptions}
+                                    placeholder="Operation.."
+                                    onChange={(val) => { onChange("options.aggregateFunction", val && val.value); }}
+                                />
+                            </Col>
+                            : null}
+
+                        {formOptions.showUom ?
+                            <FormGroup controlId="uom">
+                                <Col componentClass={ControlLabel} sm={12}>
+                                    <Message msgId={getLabelMessageId("uom", data)} />
+                                </Col>
+                                <Col sm={12}>
+                                    <FormControl value={get(data, `options.seriesOptions[0].uom`)} type="text" onChange={e => onChange("options.seriesOptions.[0].uom", e.target.value)} />
+                                </Col>
+                            </FormGroup> : null}
+                        {formOptions.showColorRampSelector ?
+
+                            <Col sm={2} style={{padding: 1}}>
+                                <ColorRamp
+                                    items={getColorRangeItems(data.type)}
+                                    value={head(getColorRangeItems(data.type).filter(c => data.autoColorOptions && c.name === data.autoColorOptions.name ))}
+                                    samples={data.type === "pie" ? 5 : 1}
+                                    onChange={v => {
+                                        onChange("autoColorOptions1", {
+                                            ...v.options,
+                                            name: v.name,
+                                            ...(classification ? { classification: formatAutoColorOptions(classification) } : {} ),
+                                            defaultCustomColor: defaultCustomColor ?? '#0888A1'
+                                        });
+                                        setCustomColor(v?.custom);
+                                        setShowModal(true);
+                                    }}/>
+                            </Col>
+                            : null}
+                            <Col sm={5} style={{padding: 1}}>
+                            <Select
                                 value={(options ?? []).filter(v => castArray(data?.options?.aggregationAttribute ?? []).includes(v?.value))}
                                 options={options}
-                                placeholder={placeHolder}
+                                placeholder="Attribute.."
                                 onChange={(event) => {
-                                    const value = event.map((entry) => entry.value);
+                                    const value = event.value;
                                     onChange("options.aggregationAttribute", value);
                                 }}
                             />
                         </Col>
-                    </FormGroup>
+                        {/** second */}
+                        {hasAggregateProcess ?
+                            <Col sm={4} style={{padding: 1}}>
+                                <Select
+                                    value={data.options && data.options.aggregateFunction1}
+                                    options={aggregationOptions}
+                                    placeholder="Operation.."
+                                    onChange={(val) => { onChange("options.aggregateFunction1", val && val.value); }}
+                                />
+                            </Col>
+                            : null}
 
-                    {hasAggregateProcess ? <FormGroup controlId="aggregateFunction" className="mapstore-block-width">
-                        <Col componentClass={ControlLabel} sm={6}>
-                            <Message msgId={getLabelMessageId("aggregateFunction", data)} />
-                        </Col>
-                        <Col sm={6}>
-                            <Select
-                                value={data.options && data.options.aggregateFunction}
-                                options={aggregationOptions}
-                                placeholder={placeHolder}
-                                onChange={(val) => { onChange("options.aggregateFunction", val && val.value); }}
-                            />
-                        </Col>
-                    </FormGroup> : null}
+                        {formOptions.showUom ?
+                            <FormGroup controlId="uom">
+                                <Col componentClass={ControlLabel} sm={12}>
+                                    <Message msgId={getLabelMessageId("uom", data)} />
+                                </Col>
+                                <Col sm={12}>
+                                    <FormControl value={get(data, `options.seriesOptions[0].uom`)} type="text" onChange={e => onChange("options.seriesOptions.[0].uom", e.target.value)} />
+                                </Col>
+                            </FormGroup> : null}
+                        {formOptions.showColorRampSelector ?
 
-                    {formOptions.showUom ?
-                        <FormGroup controlId="uom">
-                            <Col componentClass={ControlLabel} sm={6}>
-                                <Message msgId={getLabelMessageId("uom", data)} />
-                            </Col>
-                            <Col sm={6}>
-                                <FormControl value={get(data, `options.seriesOptions[0].uom`)} type="text" onChange={e => onChange("options.seriesOptions.[0].uom", e.target.value)} />
-                            </Col>
-                        </FormGroup> : null}
-                    {formOptions.showColorRampSelector ?
-                        <FormGroup controlId="colorRamp" className="mapstore-block-width">
-                            <Col componentClass={ControlLabel} sm={6}>
-                                <Message msgId={getLabelMessageId("colorRamp", data)} />
-                            </Col>
-                            <Col sm={6}>
+                            <Col sm={2} style={{padding: 1}}>
                                 <ColorRamp
                                     items={getColorRangeItems(data.type)}
                                     value={head(getColorRangeItems(data.type).filter(c => data.autoColorOptions && c.name === data.autoColorOptions.name ))}
@@ -193,7 +237,8 @@ export default ({
                                         setShowModal(true);
                                     }}/>
                             </Col>
-                        </FormGroup> : null}
+                            : null}
+                    </FormGroup>
 
                     { customColor &&
                     <ColorClassModal

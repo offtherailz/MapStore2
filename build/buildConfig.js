@@ -310,6 +310,13 @@ module.exports = (...args) => mapArgumentsToObject(args, ({
             '/docs': {
                 target: "http://localhost:8081",
                 pathRewrite: {'/docs': '/mapstore/docs'}
+            },
+            '/geoserver': {
+                target: "https://mappe.comune.genova.it/",
+                secure: false,
+                headers:{
+                    host: "mappe.comune.genova.it"
+                }
             }
         }
     },
