@@ -17,6 +17,7 @@ const assign = require('object-assign');
 const isObject = require('lodash/isObject');
 const omitBy = require('lodash/omitBy');
 const isNil = require('lodash/isNil');
+const castArray = require('lodash/castArray');
 const urlUtil = require('url');
 
 /**
@@ -86,6 +87,16 @@ function addAuthenticationToAxios(axiosConfig) {
             return axiosConfig;
         }
         addHeaderToAxiosConfig(axiosConfig, 'Authorization', "Bearer " + token);
+        return axiosConfig;
+    }
+    case 'openId': {
+        const tokensRules = castArray(rule?.tokensParams ?? []);
+        const tokens = tokensRules.reduce((acc, {paramName, tokenName}) => ({...acc, [paramName]: getToken(tokenName)}), {});
+        Object.entries(tokens).map( ([paramName, tokenName]) => addParameterToAxiosConfig(axiosConfig, paramName, getToken(tokenName)));
+        const headerRules = castArray(rule?.headerRules);
+        const processToken = (token) => `Bearer ${token}`; // only Bearer header supported, it should be the default
+        const headers = headerRules.reduce((acc, {headerName, tokenName}) => ({...acc, [headerName]: processToken(getToken(tokenName))}), {});
+        Object.entries(headers).map( ([headerName, headerValue]) => addHeaderToAxiosConfig(axiosConfig, headerName ?? 'Authorization', headerValue));
         return axiosConfig;
     }
     default:

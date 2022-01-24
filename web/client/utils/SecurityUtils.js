@@ -13,6 +13,7 @@ import assign from "object-assign";
 import head from "lodash/head";
 import isNil from "lodash/isNil";
 import isArray from "lodash/isArray";
+import castArray from "lodash/castArray";
 
 import {setStore as stateSetStore, getState} from "./StateUtils";
 
@@ -47,8 +48,8 @@ export function getBasicAuthHeader() {
 /**
  * Returns the current user access token value.
  */
-export function getToken() {
-    return getSecurityInfo()?.token;
+export function getToken( tokenName = "token" ) {
+    return getSecurityInfo()?.[tokenName]
 }
 
 /**
@@ -184,6 +185,12 @@ export function addAuthenticationParameter(url, parameters, securityToken) {
         const token = rule ? rule.token : "";
         const authParam = getAuthKeyParameter(url);
         return assign(parameters || {}, { [authParam]: token });
+    }
+    case 'openId': {
+        const rule = getAuthenticationRule(url);
+        const tokensRules = castArray(rule?.tokensParams ?? []);
+        const tokens = tokensRules.reduce((acc, {paramName, tokenName}) => ({...acc, [paramName]: getToken(tokenName)}), {});
+        return assign(parameters || {}, tokens);
     }
     default:
         // we cannot handle the required authentication method

@@ -60,6 +60,8 @@ function security(state = {user: null, errorCause: null}, action) {
         const timestamp = new Date() / 1000 | 0;
         return assign({}, state, {
             token: (action.userDetails && action.userDetails.access_token),
+            access_token: action?.userDetails?.access_token,
+            id_token: action?.userDetails?.id_token,
             refresh_token: (action.userDetails && action.userDetails.refresh_token),
             expires: (action.userDetails && action.userDetails.expires) ? timestamp + action.userDetails.expires : timestamp + 48 * 60 * 60
         });

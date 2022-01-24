@@ -89,6 +89,8 @@ export default {
         OmniBarPlugin: require('../plugins/OmniBar').default,
         PlaybackPlugin: require('../plugins/Playback.jsx').default,
         PrintPlugin: require('../plugins/Print').default,
+        PrintOutputFormat: require('../plugins/print/OutputFormat').default,
+        PrintProjection: require('../plugins/print/Projection').default,
         QueryPanelPlugin: require('../plugins/QueryPanel').default,
         RedirectPlugin: require('../plugins/Redirect').default,
         RedoPlugin: require('../plugins/History').default,
