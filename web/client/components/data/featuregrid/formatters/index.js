@@ -20,6 +20,7 @@ export const getFormatter = (desc, dateFormats) => {
         return ({value} = {}) => !isNil(value) ? <span>{value.toString()}</span> : null;
     } else if (['int', 'number'].includes(desc.localType)) {
         return ({value} = {}) => !isNil(value) ? <NumberFormat value={value} numberParams={{maximumFractionDigits: 17}}/> : null;
+<<<<<<< HEAD
     } else if (desc.localType === 'string') {
         return ({value} = {}) => !isNil(value) ? reactStringReplace(value, /(https?:\/\/\S+)/g, (match, i) => (
             <a key={match + i} href={match} target={"_blank"}>{match}</a>
@@ -44,6 +45,10 @@ export const getFormatter = (desc, dateFormats) => {
                     : moment(`${DEFAULT_DATE_PART}T${value}`).utc().format(format)
                 : null;
         };
+=======
+    } else if (desc.localType === 'Geometry') {
+        return () => null;
+>>>>>>> f6b2cbe04 (#8083: Add an empty renderer for geometry types)
     }
     return null;
 };

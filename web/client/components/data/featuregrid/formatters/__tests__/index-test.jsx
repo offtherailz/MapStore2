@@ -62,6 +62,7 @@ describe('Tests for the formatter functions', () => {
         expect(formatter({value: null})).toBe(null);
         expect(formatter({value: undefined})).toBe(null);
     });
+<<<<<<< HEAD
     it('test getFormatter for date / date-time / time', () => {
         const dateFormats = {
             date: 'YYYY',
@@ -82,4 +83,6 @@ describe('Tests for the formatter functions', () => {
         expect(timeFormatter({value: '12:45:00Z'})).toBe('12:45');
         expect(timeFormatter({ value: '1970-01-01T02:30:00Z' })).toBe('02:30'); // still able to format time even when found a full date (sometimes GeoServer returns full date instead of time only)
     });
+=======
+>>>>>>> f6b2cbe04 (#8083: Add an empty renderer for geometry types)
 });
