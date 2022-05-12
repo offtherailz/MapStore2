@@ -136,12 +136,9 @@ module.exports = (...args) => mapArgumentsToObject(args, ({
         chunkFilename: prod ? (paths.chunks || "") + "[name].[hash].chunk.js" : (paths.chunks || "") + "[name].js"
     },
     plugins: [
-        new CopyWebpackPlugin([
-            { from: path.join(paths.base, 'node_modules', 'bootstrap', 'less'), to: path.join(paths.dist, "bootstrap", "less") }
-        ]),
-        new CopyWebpackPlugin([
-            { from: path.join(paths.base, 'node_modules', 'react-nouislider', 'example'), to: path.join(paths.dist, "react-nouislider", "example") }
-        ]),
+        new CopyWebpackPlugin({
+            patterns: [{ from: path.join(paths.base, 'node_modules', 'bootstrap', 'less'), to: path.join(paths.dist, "bootstrap", "less") }]
+        }),
         new LoaderOptionsPlugin({
             debug: !prod,
             options: {
@@ -161,11 +158,11 @@ module.exports = (...args) => mapArgumentsToObject(args, ({
             // Define relative base path in cesium for loading assets
             'CESIUM_BASE_URL': JSON.stringify(cesiumBaseUrl ? cesiumBaseUrl : path.join('dist', 'cesium'))
         }),
-        new CopyWebpackPlugin([
+        new CopyWebpackPlugin({patterns: [
             { from: path.join(getCesiumPath({ paths, prod }), 'Workers'), to: path.join(paths.dist, 'cesium', 'Workers') },
             { from: path.join(getCesiumPath({ paths, prod }), 'Assets'), to: path.join(paths.dist, 'cesium', 'Assets') },
             { from: path.join(getCesiumPath({ paths, prod }), 'Widgets'), to: path.join(paths.dist, 'cesium', 'Widgets') }
-        ]),
+        ]}),
         new ProvidePlugin({
             Buffer: ['buffer', 'Buffer']
         }),
@@ -298,7 +295,10 @@ module.exports = (...args) => mapArgumentsToObject(args, ({
         }] : [])
     },
     devServer: devServer || {
-        publicPath: "/dist/",
+        "static": {
+            directory: path.join(__dirname, "web", "client"),
+            publicPath: "/dist/"
+        },
         proxy: proxy || {
             '/rest': {
                 target: "https://dev-mapstore.geosolutionsgroup.com/mapstore",
