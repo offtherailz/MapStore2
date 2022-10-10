@@ -304,28 +304,21 @@ module.exports = (...args) => mapArgumentsToObject(args, ({
                 target: "https://dev-mapstore.geosolutionsgroup.com/mapstore",
                 secure: false,
                 headers: {
-                    host: "dev-mapstore.geosolutionsgroup.com"
+                    host: "localhost:8080"
                 }
             },
-            '/pdf': {
-                target: "https://dev-mapstore.geosolutionsgroup.com/mapstore",
+            '/print': {
+                target: "http://localhost:8080",
                 secure: false,
                 headers: {
-                    host: "dev-mapstore.geosolutionsgroup.com"
-                }
-            },
-            '/mapstore/pdf': {
-                target: "https://dev-mapstore.geosolutionsgroup.com",
-                secure: false,
-                headers: {
-                    host: "dev-mapstore.geosolutionsgroup.com"
+                    host: "localhost:8080"
                 }
             },
             '/proxy': {
-                target: "https://dev-mapstore.geosolutionsgroup.com/mapstore",
+                target: "http://localhost:8080/mapstore",
                 secure: false,
                 headers: {
-                    host: "dev-mapstore.geosolutionsgroup.com"
+                    host: "localhost:8080"
                 }
             },
             '/docs': {
