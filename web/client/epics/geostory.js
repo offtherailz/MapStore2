@@ -556,12 +556,6 @@ export const handlePendingGeoStoryChanges = action$ =>
             )
     );
 
-const semaphore = (sem$, start = true, condition = (c) => c) => (stream$) =>
-    stream$
-        .withLatestFrom(sem$.startWith(start))
-        .filter(([, s]) => condition(s))
-        .map(([e]) => e);
-
 /**
  * Handle the url updates on currentPage change
  * @param {Observable} action$ stream of actions
@@ -569,11 +563,13 @@ const semaphore = (sem$, start = true, condition = (c) => c) => (stream$) =>
  */
 export const urlUpdateOnScroll = (action$, {getState}) =>
     action$.ofType(UPDATE_CURRENT_PAGE)
-        .let(semaphore(
+        .withLatestFrom(
             action$.ofType(GEOSTORY_SCROLLING)
                 .map(a => !a.status)
                 .startWith(true)
-        ))
+        )
+        .filter(([, scrolling]) => scrolling)
+        .map(([a]) => a)
         .debounceTime(50) // little delay if too many UPDATE_CURRENT_PAGE actions come
         .switchMap(({sectionId, columnId}) => {
             if (

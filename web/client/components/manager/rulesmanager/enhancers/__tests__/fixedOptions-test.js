@@ -12,8 +12,6 @@ import ReactDOM from 'react-dom';
 import { createSink, setObservableConfig } from 'recompose';
 import expect from 'expect';
 import fixedOptions from '../fixedOptions';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-setObservableConfig(rxjsConfig);
 
 
 describe('fixedOption enhancer', () => {

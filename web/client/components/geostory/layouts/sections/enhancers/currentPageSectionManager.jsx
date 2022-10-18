@@ -10,8 +10,8 @@ import { get, minBy} from "lodash";
 import { Observable } from "rxjs";
 
 // TODO: externalize
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-setObservableConfig(rxjsConfig);
+
+
 /**
  * Handles the intersection event stream into calls to `updateCurrentPage`, when the current section changes.
  * @param {stream} intersection$ the stream of intersection event calls

@@ -13,7 +13,8 @@ import { createEpicMiddleware, combineEpics } from 'redux-observable';
 import { CLEAR_NOTIFICATIONS } from '../../actions/notifications';
 import { clearNotificationOnLocationChange } from '../notifications';
 const rootEpic = combineEpics(clearNotificationOnLocationChange);
-const epicMiddleware = createEpicMiddleware(rootEpic);
+const epicMiddleware = createEpicMiddleware();
+epicMiddleware.run();
 const mockStore = configureMockStore([epicMiddleware]);
 import { onLocationChanged } from 'connected-react-router';
 

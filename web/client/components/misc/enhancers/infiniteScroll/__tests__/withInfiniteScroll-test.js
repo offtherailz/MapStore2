@@ -10,12 +10,11 @@ import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { lifecycle, setObservableConfig } from 'recompose';
-import rxjsconfig from 'recompose/rxjsObservableConfig';
+
 import { Observable } from 'rxjs';
 
 import withInfiniteScroll from '../withInfiniteScroll';
 
-setObservableConfig(rxjsconfig);
 
 describe('withInfiniteScroll enhancer', () => {
     beforeEach((done) => {

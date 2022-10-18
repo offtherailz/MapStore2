@@ -16,6 +16,7 @@ import {
 } from '../StateUtils';
 import {createEpicMiddleware} from "redux-observable";
 import Rx from 'rxjs';
+
 import {REDUCERS_LOADED, reducersLoaded} from "../../actions/storemanager";
 
 describe('StateUtils', () => {
@@ -163,12 +164,13 @@ describe('StateUtils', () => {
         let epicMiddleware;
         beforeEach(() => {
             storeManager = createStoreManager({}, {});
-            epicMiddleware = createEpicMiddleware(storeManager.rootEpic);
+            epicMiddleware = createEpicMiddleware();
             createStore({
                 rootReducer: (action, state) => state,
                 state: {},
                 middlewares: [epicMiddleware]
             });
+            epicMiddleware.run(storeManager.rootEpic);
             storeManager.addEpics('test', {
                 epic1: (action$) =>
                     action$.ofType('TEST')

@@ -116,7 +116,8 @@ export const getPluginForTest = (pluginDef, storeState, plugins, testEpics = [],
             .map(p => Object.keys(p.epics || {}).map(key => p.epics[key]) || []) // get epics as array from each plugin
     );
     const rootEpic = combineEpics.apply(null, [...pluginEpics, ...pluginsEpics, ...castArray(testEpics)]);
-    const epicMiddleware = createEpicMiddleware(rootEpic);
+    const epicMiddleware = createEpicMiddleware();
+epicMiddleware.run();
 
     const store = applyMiddleware(thunkMiddleware, epicMiddleware, createRegisterActionsMiddleware(actions))(createStore)(reducer, storeState);
     const pluginProps = items?.length ? {items} : undefined;

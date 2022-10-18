@@ -7,6 +7,8 @@
 */
 
 import React from 'react';
+import { Observable } from 'rxjs';
+
 import PropTypes from 'prop-types';
 import assign from 'object-assign';
 import {defaultProps, compose, mapPropsStream} from 'recompose';
@@ -171,8 +173,8 @@ const featuredMapsPluginSelector = createSelector([
 }));
 
 const updateFeaturedMapsStream = mapPropsStream(props$ =>
-    props$.merge(props$.take(1).switchMap(({searchText = '', permission, viewSize, pageSize, loadFirst = () => {} }) => {
-        return props$
+    Observable.from(props$).merge(Observable.from(props$).take(1).switchMap(({searchText = '', permission, viewSize, pageSize, loadFirst = () => {} }) => {
+        return Observable.from(props$)
             .startWith({searchText, permission, viewSize, pageSize, loading: true})
             .distinctUntilChanged((previous, next) =>
                 previous.invalidate === next.invalidate

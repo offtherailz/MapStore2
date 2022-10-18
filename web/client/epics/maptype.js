@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { push, LOCATION_CHANGE } from 'connected-react-router';
 
 import { changeMapType, updateLast2dMapType, MAP_TYPE_CHANGED } from '../actions/maptype';
@@ -23,16 +23,16 @@ import { LOCAL_CONFIG_LOADED } from '../actions/localConfig';
  * @return {external:Observable}  the stream of the actions to emit. (`changeMapType`)
  */
 export const syncMapType = (action$, store) =>
-    Rx.Observable.merge(
+    Observable.merge(
         // when location change and the mapType intercepted in the hash is different, update the map type.
         // It means that the URL has been used from external link
         action$.ofType(LOCATION_CHANGE)
             .filter(action => {
                 const hashMapType = findMapType(action?.payload?.location?.pathname);
-                return hashMapType && hashMapType !== mapTypeSelector(store.getState());
+                return hashMapType && hashMapType !== mapTypeSelector(store.value);
             })
             .switchMap((action) =>
-                Rx.Observable.of(changeMapType(findMapType(action.payload.location.pathname)))
+                Observable.of(changeMapType(findMapType(action.payload.location.pathname)))
             ),
         // when map type change, if the URL hash matches with one of the URLs that includes the maptype, update it
         // this when map type is changed using the action or not the URL
@@ -41,16 +41,16 @@ export const syncMapType = (action$, store) =>
             .switchMap((action) => {
                 const hash = action.hash || location.hash;
                 const hashMapType = findMapType(hash);
-                const currentMapType = mapTypeSelector(store.getState());
+                const currentMapType = mapTypeSelector(store.value);
                 // if the URL hash contains the mapType and it is not in sync with the new path, syncronize
                 if (hashMapType && hashMapType !== currentMapType) {
                     const newPath = replaceMapType(hash, currentMapType);
                     // in this case the URL change
                     if (newPath !== hash) {
-                        return Rx.Observable.from([push(newPath)]);
+                        return Observable.from([push(newPath)]);
                     }
                 }
-                return Rx.Observable.empty();
+                return Observable.empty();
             })
     );
 /**
@@ -58,10 +58,10 @@ export const syncMapType = (action$, store) =>
  */
 export const updateLast2dMapTypeOnChangeEvents = (action$, store) => action$
     .ofType(LOCAL_CONFIG_LOADED)
-    .map(() => mapTypeSelector(store.getState()))
+    .map(() => mapTypeSelector(store.value))
     .merge(action$.ofType(MAP_TYPE_CHANGED).pluck('mapType'))
     .filter((mapType) => mapType && mapType !== "cesium")
-    .switchMap(type => Rx.Observable.of(updateLast2dMapType(type)));
+    .switchMap(type => Observable.of(updateLast2dMapType(type)));
 
 /**
  * Restores last 2D map type when switch to a context where maptype is not
@@ -71,9 +71,9 @@ export const restore2DMapTypeOnLocationChange = (action$, store) => {
     return action$.ofType(LOCATION_CHANGE)
         // NOTE: this do not conflict with syncMapType LOCATION_CHANGE intercept, they are mutually esclusive
         // because of the `findMapType` check
-        .filter(action =>!findMapType(action?.payload?.location?.pathname) && isCesium(store.getState()))
+        .filter(action =>!findMapType(action?.payload?.location?.pathname) && isCesium(store.value))
         .switchMap(() => {
-            return Rx.Observable.of(changeMapType(last2dMapTypeSelector(store.getState())));
+            return Observable.of(changeMapType(last2dMapTypeSelector(store.value)));
         });
 };
 /**

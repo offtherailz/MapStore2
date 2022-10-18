@@ -7,7 +7,8 @@
  */
 
 import { castArray } from 'lodash';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
+import { startWith, catchError } from 'rxjs/operators';
 
 export const start = (stream$, actions = []) => stream$
     .startWith(...actions);
@@ -20,12 +21,11 @@ export const start = (stream$, actions = []) => stream$
  * @param {function} exception an optional function that returns the stream for exceptions
  */
 export const wrapStartStop = (startAction, endAction, createExceptionStream) => stream$ =>
-    (createExceptionStream ?
-        start(stream$, castArray(startAction))
-            .catch(createExceptionStream)
-        : start(stream$, castArray(startAction))
-    ).concat(
-        Rx.Observable.from(castArray(endAction))
+    Observable.concat(
+        createExceptionStream ?
+            stream$.pipe(startWith(...castArray(startAction)), catchError(createExceptionStream))
+            : stream$.pipe(startWith(...castArray(startAction))),
+        Observable.from(castArray(endAction))
     );
 
 

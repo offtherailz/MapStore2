@@ -12,7 +12,8 @@ import configureMockStore from 'redux-mock-store';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 import { onEpic } from '../controls';
 const rootEpic = combineEpics(onEpic);
-const epicMiddleware = createEpicMiddleware(rootEpic);
+const epicMiddleware = createEpicMiddleware();
+epicMiddleware.run();
 const mockStore = configureMockStore([epicMiddleware]);
 
 import { TOGGLE_CONTROL, toggleControl, resetControls, RESET_CONTROLS, on } from '../../actions/controls';

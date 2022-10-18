@@ -11,8 +11,7 @@ import { findIndex, get, maxBy } from "lodash";
 import { Observable } from "rxjs";
 
 // TODO: externalize
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-setObservableConfig(rxjsConfig);
+
 
 const getContentInView = (contents, id) => {
     const index = findIndex(contents, { id });

@@ -10,20 +10,17 @@ import { isArray } from 'lodash';
 import React from 'react';
 import {
     compose,
-    mapPropsStreamWithConfig,
-    setObservableConfig,
+    mapPropsStream,
     withHandlers,
     withPropsOnChange,
     withStateHandlers
 } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+
 
 import { escapeCQLStrings } from '../../utils/FilterUtils';
 import { generateTemplateString } from '../../utils/TemplateUtils';
 import PagedComboboxWithFeatures from './combobox/PagedComboboxWithFeatures';
 
-setObservableConfig(rxjsConfig);
-const mapPropsStream = mapPropsStreamWithConfig(rxjsConfig);
 
 // fetch data from wps service
 const streamEnhancer = mapPropsStream(props$ => {

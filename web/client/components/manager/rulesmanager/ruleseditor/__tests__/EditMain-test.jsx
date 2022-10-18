@@ -6,7 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import rxjsConfig from 'recompose/rxjsObservableConfig';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -15,7 +14,7 @@ import { Provider } from 'react-redux';
 import Editor from '../EditMain.jsx';
 import configureMockStore from 'redux-mock-store';
 import { setObservableConfig } from 'recompose';
-setObservableConfig(rxjsConfig);
+
 const mockStore = configureMockStore();
 
 const renderComp = (props, store) => {

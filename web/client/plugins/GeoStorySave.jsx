@@ -9,8 +9,8 @@
 import React from 'react';
 import {Glyphicon} from 'react-bootstrap';
 import { connect } from 'react-redux';
-import { compose, setObservableConfig, withHandlers, withProps } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+import { compose, withHandlers, withProps } from 'recompose';
+
 import { createSelector } from 'reselect';
 
 import { clearSaveError, saveStory, setControl } from '../actions/geostory';
@@ -28,11 +28,6 @@ import {
 import { isLoggedIn, userSelector } from '../selectors/security';
 import { Controls } from '../utils/GeoStoryUtils';
 import { createPlugin } from '../utils/PluginsUtils';
-
-// TODO: externalize
-
-setObservableConfig(rxjsConfig);
-
 
 /**
  * Save dialog component enhanced for GeoStory

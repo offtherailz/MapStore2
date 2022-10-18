@@ -60,7 +60,8 @@ const testState = {
     details: {}
 };
 const rootEpic = combineEpics(closeDetailsPanelEpic);
-const epicMiddleware = createEpicMiddleware(rootEpic);
+const epicMiddleware = createEpicMiddleware();
+epicMiddleware.run();
 const mockStore = configureMockStore([epicMiddleware]);
 
 const mapAttributesEmptyDetails = {

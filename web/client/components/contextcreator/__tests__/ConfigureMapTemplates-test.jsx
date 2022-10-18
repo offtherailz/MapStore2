@@ -12,9 +12,9 @@ import TestUtils from 'react-dom/test-utils';
 import expect from 'expect';
 import { find, get } from 'lodash';
 import { setObservableConfig } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+
 import ConfigureMapTemplate from '../ConfigureMapTemplates';
-setObservableConfig(rxjsConfig);
+
 
 describe('ConfigureMapTemplate component', () => {
     beforeEach((done) => {

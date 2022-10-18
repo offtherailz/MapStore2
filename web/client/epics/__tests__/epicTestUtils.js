@@ -1,5 +1,5 @@
-
-import Rx from 'rxjs';
+import Rx, {Subject, Observable} from "rxjs";
+import 'rxjs/add/observable/from';
 import { isFunction } from 'lodash';
 import { ActionsObservable, combineEpics } from 'redux-observable';
 
@@ -18,17 +18,18 @@ export const TEST_TIMEOUT = "EPICTEST:TIMEOUT";
  * @param  {Object|function}   [state={}] the state or a function that return it
  */
 export const testEpic = (epic, count, action, callback, state = {}, done, withCompleteAction = false) => {
-    const actions = new Rx.Subject();
-    const actions$ = new ActionsObservable(actions);
+    const actions = new Subject();
+    const actions$ = Observable.from(new ActionsObservable(actions));
     const store = {
-        getState: () => isFunction(state) ? state() : state,
+        getState: () => isFunction(state) ? state() : state, // remove for redux-observable 1.0
+        value: isFunction(state) ? state() : state,
         // subscribes to the actions and allow to react to them.
         dispatch: (a) => {
             actions.next(a);
         }
     };
     epic(actions$, store)
-        [isFunction(count) ? "takeWhile" : "take"](count, true).concat( withCompleteAction ? Rx.Observable.of({ type: "EPIC_COMPLETED"}) : [])
+        [isFunction(count) ? "takeWhile" : "take"](count, true).concat( withCompleteAction ? Observable.of({ type: "EPIC_COMPLETED"}) : [])
         .toArray()
         .subscribe((x) => {
             try {
@@ -51,7 +52,7 @@ export const testEpic = (epic, count, action, callback, state = {}, done, withCo
  * @param {function} epic         The epic to combine
  * @param {Number} [timeout=1000] milliseconds to wait after emit the TEST_TIMEOUT action.
  */
-export const addTimeoutEpic = (epic, timeout = 1000) => combineEpics(epic, () => Rx.Observable.timer(timeout).map(() => ({type: TEST_TIMEOUT, timeout})));
+export const addTimeoutEpic = (epic, timeout = 1000) => combineEpics(epic, () => Observable.timer(timeout).map(() => ({type: TEST_TIMEOUT, timeout})));
 /**
  * More general, but more complicated, test utility that allows to test epics combined.
  * Differently from the testEpic, this function allow to combine and test more epics at once.
@@ -67,7 +68,7 @@ export const addTimeoutEpic = (epic, timeout = 1000) => combineEpics(epic, () =>
  * let actions = [];
  * testcombinedEpicStream(
  *     [myEpic1, myEpic2, myMockEpicToSimulateControl],
- *     action$ => a$.filter(a => if(conditionOfEnd(e))),
+ *     action$ => Observable.from(a$).filter(a => iif(conditionOfEnd(e))),
  *     {
  *        onNext: a => actions.push(a), // note: here all the actions are included.
  *        onError: e => done(e),
@@ -84,7 +85,7 @@ export const testCombinedEpicStream = (
         onComplete = () => {}
     } = {},
     store = {getState: () => {}} ) => {
-    const actions = new Rx.Subject();
+    const actions = new Subject();
     const actions$ = new ActionsObservable(actions);
     return combineEpics(...epics)(actions$, store)
         .takeUntil(stopEpic(actions, store))

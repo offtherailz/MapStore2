@@ -10,8 +10,6 @@ import { compose, createEventHandler, mapPropsStream, setObservableConfig } from
 import { Observable } from "rxjs";
 
 // TODO: externalize
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-setObservableConfig(rxjsConfig);
 
 
 /**

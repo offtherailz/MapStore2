@@ -20,7 +20,7 @@ module.exports = ({browsers = [ 'ChromeHeadless' ], files, path, testFile, singl
 
     basePath,
 
-    files,
+    files: ["test-base.js", ...files],
 
     plugins: [
         require('karma-chrome-launcher'),

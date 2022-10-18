@@ -8,13 +8,12 @@
 
 
 // import bindings
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+import { setObservableConfig } from 'recompose';
+import { Observable } from 'rxjs';
 
 // loading definition of operators
-import 'rxjs';
 
 // binds recompose with rxjs
-import { setObservableConfig } from 'recompose';
 /**
  * The following operations are required to bind rxjs to recompose and ES6 Observables.
  * It is a requirement to use recompose together with RxJS ()
@@ -24,4 +23,4 @@ import { setObservableConfig } from 'recompose';
  * TODO: import it in StandardApp or where needed
  *
  */
-setObservableConfig(rxjsConfig);
+setObservableConfig({ fromESOBservable: Observable.from, toESObservable: stream => stream });

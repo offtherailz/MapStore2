@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { MAPS_LIST_LOADING, ATTRIBUTE_UPDATED } from '../actions/maps';
 import { SAVED as GEOSTORY_SAVED } from '../actions/geostory';
@@ -44,7 +44,7 @@ const calculateNewParams = state => {
 
 export const searchGeostoriesOnMapSearch = action$ =>
     action$.ofType(MAPS_LIST_LOADING)
-        .switchMap(({ searchText }) => Rx.Observable.of(searchGeostoriesAction(searchText)));
+        .switchMap(({ searchText }) => Observable.of(searchGeostoriesAction(searchText)));
 
 export const searchGeostories = (action$, { getState = () => { } }) =>
     action$.ofType(SEARCH_GEOSTORIES)
@@ -57,12 +57,12 @@ export const searchGeostories = (action$, { getState = () => { } }) =>
         }))
         .switchMap(
             ({ searchText, options }) =>
-                Rx.Observable.defer(() => GeoStoreApi.getResourcesByCategory("GEOSTORY", searchText, options))
+                Observable.defer(() => GeoStoreApi.getResourcesByCategory("GEOSTORY", searchText, options))
                     .map(results => geostoriesListLoaded(results, {searchText, options}))
                     .let(wrapStartStop(
                         geostoriesLoading(true, "loading"),
                         geostoriesLoading(false, "loading"),
-                        () => Rx.Observable.of(error({
+                        () => Observable.of(error({
                             title: "notification.error",
                             message: "resources.geostories.errorLoadingGeostories",
                             autoDismiss: 6,
@@ -76,7 +76,7 @@ export const deleteGeostory = action$ => action$
     .let(wrapStartStop(
         geostoriesLoading(true, "loading"),
         geostoriesLoading(false, "loading"),
-        () => Rx.Observable.of(error({
+        () => Observable.of(error({
             title: "notification.error",
             message: "resources.geostories.deleteError",
             autoDismiss: 6,
@@ -86,7 +86,7 @@ export const deleteGeostory = action$ => action$
 export const reloadOnGeostories = (action$, { getState = () => { } }) =>
     action$.ofType(GEOSTORY_DELETED, RELOAD, ATTRIBUTE_UPDATED, GEOSTORY_SAVED, LOGIN_SUCCESS, LOGOUT)
         .delay(1000) // delay as a workaround for geostore issue #178
-        .switchMap( () => Rx.Observable.of(searchGeostoriesAction(
+        .switchMap( () => Observable.of(searchGeostoriesAction(
             searchTextSelector(getState()),
             calculateNewParams(getState())
         )));

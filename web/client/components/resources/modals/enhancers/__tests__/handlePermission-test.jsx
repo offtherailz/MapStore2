@@ -11,11 +11,11 @@ import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { createSink, setObservableConfig } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+
 
 import handlePermission from '../handlePermission';
 
-setObservableConfig(rxjsConfig);
+
 
 
 describe('handlePermission enhancer', () => {

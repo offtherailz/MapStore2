@@ -16,7 +16,8 @@ import { SET_CONTROL_PROPERTY } from '../../actions/controls';
 import screenfull from 'screenfull';
 import { toggleFullscreenEpic } from '../fullscreen';
 const rootEpic = combineEpics(toggleFullscreenEpic);
-const epicMiddleware = createEpicMiddleware(rootEpic);
+const epicMiddleware = createEpicMiddleware();
+epicMiddleware.run();
 const mockStore = configureMockStore([epicMiddleware]);
 
 describe('fullscreen Epics', () => {

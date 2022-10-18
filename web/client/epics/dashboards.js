@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { MAPS_LIST_LOADING, ATTRIBUTE_UPDATED, MAP_DELETED } from '../actions/maps';
 import { DASHBOARD_SAVED } from '../actions/dashboard';
@@ -46,7 +46,7 @@ const calculateNewParams = state => {
 
 export const searchDashboardsOnMapSearch = action$ =>
     action$.ofType(MAPS_LIST_LOADING)
-        .switchMap(({ searchText }) => Rx.Observable.of(searchDashboardsAction(searchText)));
+        .switchMap(({ searchText }) => Observable.of(searchDashboardsAction(searchText)));
 
 export const searchDashboards = (action$, { getState = () => { } }) =>
     action$.ofType(SEARCH_DASHBOARDS)
@@ -59,12 +59,12 @@ export const searchDashboards = (action$, { getState = () => { } }) =>
         }))
         .switchMap(
             ({ searchText, options }) =>
-                Rx.Observable.defer(() => GeoStoreApi.getResourcesByCategory("DASHBOARD", searchText, options))
+                Observable.defer(() => GeoStoreApi.getResourcesByCategory("DASHBOARD", searchText, options))
                     .map(results => dashboardListLoaded(results, {searchText, options}))
                     .let(wrapStartStop(
                         dashboardsLoading(true, "loading"),
                         dashboardsLoading(false, "loading"),
-                        () => Rx.Observable.of(error({
+                        () => Observable.of(error({
                             title: "notification.error",
                             message: "resources.dashboards.errorLoadingDashboards",
                             autoDismiss: 6,
@@ -78,7 +78,7 @@ export const deleteDashboard = action$ => action$
     .let(wrapStartStop(
         dashboardsLoading(true, "loading"),
         dashboardsLoading(false, "loading"),
-        () => Rx.Observable.of(error({
+        () => Observable.of(error({
             title: "notification.error",
             message: "resources.dashboards.deleteError",
             autoDismiss: 6,
@@ -88,7 +88,7 @@ export const deleteDashboard = action$ => action$
 export const reloadOnDashboards = (action$, { getState = () => { } }) =>
     action$.ofType(DASHBOARD_DELETED, MAP_DELETED, RELOAD, ATTRIBUTE_UPDATED, DASHBOARD_SAVED, LOGIN_SUCCESS, LOGOUT)
         .delay(1000) // delay as a workaround for geostore issue #178
-        .switchMap( () => Rx.Observable.of(searchDashboardsAction(
+        .switchMap( () => Observable.of(searchDashboardsAction(
             searchTextSelector(getState()),
             calculateNewParams(getState())
         )));

@@ -10,12 +10,11 @@ import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { createSink, setObservableConfig } from 'recompose';
-import rxjsconfig from 'recompose/rxjsObservableConfig';
+
 import { Observable } from 'rxjs';
 
 import loadMore from '../loadMore';
 
-setObservableConfig(rxjsconfig);
 
 describe('loadMore enhancer', () => {
     beforeEach((done) => {

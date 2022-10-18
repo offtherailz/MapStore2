@@ -7,12 +7,10 @@
  */
 
 
-import { mapPropsStreamWithConfig } from 'recompose';
+import { mapPropsStream } from 'recompose';
 
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+
 import Rx from 'rxjs';
-const mapPropsStream = mapPropsStreamWithConfig(rxjsConfig);
-
 /**
  * implements the stream version of withProps
  * as the mapPropsStream implements mapProps with stream.

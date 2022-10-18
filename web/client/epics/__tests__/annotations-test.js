@@ -72,7 +72,8 @@ const rootEpic = combineEpics(addAnnotationsLayerEpic, editAnnotationEpic, remov
     downloadAnnotations, onLoadAnnotations, onChangedSelectedFeatureEpic, onBackToEditingFeatureEpic, redrawOnChangeRadiusEpic, redrawOnChangeTextEpic,
     editSelectedFeatureEpic, editCircleFeatureEpic, purgeMapInfoEpic, tearDownByDrawingToolsEpic, openEditorEpic, loadDefaultAnnotationsStylesEpic, showHideAnnotationEpic, hideAnnotationGroupEpic, highlightGeometryEpic
 );
-const epicMiddleware = createEpicMiddleware(rootEpic);
+const epicMiddleware = createEpicMiddleware();
+epicMiddleware.run();
 const mockStore = configureMockStore([epicMiddleware]);
 const ft = {
     type: "Feature",

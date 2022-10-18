@@ -21,10 +21,8 @@ import {
 
 import AutocompleteEditor from '../../components/data/featuregrid/editors/AutocompleteEditor';
 import { AutocompleteWFSCombobox } from '../../components/misc/AutocompleteWFSCombobox';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-import { setObservableConfig, mapPropsStreamWithConfig } from 'recompose';
-setObservableConfig(rxjsConfig);
-const mapPropsStream = mapPropsStreamWithConfig(rxjsConfig);
+import { mapPropsStream } from 'recompose';
+
 const props = {
     attribute: "STATE_NAME",
     performFetch: false,

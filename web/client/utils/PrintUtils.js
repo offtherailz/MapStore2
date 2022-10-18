@@ -406,7 +406,7 @@ export function addValidator(id, name, validator) {
  *    summing up the defaultPrintingServiceTransformerChain list, to eventual custom transformers,
  *    added with addTransformer.
  *
- *    Each transformer is a function reiceiving two parameters, the redux global state and the print
+ *    Each transformer is a function receiving two parameters, the redux global state and the print
  *    specification object returned by the previous chain step, and returning a Promise of the transformed
  *    specification:
  *
@@ -419,7 +419,7 @@ export function addValidator(id, name, validator) {
  *
  *    It works by applying a chain of validators, that enrich the validation result object.
  *
- *    Each validator has a name, and a function reiceiving two parameters, the redux global state and the
+ *    Each validator has a name, and a function receiving two parameters, the redux global state and the
  *    actual validation object for the name:
  *
  *     (state, validation) => {valid: true/false, errors: ["message", ...]}
@@ -430,14 +430,14 @@ export function addValidator(id, name, validator) {
  *
  *    It works by applying a chain of map transformers, that transform the map configuration object.
  *
- *    Each transformer is a function reiceiving two parameters, the redux global state and the
+ *    Each transformer is a function receiving two parameters, the redux global state and the
  *    actual map configuration object:
  *
  *     (state, map) => <transformed map>
  *
  *    Project specific transformers can be added to the end of the chain using the addMapTransformer function.
  *
- * @returns {object} the default printint service.
+ * @returns {object} the default print service.
  * @memberof utils.PrintUtils
  */
 export const getDefaultPrintingService = () => {

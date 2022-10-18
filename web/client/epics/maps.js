@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import assign from 'object-assign';
 import {push} from 'connected-react-router';
 import {basicError, basicSuccess} from '../utils/NotificationUtils';
@@ -70,25 +70,25 @@ export const loadMapsEpic = (action$) =>
             let {params, searchText, geoStoreUrl} = action;
             let modifiedSearchText = searchText.replace(/[/?:;@=&\\]+/g, '');
             let opts = assign({}, {params}, geoStoreUrl ? {baseURL: geoStoreUrl} : {});
-            return Rx.Observable.of(
+            return Observable.of(
                 mapsLoading(modifiedSearchText, params),
                 getMapResourcesByCategory("MAP", modifiedSearchText, opts)
             );
 
         });
 
-export const reloadMapsEpic = (action$, { getState = () => { } }) =>
+export const reloadMapsEpic = (action$, store) =>
     action$.ofType(MAP_DELETED, MAP_SAVED, RELOAD_MAPS, ATTRIBUTE_UPDATED, DASHBOARD_DELETED, LOGIN_SUCCESS, LOGOUT)
         .delay(1000)
-        .switchMap(() => Rx.Observable.of(loadMaps(false,
-            searchTextSelector(getState()),
-            calculateNewParams(getState())
+        .switchMap(() => Observable.of(loadMaps(false,
+            searchTextSelector(store.value),
+            calculateNewParams(store.value)
         ), invalidateFeaturedMaps()));
 
 export const getMapsResourcesByCategoryEpic = (action$, store) =>
     action$.ofType(MAPS_GET_MAP_RESOURCES_BY_CATEGORY)
         .switchMap((action) => {
-            const state = store.getState();
+            const state = store.value;
             const searchFilter = searchFilterSelector(state) || {};
             const userRole = userRoleSelector(state);
             let {map, searchText, opts = {}} = action;
@@ -114,13 +114,13 @@ export const getMapsResourcesByCategoryEpic = (action$, store) =>
             const getContextNames = ({results, ...other}) => {
                 const maps = isArray(results) ? results : (results === "" ? [] : [results]);
                 return maps.length === 0 ?
-                    Rx.Observable.of({results: [], ...other}) :
-                    Rx.Observable.forkJoin(
+                    Observable.of({results: [], ...other}) :
+                    Observable.forkJoin(
                         maps.map(({context}) => context ?
                             getResource(context, {includeAttributes: false, withData: false, withPermissions: false})
-                                .switchMap(resource => Rx.Observable.of(resource.name))
-                                .catch(() => Rx.Observable.of(null)) :
-                            Rx.Observable.of(null))
+                                .switchMap(resource => Observable.of(resource.name))
+                                .catch(() => Observable.of(null)) :
+                            Observable.of(null))
                     ).map(contextNames => ({
                         results: zip(maps, contextNames).map(
                             ([curMap, contextName]) => ({...curMap, contextName})),
@@ -148,9 +148,9 @@ export const getMapsResourcesByCategoryEpic = (action$, store) =>
                         success: true
                     };
                     return getContextNames(maps).switchMap(mapsWithContext =>
-                        Rx.Observable.of(mapsLoaded(mapsWithContext, opts.params, actualSearchText)));
+                        Observable.of(mapsLoaded(mapsWithContext, opts.params, actualSearchText)));
                 }) :
-                Rx.Observable.fromPromise(GeoStoreApi.getResourcesByCategory(map, actualSearchText, {
+                Observable.fromPromise(GeoStoreApi.getResourcesByCategory(map, actualSearchText, {
                     ...opts,
                     params: {
                         ...(opts.params || {}),
@@ -160,7 +160,7 @@ export const getMapsResourcesByCategoryEpic = (action$, store) =>
                     .then(data => data))
                     .switchMap((response) => getContextNames(response).switchMap(responseWithContext => {
                         // category is required to identify maps for detail card. It's missing from this entry point
-                        return Rx.Observable.of(
+                        return Observable.of(
                             mapsLoaded({
                                 ...responseWithContext,
                                 results: responseWithContext.results?.map(res => ({...res, category: {name: "MAP"}}))
@@ -172,7 +172,7 @@ export const getMapsResourcesByCategoryEpic = (action$, store) =>
                 .let(wrapStartStop(
                     loading(true, 'loadingMaps'),
                     loading(false, 'loadingMaps'),
-                    e => Rx.Observable.of(loadError(e))
+                    e => Observable.of(loadError(e))
                 ));
         });
 
@@ -180,12 +180,12 @@ export const loadMapsOnSearchFilterChange = (action$, store) =>
     action$.ofType(SEARCH_FILTER_CHANGED, SEARCH_FILTER_CLEAR_ALL)
         .filter(({filter}) => !filter || filter === 'contexts')
         .switchMap(({type}) => {
-            const state = store.getState();
+            const state = store.value;
             const searchFilter = searchFilterSelector(state);
             const searchText = searchTextSelector(state);
             const {limit = 12, ...params} = searchParamsSelector(state) || {};
 
-            return Rx.Observable.of(
+            return Observable.of(
                 ...(type === SEARCH_FILTER_CLEAR_ALL ? [setSearchFilter({})] : []),
                 ...(type === SEARCH_FILTER_CLEAR_ALL && (!searchFilter || (searchFilter.contexts || []).length === 0) ?
                     [] :
@@ -196,7 +196,7 @@ export const loadMapsOnSearchFilterChange = (action$, store) =>
 export const hideTabsOnSearchFilterChange = (action$) =>
     action$.ofType(SEARCH_FILTER_CHANGED, SEARCH_FILTER_CLEAR_ALL)
         .filter(({filter}) => !filter || filter === 'contexts')
-        .switchMap(({filterData}) => Rx.Observable.of(
+        .switchMap(({filterData}) => Observable.of(
             setTabsHidden(
                 (filterData || []).length === 0 ? {
                     geostories: false,
@@ -219,10 +219,10 @@ export const mapsLoadContextsEpic = (action$) =>
         )
         .switchMap(({searchText, options = {}, delayLoad = 0}) => {
             const curSearchText = searchText || '*';
-            return Rx.Observable.of(null).delay(delayLoad).switchMap(() =>
-                Rx.Observable.defer(() => GeoStoreApi.getResourcesByCategory('CONTEXT', curSearchText, options))
+            return Observable.of(null).delay(delayLoad).switchMap(() =>
+                Observable.defer(() => GeoStoreApi.getResourcesByCategory('CONTEXT', curSearchText, options))
                     .switchMap(response => {
-                        return Rx.Observable.of(setContexts({
+                        return Observable.of(setContexts({
                             results: (isArray(response.results) ? response.results : [response.results]).filter(r => !!r),
                             totalCount: response.totalCount,
                             searchText: curSearchText,
@@ -233,7 +233,7 @@ export const mapsLoadContextsEpic = (action$) =>
                     .let(wrapStartStop(
                         loading(true, 'loadingContexts'),
                         loading(false, 'loadingContexts'),
-                        () => Rx.Observable.of(basicError({
+                        () => Observable.of(basicError({
                             message: 'maps.feedback.errorLoadingContexts'
                         }))
                     ))
@@ -243,9 +243,9 @@ export const mapsLoadContextsEpic = (action$) =>
 export const mapsSetupFilterOnLogin = (action$, store) =>
     action$.ofType(LOGIN_SUCCESS, LOGOUT)
         .switchMap(() => {
-            const state = store.getState();
+            const state = store.value;
             const contexts = contextsSelector(state) || {};
-            return Rx.Observable.of(setControlProperty('advancedsearchpanel', 'enabled', false), loadContexts(contexts.searchText,
+            return Observable.of(setControlProperty('advancedsearchpanel', 'enabled', false), loadContexts(contexts.searchText,
                 {params: {start: get(contexts, 'start', 0), limit: get(contexts, 'limit', 12)}},
                 0,
                 true
@@ -255,7 +255,7 @@ export const mapsSetupFilterOnLogin = (action$, store) =>
 export const deleteMapAndAssociatedResourcesEpic = (action$, store) =>
     action$.ofType(DELETE_MAP)
         .switchMap((action) => {
-            const state = store.getState();
+            const state = store.value;
             const mapId = action.resourceId;
             const options = action.options;
             const detailsUri = mapDetailsUriFromIdSelector(state, mapId);
@@ -263,7 +263,7 @@ export const deleteMapAndAssociatedResourcesEpic = (action$, store) =>
             const detailsId = getIdFromUri(detailsUri);
             const thumbnailsId = getIdFromUri(thumbnailUri);
 
-            return Rx.Observable.forkJoin(
+            return Observable.forkJoin(
             // delete details
                 deleteResourceById(thumbnailsId, options),
                 // delete thumbnail
@@ -294,7 +294,7 @@ export const deleteMapAndAssociatedResourcesEpic = (action$, store) =>
                     actions.push(basicSuccess({ message: "maps.feedback.allResDeleted"}));
 
                 }
-                return Rx.Observable.from(actions);
+                return Observable.from(actions);
             }).startWith(mapDeleting(mapId));
         });
 
@@ -321,21 +321,21 @@ export const mapSaveMapResourceEpic = (action$, store) =>
             // thumbnails and details are handled separately(linked resources)
             const validAttributesNames = keys(attributesFixed)
                 .filter(attrName => attrName !== 'thumbnail' && attrName !== 'details' && !isNil(attributesFixed[attrName]));
-            return Rx.Observable.forkJoin(
+            return Observable.forkJoin(
                 (() => {
                     // get a context information using the id in the attribute
                     const contextId = get(resource, 'attributes.context');
-                    return contextId ? getResource(contextId, {withData: false}) : Rx.Observable.of(null);
+                    return contextId ? getResource(contextId, {withData: false}) : Observable.of(null);
                 })(),
                 !resource.id ? createResource(resource) : updateResource(resource))
                 .switchMap(([contextResource, rid]) => (validAttributesNames.length > 0 ?
                     // update valid attributes
-                    Rx.Observable.forkJoin(validAttributesNames.map(attrName => updateResourceAttribute({
+                    Observable.forkJoin(validAttributesNames.map(attrName => updateResourceAttribute({
                         id: rid,
                         name: attrName,
                         value: attributesFixed[attrName]
-                    }))) : Rx.Observable.of([])).switchMap(() =>
-                    Rx.Observable.from([
+                    }))) : Observable.of([])).switchMap(() =>
+                    Observable.from([
                         ...(resource.id ? [loadMapInfo(rid)] : []),
                         ...(resource.id ? [configureMap(resource.data, rid)] : []),
                         resource.id ? toggleControl('mapSave') : toggleControl('mapSaveAs'),
@@ -345,11 +345,11 @@ export const mapSaveMapResourceEpic = (action$, store) =>
                             // if we got a valid context information redirect to a context, instead of the default viewer
                             push(contextResource ?
                                 `/context/${contextResource.name}/${rid}` :
-                                `/viewer/${mapTypeSelector(store.getState())}/${rid}`)]
+                                `/viewer/${mapTypeSelector(store.value)}/${rid}`)]
                             : [])
                     ])
                         .merge(
-                            Rx.Observable.of(basicSuccess({
+                            Observable.of(basicSuccess({
                                 title: 'map.savedMapTitle',
                                 message: 'map.savedMapMessage',
                                 autoDismiss: 6,
@@ -359,7 +359,7 @@ export const mapSaveMapResourceEpic = (action$, store) =>
                 ))
                 .catch((e) => {
                     const { status, statusText, data, message, ...other} = e;
-                    return Rx.Observable.of(mapSaveError(status ? { status, statusText, data } : message || other), basicError({
+                    return Observable.of(mapSaveError(status ? { status, statusText, data } : message || other), basicError({
                         ...getErrorMessage(e, 'geostore', 'mapsError'),
                         autoDismiss: 6,
                         position: 'tc'

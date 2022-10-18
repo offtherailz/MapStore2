@@ -10,7 +10,7 @@ import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { compose, createSink, mapPropsStream, setObservableConfig } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+
 
 import processFiles from '../processFiles';
 import {
@@ -24,7 +24,7 @@ import {
     getUnsupportedMapFile
 } from './testData';
 
-setObservableConfig(rxjsConfig);
+
 
 describe('processFiles enhancer', () => {
     beforeEach((done) => {

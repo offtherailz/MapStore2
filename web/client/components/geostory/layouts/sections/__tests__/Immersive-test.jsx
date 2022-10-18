@@ -14,8 +14,8 @@ import Immersive from '../Immersive';
 
 // TODO: externalize
 import {setObservableConfig} from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-setObservableConfig(rxjsConfig);
+
+
 import { testToolbarButtons } from './testUtils';
 
 import { Modes } from '../../../../../utils/GeoStoryUtils';

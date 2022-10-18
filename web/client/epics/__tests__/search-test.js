@@ -43,7 +43,8 @@ import {
     delayedSearchEpic
 } from '../search';
 const rootEpic = combineEpics(searchEpic, searchItemSelected, zoomAndAddPointEpic, searchOnStartEpic, textSearchShowGFIEpic);
-const epicMiddleware = createEpicMiddleware(rootEpic);
+const epicMiddleware = createEpicMiddleware();
+epicMiddleware.run();
 const mockStore = configureMockStore([epicMiddleware]);
 
 const SEARCH_NESTED = 'SEARCH NESTED';

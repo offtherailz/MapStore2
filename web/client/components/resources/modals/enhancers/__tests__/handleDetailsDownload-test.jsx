@@ -12,11 +12,11 @@ import ReactDOM from 'react-dom';
 import axios from 'axios';
 import MockAdapter from "axios-mock-adapter";
 import { createSink, setObservableConfig } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+
 
 import handleDetailsDownload from '../handleDetailsDownload';
 
-setObservableConfig(rxjsConfig);
+
 
 describe('handleDetailsDownload enhancer', () => {
     let mockAxios;

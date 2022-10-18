@@ -11,8 +11,11 @@ import {Provider} from 'react-redux';
 import expect from 'expect';
 import GeoCarousel from '../GeoCarousel';
 import {setObservableConfig} from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-setObservableConfig(rxjsConfig);
+import { setObservableConfig } from 'recompose'
+import { from, to } from 'rxjs'
+
+setObservableConfig({ fromESOBservable: from, toESObservable: to })
+
 import { testToolbarButtons } from './testUtils';
 import { Modes } from '../../../../../utils/GeoStoryUtils';
 import HTML5Backend from 'react-dnd-html5-backend';

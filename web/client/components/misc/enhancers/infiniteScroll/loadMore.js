@@ -7,8 +7,7 @@
  */
 
 import { createEventHandler, mapPropsStream } from 'recompose';
-const Rx = require('rxjs');
-
+import {Observable} from 'rxjs';
 /**
  * Create a stream that implements the infinite scrolling
  * @param  {Observable} initialLoadStream$ A stream that emits the first load with load page parameters
@@ -17,10 +16,10 @@ const Rx = require('rxjs');
  * @return {Observable}                    Stream of props {with items, loading, error, total}
  */
 const loadMoreStream = (initialStream$, loadMore$, loadPage, {dataProp = "items", initialStreamDebounce = 0, throttleTime = 500} = {}) =>
-    initialStream$.take(1).concat(initialStream$.debounceTime(initialStreamDebounce)).switchMap(searchParams =>
+    Observable.from(initialStream$).take(1).concat(Observable.from(initialStream$).debounceTime(initialStreamDebounce)).switchMap(searchParams =>
         loadPage(searchParams, 0)
             .startWith({ loading: true })
-            .concat(Rx.Observable.of({loading: false}))
+            .concat(Observable.of({loading: false}))
             .concat(
                 loadMore$
                     .throttleTime(throttleTime)
@@ -29,7 +28,7 @@ const loadMoreStream = (initialStream$, loadMore$, loadPage, {dataProp = "items"
                         loadPage(searchParams, page)
                             .startWith({
                                 loading: true
-                            }).concat(Rx.Observable.of({ loading: false }))
+                            }).concat(Observable.of({ loading: false }))
                     )
             )
             .scan(({ [dataProp]: items, ...other }, { [dataProp]: newItems, ...newOther }) => ({
@@ -40,7 +39,7 @@ const loadMoreStream = (initialStream$, loadMore$, loadPage, {dataProp = "items"
                 ...res
             }))
     )
-        .catch(error => Rx.Observable.of({ loading: false, error }));
+        .catch(error => Observable.of({ loading: false, error }));
 
 /**
  * Enhancer that implements paginated data retrival in append mode for the enhanced component.
@@ -78,11 +77,11 @@ const loadMoreStream = (initialStream$, loadMore$, loadPage, {dataProp = "items"
  * @param {function} loadPage the function that returns the stream. It must accept 2 params: `searchParams`, `page`.
  */
 
-export default (loadPage = () => Rx.Observable.empty(), options) => mapPropsStream((props$) => {
+export default (loadPage = () => Observable.empty(), options) => mapPropsStream((props$) => {
     const { handler: onLoadMore, stream: loadMore$ } = createEventHandler();
     const { handler: loadFirst, stream: initialStream$ } = createEventHandler();
-    return props$.combineLatest(loadMoreStream(
-        initialStream$,
+    return Observable.from(props$).combineLatest(loadMoreStream(
+        Observable.from(initialStream$),
         loadMore$,
         loadPage,
         options

@@ -28,7 +28,7 @@ import { isLoggedIn } from '../selectors/security';
 import ConfigUtils from '../utils/ConfigUtils';
 import {getCookieValue, eraseCookie} from '../utils/CookieUtils';
 import AuthenticationAPI from '../api/GeoStoreDAO';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { push, LOCATION_CHANGE } from 'connected-react-router';
 import url from 'url';
 import { get } from 'lodash';
@@ -43,55 +43,55 @@ export const refreshTokenEpic = (action$, store) =>
     action$.ofType(LOCATION_CHANGE)
         .take(1)
         // do not launch the session verify is there is no stored session
-        .switchMap(() => (get(store.getState(), "security.user") ?
-            Rx.Observable.fromPromise(AuthenticationAPI.verifySession())
+        .switchMap(() => (get(store.value, "security.user") ?
+            Observable.fromPromise(AuthenticationAPI.verifySession())
                 .map(
                     (response) => sessionValid(response, AuthenticationAPI.authProviderName)
                 )
                 // try to refresh the token if the session is still valid
-                .catch(() => Rx.Observable.of(refreshAccessToken())) : Rx.Observable.empty()
+                .catch(() => Observable.of(refreshAccessToken())) : Observable.empty()
         )
-            .merge(Rx.Observable
+            .merge(Observable
                 .interval(ConfigUtils.getConfigProp("tokenRefreshInterval") ?? 30000 /* ms */)
-                .filter(() => get(store.getState(), "security.user"))
+                .filter(() => get(store.value, "security.user"))
                 .mapTo(refreshAccessToken()))
         );
 
 
 export const reloadMapConfig = (action$, store) =>
-    Rx.Observable.merge(
+    Observable.merge(
         action$.ofType(LOGIN_SUCCESS, LOGOUT)
-            .filter(() => pathnameSelector(store.getState()).indexOf("viewer") !== -1)
+            .filter(() => pathnameSelector(store.value).indexOf("viewer") !== -1)
             .filter((data) => data.type !== "LOGOUT" ?
-                hasMapAccessLoadingError(store.getState()) :
-                pathnameSelector(store.getState()).indexOf("new") === -1)
-            .map(() => mapIdSelector(store.getState())),
+                hasMapAccessLoadingError(store.value) :
+                pathnameSelector(store.value).indexOf("new") === -1)
+            .map(() => mapIdSelector(store.value)),
         action$.ofType(LOGOUT)
-            .filter(() => pathnameSelector(store.getState()).indexOf("viewer") !== -1 && pathnameSelector(store.getState()).indexOf("new") !== -1)
+            .filter(() => pathnameSelector(store.value).indexOf("viewer") !== -1 && pathnameSelector(store.value).indexOf("new") !== -1)
             .map(() => 'new')
     )
         .switchMap((mapId) => {
-            if (mapId === "new" && !isLoggedIn(store.getState())) {
-                return Rx.Observable.of(configureError({status: 403}));
+            if (mapId === "new" && !isLoggedIn(store.value)) {
+                return Observable.of(configureError({status: 403}));
             }
             const urlQuery = url.parse(window.location.href, true).query;
             let config = urlQuery && urlQuery.config || null;
             const { configUrl } = ConfigUtils.getConfigUrl({ mapId, config });
-            return Rx.Observable.of(loadMapConfig(configUrl, mapId !== 'new' ? mapId : null ));
+            return Observable.of(loadMapConfig(configUrl, mapId !== 'new' ? mapId : null ));
         }).catch((e) => {
-            return Rx.Observable.of(configureError(e));
+            return Observable.of(configureError(e));
         });
 
 export const promptLoginOnMapError = (actions$, store) =>
     actions$.ofType(LOGIN_REQUIRED)
         .switchMap(() => {
-            return Rx.Observable.of(setControlProperty('LoginForm', 'enabled', true))
+            return Observable.of(setControlProperty('LoginForm', 'enabled', true))
             // send to homepage if close is pressed on login modal
                 .merge(
                     actions$.ofType(SET_CONTROL_PROPERTY)
                         // login close event
-                        .filter(action => action.control === 'LoginForm' && action.property === 'enabled' && action.value === false && !isLoggedIn(store.getState()))
-                        .exhaustMap(() => Rx.Observable.of(loginPromptClosed()))
+                        .filter(action => action.control === 'LoginForm' && action.property === 'enabled' && action.value === false && !isLoggedIn(store.value))
+                        .exhaustMap(() => Observable.of(loginPromptClosed()))
                         .takeUntil(actions$.ofType(LOGIN_SUCCESS, LOCATION_CHANGE))
                 );
         });
@@ -99,13 +99,13 @@ export const promptLoginOnMapError = (actions$, store) =>
 export const initCatalogOnLoginOutEpic = (action$) =>
     action$.ofType(LOGIN_SUCCESS, LOGOUT)
         .switchMap(() => {
-            return Rx.Observable.of(initCatalog());
+            return Observable.of(initCatalog());
         });
 
 export const redirectOnLogout = action$ =>
     action$.ofType(LOGOUT)
         .filter(({ redirectUrl }) => redirectUrl)
-        .switchMap(({ redirectUrl }) => Rx.Observable.of(push(redirectUrl)));
+        .switchMap(({ redirectUrl }) => Observable.of(push(redirectUrl)));
 
 /**
  * Verifies the session from the cookie.
@@ -116,29 +116,29 @@ export const redirectOnLogout = action$ =>
 export const verifyOpenIdSessionCookie = (action$, {getState = () => {}}) => {
     return action$.ofType(LOCATION_CHANGE).take(1).switchMap( () => {
         if (isLoggedIn(getState())) {
-            return Rx.Observable.empty();
+            return Observable.empty();
         }
         const tokensKey = getCookieValue("tokens_key");
         const authProvider = getCookieValue('authProvider'); // This is set by login tool.
         if (!tokensKey || !authProvider) {
-            return Rx.Observable.empty();
+            return Observable.empty();
         }
-        return Rx.Observable.defer(() => {
+        return Observable.defer(() => {
             return AuthenticationAPI.getTokens(authProvider, tokensKey);
         }).switchMap(({access_token: accessToken, refresh_token: refreshToken, expires: expires }) => {
-            return Rx.Observable.defer(() => AuthenticationAPI.getUserDetails({access_token: accessToken}))
+            return Observable.defer(() => AuthenticationAPI.getUserDetails({access_token: accessToken}))
                 .switchMap( userDetails => { // check user detail to confirm login success
-                    return Rx.Observable.of(loginSuccess({...userDetails, access_token: accessToken, refresh_token: refreshToken, expires: expires, authProvider}));
+                    return Observable.of(loginSuccess({...userDetails, access_token: accessToken, refresh_token: refreshToken, expires: expires, authProvider}));
                 });
         })
             .catch(() => { // call failure means that the session expired, so logout at all
-                return Rx.Observable.of(logout(null));
+                return Observable.of(logout(null));
             })
-            .concat(Rx.Observable.of(1).switchMap(() => {
+            .concat(Observable.of(1).switchMap(() => {
                 // clean up the cookie
                 eraseCookie('tokens_key');
                 eraseCookie('authProvider');
-                return Rx.Observable.empty();
+                return Observable.empty();
             }));
 
     });
@@ -154,12 +154,12 @@ export const checkSSO = ( action$, store ) => {
             const {sso} = ssoProvider;
             // only keycloak implementation is supported
             if (sso.type !== "keycloak") {
-                return Rx.Observable.empty();
+                return Observable.empty();
             }
 
             return monitorKeycloak(ssoProvider)(action$, store);
         }
-        return Rx.Observable.empty();
+        return Observable.empty();
     });
 };
 

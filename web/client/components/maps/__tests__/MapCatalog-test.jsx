@@ -10,8 +10,8 @@ import React from 'react';
 
 import ReactDOM from 'react-dom';
 import { createSink, setObservableConfig } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-setObservableConfig(rxjsConfig);
+
+
 import expect from 'expect';
 import MapCatalog from '../MapCatalog';
 import mapCatalog from '../enhancers/mapCatalog';

@@ -7,7 +7,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { split, get, isNil } from 'lodash';
 import { LOCATION_CHANGE, push } from 'connected-react-router';
@@ -51,11 +51,11 @@ import { getGeostoryMode } from '../utils/GeoStoryUtils';
  * @return {Observable}
  */
 export const updateVisibility = (action$, loadActions, isEnabled = () => {}, mode) =>
-    Rx.Observable.concat(
-        Rx.Observable.of(feedbackMaskLoading(mode)),
+    Observable.concat(
+        Observable.of(feedbackMaskLoading(mode)),
         action$.ofType(...loadActions)
             .switchMap(action => {
-                return Rx.Observable.of(
+                return Observable.of(
                     feedbackMaskLoaded(),
                     feedbackMaskEnabled(isEnabled(action), action.error)
                 );
@@ -75,13 +75,13 @@ export const updateMapVisibility = (action$, store) =>
             const loadActions = [MAP_CONFIG_LOADED, MAP_CONFIG_LOAD_ERROR];
             const isEnabled = ({type}) => type === MAP_CONFIG_LOAD_ERROR;
             const updateObservable = updateVisibility(action$, loadActions, isEnabled, 'map');
-            return disableFeedbackMask ? Rx.Observable.empty() : Rx.Observable.merge(
+            return disableFeedbackMask ? Observable.empty() : Observable.merge(
                 updateObservable,
                 action$.ofType(LOGIN_SUCCESS, LOGOUT)
                     .switchMap((action) =>
-                        action.type === LOGIN_SUCCESS && !mapSelector(store.getState()) && updateObservable
+                        action.type === LOGIN_SUCCESS && !mapSelector(store.value) && updateObservable
                         || action.type === LOGOUT && updateObservable
-                        || Rx.Observable.empty())
+                        || Observable.empty())
                     .takeUntil(action$.ofType(DETECTED_NEW_PAGE))
             );
         });
@@ -101,7 +101,7 @@ export const updateDashboardVisibility = action$ =>
                 ? 'dashboardEmbedded'
                 : 'dashboard';
             const updateObservable = updateVisibility(action$, loadActions, isEnabled, mode);
-            return Rx.Observable.merge(
+            return Observable.merge(
                 updateObservable,
                 action$.ofType(LOGIN_SUCCESS, LOGOUT, LOCATION_CHANGE)
                     .switchMap(() => updateObservable)
@@ -120,7 +120,7 @@ export const updateGeoStoryFeedbackMaskVisibility = action$ =>
             const loadActions = [GEOSTORY_LOADED, LOAD_GEOSTORY_ERROR];
             const isEnabled = ({ type }) => type === LOAD_GEOSTORY_ERROR;
             const updateObservable = updateVisibility(action$, loadActions, isEnabled, getGeostoryMode());
-            return Rx.Observable.merge(
+            return Observable.merge(
                 updateObservable,
                 action$.ofType(LOGIN_SUCCESS, LOGOUT, LOCATION_CHANGE)
                     .switchMap(() => updateObservable)
@@ -141,7 +141,7 @@ export const updateContextFeedbackMaskVisibility = action$ =>
             const isEnabled = ({ type }) => type === MAP_CONFIG_LOAD_ERROR || type === CONTEXT_LOAD_ERROR
                 || type === MAP_INFO_LOAD_ERROR; // TODO: handle context config error
             const updateObservable = updateVisibility(action$, loadActions, isEnabled, 'context');
-            return Rx.Observable.merge(
+            return Observable.merge(
                 updateObservable,
                 action$.ofType(LOGIN_SUCCESS, LOGOUT, LOCATION_CHANGE)
                     .switchMap(() => updateObservable)
@@ -161,7 +161,7 @@ export const updateContextCreatorFeedbackMaskVisibility = action$ =>
             const loadActions = [LOAD_FINISHED_CONTEXTCREATOR, CONTEXT_LOAD_ERROR_CONTEXTCREATOR];
             const isEnabled = ({ type }) => type === CONTEXT_LOAD_ERROR_CONTEXTCREATOR;
             const updateObservable = updateVisibility(action$, loadActions, isEnabled, 'context');
-            return Rx.Observable.merge(
+            return Observable.merge(
                 updateObservable,
                 action$.ofType(LOGIN_SUCCESS, LOGOUT)
                     .switchMap(() => updateObservable)
@@ -181,11 +181,11 @@ export const detectNewPage = (action$, store) =>
         .filter(action => {
             const pathname = action.payload && action.payload.location && action.payload.location.pathname;
             const currentPage = !isNil(pathname) && split(pathname, '/')[1];
-            const oldPage = get(store.getState(), 'feedbackMask.currentPage');
+            const oldPage = get(store.value, 'feedbackMask.currentPage');
             // verify if it's a text to avoid id number (eg. embedded)
             return isNaN(parseFloat(currentPage)) && currentPage !== oldPage;
         })
-        .switchMap(action => Rx.Observable.of(
+        .switchMap(action => Observable.of(
             feedbackMaskLoaded(),
             feedbackMaskEnabled(false),
             detectedNewPage(split(action.payload.location.pathname, '/')[1])
@@ -198,32 +198,32 @@ export const detectNewPage = (action$, store) =>
 export const feedbackMaskPromptLogin = (action$, store) => // TODO: separate login required logic (403) condition from feedback mask
     action$.ofType(MAP_CONFIG_LOAD_ERROR, DASHBOARD_LOAD_ERROR, LOAD_GEOSTORY_ERROR, CONTEXT_LOAD_ERROR, CONTEXT_LOAD_ERROR_CONTEXTCREATOR)
         .filter((action) => {
-            const pathname = pathnameSelector(store.getState());
+            const pathname = pathnameSelector(store.value);
             return action.error
                 && action.error.status === 403
                 && pathname.indexOf("new") === -1 && !(pathname.match(/dashboard/) !== null && pathname.match(/dashboard\/[0-9]+/) === null); // new map geostory and dashboard has different handling (see redirectUnauthorizedUserOnNewLoadError, TODO: uniform different behaviour)
         })
-        .filter(() => !isLoggedIn(store.getState()) && !isSharedStory(store.getState()))
+        .filter(() => !isLoggedIn(store.value) && !isSharedStory(store.value))
         .exhaustMap(
             () =>
-                Rx.Observable.of(loginRequired()) // prompt login
+                Observable.of(loginRequired()) // prompt login
                     .concat(
                         action$.ofType(LOGIN_PROMPT_CLOSED) // then if for login close
                             .take(1)
-                            .switchMap(() => Rx.Observable.of(feedbackMaskLoading(), push('/'))) // go to home page
+                            .switchMap(() => Observable.of(feedbackMaskLoading(), push('/'))) // go to home page
 
                     ).takeUntil(action$.ofType(LOGIN_SUCCESS, LOCATION_CHANGE))
         );
 
-export const redirectUnauthorizedUserOnNewLoadError = (action$, { getState = () => {}}) =>
+export const redirectUnauthorizedUserOnNewLoadError = (action$, store) =>
     action$.ofType(MAP_CONFIG_LOAD_ERROR, LOAD_GEOSTORY_ERROR, DASHBOARD_LOAD_ERROR)
         .filter((action) => action.error &&
             action.error.status === 403 &&
-            (pathnameSelector(getState()).indexOf("new") !== -1 ||
-             pathnameSelector(getState()).match(/dashboard\/[0-9]+/) === null &&
-             pathnameSelector(getState()).match(/dashboard/) !== null))
-        .filter(() => !isLoggedIn(getState()))
-        .switchMap(() => Rx.Observable.of(push('/'))); // go to home page
+            (pathnameSelector(store.value).indexOf("new") !== -1 ||
+             pathnameSelector(store.value).match(/dashboard\/[0-9]+/) === null &&
+             pathnameSelector(store.value).match(/dashboard/) !== null))
+        .filter(() => !isLoggedIn(store.value))
+        .switchMap(() => Observable.of(push('/'))); // go to home page
 
 /**
  * Epics for feedbackMask functionality

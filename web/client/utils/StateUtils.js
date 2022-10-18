@@ -13,6 +13,8 @@ import {semaphore, wrapEpics} from "./EpicsUtils";
 import ConfigUtils from './ConfigUtils';
 import isEmpty from 'lodash/isEmpty';
 import {BehaviorSubject, Subject} from 'rxjs';
+import { mergeMap, startWith } from 'rxjs/operators';
+
 import {normalizeName} from "./PluginsUtils";
 import {reducersLoaded} from "../actions/storemanager";
 
@@ -75,7 +77,8 @@ export const getStore = (name = 'persisted.reduxStore') => {
  * @param {string} storeName optional store name the middleware is used by
  * @param {string} name optional name (if you want to persist more than one middleware)
  */
-export const persistMiddleware = (middleware, storeName = PERSISTED_STORE_NAME, name = 'epicMiddleware') => {
+export const persistMiddleware = (middleware, rootEpic, storeName = PERSISTED_STORE_NAME, name = 'epicMiddleware') => {
+    middleware.run(rootEpic);
     ConfigUtils.setConfigProp(storeName + '.' + name, middleware);
     return middleware;
 };
@@ -119,7 +122,7 @@ export const persistEpic = (epic, storeName = PERSISTED_STORE_NAME, name = 'root
     const epic$ = new BehaviorSubject(epic);
     ConfigUtils.setConfigProp(storeName + '.' + name, epic$);
     return (...args) =>
-        epic$.mergeMap(e => e(...args));
+        epic$.pipe(mergeMap(e => e(...args)));
 };
 
 /**
@@ -138,8 +141,8 @@ const isolateEpics = (epics, muteState) => {
         const pluginRenderStream$ = muteState[name].asObservable();
 
         modifiedOptions.pluginRenderStream$ = pluginRenderStream$;
-        return epic(action$.let(semaphore(pluginRenderStream$.startWith(true))), store, modifiedOptions).let(semaphore(
-            pluginRenderStream$.startWith(true)
+        return epic(action$.pipe(semaphore(pluginRenderStream$.pipe(startWith(true)))), store, modifiedOptions).let(semaphore(
+            pluginRenderStream$.pipe(startWith(true))
         ));
     };
     return Object.entries(epics).reduce((out, [k, epic]) => ({ ...out, [k]: isolateEpic(epic, k) }), {});
@@ -315,7 +318,7 @@ export const createStoreManager = (initialReducers, initialEpics) => {
          * @param args
          * @returns {Observable<Action>}
          */
-        rootEpic: (...args) => epic$.mergeMap(e => e(...args))
+        rootEpic: (...args) => epic$.pipe(mergeMap(e => e(...args)))
     };
 };
 
@@ -345,13 +348,16 @@ export const createStore = ({
 } = {}) => {
     const reducer = persistReducer(rootReducer || combineReducers(reducers));
     const epic = rootEpic || combineEpics(...wrapEpics(epics));
-    const allMiddlewares = epic ? [persistMiddleware(createEpicMiddleware(epic)), ...middlewares] : middlewares;
+    const epicMiddleware = createEpicMiddleware();
+    const allMiddlewares = epic ? [persistMiddleware(epicMiddleware), ...middlewares] : middlewares;
     const middleware = applyMiddleware.apply(null, getMiddlewares(allMiddlewares, debug));
     const finalCreateStore = (window.__REDUX_DEVTOOLS_EXTENSION__ && debug ? compose(
         middleware,
         window.__REDUX_DEVTOOLS_EXTENSION__()
     ) : middleware)(createReduxStore);
-    return setStore(finalCreateStore(reducer, state, enhancer));
+    const store = finalCreateStore(reducer, state, enhancer);
+    epicMiddleware.run(epic);
+    return setStore(store);
 };
 
 /**

@@ -5,12 +5,9 @@
   * This source code is licensed under the BSD-style license found in the
   * LICENSE file in the root directory of this source tree.
   */
-
-import { compose, mapPropsStreamWithConfig, defaultProps } from 'recompose';
-
-import rxjsConfig from 'recompose/rxjsObservableConfig';
 import Rx from 'rxjs';
-const mapPropsStream = mapPropsStreamWithConfig(rxjsConfig);
+import { compose, mapPropsStream, defaultProps } from 'recompose';
+
 
 /**
  * This enhancer allows a component to implement a function (passed as property)

@@ -48,7 +48,7 @@ const appStore = (
             ...(!storeOpts.noRouter && { router: connectRouter(history) })
         },
         { ...standardEpics, ...appEpics });
-    const epicMiddleware = persistMiddleware(createEpicMiddleware(storeManager.rootEpic));
+    const epicMiddleware = persistMiddleware(createEpicMiddleware());
     const pluginsReducers = getReducers(staticPlugins);
     Object.keys(pluginsReducers).forEach(key => storeManager.addReducer(key, pluginsReducers[key]));
 
@@ -100,7 +100,7 @@ const appStore = (
 
     store = DebugUtils.createDebugStore(rootReducer, defaultState, middlewares, enhancer);
     store.storeManager = storeManager;
-
+    epicMiddleware.run(storeManager.rootEpic);
     const pluginsEpics = getGroupedEpics(staticPlugins);
     Object.keys(pluginsEpics).forEach(key => store.storeManager.addEpics(key, pluginsEpics[key]));
 

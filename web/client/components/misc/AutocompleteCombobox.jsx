@@ -8,13 +8,10 @@
 
 import { isArray } from 'lodash';
 import React from 'react';
-import { compose, mapPropsStreamWithConfig, setObservableConfig, withStateHandlers } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+import { compose, mapPropsStream, withStateHandlers } from 'recompose';
+
 
 import PagedCombobox from './combobox/PagedCombobox';
-
-setObservableConfig(rxjsConfig);
-const mapPropsStream = mapPropsStreamWithConfig(rxjsConfig);
 
 // fetch data from wps service
 const streamEnhancer = mapPropsStream(props$ => {

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { keys, findIndex, difference } from 'lodash';
 import { MAPS_LOAD_MAP, MAPS_LIST_LOADED } from '../actions/maps';
@@ -21,7 +21,7 @@ import { onTabSelected, SET_TABS_HIDDEN } from '../actions/contenttabs';
 export const updateMapsDashboardTabs = (action$, {getState = () => {}}) =>
     action$.ofType(MAPS_LOAD_MAP)
         .switchMap(() => {
-            return Rx.Observable.forkJoin(
+            return Observable.forkJoin(
                 action$.ofType(MAPS_LIST_LOADED).take(1),
                 action$.ofType(DASHBOARDS_LIST_LOADED).take(1),
                 action$.ofType(GEOSTORIES_LIST_LOADED).take(1),
@@ -33,10 +33,10 @@ export const updateMapsDashboardTabs = (action$, {getState = () => {}}) =>
                     if (results[selected] && results[selected].totalCount === 0) {
                         const id = keys(results).filter(key => (results[key] || {}).totalCount > 0 && !hiddenTabs[key])[0];
                         if (id) {
-                            return Rx.Observable.of(onTabSelected(id));
+                            return Observable.of(onTabSelected(id));
                         }
                     }
-                    return Rx.Observable.empty();
+                    return Observable.empty();
                 });
         });
 
@@ -49,8 +49,8 @@ export const updateSelectedOnHiddenTabs = (action$, store) =>
             const hiddenKeys = keys(hiddenTabs).filter(key => !!hiddenTabs[key]);
 
             return findIndex(hiddenKeys, key => key === selected) > -1 ?
-                Rx.Observable.of(onTabSelected(difference(['dashboards', 'geostories', 'maps', 'contexts'], hiddenKeys)[0])) :
-                Rx.Observable.empty();
+                Observable.of(onTabSelected(difference(['dashboards', 'geostories', 'maps', 'contexts'], hiddenKeys)[0])) :
+                Observable.empty();
         });
 
 export default {updateMapsDashboardTabs, updateSelectedOnHiddenTabs};

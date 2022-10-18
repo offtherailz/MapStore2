@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { push } from 'connected-react-router';
 
 import {
@@ -33,11 +33,11 @@ export const checkContextsOnMapLoad = (action$) => action$
             }
         }
     }).map(response => response.totalCount)
-        .switchMap((totalCount = 0) => Rx.Observable.of(hasContexts(totalCount > 0)))
+        .switchMap((totalCount = 0) => Observable.of(hasContexts(totalCount > 0)))
         .let(wrapStartStop(
             loading(true, 'newMapDialog'),
             loading(false, 'newMapDialog'),
-            () => Rx.Observable.empty()
+            () => Observable.empty()
         ))
     );
 
@@ -47,7 +47,7 @@ export const createNewMapEpic = (action$, store) => action$
         const state = store.getState();
         const mapType = mapTypeSelector(state);
 
-        return Rx.Observable.of(
+        return Observable.of(
             showNewMapDialog(false),
             push("/viewer/" + mapType + "/new" + (context ? `/context/${context.id}` : ''))
         );

@@ -28,7 +28,8 @@ import { SHOW_NOTIFICATION } from '../../actions/notifications';
 import { testEpic } from './epicTestUtils';
 import { refresh, updateDimension, updateSettingsParamsEpic } from '../layers';
 const rootEpic = combineEpics(refresh);
-const epicMiddleware = createEpicMiddleware(rootEpic);
+const epicMiddleware = createEpicMiddleware();
+epicMiddleware.run();
 const mockStore = configureMockStore([epicMiddleware]);
 
 describe('layers Epics', () => {

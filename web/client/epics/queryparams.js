@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import * as Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import {LOCATION_CHANGE} from 'connected-react-router';
 import {every, get, has, head, isEmpty, isUndefined, partial} from 'lodash';
 
@@ -40,11 +40,11 @@ export const readQueryParamsOnMapEpic = (action$, store) => {
             action$.ofType(LOCATION_CHANGE)
                 .map(() => !skipProcessing)
                 .startWith(true)
-                .do(() => {skipProcessing = false;})
+                // .do(() => {skipProcessing = false;}) // TOOD: re-enable
         ))
         .switchMap(() => {
-            const parameters = getParametersValues(paramActions, store.getState());
-            return Rx.Observable.merge(
+            const parameters = getParametersValues(paramActions, store.value);
+            return Observable.merge(
                 action$.ofType(INIT_MAP)
                     .take(1)
                     .switchMap(() => {
@@ -53,32 +53,32 @@ export const readQueryParamsOnMapEpic = (action$, store) => {
                         const cesiumViewerOptions = getCesiumViewerOptions(parameters);
                         if (cesiumViewerOptions) {
                             skipProcessing = true;
-                            return Rx.Observable.of(changeMapType('cesium'));
+                            return Observable.of(changeMapType('cesium'));
                         }
-                        return Rx.Observable.empty();
+                        return Observable.empty();
                     }),
                 action$.ofType(LAYER_LOAD)
                     .take(1)
                     .switchMap(() => {
-                        const queryActions = getQueryActions(parameters, paramActions, store.getState());
+                        const queryActions = getQueryActions(parameters, paramActions, store.value);
                         return head(queryActions)
-                            ? Rx.Observable.of(...queryActions)
-                            : Rx.Observable.empty();
+                            ? Observable.of(...queryActions)
+                            : Observable.empty();
                     }),
                 action$.ofType(CHANGE_MAP_VIEW)
                     .take(1).switchMap(() => {
-                        const mapType = get(store.getState(), 'maptype.mapType') || '';
+                        const mapType = get(store.value, 'maptype.mapType') || '';
                         if (mapType === 'cesium') {
                             if (!parameters?.bbox) {
                                 if (!isEmpty(parameters)) {
                                     const requiredKeys = ['center', 'zoom', 'heading', 'pitch', 'roll'];
                                     if (every(requiredKeys, partial(has, parameters))) {
-                                        return Rx.Observable.of(orientateMap(parameters));
+                                        return Observable.of(orientateMap(parameters));
                                     }
                                 }
                             }
                         }
-                        return Rx.Observable.empty();
+                        return Observable.empty();
                     })
             );
         });
@@ -91,13 +91,13 @@ export const readQueryParamsOnMapEpic = (action$, store) => {
  * @memberof epics.share
  * @return {external:Observable}
  */
-export const onMapClickForShareEpic = (action$, { getState = () => { } }) =>
+export const onMapClickForShareEpic = (action$, store) =>
     action$.ofType(CLICK_ON_MAP).
         switchMap(({point}) =>{
-            const allowClick = get(getState(), 'controls.share.settings.centerAndZoomEnabled');
+            const allowClick = get(store.value, 'controls.share.settings.centerAndZoomEnabled');
             return allowClick
-                ? Rx.Observable.of(resetSearch(), addMarker({latlng: point?.latlng || {}}))
-                : Rx.Observable.empty();
+                ? Observable.of(resetSearch(), addMarker({latlng: point?.latlng || {}}))
+                : Observable.empty();
         });
 
 /**
@@ -107,16 +107,16 @@ export const onMapClickForShareEpic = (action$, { getState = () => { } }) =>
  * @memberof epics.share
  * @return {external:Observable}
  */
-export const disableGFIForShareEpic = (action$, { getState = () => { } }) =>
+export const disableGFIForShareEpic = (action$, store) =>
     action$.ofType(TOGGLE_CONTROL)
         .filter(({control}) => control === "share")
         .switchMap(() => {
-            const state = getState();
+            const state = store.value;
             const shareEnabled = shareSelector(state);
             const mapInfoEnabled = mapInfoEnabledSelector(state);
             const shareParams = {bboxEnabled: false, centerAndZoomEnabled: false};
             if (!isUndefined(shareEnabled) && shareEnabled) {
-                let $observable = Rx.Observable.empty();
+                let $observable = Observable.empty();
                 if (mapInfoEnabled) {
                     let actions = [toggleMapInfoState()];
                     if (isMapInfoOpen(state)) {
@@ -125,11 +125,11 @@ export const disableGFIForShareEpic = (action$, { getState = () => { } }) =>
                         const newPoint = {latlng: {lat, lng}};
                         actions = actions.concat(addMarker(newPoint)); // Retain marker position set by GFI for Share position marker
                     }
-                    $observable = Rx.Observable.from(actions);
+                    $observable = Observable.from(actions);
                 }
                 return $observable;
             }
-            return Rx.Observable.of(hideMapinfoMarker(),
+            return Observable.of(hideMapinfoMarker(),
                 purgeMapInfoResults(),
                 toggleMapInfoState(),
                 setControlProperty("share", "settings", shareParams),

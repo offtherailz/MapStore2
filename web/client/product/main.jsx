@@ -7,8 +7,10 @@
  */
 
 import { connect } from 'react-redux';
-import { setObservableConfig } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
+import 'rxjs';
+import "rxjs-compat";
+import '../libs/bindings/rxjsRecompose';
+
 
 import main from '../components/app/main';
 import StandardApp from '../components/app/StandardApp';
@@ -40,8 +42,6 @@ import {
     standardEpics,
     standardRootReducerFunc
 } from '../stores/defaultOptions';
-
-setObservableConfig(rxjsConfig);
 
 export default (config = {}, pluginsDef, overrideConfig = cfg => cfg) => {
 

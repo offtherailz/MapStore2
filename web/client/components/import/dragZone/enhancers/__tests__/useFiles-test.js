@@ -10,8 +10,8 @@ import React from 'react';
 
 import ReactDOM from 'react-dom';
 import { createSink, setObservableConfig } from 'recompose';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-setObservableConfig(rxjsConfig);
+
+
 import expect from 'expect';
 import useFiles from '../useFiles';
 

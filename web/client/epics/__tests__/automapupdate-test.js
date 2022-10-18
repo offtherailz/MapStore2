@@ -14,7 +14,8 @@ import { configureMap, mapInfoLoaded } from '../../actions/config';
 import { SHOW_NOTIFICATION } from '../../actions/notifications';
 import { manageAutoMapUpdate } from '../automapupdate';
 const rootEpic = combineEpics(manageAutoMapUpdate);
-const epicMiddleware = createEpicMiddleware(rootEpic);
+const epicMiddleware = createEpicMiddleware();
+epicMiddleware.run();
 const mockStore = configureMockStore([epicMiddleware]);
 
 describe('automapupdate Epics', () => {

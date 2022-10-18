@@ -7,13 +7,13 @@
  */
 
 import { mapPropsStream } from 'recompose';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { getResource } from '../../../../api/persistence';
 
 export default mapPropsStream(props$ => {
-    return props$.combineLatest(
-        props$
+    return Observable.from(props$).combineLatest(
+        Observable.from(props$)
             .pluck('resource')
             .filter(res => res && res.id)
             .distinctUntilChanged()
@@ -24,7 +24,7 @@ export default mapPropsStream(props$ => {
                         resource
                     }))
                     .startWith({ loading: true, resource: false })
-                    .catch(e => Rx.Observable.of({ loading: false, errors: [e] }))
+                    .catch(e => Observable.of({ loading: false, errors: [e] }))
             )
             .startWith({}),
         (p1, p2) => ({

@@ -1,9 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { createSink, setObservableConfig } from 'recompose';
+import { createSink } from 'recompose';
 import expect from 'expect';
-import rxjsConfig from 'recompose/rxjsObservableConfig';
-setObservableConfig(rxjsConfig);
+
 
 import forceScrollTop from '../forceScrollTop';
 describe('DataGrid forceScrollTop enhancer', () => {

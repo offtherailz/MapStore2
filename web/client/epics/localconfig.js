@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { LOCAL_CONFIG_LOADED, supportedLanguagesRegistered } from '../actions/localConfig';
 import {setSupportedLocales as setSupportedLocalesUtil} from '../utils/LocaleUtils';
@@ -32,10 +32,10 @@ export const setSupportedLocales = (action$) =>
         .switchMap(action => {
             const supportedLocales = get(action, "config.initialState.defaultState.locales.supportedLocales", {});
             if (Object.keys(supportedLocales).length === 0) {
-                return Rx.Observable.of(supportedLanguagesRegistered({}));
+                return Observable.of(supportedLanguagesRegistered({}));
             }
             setSupportedLocalesUtil(supportedLocales);
-            return Rx.Observable.of(supportedLanguagesRegistered(supportedLocales));
+            return Observable.of(supportedLanguagesRegistered(supportedLocales));
         });
 
 

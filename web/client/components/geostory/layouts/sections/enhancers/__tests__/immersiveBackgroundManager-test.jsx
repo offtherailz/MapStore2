@@ -11,13 +11,12 @@ import { createSink, setObservableConfig } from 'recompose';
 import expect from 'expect';
 
 // config for recompose usage of RXJS
-import rxjsconfig from 'recompose/rxjsObservableConfig';
+
 import immersiveBackgroundManager, { backgroundSectionProp } from '../immersiveBackgroundManager';
 
 import STORY from '../../../../../../test-resources/geostory/sampleStory_1.json';
 const contents = STORY.sections[1].contents;
 
-setObservableConfig(rxjsconfig);
 
 describe('immersiveBackgroundManager enhancer', () => {
     beforeEach((done) => {
