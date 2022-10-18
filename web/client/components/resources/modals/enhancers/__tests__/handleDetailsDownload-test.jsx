@@ -11,11 +11,10 @@ import expect from 'expect';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
 import MockAdapter from "axios-mock-adapter";
-import { createSink, setObservableConfig } from 'recompose';
+import { createSink } from 'recompose';
 
 
 import handleDetailsDownload from '../handleDetailsDownload';
-
 
 
 describe('handleDetailsDownload enhancer', () => {

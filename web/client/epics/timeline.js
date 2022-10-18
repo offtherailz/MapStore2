@@ -1,5 +1,5 @@
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { isString, get, head, castArray } from 'lodash';
 import moment from 'moment';
 import { wrapStartStop } from '../observables/epics';
@@ -58,12 +58,12 @@ const MAX_HISTOGRAM = 20;
  * @param {object} paginationOptions
  */
 // TODO: there is another function called with the same name in epics/p
-const domainArgs = (getState, paginationOptions = {}) => {
-    const id = selectedLayerSelector(getState());
-    const layerName = selectedLayerName(getState());
-    const layerUrl = selectedLayerUrl(getState());
-    const bboxOptions = multidimOptionsSelectorCreator(id)(getState());
-    const fromEnd = snapTypeSelector(getState()) === 'end';
+const domainArgs = (store, paginationOptions = {}) => {
+    const id = selectedLayerSelector(store.value);
+    const layerName = selectedLayerName(store.value);
+    const layerUrl = selectedLayerUrl(store.value);
+    const bboxOptions = multidimOptionsSelectorCreator(id)(store.value);
+    const fromEnd = snapTypeSelector(store.value) === 'end';
     return [layerUrl, layerName, "time", {
         limit: 1,
         ...paginationOptions,
@@ -73,19 +73,19 @@ const domainArgs = (getState, paginationOptions = {}) => {
 /**
  * creates an observable that emit a time that snap the values of the selected layer to the current time
  */
-const snapTime = (getState, group, time) => {
+const snapTime = (store, group, time) => {
     // TODO: evaluate to snap to clicked layer instead of current selected layer, and change layer selection
     // TODO: support local list of values for no multidim-extension.
-    const state = getState();
+    const state = store.value;
     if (selectedLayerName(state)) {
         const snapType = snapTypeSelector(state);
-        return getTimeDomainsObservable(domainArgs, false, getState, snapType, time).map(values => {
+        return getTimeDomainsObservable(domainArgs, false, store, snapType, time).map(values => {
             return getNearestDate(values.filter(v => !!v), time, snapType) || time;
         });
     }
 
     const timeValues = layerTimeSequenceSelectorCreator(getLayerFromId(state, group))(state);
-    return Rx.Observable.of(getNearestDate(timeValues, time) || time);
+    return Observable.of(getNearestDate(timeValues, time) || time);
 
 };
 const snap = true; // TODO: externalize to make this configurable.
@@ -97,20 +97,20 @@ const toISOString = date => isString(date) ? date : date.toISOString();
  *
  * @param {string} id layer id
  * @param {object} timeData the object that represent the domain source. Contains the URL to the service
- * @param {function} getState return the state of the application
+ * @param {function} store return the state of the application
  * @returns a stream of data with histogram and/or domain values
  */
-const loadRangeData = (id, timeData, getState) => {
+const loadRangeData = (id, timeData, store) => {
     /**
-     * when there is no timeline state rangeSelector(getState()) returns undefined, so instead we use the timeData[id] range
+     * when there is no timeline state rangeSelector(store.value) returns undefined, so instead we use the timeData[id] range
      */
     const dataRange = timeData.domain.split('--');
 
-    const initialRange = rangeSelector(getState()) || {start: new Date(dataRange[0]), end: new Date(dataRange[1])};
+    const initialRange = rangeSelector(store.value) || {start: new Date(dataRange[0]), end: new Date(dataRange[1])};
 
     const {range, resolution} = roundRangeResolution( initialRange, MAX_HISTOGRAM);
-    const layerName = getLayerFromId(getState(), id).name;
-    const expandLimit = expandLimitSelector(getState());
+    const layerName = getLayerFromId(store.value, id).name;
+    const expandLimit = expandLimitSelector(store.value);
     const filter = {
         [TIME_DIMENSION]: `${toISOString(range.start)}/${toISOString(range.end)}`
     };
@@ -122,7 +122,7 @@ const loadRangeData = (id, timeData, getState) => {
             [TIME_DIMENSION]: `${toISOString(range.start)}/${toISOString(range.end)}`
         },
         resolution,
-        multidimOptionsSelectorCreator(id)(getState())
+        multidimOptionsSelectorCreator(id)(store.value)
     )
         .merge(
             describeDomains(
@@ -130,7 +130,7 @@ const loadRangeData = (id, timeData, getState) => {
                 layerName,
                 filter,
                 {
-                    ...multidimOptionsSelectorCreator(id)(getState()),
+                    ...multidimOptionsSelectorCreator(id)(store.value),
                     expandLimit
                 }
             )
@@ -161,7 +161,7 @@ const loadRangeData = (id, timeData, getState) => {
          * shape of histogram {values: [1, 2, 3], domain: "T_START/T_END/RESOLUTION" }
          * shape of domain: {values: ["T1", "T2", ....]}, present only if not in the form "T1--T2"
          */
-            return Rx.Observable.of({
+            return Observable.of({
                 range,
                 histogram: histogram && histogram.Domain
                     ? {
@@ -182,14 +182,14 @@ const loadRangeData = (id, timeData, getState) => {
 /**
  * when a time is selected from timeline, tries to snap to nearest value and set the current time
  */
-export const setTimelineCurrentTime = (action$, {getState = () => {}} = {}) =>
+export const setTimelineCurrentTime = (action$, store) =>
     action$.ofType(SELECT_TIME)
         .throttleTime(100) // avoid multiple request in case of mouse events drag and click
         .switchMap( ({time, group}) => {
-            const state = getState();
+            const state = store.value;
 
             if (snap && group) {
-                return snapTime(getState, group, time)
+                return snapTime(store, group, time)
                     .switchMap( t => {
                         const currentViewRange = rangeSelector(state);
                         const {
@@ -205,49 +205,49 @@ export const setTimelineCurrentTime = (action$, {getState = () => {}} = {}) =>
                                 end: moment(t).add(rangeDistance / 2)
                             })];
                         }
-                        return Rx.Observable.from([...actions, setCurrentTime(t)]);
+                        return Observable.from([...actions, setCurrentTime(t)]);
                     })
                     .let(wrapStartStop(timeDataLoading(false, true), timeDataLoading(false, false)))
                 ;
             }
-            return Rx.Observable.of(setCurrentTime(time));
+            return Observable.of(setCurrentTime(time));
         });
 /**
  * Initialize the time line and syncs the timeline guide layers on certain layer events
  * @memberof epics.timeline
  * @param {observable} action$ manages `AUTOSELECT` `REMOVE_NODE` `CHANGE_LAYER_PROPERTIES` `SELECT_LAYER`
- * @param {function} getState to fetch the store object
+ * @param {function} store to fetch the store object
  * @return {observable}
  */
-export const syncTimelineGuideLayer = (action$, { getState = () => { } } = {}) =>
+export const syncTimelineGuideLayer = (action$, store) =>
     action$.ofType(AUTOSELECT)// Initializes timeline
         .merge(
             action$.ofType(REMOVE_NODE, CHANGE_LAYER_PROPERTIES) // Or when the guide layer is removed or hidden
                 .withLatestFrom(action$.ofType(SELECT_LAYER), (_, {layerId: _layer})  =>
-                    _layer && !timelineLayersSelector(getState()).some(l=>l.id === _layer) // Retain selection when guide layer present
+                    _layer && !timelineLayersSelector(store.value).some(l=>l.id === _layer) // Retain selection when guide layer present
                 )
                 .filter(layer => !!layer) // Emit only if a guide layer was selected before remove node or change layer's visibility
         )
         .switchMap(() => {
-            const state = getState();
+            const state = store.value;
             const firstTimeLayer = get(timelineLayersSelector(state), "[0].id");
             if (isAutoSelectEnabled(state) && firstTimeLayer) {
-                return Rx.Observable.of(selectLayer(firstTimeLayer)); // Select the first guide layer from the list and snap time
+                return Observable.of(selectLayer(firstTimeLayer)); // Select the first guide layer from the list and snap time
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         });
 
 /**
  * Snap time of the selected layer
  * @memberof epics.timeline
  * @param {observable} action$ manages `SELECT_LAYER`
- * @param {function} getState to fetch the store object
+ * @param {function} store to fetch the store object
  * @return {observable}
  */
-export const snapTimeGuideLayer = (action$, { getState = () => { } } = {}) =>
+export const snapTimeGuideLayer = (action$, store) =>
     action$.ofType(SELECT_LAYER)
-        .filter((action)=> action?.layerId && isAutoSelectEnabled(getState()))
-        .switchMap(({layerId}) => snapTime(getState, layerId, currentTimeSelector(getState()) || new Date().toISOString())
+        .filter((action)=> action?.layerId && isAutoSelectEnabled(store.value))
+        .switchMap(({layerId}) => snapTime(store, layerId, currentTimeSelector(store.value) || new Date().toISOString())
             .filter(v => v)
             .map(time => setCurrentTime(time))
         );
@@ -260,11 +260,11 @@ export const snapTimeGuideLayer = (action$, { getState = () => { } } = {}) =>
  *  - At the end, if the viewport is not defined, it will be placed to center the current time. This way the range will be visible when the timeline is available.
  *
  */
-export const settingInitialOffsetValue = (action$, {getState = () => {}} = {}) =>
+export const settingInitialOffsetValue = (action$, store) =>
     action$.ofType(ENABLE_OFFSET)
         .switchMap( (action) => {
             const RATIO = 5; // ratio of the size of the offset to set relative to the current viewport, if set
-            const state = getState();
+            const state = store.value;
             const time = currentTimeSelector(state);
             const currentViewRange = rangeSelector(state);
             // find out current viewport range, if exist, to define a good offset to use as default
@@ -279,10 +279,10 @@ export const settingInitialOffsetValue = (action$, {getState = () => {}} = {}) =
                 let currentMoment = currentViewRange ? moment(start).add(rangeDistance / 2).toISOString() : moment(new Date()).toISOString();
 
                 const initialOffsetTime = moment(time ? time : currentMoment).add(rangeDistance / RATIO);
-                let setTime = action.enabled && !time ? Rx.Observable.of(setCurrentTime(currentMoment)) : Rx.Observable.empty();
-                let setOff = action.enabled && !currentOffset || action.enabled && moment(currentOffset).diff(time) < 0 ? Rx.Observable.of(setCurrentOffset(initialOffsetTime.toISOString()))
-                    : Rx.Observable.empty();
-                const centerToCurrentViewRange = currentViewRange ? Rx.Observable.empty() : Rx.Observable.of(
+                let setTime = action.enabled && !time ? Observable.of(setCurrentTime(currentMoment)) : Observable.empty();
+                let setOff = action.enabled && !currentOffset || action.enabled && moment(currentOffset).diff(time) < 0 ? Observable.of(setCurrentOffset(initialOffsetTime.toISOString()))
+                    : Observable.empty();
+                const centerToCurrentViewRange = currentViewRange ? Observable.empty() : Observable.of(
                     onRangeChanged({
                         start: moment(currentMoment).add(-1 * rangeDistance / 2),
                         end: moment(currentMoment).add(rangeDistance / 2)
@@ -290,42 +290,42 @@ export const settingInitialOffsetValue = (action$, {getState = () => {}} = {}) =
                 );
                 return setTime.concat(setOff).concat(centerToCurrentViewRange);
             }
-            return Rx.Observable.of(setCurrentOffset());
+            return Observable.of(setCurrentOffset());
         // disable by setting off the offset
         });
 /**
  * Update the time data when the timeline range changes, or when the layer dimension data is
  * updated (for instance when a layer is added to the map)
  */
-export const updateRangeDataOnRangeChange = (action$, { getState = () => { } } = {}) =>
+export const updateRangeDataOnRangeChange = (action$, store) =>
     action$.ofType(RANGE_CHANGED)
         .merge(
-            action$.ofType(CHANGE_MAP_VIEW).filter(() => isMapSync(getState())),
+            action$.ofType(CHANGE_MAP_VIEW).filter(() => isMapSync(store.value)),
             action$.ofType(SET_MAP_SYNC)
         )
         .debounceTime(400)
         .merge(action$.ofType(UPDATE_LAYER_DIMENSION_DATA).debounceTime(50))
         .switchMap( () => {
-            const timeData = timeDataSelector(getState()) || {};
+            const timeData = timeDataSelector(store.value) || {};
             const layerIds = Object.keys(timeData).filter(id => timeData[id] && timeData[id].domain
                 // when data is already fully downloaded, no need to refresh, except if the mapSync is active
-                && (isTimeDomainInterval(timeData[id].domain)) || isMapSync(getState()));
+                && (isTimeDomainInterval(timeData[id].domain)) || isMapSync(store.value));
             // update range data for every layer that need to sync with histogram/domain
-            return Rx.Observable.merge(
+            return Observable.merge(
                 ...layerIds.map(id =>
-                    loadRangeData(id, timeData[id], getState).map(({ range, histogram, domain }) => rangeDataLoaded(
+                    loadRangeData(id, timeData[id], store).map(({ range, histogram, domain }) => rangeDataLoaded(
                         id,
                         range,
                         histogram,
                         domain
                     ))
                         .startWith(timeDataLoading(id, true))
-                        .catch(() => Rx.Observable.of(error({
+                        .catch(() => Observable.of(error({
                             uid: "error_with_timeline_update",
                             title: "timeline.errors.multidim_error_title",
                             message: "timeline.errors.multidim_error_message"
                         })))
-                        .concat( Rx.Observable.of(timeDataLoading(id, false)))
+                        .concat( Observable.of(timeDataLoading(id, false)))
                 ));
 
         });

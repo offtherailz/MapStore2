@@ -10,12 +10,10 @@ import { Promise } from 'es6-promise';
 import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { createSink, setObservableConfig } from 'recompose';
+import { createSink } from 'recompose';
 
 
 import handlePermission from '../handlePermission';
-
-
 
 
 describe('handlePermission enhancer', () => {

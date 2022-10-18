@@ -7,15 +7,15 @@
  */
 
 import { isString } from 'lodash';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { parseString } from 'xml2js';
 import { stripPrefix } from 'xml2js/lib/processors';
 
 const xmlToJson = xml => {
     if (!isString(xml)) {
-        return Rx.Observable.of(xml);
+        return Observable.of(xml);
     }
-    return Rx.Observable.bindNodeCallback((data, callback) => parseString(data, {
+    return Observable.bindNodeCallback((data, callback) => parseString(data, {
         tagNameProcessors: [stripPrefix],
         explicitArray: false,
         mergeAttrs: true

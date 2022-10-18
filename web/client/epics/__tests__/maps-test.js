@@ -430,10 +430,10 @@ describe('Get Map Resource By Category Epic', () => {
     });
 });
 import Persistence from '../../api/persistence';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 const api = {
-    createResource: () => Rx.Observable.of(10),
-    updateResource: () => Rx.Observable.of(10)
+    createResource: () => Observable.of(10),
+    updateResource: () => Observable.of(10)
 };
 
 describe('Create and update flow using persistence api', () => {
@@ -504,7 +504,7 @@ describe('Create and update flow using persistence api', () => {
     it('test thumbnail attribute is ignored', done => {
         const attributeTestApi = {
             ...api,
-            updateResourceAttribute: ({name}) => name === 'thumbnail' ? done(new Error('thumbnail update request was issued!')) : Rx.Observable.of(10)
+            updateResourceAttribute: ({name}) => name === 'thumbnail' ? done(new Error('thumbnail update request was issued!')) : Observable.of(10)
         };
         Persistence.addApi('attributeTest', attributeTestApi);
         Persistence.setApi('attributeTest');

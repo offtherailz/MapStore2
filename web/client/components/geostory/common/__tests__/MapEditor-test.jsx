@@ -262,8 +262,8 @@ describe('MapEditor component', () => {
         document.body.innerHTML = '';
         setTimeout(done);
     });
-    const currentStory = get(store.getState(), "geostory.currentStory", {});
-    const focusedContent = get(store.getState(), "geostory.focusedContent", {});
+    const currentStory = get(store.value, "geostory.currentStory", {});
+    const focusedContent = get(store.value, "geostory.focusedContent", {});
 
     it('MapEditor rendering toc with layers when focusedContent element has a map and select a layer', () => {
         ReactDOM.render(<Provider store={store}><TestMapEditor  mode="edit"

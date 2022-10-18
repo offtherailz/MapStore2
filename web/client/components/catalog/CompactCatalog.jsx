@@ -7,9 +7,10 @@
  */
 
 import { isNil, isObject, isEmpty } from 'lodash';
+
 import React from 'react';
 import { compose, mapPropsStream, withPropsOnChange } from 'recompose';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import uuid from 'uuid';
 import API from '../../api/catalog';
 import Message from '../I18N/Message';
@@ -82,7 +83,7 @@ const loadPage = ({text, catalog = {}}, page = 0) => {
     } else if (type === 'tms') {
         options = _tempOption;
     }
-    return Rx.Observable
+    return Observable
         .fromPromise(API[type].textSearch(catalog.url, page * PAGE_SIZE + (type === "csw" ? 1 : 0), PAGE_SIZE, text, options))
         .map((result) => ({ result, records: API[type].getCatalogRecords(result || [], { url: catalog && catalog.url, service: catalog })}))
         .map(({records, result}) => resToProps({records, result, catalog}));
@@ -107,8 +108,8 @@ export default compose(
     withControllableState('searchText', "setSearchText", ""),
     withVirtualScroll({loadPage, scrollSpyOptions}),
     mapPropsStream( props$ =>
-        props$.merge(props$.take(1).switchMap(({loadFirst = () => {}, services }) =>
-            props$
+        Observable.from(props$).merge(Observable.from(props$).take(1).switchMap(({loadFirst = () => {}, services }) =>
+            Observable.from(props$)
                 .debounceTime(500)
                 .startWith({searchText: ""})
                 .distinctUntilKeyChanged('searchText')

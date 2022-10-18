@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { NEW, INSERT, EDIT, OPEN_FILTER_EDITOR, editNewWidget, onEditorChange} from '../actions/widgets';
 
@@ -47,20 +47,20 @@ const getFTSelectedArgs = (state) => {
 };
 
 // Basic interactions with dashboard editor
-export const openDashboardWidgetEditor = (action$, {getState = () => {}} = {}) => action$.ofType(NEW, EDIT)
-    .filter( () => isDashboardAvailable(getState()))
-    .switchMap(() => Rx.Observable.of(
+export const openDashboardWidgetEditor = (action$, store = {}) => action$.ofType(NEW, EDIT)
+    .filter( () => isDashboardAvailable(store.value))
+    .switchMap(() => Observable.of(
         setEditing(true)
     ));
 // Basic interactions with dashboard editor
-export const closeDashboardWidgetEditorOnFinish = (action$, {getState = () => {}} = {}) => action$.ofType(INSERT)
-    .filter( () => isDashboardAvailable(getState()))
-    .switchMap(() => Rx.Observable.of(setEditing(false)));
+export const closeDashboardWidgetEditorOnFinish = (action$, store = {}) => action$.ofType(INSERT)
+    .filter( () => isDashboardAvailable(store.value))
+    .switchMap(() => Observable.of(setEditing(false)));
 
 // Basic interactions with dashboard editor
-export const initDashboardEditorOnNew = (action$, {getState = () => {}} = {}) => action$.ofType(NEW)
-    .filter( () => isDashboardAvailable(getState()))
-    .switchMap((w) => Rx.Observable.of(editNewWidget({
+export const initDashboardEditorOnNew = (action$, store = {}) => action$.ofType(NEW)
+    .filter( () => isDashboardAvailable(store.value))
+    .switchMap((w) => Observable.of(editNewWidget({
         legend: false,
         mapSync: false,
         cartesian: true,
@@ -70,34 +70,34 @@ export const initDashboardEditorOnNew = (action$, {getState = () => {}} = {}) =>
         type: undefined
     }, {step: 0})));
 // Basic interactions with dashboard editor
-export const closeDashboardEditorOnExit = (action$, {getState = () => {}} = {}) => action$.ofType(LOCATION_CHANGE)
-    .filter( () => isDashboardAvailable(getState()))
-    .filter( () => isDashboardEditing(getState()) )
-    .switchMap(() => Rx.Observable.of(setEditing(false)));
+export const closeDashboardEditorOnExit = (action$, store = {}) => action$.ofType(LOCATION_CHANGE)
+    .filter( () => isDashboardAvailable(store.value))
+    .filter( () => isDashboardEditing(store.value) )
+    .switchMap(() => Observable.of(setEditing(false)));
 /**
      * Manages interaction with QueryPanel and Dashboard
      */
-export const handleDashboardWidgetsFilterPanel = (action$, {getState = () => {}} = {}) => action$.ofType(OPEN_FILTER_EDITOR)
-    .filter(() => isDashboardAvailable(getState()))
+export const handleDashboardWidgetsFilterPanel = (action$, store = {}) => action$.ofType(OPEN_FILTER_EDITOR)
+    .filter(() => isDashboardAvailable(store.value))
     .switchMap(() =>
     // open and setup query form
-        Rx.Observable.of(
-            featureTypeSelected(...getFTSelectedArgs(getState())),
-            loadFilter(getEditingWidgetFilter(getState())),
+        Observable.of(
+            featureTypeSelected(...getFTSelectedArgs(store.value)),
+            loadFilter(getEditingWidgetFilter(store.value)),
             setControlProperty('queryPanel', "enabled", true)
             // wait for any filter update(search) or query form close event
         ).concat(
-            Rx.Observable.race(
+            Observable.race(
                 action$.ofType(QUERY_FORM_SEARCH).take(1),
                 action$.ofType(TOGGLE_CONTROL).filter(({control, property} = {}) => control === "queryPanel" && (!property || property === "enabled")).take(1)
             )
             // then close the query panel, open widget form and update the current filter for the widget in editing
                 .switchMap( action =>
                     (action.filterObj
-                        ? Rx.Observable.of(onEditorChange("filter", action.filterObj))
-                        : Rx.Observable.empty()
+                        ? Observable.of(onEditorChange("filter", action.filterObj))
+                        : Observable.empty()
                     )
-                        .merge(Rx.Observable.of(
+                        .merge(Observable.of(
                             setControlProperty("widgetBuilder", "enabled", true)
                         ))
                 )
@@ -106,20 +106,20 @@ export const handleDashboardWidgetsFilterPanel = (action$, {getState = () => {}}
             action$.ofType(LOCATION_CHANGE, EDIT)
                 .merge(action$.ofType(TOGGLE_CONTROL).filter(({control, property} = {}) => control === "widgetBuilder" && (!property === false))))
             .concat(
-                Rx.Observable.of(// drawSupportReset(),
+                Observable.of(// drawSupportReset(),
                     setControlProperty('queryPanel', "enabled", false)
                 )
             )
     );
 export const filterAnonymousUsersForDashboard = (actions$, store) => actions$
     .ofType(CHECK_LOGGED_USER, LOGOUT)
-    .filter(() => pathnameSelector(store.getState()) === "/dashboard")
+    .filter(() => pathnameSelector(store.value) === "/dashboard")
     .switchMap( ({}) => {
-        return !isLoggedIn(store.getState()) ? Rx.Observable.of(dashboardLoadError({status: 403})) : Rx.Observable.empty();
+        return !isLoggedIn(store.value) ? Observable.of(dashboardLoadError({status: 403})) : Observable.empty();
     });
 
 // dashboard loading from resource ID.
-export const loadDashboardStream = (action$, {getState = () => {}}) => action$
+export const loadDashboardStream = (action$, store) => action$
     .ofType(LOAD_DASHBOARD)
     .switchMap( ({id}) =>
         getResource(id)
@@ -134,13 +134,13 @@ export const loadDashboardStream = (action$, {getState = () => {}}) => action$
                     let message = page + ".errors.loading.unknownError";
                     if (e.status === 403 ) {
                         message = page + ".errors.loading.pleaseLogin";
-                        if ( isLoggedIn(getState())) {
+                        if ( isLoggedIn(store.value)) {
                             message = page + ".errors.loading.dashboardNotAccessible";
                         }
                     } if (e.status === 404) {
                         message = page + ".errors.loading.dashboardDoesNotExist";
                     }
-                    return Rx.Observable.of(
+                    return Observable.of(
                         error({
                             title: page + ".errors.loading.title",
                             message
@@ -154,7 +154,7 @@ export const reloadDashboardOnLoginLogout = (action$) =>
     action$.ofType(LOAD_DASHBOARD).switchMap(
         ({ id }) => action$
             .ofType(LOGIN_SUCCESS, LOGOUT)
-            .switchMap(() => Rx.Observable.of(loadDashboard(id)).delay(1000))
+            .switchMap(() => Observable.of(loadDashboard(id)).delay(1000))
             .takeUntil(action$.ofType(LOCATION_CHANGE))
     );
 // saving dashboard flow (both creation and update)
@@ -162,14 +162,14 @@ export const saveDashboard = action$ => action$
     .ofType(SAVE_DASHBOARD)
     .exhaustMap(({resource} = {}) =>
         (!resource.id ? createResource(resource) : updateResource(resource))
-            .switchMap(rid => Rx.Observable.of(
+            .switchMap(rid => Observable.of(
                 dashboardSaved(rid),
                 resource.id ? triggerSave(false) : triggerSaveAs(false),
                 !resource.id
                     ? push(`/dashboard/${rid}`)
                     : loadDashboard(rid)
             ).merge(
-                Rx.Observable.of(show({
+                Observable.of(show({
                     id: "DASHBOARD_SAVE_SUCCESS",
                     title: "saveDialog.saveSuccessTitle",
                     message: "saveDialog.saveSuccessMessage"
@@ -181,14 +181,14 @@ export const saveDashboard = action$ => action$
                 dashboardLoading(false, "saving")
             ))
             .catch(
-                ({ status, statusText, data, message, ...other } = {}) => Rx.Observable.of(dashboardSaveError(status ? { status, statusText, data } : message || other), dashboardLoading(false, "saving"))
+                ({ status, statusText, data, message, ...other } = {}) => Observable.of(dashboardSaveError(status ? { status, statusText, data } : message || other), dashboardLoading(false, "saving"))
             )
     );
 
 export const exportDashboard = action$ => action$
     .ofType(DASHBOARD_EXPORT)
     .switchMap(({data, fileName}) =>
-        Rx.Observable.of([JSON.stringify({...data}), fileName, 'application/json'])
+        Observable.of([JSON.stringify({...data}), fileName, 'application/json'])
             .do((downloadArgs) => download(...downloadArgs))
             .map(() => toggleControl('export'))
     );
@@ -196,12 +196,12 @@ export const exportDashboard = action$ => action$
 export const importDashboard = action$ => action$
     .ofType(DASHBOARD_IMPORT)
     .switchMap(({file, resource}) => (
-        Rx.Observable.defer(() => readJson(file[0]).then((data) => data))
-            .switchMap((dashboard) => Rx.Observable.of(
+        Observable.defer(() => readJson(file[0]).then((data) => data))
+            .switchMap((dashboard) => Observable.of(
                 dashboardLoaded(resource, dashboard),
                 toggleControl('import')
             ))
-            .catch((e) => Rx.Observable.of(
+            .catch((e) => Observable.of(
                 error({ title: "dashboard.errors.loading.title" }),
                 dashboardLoadError({...e})
             ))

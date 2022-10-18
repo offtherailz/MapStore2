@@ -5,7 +5,7 @@
   * This source code is licensed under the BSD-style license found in the
   * LICENSE file in the root directory of this source tree.
   */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { compose, mapPropsStream, defaultProps } from 'recompose';
 
 
@@ -33,11 +33,11 @@ import { compose, mapPropsStream, defaultProps } from 'recompose';
  */
 export default compose(
     defaultProps({
-        dataStreamFactory: () => Rx.Observable.of({})
+        dataStreamFactory: () => Observable.of({})
     }),
     mapPropsStream(props$ => {
         // TODO capture sensible props changes instead of take first
-        let fetcherStream = props$.take(1).switchMap(p => {
+        let fetcherStream = Observable.from(props$).take(1).switchMap(p => {
             // this provides the stream of props with the first event
             return p.dataStreamFactory(props$.startWith(p), p);
         });

@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import GeoStoreApi from '../api/GeoStoreDAO';
 import {wrapStartStop} from '../observables/epics';
 import {error} from '../actions/notifications';
@@ -41,30 +41,30 @@ const calculateNewParams = state => {
 export const searchContextsOnMapSearch = (action$, store) =>
     action$.ofType(MAPS_LIST_LOADING, SET_CONTEXTS_AVAILABLE)
         .switchMap(({ searchText }) => {
-            const state = store.getState();
+            const state = store.value;
             if (state.contexts?.available) {
-                return Rx.Observable.of(searchContexts(searchText));
+                return Observable.of(searchContexts(searchText));
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         });
 
-export const searchContextsEpic = (action$, { getState = () => { } }) => action$
+export const searchContextsEpic = (action$, store) => action$
     .ofType(SEARCH_CONTEXTS)
     .map( ({params, searchText, geoStoreUrl}) => ({
         searchText,
         options: {
-            params: params || searchParamsSelector(getState()) || {start: 0, limit: 12},
+            params: params || searchParamsSelector(store.value) || {start: 0, limit: 12},
             ...(geoStoreUrl ? { baseURL: geoStoreUrl } : {})
         }
     }))
     .switchMap(
         ({ searchText, options }) =>
-            Rx.Observable.defer(() => GeoStoreApi.getResourcesByCategory("CONTEXT", searchText, options))
+            Observable.defer(() => GeoStoreApi.getResourcesByCategory("CONTEXT", searchText, options))
                 .map(results => contextsListLoaded(results, {searchText, options}))
                 .let(wrapStartStop(
                     contextsLoading(true, "loading"),
                     contextsLoading(false, "loading"),
-                    () => Rx.Observable.of(error({
+                    () => Observable.of(error({
                         title: "notification.error",
                         message: "resources.contexts.errorLoadingContexts",
                         autoDismiss: 6,
@@ -77,12 +77,12 @@ export const reloadOnContexts = (action$, store) => action$
     .ofType(CONTEXT_DELETED, RELOAD_CONTEXTS, ATTRIBUTE_UPDATED, CONTEXT_SAVED, LOGIN_SUCCESS, LOGOUT)
     .delay(1000)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         if (state.contexts.available) {
-            return Rx.Observable.of(searchContexts(
-                searchTextSelector(store.getState()),
-                calculateNewParams(store.getState())
+            return Observable.of(searchContexts(
+                searchTextSelector(store.value),
+                calculateNewParams(store.value)
             ));
         }
-        return Rx.Observable.empty();
+        return Observable.empty();
     });

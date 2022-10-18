@@ -13,7 +13,7 @@ import {hideMapinfoMarker, purgeMapInfoResults} from "../actions/mapInfo";
 
 export const openUserExtensionsEpic = (action$, store) =>
     action$.ofType(SET_CONTROL_PROPERTY, TOGGLE_CONTROL)
-        .filter((action) => action.control === "userExtensions" && isActiveSelector(store.getState()))
+        .filter((action) => action.control === "userExtensions" && isActiveSelector(store.value))
         .switchMap(() => {
             return Observable.of(purgeMapInfoResults(), hideMapinfoMarker());
         });

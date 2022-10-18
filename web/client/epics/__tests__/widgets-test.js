@@ -37,7 +37,7 @@ import { configureMap } from '../../actions/config';
 import { changeLayerProperties, layerLoad, layerError } from '../../actions/layers';
 import { onLocationChanged } from 'connected-react-router';
 import { ActionsObservable } from 'redux-observable';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 describe('widgets Epics', () => {
     it('clearWidgetsOnLocationChange triggers CLEAR_WIDGETS on LOCATION_CHANGE', (done) => {
@@ -399,7 +399,7 @@ describe('widgets Epics', () => {
             expect(actions.length).toBe(0);
             done();
         };
-        updateLayerOnLayerPropertiesChange(new ActionsObservable(Rx.Observable.of(action)), {getState: () => state})
+        updateLayerOnLayerPropertiesChange(new ActionsObservable(Observable.of(action)), {getState: () => state})
             .toArray()
             .subscribe(checkActions);
     });
@@ -495,7 +495,7 @@ describe('widgets Epics', () => {
             expect(actions.length).toBe(0);
             done();
         };
-        updateLayerOnLoadingErrorChange(new ActionsObservable(Rx.Observable.of(action)), {getState: () => state})
+        updateLayerOnLoadingErrorChange(new ActionsObservable(Observable.of(action)), {getState: () => state})
             .toArray()
             .subscribe(checkActions);
     });

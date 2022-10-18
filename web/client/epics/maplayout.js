@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
 */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import {UPDATE_DOCK_PANELS, updateMapLayout, FORCE_UPDATE_MAP_LAYOUT} from '../actions/maplayout';
 import {TOGGLE_CONTROL, SET_CONTROL_PROPERTY, SET_CONTROL_PROPERTIES, setControlProperty} from '../actions/controls';
@@ -63,15 +63,15 @@ export const updateMapLayoutEpic = (action$, store) =>
         FORCE_UPDATE_MAP_LAYOUT
     )
         .switchMap(() => {
-            const state = store.getState();
+            const state = store.value;
 
             if (get(state, "browser.mobile")) {
-                const bottom = isMapInfoOpen(store.getState()) ? {bottom: '50%'} : {bottom: undefined};
+                const bottom = isMapInfoOpen(store.value) ? {bottom: '50%'} : {bottom: undefined};
 
                 const boundingMapRect = {
                     ...bottom
                 };
-                return Rx.Observable.of(updateMapLayout({
+                return Observable.of(updateMapLayout({
                     boundingMapRect
                 }));
             }
@@ -99,7 +99,7 @@ export const updateMapLayoutEpic = (action$, store) =>
                 const boundingMapRect = {
                     ...bottom
                 };
-                return Rx.Observable.of(updateMapLayout({
+                return Observable.of(updateMapLayout({
                     ...height,
                     boundingMapRect
                 }));
@@ -147,7 +147,7 @@ export const updateMapLayoutEpic = (action$, store) =>
                 }
             });
 
-            return Rx.Observable.of(updateMapLayout({
+            return Observable.of(updateMapLayout({
                 ...boundingMapRect,
                 ...transform,
                 ...height,
@@ -170,7 +170,7 @@ export const updateActiveDockEpic = (action$, store) =>
             control, property, properties = [],
             type, action}) => {
             let assertion = false;
-            const state = store.getState();
+            const state = store.value;
             const controlState = state?.controls[control]?.enabled;
             switch (type) {
             case UPDATE_DOCK_PANELS:
@@ -190,7 +190,7 @@ export const updateActiveDockEpic = (action$, store) =>
             name, action, location
         }) => {
             const actions = [];
-            const state = store.getState();
+            const state = store.value;
             const panelName = name ?? control;
             const dockList = dockPanelsSelector(state);
             const isLeft = location === 'left' || dockList.left.includes(panelName);
@@ -204,7 +204,7 @@ export const updateActiveDockEpic = (action$, store) =>
                     if (i !== panelName && state?.controls[i]?.enabled) actions.push(setControlProperty(i, 'enabled', null));
                 });
             }
-            return Rx.Observable.from(actions);
+            return Observable.from(actions);
         });
 
 export default {

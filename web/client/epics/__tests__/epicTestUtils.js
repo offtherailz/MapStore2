@@ -1,4 +1,4 @@
-import Rx, {Subject, Observable} from "rxjs";
+import {Subject, Observable} from "rxjs";
 import 'rxjs/add/observable/from';
 import { isFunction } from 'lodash';
 import { ActionsObservable, combineEpics } from 'redux-observable';

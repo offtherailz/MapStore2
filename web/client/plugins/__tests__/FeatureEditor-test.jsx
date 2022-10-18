@@ -29,7 +29,7 @@ describe('FeatureEditor Plugin', () => {
         ReactDOM.render(<Plugin/>, document.getElementById("container"));
         waitFor(() => expect(document.querySelector('.feature-grid-container')).toBeTruthy())
             .then(() => {
-                const state = store.getState().featuregrid;
+                const state = store.value.featuregrid;
                 expect(state.virtualScroll).toBe(true);
                 done();
             });
@@ -45,7 +45,7 @@ describe('FeatureEditor Plugin', () => {
 
         waitFor(() => expect(document.querySelector('.feature-grid-container')).toBeTruthy())
             .then(() => {
-                const state = store.getState().featuregrid;
+                const state = store.value.featuregrid;
                 expect(state.virtualScroll).toBeFalsy();
                 expect(state.editingAllowedRoles).toEqual(props.editingAllowedRoles);
                 expect(state.maxStoredPages).toBe(props.maxStoredPages);
@@ -70,17 +70,17 @@ describe('FeatureEditor Plugin', () => {
         ReactDOM.render(<Plugin {...props}/>, document.getElementById("container"));
         waitFor(() => expect(document.querySelector('.feature-grid-container')).toBeTruthy())
             .then(() => {
-                const state = store.getState().featuregrid;
+                const state = store.value.featuregrid;
                 expect(state.virtualScroll).toBeFalsy();
                 expect(state.editingAllowedRoles).toEqual(props.editingAllowedRoles);
                 expect(state.maxStoredPages).toBe(props.maxStoredPages);
                 ReactDOM.render(<Plugin {...props2}/>, document.getElementById("container"));
-                const state2 = store.getState().featuregrid;
+                const state2 = store.value.featuregrid;
                 expect(state2.virtualScroll).toBeTruthy(); // the default
                 expect(state2.editingAllowedRoles).toEqual(props2.editingAllowedRoles); // changed
                 expect(state2.maxStoredPages).toBe(props2.maxStoredPages);
                 ReactDOM.render(<Plugin {...props3}/>, document.getElementById("container"));
-                const state3 = store.getState().featuregrid;
+                const state3 = store.value.featuregrid;
                 expect(state2.editingAllowedRoles === state3.editingAllowedRoles).toBeTruthy(); // no double call
                 done();
             });

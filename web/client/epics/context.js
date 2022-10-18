@@ -40,11 +40,11 @@ function ContextError(error) {
  *
  * @param {String} id context resource identifier
  * @param {Object} session optional session to integrate with the context configuration
- * @param {Function} getState state extraction function
+ * @param {Function} store state extraction function
  *
  * @returns {Observable} context configuration flow
  */
-const createContextFlow = (id, session = {}, getState) =>
+const createContextFlow = (id, session = {}, store) =>
     (id !== "default"
         ? getResource(id)
             // TODO: setContext should put in ConfigUtils some variables
@@ -53,7 +53,7 @@ const createContextFlow = (id, session = {}, getState) =>
         : Observable.of(
             setContext({
                 plugins: {
-                    desktop: pluginsSelectorCreator("desktop")(getState())
+                    desktop: pluginsSelectorCreator("desktop")(store.value)
                 }
             }) // TODO: select mobile if mobile browser
         )
@@ -82,11 +82,11 @@ const createMapFlow = (mapId = 'new', mapConfig, session, action$) => {
     );
 };
 
-const errorToMessageId = (name, e, getState = () => {}) => {
+const errorToMessageId = (name, e, store) => {
     let message = `context.errors.${name}.unknownError`;
     if (e.status === 403) {
         message = `context.errors.${name}.pleaseLogin`;
-        if (isLoggedIn(getState())) {
+        if (isLoggedIn(store.value)) {
             message = `context.errors.${name}.notAccessible`;
         }
     } if (e.status === 404) {
@@ -101,16 +101,16 @@ const errorToMessageId = (name, e, getState = () => {}) => {
  * @param {String} mapId current map identifier, if any
  * @param {String} contextName name of the context configuration to load
  * @param {Observable} action$ stream of actions
- * @param {Function} getState state extraction function
+ * @param {Function} store state extraction function
  *
  * @returns {Observable} flow to load the current context (with session, if enabled)
  */
-const createSessionFlow = (mapId, contextName, action$, getState) => {
+const createSessionFlow = (mapId, contextName, action$, store) => {
     return Observable.forkJoin(
         getResourceIdByName('CONTEXT', contextName),
         (mapId ? Observable.of(null) : getResourceDataByName('CONTEXT', contextName))
     ).flatMap(([id, data]) => {
-        const userName = userSelector(getState())?.name;
+        const userName = userSelector(store.value)?.name;
         return Observable.of(loadUserSession(buildSessionName(id, mapId, userName))).merge(
             action$.ofType(USER_SESSION_LOADED).take(1).switchMap(({session}) => {
                 const mapSession = session?.map && {
@@ -121,8 +121,8 @@ const createSessionFlow = (mapId, contextName, action$, getState) => {
                 };
                 return Observable.merge(
                     Observable.of(clearMapTemplates()),
-                    createContextFlow(id, contextSession, getState).catch(e => {throw new ContextError(e); }),
-                    createMapFlow(mapId, data && data.mapConfig, mapSession, action$, getState).catch(e => { throw new MapError(e); }),
+                    createContextFlow(id, contextSession, store).catch(e => {throw new ContextError(e); }),
+                    createMapFlow(mapId, data && data.mapConfig, mapSession, action$, store).catch(e => { throw new MapError(e); }),
                     Observable.of(setUserSession(session)),
                     Observable.of(userSessionStartSaving())
                 );
@@ -136,17 +136,17 @@ const createSessionFlow = (mapId, contextName, action$, getState) => {
  * @param {observable} action$ stream of actions
  * @param {object} store
  */
-export const loadContextAndMap = (action$, { getState = () => { } } = {}) =>
+export const loadContextAndMap = (action$, store) =>
     action$.ofType(LOAD_CONTEXT).switchMap(({ mapId, contextName }) => {
-        const sessionsEnabled = userSessionEnabledSelector(getState());
+        const sessionsEnabled = userSessionEnabledSelector(store.value);
         const flow = sessionsEnabled
-            ? createSessionFlow(mapId, contextName, action$, getState)
+            ? createSessionFlow(mapId, contextName, action$, store)
             : Observable.merge(
                 Observable.of(clearMapTemplates()),
                 getResourceIdByName('CONTEXT', contextName)
-                    .switchMap(id => createContextFlow(id, null, getState)).catch(e => {throw new ContextError(e); }),
+                    .switchMap(id => createContextFlow(id, null, store)).catch(e => {throw new ContextError(e); }),
                 (mapId ? Observable.of(null) : getResourceDataByName('CONTEXT', contextName))
-                    .switchMap(data => createMapFlow(mapId, data && data.mapConfig, null, action$, getState)).catch(e => { throw new MapError(e); })
+                    .switchMap(data => createMapFlow(mapId, data && data.mapConfig, null, action$, store)).catch(e => { throw new MapError(e); })
             );
         return flow
             // if everything went right, trigger loadFinished
@@ -157,7 +157,7 @@ export const loadContextAndMap = (action$, { getState = () => { } } = {}) =>
                     loading(true, "loading"),
                     [loading(false, "loading")],
                     e => {
-                        const messageId = errorToMessageId(e.name, e.originalError, getState);
+                        const messageId = errorToMessageId(e.name, e.originalError, store);
                         // prompt login should be triggered here
                         return Observable.of(contextLoadError({ error: {...e.originalError, messageId} }) );
                     }

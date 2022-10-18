@@ -135,18 +135,18 @@ const mapFlowWithOverride = (configName, mapId, config, mapInfo, state, override
 export const loadMapConfigAndConfigureMap = (action$, store) =>
     action$.ofType(LOAD_MAP_CONFIG)
         .switchMap(({configName, mapId, config, mapInfo, overrideConfig}) => {
-            const sessionsEnabled = userSessionEnabledSelector(store.getState());
+            const sessionsEnabled = userSessionEnabledSelector(store.value);
             if (overrideConfig || !sessionsEnabled) {
-                return mapFlowWithOverride(configName, mapId, config, mapInfo, store.getState(), overrideConfig);
+                return mapFlowWithOverride(configName, mapId, config, mapInfo, store.value, overrideConfig);
             }
-            const userName = userSelector(store.getState())?.name;
+            const userName = userSelector(store.value)?.name;
             return Observable.of(loadUserSession(buildSessionName(null, mapId, userName))).merge(
                 action$.ofType(USER_SESSION_LOADED).switchMap(({session}) => {
                     const mapSession = session?.map && {
                         map: session.map
                     };
                     return Observable.merge(
-                        mapFlowWithOverride(configName, mapId, config, mapInfo, store.getState(), mapSession),
+                        mapFlowWithOverride(configName, mapId, config, mapInfo, store.value, mapSession),
                         Observable.of(userSessionStartSaving())
                     );
                 })

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { isArray, startsWith } from 'lodash';
 
 import axios from '../libs/ajax';
@@ -43,30 +43,30 @@ export const isAutoCompleteEnabled = (action$, store) =>
             const parsedUrl = getParsedUrl(action.url, {
                 "version": "1.0.0",
                 "REQUEST": "DescribeProcess",
-                "IDENTIFIER": "gs:PagedUnique" }, authkeyParamNameSelector(store.getState()));
+                "IDENTIFIER": "gs:PagedUnique" }, authkeyParamNameSelector(store.value));
             if (parsedUrl === null) {
-                return Rx.Observable.of(setAutocompleteMode(false));
+                return Observable.of(setAutocompleteMode(false));
             }
-            return Rx.Observable.fromPromise(
+            return Observable.fromPromise(
                 axios.post(parsedUrl, null, {
                     timeout: 5000,
                     headers: {'Accept': 'application/json', 'Content-Type': 'application/xml'}
                 }).then(res => res.data)
             ).switchMap((data) => {
                 if (startsWith(data, "<ows:ExceptionReport")) {
-                    return Rx.Observable.of(setAutocompleteMode(false));
+                    return Observable.of(setAutocompleteMode(false));
                 }
-                return Rx.Observable.of(setAutocompleteMode(true));
-            }).catch(() => { return Rx.Observable.of(setAutocompleteMode(false)); });
+                return Observable.of(setAutocompleteMode(true));
+            }).catch(() => { return Observable.of(setAutocompleteMode(false)); });
         });
 export const fetchAutocompleteOptionsEpic = (action$, store) =>
     action$.ofType(UPDATE_FILTER_FIELD, UPDATE_CROSS_LAYER_FILTER_FIELD)
         .debounce((action) => {
-            return Rx.Observable.timer(action.fieldOptions.delayDebounce || 0);
+            return Observable.timer(action.fieldOptions.delayDebounce || 0);
         })
-        .filter( (action) => action.fieldName === "value" && action.fieldType === "string" && store.getState().queryform.autocompleteEnabled )
+        .filter( (action) => action.fieldName === "value" && action.fieldType === "string" && store.value.queryform.autocompleteEnabled )
         .switchMap((action) => {
-            const state = store.getState();
+            const state = store.value;
             const maxFeaturesWPS = maxFeaturesWPSSelector(state);
             let filterField = {};
             if (action.type === UPDATE_CROSS_LAYER_FILTER_FIELD) {
@@ -75,7 +75,7 @@ export const fetchAutocompleteOptionsEpic = (action$, store) =>
                 filterField = state.queryform && state.queryform.filterFields && state.queryform.filterFields.filter((f) => f.rowId === action.rowId)[0];
             }
             if (action.fieldOptions.selected === "selected") {
-                return Rx.Observable.from([
+                return Observable.from([
                     action.type === UPDATE_CROSS_LAYER_FILTER_FIELD ? updateCrossLayerFilterFieldOptions(filterField, [], 0) : updateFilterFieldOptions(filterField, [], 0)
                 ]);
             }
@@ -87,11 +87,11 @@ export const fetchAutocompleteOptionsEpic = (action$, store) =>
                 startIndex: action.fieldOptions.currentPage ? (action.fieldOptions.currentPage - 1) : 1 * maxFeaturesWPS,
                 value: action.fieldValue
             });
-            const parsedUrl = getParsedUrl(state.query.url, {"outputFormat": "json"}, authkeyParamNameSelector(store.getState()));
+            const parsedUrl = getParsedUrl(state.query.url, {"outputFormat": "json"}, authkeyParamNameSelector(store.value));
             if (parsedUrl === null) {
-                return Rx.Observable.of(setAutocompleteMode(false));
+                return Observable.of(setAutocompleteMode(false));
             }
-            return Rx.Observable.fromPromise(
+            return Observable.fromPromise(
                 axios.post(parsedUrl, data, {
                     timeout: 60000,
                     headers: {'Accept': 'application/json', 'Content-Type': 'application/xml'}
@@ -99,13 +99,13 @@ export const fetchAutocompleteOptionsEpic = (action$, store) =>
             ).switchMap((res) => {
                 let newOptions = isArray(res.values) ? res.values : [res.values];
                 let valuesCount = res.size;
-                return Rx.Observable.from(action.type === UPDATE_CROSS_LAYER_FILTER_FIELD ? [updateCrossLayerFilterFieldOptions(filterField, newOptions, valuesCount), toggleMenu(action.rowId, true, "crossLayer")] :
+                return Observable.from(action.type === UPDATE_CROSS_LAYER_FILTER_FIELD ? [updateCrossLayerFilterFieldOptions(filterField, newOptions, valuesCount), toggleMenu(action.rowId, true, "crossLayer")] :
                     [updateFilterFieldOptions(filterField, newOptions, valuesCount), toggleMenu(action.rowId, true, "filterField")] );
             })
                 .startWith(loadingFilterFieldOptions(true, filterField, action.type === UPDATE_CROSS_LAYER_FILTER_FIELD ? "crossLayer" : "filterField"))
                 .catch( () => {
                 // console.log("error: " + e + " data:" + e.data);
-                    return Rx.Observable.from([
+                    return Observable.from([
                         action.type === UPDATE_CROSS_LAYER_FILTER_FIELD ? updateCrossLayerFilterFieldOptions(filterField, [], 0) :
                             updateFilterFieldOptions(filterField, [], 0),
                         error({

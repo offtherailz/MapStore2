@@ -1,5 +1,5 @@
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import {
     RESET_CONTROLS,
@@ -46,24 +46,24 @@ const getNavigationArrowSVG = function({rotation = 0}) {
  * @param getState
  * @return {external:Observable}
  */
-export const disableGFIForStreetViewEpic = (action$, { getState = () => { } }) =>
+export const disableGFIForStreetViewEpic = (action$, store) =>
     action$
         .ofType(TOGGLE_CONTROL, SET_CONTROL_PROPERTY, SET_CONTROL_PROPERTIES)
         .filter(({control}) => control === CONTROL_NAME)
         // if the enable event happens when the mapInfo is active
-        .filter(() => enabledSelector(getState()))
-        .filter(() => mapInfoEnabledSelector(getState()))
+        .filter(() => enabledSelector(store.value))
+        .filter(() => mapInfoEnabledSelector(store.value))
         .switchMap(() => {
             // deactivate feature info
-            return Rx.Observable.of(hideMapinfoMarker(),
+            return Observable.of(hideMapinfoMarker(),
                 toggleMapInfoState()
             ).merge(
                 // restore feature info on close
                 action$.ofType(TOGGLE_CONTROL, SET_CONTROL_PROPERTY, SET_CONTROL_PROPERTIES)
                     .filter(({control}) => control === CONTROL_NAME)
                     .take(1)
-                    .filter(() => !enabledSelector(getState()))
-                    .filter(() => !mapInfoEnabledSelector(getState()))
+                    .filter(() => !enabledSelector(store.value))
+                    .filter(() => !mapInfoEnabledSelector(store.value))
                     .mapTo(toggleMapInfoState())
                     .takeUntil(action$.ofType(RESET_CONTROLS))
             );
@@ -74,16 +74,16 @@ export const disableGFIForStreetViewEpic = (action$, { getState = () => { } }) =
  * @param getState
  * @return {external:Observable}
  */
-export const streetViewSetupTearDown = (action$, {getState = ()=>{}}) =>
+export const streetViewSetupTearDown = (action$, store) =>
     action$
         .ofType(TOGGLE_CONTROL, SET_CONTROL_PROPERTY, SET_CONTROL_PROPERTIES)
         .filter(({control}) => control === CONTROL_NAME)
-        .filter(() => enabledSelector(getState()))
+        .filter(() => enabledSelector(store.value))
         .switchMap(() => {
             // setup
-            return Rx.Observable.from([
+            return Observable.from([
                 registerEventListener('click', CONTROL_NAME),
-                ...(useStreetViewDataLayerSelector(getState())
+                ...(useStreetViewDataLayerSelector(store.value)
                     ? [updateAdditionalLayer(
                         STREET_VIEW_DATA_LAYER_ID,
                         STREET_VIEW_OWNER,
@@ -92,7 +92,7 @@ export const streetViewSetupTearDown = (action$, {getState = ()=>{}}) =>
                             id: STREET_VIEW_DATA_LAYER_ID,
                             name: STREET_VIEW_DATA_LAYER_ID,
                             visibility: true,
-                            ...streetViewDataLayerSelector(getState())
+                            ...streetViewDataLayerSelector(store.value)
 
                         })]
                     : []
@@ -113,12 +113,12 @@ export const streetViewSetupTearDown = (action$, {getState = ()=>{}}) =>
                 action$
                     .ofType(TOGGLE_CONTROL, SET_CONTROL_PROPERTY, SET_CONTROL_PROPERTIES)
                     .filter(({control}) => control === CONTROL_NAME)
-                    .filter(() => !enabledSelector(getState()))
+                    .filter(() => !enabledSelector(store.value))
                     .take(1)
                     .switchMap(() => {
-                        return  Rx.Observable.from([
+                        return  Observable.from([
                             unRegisterEventListener('click', CONTROL_NAME),
-                            ...(useStreetViewDataLayerSelector(getState()) ? [removeAdditionalLayer({id: STREET_VIEW_DATA_LAYER_ID, owner: STREET_VIEW_OWNER})] : []),
+                            ...(useStreetViewDataLayerSelector(store.value) ? [removeAdditionalLayer({id: STREET_VIEW_DATA_LAYER_ID, owner: STREET_VIEW_OWNER})] : []),
                             removeAdditionalLayer({id: MARKER_LAYER_ID, owner: STREET_VIEW_OWNER})
                         ]);
                     })
@@ -132,23 +132,23 @@ export const streetViewSetupTearDown = (action$, {getState = ()=>{}}) =>
  * @param getState
  * @return {external:Observable}
  */
-export const streetViewMapClickHandler = (action$, {getState = () => {}}) => {
+export const streetViewMapClickHandler = (action$, store) => {
     return action$.ofType(CLICK_ON_MAP)
-        .filter(() => enabledSelector(getState()))
-        .filter(() => apiLoadedSelector(getState()))
+        .filter(() => enabledSelector(store.value))
+        .filter(() => apiLoadedSelector(store.value))
         .switchMap(({point}) => {
             const latLng = point.latlng;
-            return Rx.Observable
+            return Observable
                 .defer(() => getLocation(latLng))
                 .map(setLocation)
                 .catch((e) => {
                     if (e.code === "ZERO_RESULTS") {
-                        return Rx.Observable.of(
+                        return Observable.of(
                             info({title: "streetView.title", message: "streetView.messages.noDataForPosition"}) // LOCALIZE
                         );
                     }
                     console.error(e); //
-                    return Rx.Observable.of(
+                    return Observable.of(
                         error({title: "streetView.title", message: "streetView.messages.unknownError"})
                     );
                 });
@@ -161,7 +161,7 @@ export const streetViewMapClickHandler = (action$, {getState = () => {}}) => {
  * @param getState
  * @return {external:Observable}
  */
-export const streetViewSyncLayer = (action$, {getState = () => {}}) => {
+export const streetViewSyncLayer = (action$, store) => {
 
 
     const locationToFeature = (location, pov) => {
@@ -188,14 +188,14 @@ export const streetViewSyncLayer = (action$, {getState = () => {}}) => {
         };
     };
     return action$.ofType(SET_LOCATION, SET_POV).switchMap(() => {
-        const state = getState();
+        const state = store.value;
         const location = locationSelector(state);
         const pov = povSelector(state);
         if (!location) {
-            return Rx.Observable.empty();
+            return Observable.empty();
         }
-        return Rx.Observable.of(locationToFeature(location, pov)).map((feature) => {
-            const options = getStreetViewMarkerLayer(getState());
+        return Observable.of(locationToFeature(location, pov)).map((feature) => {
+            const options = getStreetViewMarkerLayer(store.value);
             return updateAdditionalLayer(
                 MARKER_LAYER_ID,
                 STREET_VIEW_OWNER,

@@ -6,7 +6,7 @@
 * LICENSE file in the root directory of this source tree.
 */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { mapPropsStream, createEventHandler } from 'recompose';
 
 import { updateResource, updateResourceAttribute } from '../../../../api/persistence';
@@ -22,7 +22,7 @@ export default mapPropsStream(props$ => {
                         id: rid,
                         name: 'detailsSettings',
                         value: JSON.stringify(resource.attributes?.detailsSettings || {})
-                    }) : Rx.Observable.of(rid))
+                    }) : Observable.of(rid))
                     .do(() => {
                         if (props) {
                             if (props.onClose) {
@@ -36,7 +36,7 @@ export default mapPropsStream(props$ => {
                             }
                         }
                     })
-                    .concat(Rx.Observable.of({ loading: false }))
+                    .concat(Observable.of({ loading: false }))
                     .startWith({ loading: true })
                     .catch(e => {
                         if (props.setErrors) {
@@ -47,7 +47,7 @@ export default mapPropsStream(props$ => {
                             props.onSaveError(e, props.errors);
                         }
 
-                        return Rx.Observable.of({
+                        return Observable.of({
                             loading: false
                         });
                     })

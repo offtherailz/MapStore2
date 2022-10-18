@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import * as Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import toBbox from 'turf-bbox';
 import pointOnSurface from '@turf/point-on-surface';
 import assign from 'object-assign';
@@ -68,7 +68,7 @@ export const searchEpic = action$ =>
         .debounceTime(250)
         .switchMap( action =>
         // create a stream of streams from array
-            Rx.Observable.from(
+            Observable.from(
                 (action.services || [ {type: "nominatim", priority: 5} ])
                 // Create an stream for each Service
                     .map((service) => {
@@ -77,9 +77,9 @@ export const searchEpic = action$ =>
                             const err = new Error("Service Missing");
                             err.msgId = "search.service_missing";
                             err.serviceType = service.type;
-                            return Rx.Observable.of(err).do((e) => {throw e; });
+                            return Observable.of(err).do((e) => {throw e; });
                         }
-                        return Rx.Observable.defer(() =>
+                        return Observable.defer(() =>
                             serviceInstance(action.searchText, service.options)
                                 .then( (response = []) => response.map(result => ({...result, __SERVICE__: service, __PRIORITY__: service.priority || 0}))
                                 ))
@@ -101,7 +101,7 @@ export const searchEpic = action$ =>
                 .concat([searchTextLoading(false)])
                 .catch(e => {
                     const err = {msgId: "search.generic_error", ...e, message: e.message, stack: e.stack};
-                    return Rx.Observable.from([searchResultError(err), searchTextLoading(false)]);
+                    return Observable.from([searchResultError(err), searchTextLoading(false)]);
                 })
         );
 
@@ -122,17 +122,17 @@ export const searchItemSelected = (action$, store) =>
     action$.ofType(TEXT_SEARCH_ITEM_SELECTED)
         .switchMap(action => {
             // itemSelectionStream --> emits actions for zoom and marker add
-            let itemSelectionStream = Rx.Observable.of(action.item)
+            let itemSelectionStream = Observable.of(action.item)
                 .concatMap((item) => {
                     if (item && item.__SERVICE__ && item.__SERVICE__.geomService) {
                         let staticFilter = generateTemplateString(item.__SERVICE__.geomService.options.staticFilter || "")(item);
                         // retrieve geometry from geomService or pass the item directly
-                        return Rx.Observable.fromPromise(
+                        return Observable.fromPromise(
                             API.Utils.getService(item.__SERVICE__.geomService.type)("", assign({}, item.__SERVICE__.geomService.options, { staticFilter }))
                                 .then(res => assign({}, item, { geometry: CoordinatesUtils.mergeToPolyGeom(res) }))
                         );
                     }
-                    return Rx.Observable.of(action.item);
+                    return Observable.of(action.item);
                 }).concatMap((item) => {
                     // check if the service has been configured to start a GetFeatureInfo request based on the item selected
                     // if so, then do it with a point inside the geometry
@@ -146,7 +146,7 @@ export const searchItemSelected = (action$, store) =>
                         const latlng = { lng: coord[0], lat: coord[1] };
                         const typeName = item.__SERVICE__.options.typeName;
                         if (coord) {
-                            const state = store.getState();
+                            const state = store.value;
                             const layerObj = typeName && getLayerFromName(state, typeName);
                             let itemId = null;
                             let filterNameList = [];
@@ -187,7 +187,7 @@ export const searchItemSelected = (action$, store) =>
             const item = action.item;
             let nestedServices = item && item.__SERVICE__ && item.__SERVICE__.then;
             // if a nested service is present, select the item and the nested service
-            let nestedServicesStream = nestedServices ? Rx.Observable.of(selectNestedService(
+            let nestedServicesStream = nestedServices ? Observable.of(selectNestedService(
                 nestedServices.map((nestedService) => ({
                     ...nestedService,
                     options: {
@@ -200,13 +200,13 @@ export const searchItemSelected = (action$, store) =>
                     placeholderMsgId: item.__SERVICE__.nestedPlaceholderMsgId && generateTemplateString(item.__SERVICE__.nestedPlaceholderMsgId || "")(item)
                 },
                 generateTemplateString(item.__SERVICE__.searchTextTemplate || "")(item)
-            )) : Rx.Observable.empty();
+            )) : Observable.empty();
 
             // if the service has a searchTextTemplate, use it to modify the search text to display
             let searchTextTemplate = item.__SERVICE__ && item.__SERVICE__.searchTextTemplate;
-            let searchTextStream = searchTextTemplate ? Rx.Observable.of(searchTextChanged(generateTemplateString(searchTextTemplate)(item))) : Rx.Observable.empty();
+            let searchTextStream = searchTextTemplate ? Observable.of(searchTextChanged(generateTemplateString(searchTextTemplate)(item))) : Observable.empty();
 
-            return Rx.Observable.of(resultsPurge()).concat(itemSelectionStream, nestedServicesStream, searchTextStream);
+            return Observable.of(resultsPurge()).concat(itemSelectionStream, nestedServicesStream, searchTextStream);
         });
 
 /**
@@ -216,7 +216,7 @@ export const textSearchShowGFIEpic = (action$, store) =>
     action$.ofType(TEXT_SEARCH_SHOW_GFI)
         .filter(({item = {}}) => !item?.__SERVICE__?.customGFI)
         .switchMap(({item}) => {
-            const state = store.getState();
+            const state = store.value;
             const typeName = item?.__SERVICE__?.options?.typeName;
             const layerObj = typeName && getLayerFromName(state, typeName);
             const bbox = item.bbox || item.properties.bbox || toBbox(item);
@@ -225,7 +225,7 @@ export const textSearchShowGFIEpic = (action$, store) =>
             const itemId = item.id;
             return !!coord &&
                 showGFIForService(item?.__SERVICE__) && layerIsVisibleForGFI(layerObj, item?.__SERVICE__) ?
-                Rx.Observable.of(
+                Observable.of(
                     ...(item?.__SERVICE__?.forceSearchLayerVisibility && layerObj ? [changeLayerProperties(layerObj.id, {visibility: true})] : []),
                     featureInfoClick({ latlng }, typeName, [typeName], {
                         [typeName]: {
@@ -251,14 +251,14 @@ export const textSearchShowGFIEpic = (action$, store) =>
                             .take(1)
                             .mapTo(zoomToExtent([bbox[0], bbox[1], bbox[2], bbox[3]], "EPSG:4326", item?.__SERVICE__?.options?.maxZoomLevel || 21))
                             .takeUntil(action$.ofType(EXCEPTIONS_FEATURE_INFO, ERROR_FEATURE_INFO))
-                        : Rx.Observable.empty()
+                        : Observable.empty()
                 )
                 // disable temporary centerToMarker when this operation happens, because we have the zoom
-                    .let(stream$ => bbox && centerToMarkerSelector(store.getState())
-                        ? stream$.startWith(updateCenterToMarker(false)).concat(Rx.Observable.of(updateCenterToMarker(true)))
+                    .let(stream$ => bbox && centerToMarkerSelector(store.value)
+                        ? stream$.startWith(updateCenterToMarker(false)).concat(Observable.of(updateCenterToMarker(true)))
                         : stream$
                     )
-                : Rx.Observable.empty();
+                : Observable.empty();
         });
 
 /**
@@ -277,8 +277,8 @@ export const zoomAndAddPointEpic = (action$, store) =>
                 }
             };
 
-            const state = store.getState();
-            return Rx.Observable.from([
+            const state = store.value;
+            return Observable.from([
                 updateAdditionalLayer("search", "search", 'overlay', {
                     features: [feature],
                     type: "vector",
@@ -299,14 +299,14 @@ export const zoomAndAddPointEpic = (action$, store) =>
 export const searchOnStartEpic = (action$, store) =>
     action$.ofType(SEARCH_LAYER_WITH_FILTER)
         .switchMap(({layer: name, "cql_filter": cqlFilter}) => {
-            const state = store.getState();
+            const state = store.value;
             // if layer is NOT queriable and visible then show error notification
             if (queryableLayersSelector(state).filter(l => l.name === name ).length === 0) {
-                return Rx.Observable.of(nonQueriableLayerError());
+                return Observable.of(nonQueriableLayerError());
             }
             const layer = getLayerFromName(state, name);
             if (layer && cqlFilter) {
-                return Rx.Observable.defer(() =>
+                return Observable.defer(() =>
                 // take geoserver url from layer
                     getFeatureSimple(layer.url, {
                         maxFeatures: 1,
@@ -323,14 +323,14 @@ export const searchOnStartEpic = (action$, store) =>
                         const latlng = {lng: coord[0], lat: coord[1] };
 
                         if (coord) { // trigger get feature info
-                            return Rx.Observable.of(featureInfoClick({latlng}, typeName, [typeName], {[typeName]: {cql_filter: cqlFilter}}), showMapinfoMarker());
+                            return Observable.of(featureInfoClick({latlng}, typeName, [typeName], {[typeName]: {cql_filter: cqlFilter}}), showMapinfoMarker());
                         }
-                        return Rx.Observable.empty();
+                        return Observable.empty();
                     }).catch(() => {
-                        return Rx.Observable.of(serverError());
+                        return Observable.of(serverError());
                     });
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         });
 
 /**
@@ -344,6 +344,6 @@ export const delayedSearchEpic = (action$) =>
                 .filter(({layer}) => layer.name === name)
                 .take(1)
                 .switchMap(() => {
-                    return Rx.Observable.of(searchLayerWithFilter({layer: name, "cql_filter": cqlFilter}));
+                    return Observable.of(searchLayerWithFilter({layer: name, "cql_filter": cqlFilter}));
                 });
         });

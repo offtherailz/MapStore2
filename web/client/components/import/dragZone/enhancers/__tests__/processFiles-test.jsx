@@ -9,7 +9,7 @@
 import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { compose, createSink, mapPropsStream, setObservableConfig } from 'recompose';
+import { compose, createSink, mapPropsStream } from 'recompose';
 
 
 import processFiles from '../processFiles';
@@ -23,7 +23,6 @@ import {
     getShapeFile,
     getUnsupportedMapFile
 } from './testData';
-
 
 
 describe('processFiles enhancer', () => {

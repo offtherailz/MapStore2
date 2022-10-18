@@ -8,7 +8,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { values } from 'lodash';
 import { compose, branch, withState, getContext, lifecycle } from 'recompose';
 import { Glyphicon } from 'react-bootstrap';
@@ -27,7 +27,7 @@ const searchContexts = ({searchText, opts}) => getResources({
     query: searchText || '*',
     category: 'CONTEXT',
     options: opts
-}).switchMap(response => Rx.Observable.of({
+}).switchMap(response => Observable.of({
     items: response.totalCount === 1 ? [response.results] : values(response.results),
     total: response.totalCount,
     loading: false

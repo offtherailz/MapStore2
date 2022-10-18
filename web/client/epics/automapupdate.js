@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
 */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { refreshLayers, LAYERS_REFRESHED, LAYERS_REFRESH_ERROR } from '../actions/layers';
 import { MAP_CONFIG_LOADED, MAP_INFO_LOADED } from '../actions/config';
@@ -28,12 +28,12 @@ export const manageAutoMapUpdate = (action$, store) =>
             action$.ofType(MAP_INFO_LOADED)
                 .take(1)
                 .switchMap((mapInfoLoaded) => {
-                    const version = mapVersionSelector(store.getState());
+                    const version = mapVersionSelector(store.value);
                     const canEdit = mapInfoLoaded.info && mapInfoLoaded.info.canEdit || false;
                     let layers = mapConfigLoaded.config && mapConfigLoaded.config.map && mapConfigLoaded.config.map.layers && mapConfigLoaded.config.map.layers.filter((l) => l.type === 'wms' && l.group !== 'background') || [];
-                    const options = mapUpdateOptions(store.getState());
+                    const options = mapUpdateOptions(store.value);
                     return version < 2 && canEdit ?
-                        Rx.Observable.of(warning({
+                        Observable.of(warning({
                             title: "notification.warning",
                             message: "notification.updateOldMap",
                             action: {
@@ -61,9 +61,9 @@ export const manageAutoMapUpdate = (action$, store) =>
                                             autoDismiss: 6,
                                             position: "tc"
                                         });
-                                    return Rx.Observable.of(notification, toggleControl('save'), updateVersion(2));
+                                    return Observable.of(notification, toggleControl('save'), updateVersion(2));
                                 }))
-                        : Rx.Observable.empty();
+                        : Observable.empty();
                 }));
 
 /**

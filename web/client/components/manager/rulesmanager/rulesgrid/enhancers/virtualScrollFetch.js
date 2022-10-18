@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { loadRules } from '../../../../../observables/rulesmanager';
 const sameFilter = ({filters: f1}, {filters: f2}) => f1 === f2;
@@ -30,7 +30,7 @@ export default page$ => props$ => props$.distinctUntilChanged((oProps, nProps) =
                 ...updatePages(newPages.pages, pagesRequest, maxStoredPages)
             }))
             .do(() => setLoading(false))
-            .catch((e) => Rx.Observable.of({
+            .catch((e) => Observable.of({
                 error: e
             }).do(() => onLoadError({
                 title: "rulesmanager.errorTitle",

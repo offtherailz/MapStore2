@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import React from 'react';
-
+import {Observable} from 'rxjs';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { compose, withProps, withState, lifecycle, mapPropsStream } from 'recompose';
@@ -148,9 +148,9 @@ export default compose(
         }
     }),
     // expand icons when one widget has been collapsed, collapse icons when no items collapsed anymore
-    mapPropsStream(props$ => props$
+    mapPropsStream(props$ => Observable.from(props$)
         .merge(
-            props$
+            Observable.from(props$)
                 .distinctUntilKeyChanged('hasCollapsedWidgets')
                 .do(({ setExpanded = () => { }, hasCollapsedWidgets }) => setExpanded(hasCollapsedWidgets))
                 .ignoreElements()

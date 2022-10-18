@@ -7,7 +7,7 @@
  */
 
 import { branch, compose, mapPropsStream, withStateHandlers } from 'recompose';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import GeoStoreDAO from '../../../../api/GeoStoreDAO';
 
@@ -21,12 +21,12 @@ const retrieveGroups = (API) =>
             props$
                 .take(1)
                 .switchMap(({ user }) =>
-                    Rx.Observable.defer(() => API.getAvailableGroups(user))
+                    Observable.defer(() => API.getAvailableGroups(user))
                         .map(availableGroups => ({ availableGroups }))
                         .startWith({ loading: true })
                 )
                 .startWith({})
-                .catch( () => Rx.Observable.of({})),
+                .catch( () => Observable.of({})),
             (props, overrides) => ({
                 ...props,
                 ...overrides
@@ -49,12 +49,12 @@ const retrievePermission = (API) =>
                 .pluck('id')
                 .distinctUntilChanged()
                 .switchMap(id =>
-                    Rx.Observable.defer(() => API.getResourcePermissions(id))
+                    Observable.defer(() => API.getResourcePermissions(id))
                         .map(rules => ({ rules }))
                         .startWith({ loading: true })
                 )
                 .startWith({})
-                .catch(() => Rx.Observable.of({})),
+                .catch(() => Observable.of({})),
             (props, overrides) => ({
                 ...props,
                 ...overrides

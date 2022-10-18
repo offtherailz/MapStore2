@@ -10,7 +10,7 @@
  * Get data all in one request.
  * @param {Observable} props$ stream of props
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { getLayerJSONFeature } from '../../../../observables/wfs';
 import { getAttributesNames } from "../../../../utils/FeatureGridUtils";
@@ -39,7 +39,7 @@ export default props$ => props$.switchMap(
                     totalFeatures: data.totalFeatures
                 }
             }))
-            .catch((e) => Rx.Observable.of({
+            .catch((e) => Observable.of({
                 loading: false,
                 error: e,
                 data: []

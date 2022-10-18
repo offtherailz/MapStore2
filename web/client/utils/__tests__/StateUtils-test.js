@@ -15,7 +15,7 @@ import {
     createStoreManager
 } from '../StateUtils';
 import {createEpicMiddleware} from "redux-observable";
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import {REDUCERS_LOADED, reducersLoaded} from "../../actions/storemanager";
 
@@ -71,7 +71,7 @@ describe('StateUtils', () => {
     });
 
     it('createStore with rootEpic', () => {
-        const spy1 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Rx.Observable.empty()));
+        const spy1 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Observable.empty()));
         const store = createStore({ rootEpic: spy1 });
         expect(store).toExist();
         expect(store.dispatch).toExist();
@@ -80,7 +80,7 @@ describe('StateUtils', () => {
     });
 
     it('createStore with epics list', () => {
-        const spy1 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Rx.Observable.empty()));
+        const spy1 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Observable.empty()));
         const store = createStore({ epics: {myepic: spy1} });
         expect(store).toExist();
         expect(store.dispatch).toExist();
@@ -129,8 +129,8 @@ describe('StateUtils', () => {
     });
 
     it('updateStore with rootEpic', () => {
-        const spy1 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Rx.Observable.empty()));
-        const spy2 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Rx.Observable.empty()));
+        const spy1 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Observable.empty()));
+        const spy2 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Observable.empty()));
         const store = createStore({ rootEpic: spy1 });
         expect(store).toExist();
         expect(store.dispatch).toExist();
@@ -144,8 +144,8 @@ describe('StateUtils', () => {
         expect(spy1.calls.length).toBe(beforeUpdateCalls);
     });
     it('updateStore with epics', () => {
-        const spy1 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Rx.Observable.empty()));
-        const spy2 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Rx.Observable.empty()));
+        const spy1 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Observable.empty()));
+        const spy2 = expect.createSpy().andCall((actions$) => actions$.ofType("fake").switchMap(() => Observable.empty()));
         const store = createStore({ epics: { myepic: spy1 } });
         expect(store).toExist();
         expect(store.dispatch).toExist();
@@ -175,12 +175,12 @@ describe('StateUtils', () => {
                 epic1: (action$) =>
                     action$.ofType('TEST')
                         .switchMap(() => {
-                            return Rx.Observable.empty();
+                            return Observable.empty();
                         }),
                 epic2: (action$) =>
                     action$.ofType('TEST')
                         .switchMap(() => {
-                            return Rx.Observable.empty();
+                            return Observable.empty();
                         })
             });
         });
@@ -205,7 +205,7 @@ describe('StateUtils', () => {
                 epic1: (action$) =>
                     action$.ofType('TEST')
                         .switchMap(() => {
-                            return Rx.Observable.empty();
+                            return Observable.empty();
                         })
             });
             const listenedBy = storeManager.getEpicsRegistry().epicsListenedBy;
@@ -218,7 +218,7 @@ describe('StateUtils', () => {
                 epic1: (action$) =>
                     action$.ofType('TEST')
                         .switchMap(() => {
-                            return Rx.Observable.empty();
+                            return Observable.empty();
                         })
             });
             const groupedByModule = storeManager.getEpicsRegistry().groupedByModule;
@@ -232,7 +232,7 @@ describe('StateUtils', () => {
                 epic1: (action$) =>
                     action$.ofType('TEST')
                         .switchMap(() => {
-                            return Rx.Observable.empty();
+                            return Observable.empty();
                         })
             });
             const addedEpics = storeManager.getEpicsRegistry().addedEpics;
@@ -245,7 +245,7 @@ describe('StateUtils', () => {
                 epic1: (action$) =>
                     action$.ofType('TEST')
                         .switchMap(() => {
-                            return Rx.Observable.empty();
+                            return Observable.empty();
                         })
             });
             storeManager.muteEpics('testPlugin');
@@ -259,7 +259,7 @@ describe('StateUtils', () => {
                 epic1: (action$) =>
                     action$.ofType('TEST')
                         .switchMap(() => {
-                            return Rx.Observable.empty();
+                            return Observable.empty();
                         })
             });
             storeManager.muteEpics('testPlugin');

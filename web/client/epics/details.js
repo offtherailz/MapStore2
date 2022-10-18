@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { find } from 'lodash';
 
 import {
@@ -33,18 +33,18 @@ import { basicError } from '../utils/NotificationUtils';
 export const fetchDataForDetailsPanel = (action$, store) =>
     action$.ofType(OPEN_DETAILS_PANEL)
         .switchMap(() => {
-            const state = store.getState();
+            const state = store.value;
             const detailsUri = mapInfoDetailsUriFromIdSelector(state);
             const detailsId = getIdFromUri(detailsUri);
-            return Rx.Observable.fromPromise(GeoStoreApi.getData(detailsId)
+            return Observable.fromPromise(GeoStoreApi.getData(detailsId)
                 .then(data => data))
                 .switchMap((details) => {
-                    return Rx.Observable.of(
+                    return Observable.of(
                         updateDetails(details)
                     );
                 }).startWith(toggleControl("details", "enabled"))
                 .catch(() => {
-                    return Rx.Observable.of(
+                    return Observable.of(
                         basicError({message: "maps.feedback.errorFetchingDetailsOfMap"}),
                         updateDetails(NO_DETAILS_AVAILABLE)
                     );
@@ -53,7 +53,7 @@ export const fetchDataForDetailsPanel = (action$, store) =>
 
 export const closeDetailsPanelEpic = (action$) =>
     action$.ofType(CLOSE_DETAILS_PANEL)
-        .switchMap(() => Rx.Observable.from( [
+        .switchMap(() => Observable.from( [
             setControlProperty("details", "enabled", false)
         ])
         );
@@ -61,11 +61,11 @@ export const closeDetailsPanelEpic = (action$) =>
 export const storeDetailsInfoEpic = (action$, store) =>
     action$.ofType(MAP_INFO_LOADED)
         .switchMap(() => {
-            const mapId = mapIdSelector(store.getState());
-            const isTutorialRunning = store.getState()?.tutorial?.run;
+            const mapId = mapIdSelector(store.value);
+            const isTutorialRunning = store.value?.tutorial?.run;
             return !mapId ?
-                Rx.Observable.empty() :
-                Rx.Observable.fromPromise(
+                Observable.empty() :
+                Observable.fromPromise(
                     GeoStoreApi.getResourceAttributes(mapId)
                 )
                     .switchMap((attributes) => {
@@ -74,7 +74,7 @@ export const storeDetailsInfoEpic = (action$, store) =>
                         let detailsSettings = {};
 
                         if (!details || details.value === EMPTY_RESOURCE_VALUE) {
-                            return Rx.Observable.empty();
+                            return Observable.empty();
                         }
 
                         try {
@@ -83,7 +83,7 @@ export const storeDetailsInfoEpic = (action$, store) =>
                             detailsSettings = {};
                         }
 
-                        return Rx.Observable.of(
+                        return Observable.of(
                             detailsLoaded(mapId, details.value, detailsSettings),
                             ...(detailsSettings.showAtStartup && !isTutorialRunning ? [openDetailsPanel()] : [])
                         );

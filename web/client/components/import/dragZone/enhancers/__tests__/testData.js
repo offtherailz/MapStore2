@@ -1,6 +1,6 @@
 import axios from 'axios';
 // const b64toBlob = require('b64-to-blob');
-import * as Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 const SHP_FILE_URL = 'base/web/client/test-resources/caput-mundi/caput-mundi.zip';
 const ANNOTATION_GEO_JSON_FILE_URL = 'base/web/client/test-resources/caput-mundi/caput-mundi.config';
@@ -12,7 +12,7 @@ const MAP_FILE = 'base/web/client/test-resources/map.config';
 const UNSUPPORTED_MAP_FILE = 'base/web/client/test-resources/unsupportedMap.config';
 
 export const getFile = (url, fileName = "file") =>
-    Rx.Observable.defer( () => axios.get(url, {
+    Observable.defer( () => axios.get(url, {
         responseType: 'arraybuffer'
     }))
         .map( res => {

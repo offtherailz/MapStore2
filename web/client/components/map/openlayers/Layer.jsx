@@ -11,7 +11,7 @@ import React from 'react';
 import Layers from '../../../utils/openlayers/Layers';
 import {normalizeSRS, reprojectBbox, getExtentFromNormalized, isBboxCompatible, getPolygonFromExtent} from '../../../utils/CoordinatesUtils';
 import assign from 'object-assign';
-import Rx from 'rxjs';
+import {Subject} from 'rxjs';
 import isNumber from 'lodash/isNumber';
 import isArray from 'lodash/isArray';
 import omit from 'lodash/omit';
@@ -234,8 +234,8 @@ export default class OpenlayersLayer extends React.Component {
         if (this.isValid()) {
             this.props.map.addLayer(this.layer);
 
-            const tileLoadEndStream$ = new Rx.Subject();
-            const tileStopStream$ = new Rx.Subject();
+            const tileLoadEndStream$ = new Subject();
+            const tileStopStream$ = new Subject();
 
             if (options.handleClickOnLayer) {
                 this.layer.set("handleClickOnLayer", true);
@@ -280,8 +280,8 @@ export default class OpenlayersLayer extends React.Component {
             this.tileLoadEndStream$ = tileLoadEndStream$;
             this.tileStopStream$ = tileStopStream$;
 
-            const imageLoadEndStream$ = new Rx.Subject();
-            const imageStopStream$ = new Rx.Subject();
+            const imageLoadEndStream$ = new Subject();
+            const imageStopStream$ = new Subject();
 
             this.layer.getSource().on('imageloadstart', () => {
                 if (this.imagestoload === 0) {

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { get, find, findIndex, pick, toPairs, castArray } from 'lodash';
 import { saveAs } from 'file-saver';
 import { parseString } from 'xml2js';
@@ -182,11 +182,11 @@ const restoreExportDataResultsFromCookie = (state) => {
 
         if (userExportDataResultsCookie) {
             const { results } = JSON.parse(decodeURIComponent(userExportDataResultsCookie.split('=')[1]));
-            return Rx.Observable.of(setExportDataResults(results.filter(({status}) => status !== 'pending')));
+            return Observable.of(setExportDataResults(results.filter(({status}) => status !== 'pending')));
         }
     }
 
-    return Rx.Observable.empty();
+    return Observable.empty();
 };
 
 /*
@@ -202,9 +202,9 @@ export const checkWPSAvailabilityEpic = (action$, store) => action$
     .ofType(CHECK_WPS_AVAILABILITY)
     .switchMap(({url, selectedService}) => {
         return describeProcess(url, 'gs:DownloadEstimator,gs:Download')
-            .switchMap(response => Rx.Observable.defer(() => new Promise((resolve, reject) => parseString(response.data, {tagNameProcessors: [stripPrefix]}, (err, res) => err ? reject(err) : resolve(res)))))
+            .switchMap(response => Observable.defer(() => new Promise((resolve, reject) => parseString(response.data, {tagNameProcessors: [stripPrefix]}, (err, res) => err ? reject(err) : resolve(res)))))
             .flatMap(xmlObj => {
-                const state = store.getState();
+                const state = store.value;
                 const layer = getSelectedLayer(state);
                 const ids = [
                     xmlObj?.ProcessDescriptions?.ProcessDescription?.[0]?.Identifier?.[0],
@@ -213,19 +213,19 @@ export const checkWPSAvailabilityEpic = (action$, store) => action$
                 const isWpsAvailable = findIndex(ids, x => x === 'gs:DownloadEstimator') > -1 && findIndex(ids, x => x === 'gs:Download') > -1;
                 const isWfsAvailable = layer.search?.url;
                 const shouldSelectWps = isWpsAvailable && (selectedService === 'wps' || !isWfsAvailable);
-                return Rx.Observable.of(
+                return Observable.of(
                     setService(shouldSelectWps ? 'wps' : 'wfs'),
                     setWPSAvailability(isWpsAvailable),
                     checkingWPSAvailability(false)
                 );
             })
-            .catch(() => Rx.Observable.of(setService('wfs'), setWPSAvailability(false), checkingWPSAvailability(false)))
+            .catch(() => Observable.of(setService('wfs'), setWPSAvailability(false), checkingWPSAvailability(false)))
             .startWith(checkingWPSAvailability(true));
     });
 export const openDownloadTool = (action$) =>
     action$.ofType(DOWNLOAD)
         .switchMap((action) => {
-            return Rx.Observable.from([
+            return Observable.from([
                 toggleControl("layerdownload"),
                 onDownloadOptionChange("singlePage", false),
                 ...(action.layer.search?.url ? [createQuery(action.layer.url, {featureTypeName: action.layer.name})] : [])
@@ -241,7 +241,7 @@ export const fetchFormatsWFSDownload = (action$) =>
         });
 export const startFeatureExportDownload = (action$, store) =>
     action$.ofType(DOWNLOAD_FEATURES).switchMap(action => {
-        const state = store.getState();
+        const state = store.value;
         const {virtualScroll = false} = state.featuregrid || {};
         const service = serviceSelector(state);
         const layer = getSelectedLayer(state);
@@ -280,7 +280,7 @@ export const startFeatureExportDownload = (action$, store) =>
                     layerFilter,
                     options: {
                         pagination: !virtualScroll && get(action, "downloadOptions.singlePage") ? action.filterObj && action.filterObj.pagination : null,
-                        sortOptions: getDefaultSortOptions(getFirstAttribute(store.getState())),
+                        sortOptions: getDefaultSortOptions(getFirstAttribute(store.value)),
                         propertyNames: action.downloadOptions.propertyName ? [...action.downloadOptions.propertyName,
                             extractGeometryAttributeName(layerDescribeSelector(state, layer.name))] : null
                     }
@@ -297,7 +297,7 @@ export const startFeatureExportDownload = (action$, store) =>
                 saveAs(new Blob([data], { type: headers && headers["content-type"] }), getFileName(action));
             })
             .map(() => onDownloadFinished())
-            .catch((e) => Rx.Observable.of(
+            .catch((e) => Observable.of(
                 error({
                     error: e,
                     title: "layerdownload.error.title",
@@ -364,14 +364,14 @@ export const startFeatureExportDownload = (action$, store) =>
                 .takeUntil(action$.ofType(REMOVE_EXPORT_DATA_RESULT).filter(({id}) => id === newResult.id).take(1))
                 .flatMap((data) => {
                     if (data === 'DownloadEstimatorSuccess') {
-                        return Rx.Observable.of(
+                        return Observable.of(
                             addExportDataResult({...newResult, startTime: (new Date()).getTime()}),
                             showInfoBubbleMessage('layerdownload.exportResultsMessages.newExport'),
                             onDownloadFinished(),
                             toggleControl('layerdownload', 'enabled')
                         );
                     }
-                    return Rx.Observable.of(...(data && data.length > 0 && data[0].href ? [
+                    return Observable.of(...(data && data.length > 0 && data[0].href ? [
                         updateExportDataResult(newResult.id, {status: 'completed', result: data[0].href}),
                         showInfoBubbleMessage('layerdownload.exportResultsMessages.exportSuccess', {layerTitle: getLayerTitle(layer, currentLocale)}, 'success')
                     ] : [
@@ -379,7 +379,7 @@ export const startFeatureExportDownload = (action$, store) =>
                         showInfoBubbleMessage('layerdownload.exportResultsMessages.exportFailure', {layerTitle: getLayerTitle(layer, currentLocale)}, 'danger')
                     ]));
                 })
-                .catch(e => Rx.Observable.of(...(e.message && e.message.indexOf('DownloadEstimator') > -1 ?
+                .catch(e => Observable.of(...(e.message && e.message.indexOf('DownloadEstimator') > -1 ?
                     [error({
                         error: e,
                         title: 'layerdownload.error.downloadEstimatorTitle',
@@ -396,23 +396,23 @@ export const startFeatureExportDownload = (action$, store) =>
 
 export const closeExportDownload = (action$, store) =>
     action$.ofType(TOGGLE_CONTROL)
-        .filter((a) => a.control === "queryPanel" && !queryPanelSelector(store.getState()) && wfsDownloadSelector(store.getState()))
-        .switchMap( () => Rx.Observable.of(toggleControl("layerdownload")));
+        .filter((a) => a.control === "queryPanel" && !queryPanelSelector(store.value) && wfsDownloadSelector(store.value))
+        .switchMap( () => Observable.of(toggleControl("layerdownload")));
 
 export const showInfoBubbleMessageEpic = (action$) => action$
     .ofType(SHOW_INFO_BUBBLE_MESSAGE)
-    .concatMap((action = {}) => Rx.Observable.of(setInfoBubbleMessage(action.msgId, action.msgParams, action.level), showInfoBubble(true)).delay(10) // the delay is to ensure that transition animation always triggers
-        .concat(Rx.Observable.of(showInfoBubble(false)).delay(action.duration || 3000))
-        .concat(Rx.Observable.empty().delay(1000)/* this is set to the duration of css transition animation in layerdownload.less*/));
+    .concatMap((action = {}) => Observable.of(setInfoBubbleMessage(action.msgId, action.msgParams, action.level), showInfoBubble(true)).delay(10) // the delay is to ensure that transition animation always triggers
+        .concat(Observable.of(showInfoBubble(false)).delay(action.duration || 3000))
+        .concat(Observable.empty().delay(1000)/* this is set to the duration of css transition animation in layerdownload.less*/));
 
 export const checkExportDataEntriesEpic = (action$, store) => action$
     .ofType(CHECK_EXPORT_DATA_ENTRIES)
     .exhaustMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const results = exportDataResultsSelector(state) || [];
         const validResults = results.filter(({status}) => status === 'completed');
 
-        return validResults.length > 0 ? Rx.Observable.forkJoin(validResults
+        return validResults.length > 0 ? Observable.forkJoin(validResults
             .map((validResult) => {
                 const { result } = validResult;
                 const executionIdStart = result.indexOf('executionId=');
@@ -425,24 +425,24 @@ export const checkExportDataEntriesEpic = (action$, store) => action$
                 return getExecutionStatus(url, executionId)
                     .let(interceptOGCError)
                     .catch(() => {
-                        return Rx.Observable.of(null);
+                        return Observable.of(null);
                     })
                     .map(reqResult => !reqResult ? validResult.id : null);
             })
         ).flatMap(checkedResults => {
-            return Rx.Observable.of(
+            return Observable.of(
                 removeExportDataResults(checkedResults.filter(res => !!res)),
                 serializeCookie(),
                 checkingExportDataEntries(false)
             );
-        }).startWith(checkingExportDataEntries(true)) : Rx.Observable.empty();
+        }).startWith(checkingExportDataEntries(true)) : Observable.empty();
     });
 
 export const serializeCookieOnExportDataChange = (action$, store) => action$
     .ofType(ADD_EXPORT_DATA_RESULT, REMOVE_EXPORT_DATA_RESULT, UPDATE_EXPORT_DATA_RESULT, SERIALIZE_COOKIE)
-    .filter(() => isLoggedIn(store.getState()))
+    .filter(() => isLoggedIn(store.value))
     .do(() => {
-        const state = store.getState();
+        const state = store.value;
         const results = exportDataResultsSelector(state);
         const { id } = userSelector(state);
 
@@ -450,20 +450,20 @@ export const serializeCookieOnExportDataChange = (action$, store) => action$
 
         document.cookie = `exportDataResults_${id}=${encodeURIComponent(json)}`;
     })
-    .flatMap(() => Rx.Observable.empty());
+    .flatMap(() => Observable.empty());
 
 export const resetExportDataResultsOnLogout = (action$) => action$
     .ofType(MAP_CONFIG_LOADED)
     .switchMap(() => action$
         .ofType(LOGOUT)
-        .switchMap(() => Rx.Observable.of(setExportDataResults([])))
+        .switchMap(() => Observable.of(setExportDataResults([])))
         .takeUntil(action$.ofType(LOCATION_CHANGE))
     );
 
 export const setExportDataResultsOnLoginSuccessAndMapConfigLoaded = (action$, store) => action$
     .ofType(MAP_CONFIG_LOADED)
-    .switchMap(() => restoreExportDataResultsFromCookie(store.getState()).concat(action$
+    .switchMap(() => restoreExportDataResultsFromCookie(store.value).concat(action$
         .ofType(LOGIN_SUCCESS)
-        .switchMap(() => restoreExportDataResultsFromCookie(store.getState()))
+        .switchMap(() => restoreExportDataResultsFromCookie(store.value))
         .takeUntil(action$.ofType(LOCATION_CHANGE))
     ));

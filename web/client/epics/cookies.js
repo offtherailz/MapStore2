@@ -7,7 +7,7 @@
 */
 
 import { LOCATION_CHANGE } from 'connected-react-router';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { SET_MORE_DETAILS_VISIBILITY, setCookieVisibility, setDetailsCookieHtml } from '../actions/cookie';
 import { CHANGE_LOCALE } from '../actions/locale';
@@ -34,19 +34,19 @@ export const cookiePolicyChecker = (action$) =>
             }
         })
         .switchMap(() =>
-            Rx.Observable.of(setCookieVisibility(true))
+            Observable.of(setCookieVisibility(true))
         );
 
 export const loadCookieDetailsPage = (action$, store) =>
     action$.ofType(SET_MORE_DETAILS_VISIBILITY, CHANGE_LOCALE )
-        .filter( () => !getApi().getItem("cookies-policy-approved") && store.getState().cookie.seeMore && !store.getState().cookie.html[store.getState().locale.current])
-        .switchMap(() => Rx.Observable.fromPromise(
-            axios.get("translations/fragments/cookie/cookieDetails-" + store.getState().locale.current + ".html", null, {
+        .filter( () => !getApi().getItem("cookies-policy-approved") && store.value.cookie.seeMore && !store.value.cookie.html[store.value.locale.current])
+        .switchMap(() => Observable.fromPromise(
+            axios.get("translations/fragments/cookie/cookieDetails-" + store.value.locale.current + ".html", null, {
                 timeout: 60000,
                 headers: {'Accept': 'text/html', 'Content-Type': 'text/html'}
             }).then(res => res.data)
         ))
-        .switchMap(html => Rx.Observable.of(setDetailsCookieHtml(html, store.getState().locale.current )));
+        .switchMap(html => Observable.of(setDetailsCookieHtml(html, store.value.locale.current )));
 
 /**
  * Epics for cookies policy informations

@@ -11,7 +11,6 @@ import ReactDOM from 'react-dom';
 import TestUtils from 'react-dom/test-utils';
 import expect from 'expect';
 import { find, get } from 'lodash';
-import { setObservableConfig } from 'recompose';
 
 import ConfigureMapTemplate from '../ConfigureMapTemplates';
 

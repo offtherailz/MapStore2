@@ -40,10 +40,10 @@ const getTimeMultidimURL = (l = {}) => get(find(l.dimensions || [], d => d && d.
 /**
  * Sync current time param of the layer with the current time element
  */
-export const updateLayerDimensionOnCurrentTimeSelection = (action$, { getState = () => { } } = {}) =>
+export const updateLayerDimensionOnCurrentTimeSelection = (action$, store = {}) =>
     action$.ofType(SET_CURRENT_TIME, SET_OFFSET_TIME, MOVE_TIME).switchMap(() => {
-        const currentTime = currentTimeSelector(getState());
-        const offsetTime = offsetTimeSelector(getState());
+        const currentTime = currentTimeSelector(store.value);
+        const offsetTime = offsetTimeSelector(store.value);
         const time = offsetTime ? `${currentTime}/${offsetTime}` : currentTime;
         return Observable.of(updateLayerDimension('time', time));
     });
@@ -52,7 +52,7 @@ export const updateLayerDimensionOnCurrentTimeSelection = (action$, { getState =
  * Check the presence of Multidimensional API extension, then setup layers properly.
  * Updates also current dimension state
  */
-export const queryMultidimensionalAPIExtensionOnAddLayer = (action$, { getState = () => { } } = {}) =>
+export const queryMultidimensionalAPIExtensionOnAddLayer = (action$, store = {}) =>
     action$
         .ofType(ADD_LAYER)
         .filter(
@@ -82,7 +82,7 @@ export const queryMultidimensionalAPIExtensionOnAddLayer = (action$, { getState 
                                 ...flatten(dimensions.map(d => [
                                     updateLayerDimensionData(layer.id, d.name, d),
                                     autoselect(),
-                                    ...(endValuesSupportSelector(getState()) === undefined ? [setEndValuesSupport(d.source.version === "1.2")] : [])
+                                    ...(endValuesSupportSelector(store.value) === undefined ? [setEndValuesSupport(d.source.version === "1.2")] : [])
                                 ])
                                 ));
                         }
@@ -94,9 +94,9 @@ export const queryMultidimensionalAPIExtensionOnAddLayer = (action$, { getState 
 /**
  * Updates dimension state for layers that has multidimensional extension.
  */
-export const updateLayerDimensionDataOnMapLoad = (action$, {getState = () => {}} = {}) =>
+export const updateLayerDimensionDataOnMapLoad = (action$, store = {}) =>
     action$.ofType(MAP_CONFIG_LOADED).switchMap( ({config = {}}) => {
-        const layers = layersWithTimeDataSelector(getState());
+        const layers = layersWithTimeDataSelector(store.value);
         const layersWithMultidim = layers.filter(l =>
             l && l.dimensions && find(l.dimensions, d => d && d.source && d.source.type === "multidim-extension")); // layers with dimension and multidimensional extension
 

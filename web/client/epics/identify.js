@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { get, find, reverse} from 'lodash';
 import uuid from 'uuid';
 import { LOCATION_CHANGE } from 'connected-react-router';
@@ -72,24 +72,24 @@ import {updatePointWithGeometricFilter} from "../utils/IdentifyUtils";
 /**
  * Triggers data load on FEATURE_INFO_CLICK events
  */
-export const getFeatureInfoOnFeatureInfoClick = (action$, { getState = () => { } }) =>
+export const getFeatureInfoOnFeatureInfoClick = (action$, store) =>
     action$.ofType(FEATURE_INFO_CLICK)
         .switchMap(({ point, filterNameList = [], overrideParams = {} }) => {
             // Reverse - To query layer in same order as in TOC
-            let queryableLayers = reverse(queryableLayersSelector(getState()));
-            const queryableSelectedLayers = queryableSelectedLayersSelector(getState());
-            const enableInfoForSelectedLayers = enableInfoForSelectedLayersSelector(getState());
+            let queryableLayers = reverse(queryableLayersSelector(store.value));
+            const queryableSelectedLayers = queryableSelectedLayersSelector(store.value);
+            const enableInfoForSelectedLayers = enableInfoForSelectedLayersSelector(store.value);
             if (enableInfoForSelectedLayers && queryableSelectedLayers.length) {
                 queryableLayers = queryableSelectedLayers;
             }
 
-            const selectedLayers = selectedNodesSelector(getState());
+            const selectedLayers = selectedNodesSelector(store.value);
 
             if (queryableLayers.length === 0 || queryableSelectedLayers.length === 0 && selectedLayers.length !== 0) {
-                return Rx.Observable.of(purgeMapInfoResults(), noQueryableLayers());
+                return Observable.of(purgeMapInfoResults(), noQueryableLayers());
             }
 
-            // TODO: make it in the application getState()
+            // TODO: make it in the application store.value
             const excludeParams = ["SLD_BODY"];
             const includeOptions = [
                 "buffer",
@@ -100,16 +100,16 @@ export const getFeatureInfoOnFeatureInfoClick = (action$, { getState = () => { }
 
             let firstResponseReturned = false;
 
-            const out$ = Rx.Observable.from((queryableLayers.filter(l => {
+            const out$ = Observable.from((queryableLayers.filter(l => {
             // filtering a subset of layers
                 return filterNameList.length ? (filterNameList.filter(name => name.indexOf(l.name) !== -1).length > 0) : true;
             })))
                 .mergeMap(layer => {
-                    let env = localizedLayerStylesEnvSelector(getState());
-                    let { url, request, metadata } = buildIdentifyRequest(layer, {...identifyOptionsSelector(getState()), env});
+                    let env = localizedLayerStylesEnvSelector(store.value);
+                    let { url, request, metadata } = buildIdentifyRequest(layer, {...identifyOptionsSelector(store.value), env});
                     // request override
-                    if (itemIdSelector(getState()) && overrideParamsSelector(getState())) {
-                        request = {...request, ...overrideParamsSelector(getState())[layer.name]};
+                    if (itemIdSelector(store.value) && overrideParamsSelector(store.value)) {
+                        request = {...request, ...overrideParamsSelector(store.value)[layer.name]};
                     }
                     if (overrideParams[layer.name]) {
                         request = {...request, ...overrideParams[layer.name]};
@@ -119,8 +119,8 @@ export const getFeatureInfoOnFeatureInfoClick = (action$, { getState = () => { }
                         const requestParams = request;
                         const lMetaData = metadata;
                         const appParams = filterRequestParams(layer, includeOptions, excludeParams);
-                        const attachJSON = isHighlightEnabledSelector(getState());
-                        const itemId = itemIdSelector(getState());
+                        const attachJSON = isHighlightEnabledSelector(store.value);
+                        const itemId = itemIdSelector(store.value);
                         const reqId = uuid.v1();
                         const param = { ...appParams, ...requestParams };
                         return getFeatureInfo(basePath, param, layer, {attachJSON, itemId})
@@ -134,19 +134,19 @@ export const getFeatureInfoOnFeatureInfoClick = (action$, { getState = () => { }
                                     ? exceptionsFeatureInfo(reqId, response.data.exceptions, requestParams, lMetaData)
                                     : loadFeatureInfo(reqId, response.data, requestParams, { ...lMetaData, features: response.features, featuresCrs: response.featuresCrs }, layer)
                             )
-                            .catch((e) => Rx.Observable.of(errorFeatureInfo(reqId, e.data || e.statusText || e.status, requestParams, lMetaData)))
-                            .concat(Rx.Observable.defer(() => {
+                            .catch((e) => Observable.of(errorFeatureInfo(reqId, e.data || e.statusText || e.status, requestParams, lMetaData)))
+                            .concat(Observable.defer(() => {
                                 // update the layout only after the initial response
                                 // we don't need to trigger this for each query layer
                                 if (!firstResponseReturned) {
                                     firstResponseReturned = true;
-                                    return Rx.Observable.of(forceUpdateMapLayout());
+                                    return Observable.of(forceUpdateMapLayout());
                                 }
-                                return Rx.Observable.empty();
+                                return Observable.empty();
                             }))
                             .startWith(newMapInfoRequest(reqId, param));
                     }
-                    return Rx.Observable.of(getVectorInfo(layer, request, metadata, queryableLayers));
+                    return Observable.of(getVectorInfo(layer, request, metadata, queryableLayers));
                 });
             // NOTE: multiSelection is inside the event
             // TODO: move this flag in the application state
@@ -159,8 +159,8 @@ export const getFeatureInfoOnFeatureInfoClick = (action$, { getState = () => { }
  * if `clickLayer` is present, this means that `handleClickOnLayer` is true for the clicked layer, so the marker have to be hidden, because
  * it's managed by the layer itself (e.g. annotations). So the marker have to be hidden.
  */
-export const handleMapInfoMarker = (action$, {getState}) =>
-    action$.ofType(FEATURE_INFO_CLICK).filter(() => !isMapPopup(getState()))
+export const handleMapInfoMarker = (action$, store) =>
+    action$.ofType(FEATURE_INFO_CLICK).filter(() => !isMapPopup(store.value))
         .map(({ layer }) => layer
             ? hideMapinfoMarker()
             : showMapinfoMarker()
@@ -168,52 +168,52 @@ export const handleMapInfoMarker = (action$, {getState}) =>
 export const closeFeatureGridFromIdentifyEpic = (action$, store) =>
     action$.ofType(LOAD_FEATURE_INFO, GET_VECTOR_INFO)
         .switchMap(() => {
-            if (isFeatureGridOpen(store.getState())) {
-                return Rx.Observable.of(closeFeatureGrid());
+            if (isFeatureGridOpen(store.value)) {
+                return Observable.of(closeFeatureGrid());
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         });
 /**
  * Check if something is editing in feature info.
  * If so, as to the proper tool to close (annotations)
  * Otherwise it closes by itself.
  */
-export const closeFeatureAndAnnotationEditing = (action$, {getState = () => {}} = {}) =>
+export const closeFeatureAndAnnotationEditing = (action$, store = {}) =>
     action$.ofType(CLOSE_IDENTIFY).switchMap( () =>
-        get(getState(), "annotations.editing")
-            ? Rx.Observable.of(closeAnnotations())
-            : Rx.Observable.of(purgeMapInfoResults())
+        get(store.value, "annotations.editing")
+            ? Observable.of(closeAnnotations())
+            : Observable.of(purgeMapInfoResults())
     );
 export const hideMarkerOnIdentifyCloseOrClearWarning = (action$) =>
     action$.ofType(CLOSE_IDENTIFY, CLEAR_WARNING)
-        .flatMap(() => Rx.Observable.of(hideMapinfoMarker()));
+        .flatMap(() => Observable.of(hideMapinfoMarker()));
 export const changeMapPointer = (action$, store) =>
     action$.ofType(CHANGE_MOUSE_POINTER)
-        .filter(() => !(store.getState()).map)
+        .filter(() => !(store.value).map)
         .switchMap((a) => action$.ofType(MAP_CONFIG_LOADED).mapTo(a));
 export const onMapClick = (action$, store) =>
     action$.ofType(CLICK_ON_MAP).filter(() => {
-        const {disableAlwaysOn = false} = (store.getState()).mapInfo;
-        if (isMouseMoveIdentifyActiveSelector(store.getState())) {
+        const {disableAlwaysOn = false} = (store.value).mapInfo;
+        if (isMouseMoveIdentifyActiveSelector(store.value)) {
             return false;
         }
-        return disableAlwaysOn || !stopFeatureInfo(store.getState() || {});
+        return disableAlwaysOn || !stopFeatureInfo(store.value || {});
     })
         .switchMap(({point, layer}) => {
-            const projection = projectionSelector(store.getState());
-            return Rx.Observable.of(featureInfoClick(updatePointWithGeometricFilter(point, projection), layer), cancelSelectedItem())
-                .merge(Rx.Observable.of(addPopup(uuid(),
+            const projection = projectionSelector(store.value);
+            return Observable.of(featureInfoClick(updatePointWithGeometricFilter(point, projection), layer), cancelSelectedItem())
+                .merge(Observable.of(addPopup(uuid(),
                     {component: IDENTIFY_POPUP, maxWidth: 600, position: {coordinates: point ? point.rawPos : []}}))
-                    .filter(() => isMapPopup(store.getState()))
+                    .filter(() => isMapPopup(store.value))
                 );
         });
 /**
  * Reacts to an update of FeatureInfo coordinates recalculating geometry filter from the map and re-trigger the feature info.
  */
-export const onUpdateFeatureInfoClickPoint = (action$, {getState = () => {}} = {}) =>
+export const onUpdateFeatureInfoClickPoint = (action$, store = {}) =>
     action$.ofType(UPDATE_FEATURE_INFO_CLICK_POINT)
         .map(({ point }) => {
-            const projection = projectionSelector(getState());
+            const projection = projectionSelector(store.value);
             return {
                 point: updatePointWithGeometricFilter(point, projection)
             };
@@ -226,19 +226,19 @@ export const onUpdateFeatureInfoClickPoint = (action$, {getState = () => {}} = {
 /**
  * triggers click again when highlight feature is enabled, to download the feature.
  */
-export const featureInfoClickOnHighligh = (action$, {getState = () => {}} = {}) =>
+export const featureInfoClickOnHighligh = (action$, store = {}) =>
     action$.ofType(TOGGLE_HIGHLIGHT_FEATURE)
         .filter(({enabled}) =>
             enabled
-            && clickPointSelector(getState())
+            && clickPointSelector(store.value)
         )
-        .switchMap( () => Rx.Observable.from([
+        .switchMap( () => Observable.from([
             featureInfoClick(
-                clickPointSelector(getState()),
-                clickLayerSelector(getState()),
-                filterNameListSelector(getState()),
-                overrideParamsSelector(getState()),
-                itemIdSelector(getState())
+                clickPointSelector(store.value),
+                clickLayerSelector(store.value),
+                filterNameListSelector(store.value),
+                overrideParamsSelector(store.value),
+                itemIdSelector(store.value)
             ),
             showMapinfoMarker()])
         );
@@ -250,11 +250,11 @@ export const featureInfoClickOnHighligh = (action$, {getState = () => {}} = {}) 
  */
 export const zoomToVisibleAreaEpic = (action$, store) =>
     action$.ofType(FEATURE_INFO_CLICK)
-        .filter(() => centerToMarkerSelector(store.getState()))
+        .filter(() => centerToMarkerSelector(store.value))
         .switchMap((action) =>
             action$.ofType(LOAD_FEATURE_INFO, ERROR_FEATURE_INFO)
                 .mergeMap(() => {
-                    const state = store.getState();
+                    const state = store.value;
                     const map = mapSelector(state);
                     const mapProjection = projectionSelector(state);
                     const projectionDefs = projectionDefsSelector(state);
@@ -272,18 +272,18 @@ export const zoomToVisibleAreaEpic = (action$, store) =>
                     };
                     // exclude cesium with cartographic options
                     if (!map || !layoutBounds || !coords || action.point.cartographic || isInsideVisibleArea(coords, map, layoutBounds, resolution) || isMouseMoveIdentifyActiveSelector(state)) {
-                        return Rx.Observable.of(updateCenterToMarker('disabled'));
+                        return Observable.of(updateCenterToMarker('disabled'));
                     }
                     if (reprojectExtent && !isPointInsideExtent(coords, reprojectExtent)) {
-                        return Rx.Observable.empty();
+                        return Observable.empty();
                     }
                     const center = centerToVisibleArea(coords, map, layoutBounds, resolution);
-                    return Rx.Observable.of(updateCenterToMarker('enabled'), zoomToPoint(center.pos, center.zoom, center.crs))
+                    return Observable.of(updateCenterToMarker('enabled'), zoomToPoint(center.pos, center.zoom, center.crs))
                         // restore initial position
                         .concat(
                             action$.ofType(CLOSE_IDENTIFY).switchMap(()=>{
                                 const bbox = map && getBbox(map.center, map.zoom);
-                                return Rx.Observable.of(
+                                return Observable.of(
                                     changeMapView(map.center, map.zoom, bbox, map.size, null, map.projection));
                             }).takeUntil(action$.ofType(CHANGE_MAP_VIEW).skip(1)) // do not restore if user changes position (skip first caused by the zoomToPoint)
                         );
@@ -297,17 +297,17 @@ export const closeFeatureInfoOnCatalogOpenEpic = (action$, store) =>
         .ofType(SET_CONTROL_PROPERTIES)
         .filter((action) => action.control === "metadataexplorer" && action.properties && action.properties.enabled)
         .switchMap(() => {
-            return Rx.Observable.of(purgeMapInfoResults(), hideMapinfoMarker() ).merge(
-                Rx.Observable.of(cleanPopups())
-                    .filter(() => isMapPopup(store.getState()))
+            return Observable.of(purgeMapInfoResults(), hideMapinfoMarker() ).merge(
+                Observable.of(cleanPopups())
+                    .filter(() => isMapPopup(store.value))
             );
         });
 /**
  * Clean state on annotation open
  */
-export const closeFeatureInfoOnAnnotationOpenEpic = (action$, {getState}) =>
+export const closeFeatureInfoOnAnnotationOpenEpic = (action$, store) =>
     action$.ofType(TOGGLE_CONTROL)
-        .filter(({control} = {}) => control === 'annotations' && get(getState(), "controls.annotations.enabled", false))
+        .filter(({control} = {}) => control === 'annotations' && get(store.value, "controls.annotations.enabled", false))
         .mapTo(purgeMapInfoResults());
 /**
  * Clean state on measure open
@@ -319,22 +319,22 @@ export const closeFeatureInfoOnMeasureOpenEpic = (action$) =>
 /**
  * Clean popup on PURGE_MAPINFO_RESULTS
  * */
-export const cleanPopupsEpicOnPurge = (action$, {getState}) =>
+export const cleanPopupsEpicOnPurge = (action$, store) =>
     action$.ofType(PURGE_MAPINFO_RESULTS)
-        .filter(() => isMapPopup(getState()))
+        .filter(() => isMapPopup(store.value))
         .mapTo(cleanPopups());
 export const identifyEditLayerFeaturesEpic = (action$, store) =>
     action$.ofType(EDIT_LAYER_FEATURES)
-        .exhaustMap(({layer}) => Rx.Observable.of(
-            setCurrentEditFeatureQuery(clickPointSelector(store.getState())?.geometricFilter), browseData(layer)));
+        .exhaustMap(({layer}) => Observable.of(
+            setCurrentEditFeatureQuery(clickPointSelector(store.value)?.geometricFilter), browseData(layer)));
 export const switchFeatureGridToEdit = (action$, store) =>
     action$.ofType(QUERY_CREATE)
         .switchMap(() => {
-            const queryObj = currentEditFeatureQuerySelector(store.getState());
-            const currentFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry') || {};
-            const attribute = currentFilter.attribute || get(spatialFieldSelector(store.getState()), 'attribute');
+            const queryObj = currentEditFeatureQuerySelector(store.value);
+            const currentFilter = find(getAttributeFilters(store.value), f => f.type === 'geometry') || {};
+            const attribute = currentFilter.attribute || get(spatialFieldSelector(store.value), 'attribute');
 
-            return queryObj ? Rx.Observable.of(
+            return queryObj ? Observable.of(
                 setCurrentEditFeatureQuery(),
                 toggleEditMode(),
                 updateFilter({
@@ -345,7 +345,7 @@ export const switchFeatureGridToEdit = (action$, store) =>
                         attribute
                     }
                 })
-            ) : Rx.Observable.empty();
+            ) : Observable.empty();
         });
 export const resetCurrentEditFeatureQuery = (action$) =>
     action$.ofType(CLOSE_FEATURE_GRID, LOCATION_CHANGE)
@@ -353,62 +353,62 @@ export const resetCurrentEditFeatureQuery = (action$) =>
 /**
  * Triggers data load on MOUSE_MOVE events
  */
-export const mouseMoveMapEventEpic = (action$, {getState}) =>
+export const mouseMoveMapEventEpic = (action$, store) =>
     action$.ofType(MOUSE_MOVE)
-        .debounceTime(floatingIdentifyDelaySelector(getState()))
+        .debounceTime(floatingIdentifyDelaySelector(store.value))
         .switchMap(({position, layer}) => {
-            const isAnnotationsEnabled = createControlEnabledSelector('annotations')(getState());
-            const isMeasureEnabled = measureSelector(getState());
-            const isMouseOut = mouseOutSelector(getState());
-            const isMouseMoveIdentifyDisabled = !isMouseMoveIdentifyActiveSelector(getState());
+            const isAnnotationsEnabled = createControlEnabledSelector('annotations')(store.value);
+            const isMeasureEnabled = measureSelector(store.value);
+            const isMouseOut = mouseOutSelector(store.value);
+            const isMouseMoveIdentifyDisabled = !isMouseMoveIdentifyActiveSelector(store.value);
             if (isMouseMoveIdentifyDisabled || isAnnotationsEnabled || isMeasureEnabled || isMouseOut) {
-                return Rx.Observable.empty();
+                return Observable.empty();
             }
-            return Rx.Observable.of(featureInfoClick(position, layer))
-                .merge(Rx.Observable.of(addPopup(uuid(), { component: IDENTIFY_POPUP, maxWidth: 600, position: {  coordinates: position ? position.rawPos : []}, autoPanMargin: 70, autoPan: true})));
+            return Observable.of(featureInfoClick(position, layer))
+                .merge(Observable.of(addPopup(uuid(), { component: IDENTIFY_POPUP, maxWidth: 600, position: {  coordinates: position ? position.rawPos : []}, autoPanMargin: 70, autoPan: true})));
         });
 /**
  * Triggers remove popup on UNREGISTER_EVENT_LISTENER
  */
-export const removePopupOnUnregister = (action$, {getState}) =>
+export const removePopupOnUnregister = (action$, store) =>
     action$.ofType(UNREGISTER_EVENT_LISTENER)
         .switchMap(() => {
-            let observable = Rx.Observable.empty();
-            const popups = getState()?.mapPopups?.popups || [];
-            if (popups.length && !isMouseMoveIdentifyActiveSelector(getState())) {
+            let observable = Observable.empty();
+            const popups = store.value?.mapPopups?.popups || [];
+            if (popups.length && !isMouseMoveIdentifyActiveSelector(store.value)) {
                 const activePopupId = popups[0].id;
-                observable = Rx.Observable.of(removePopup(activePopupId));
+                observable = Observable.of(removePopup(activePopupId));
             }
             return observable;
         });
 /**
  * Triggers remove popup on LOCATION_CHANGE, PURGE_MAPINFO_RESULTS or CLEAR_WARNING
  */
-export const removePopupOnLocationChangeEpic = (action$, {getState}) =>
+export const removePopupOnLocationChangeEpic = (action$, store) =>
     action$.ofType(LOCATION_CHANGE, PURGE_MAPINFO_RESULTS, CLEAR_WARNING)
         .switchMap(() => {
-            let observable = Rx.Observable.empty();
-            const popups = getState()?.mapPopups?.popups || [];
+            let observable = Observable.empty();
+            const popups = store.value?.mapPopups?.popups || [];
             if (popups.length) {
                 const activePopupId = popups[0].id;
-                observable = Rx.Observable.of(removePopup(activePopupId));
+                observable = Observable.of(removePopup(activePopupId));
             }
             return observable;
         });
 /**
  * Triggers remove map info marker on REMOVE_MAP_POPUP
  */
-export const removeMapInfoMarkerOnRemoveMapPopupEpic = (action$, {getState}) =>
+export const removeMapInfoMarkerOnRemoveMapPopupEpic = (action$, store) =>
     action$.ofType(REMOVE_MAP_POPUP)
-        .switchMap(() => isMouseMoveIdentifyActiveSelector(getState()) ? Rx.Observable.of(hideMapinfoMarker()) : Rx.Observable.empty());
+        .switchMap(() => isMouseMoveIdentifyActiveSelector(store.value) ? Observable.of(hideMapinfoMarker()) : Observable.empty());
 /**
 * Sets which trigger to use on the map
 */
 export const setMapTriggerEpic = (action$, store) =>
     action$.ofType(SET_MAP_TRIGGER, MAP_CONFIG_LOADED, MAP_TYPE_CHANGED)
         .switchMap(() => {
-            return Rx.Observable.of(
-                mapTriggerSelector(store.getState()) === 'hover' ? registerEventListener('mousemove', 'identifyFloatingTool') : unRegisterEventListener('mousemove', 'identifyFloatingTool')
+            return Observable.of(
+                mapTriggerSelector(store.value) === 'hover' ? registerEventListener('mousemove', 'identifyFloatingTool') : unRegisterEventListener('mousemove', 'identifyFloatingTool')
             );
         });
 

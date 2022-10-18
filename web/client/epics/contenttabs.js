@@ -18,7 +18,7 @@ import { onTabSelected, SET_TABS_HIDDEN } from '../actions/contenttabs';
  * Update Maps, Dashboards and Geostories counts to select contenttabs each tab has to have a key in its ContentTab configuration
  * @param {object} action
  */
-export const updateMapsDashboardTabs = (action$, {getState = () => {}}) =>
+export const updateMapsDashboardTabs = (action$, store) =>
     action$.ofType(MAPS_LOAD_MAP)
         .switchMap(() => {
             return Observable.forkJoin(
@@ -28,7 +28,7 @@ export const updateMapsDashboardTabs = (action$, {getState = () => {}}) =>
                 action$.ofType(CONTEXTS_LIST_LOADED).take(1))
                 .switchMap((r) => {
                     const results = {maps: r[0].maps, dashboards: r[1], geostories: r[2]};
-                    const {contenttabs = {}} = getState() || {};
+                    const {contenttabs = {}} = store.value || {};
                     const {selected, hiddenTabs = {}} = contenttabs;
                     if (results[selected] && results[selected].totalCount === 0) {
                         const id = keys(results).filter(key => (results[key] || {}).totalCount > 0 && !hiddenTabs[key])[0];
@@ -43,7 +43,7 @@ export const updateMapsDashboardTabs = (action$, {getState = () => {}}) =>
 export const updateSelectedOnHiddenTabs = (action$, store) =>
     action$.ofType(SET_TABS_HIDDEN)
         .switchMap(() => {
-            const state = store.getState();
+            const state = store.value;
             const {selected, hiddenTabs = {}} = state.contenttabs;
 
             const hiddenKeys = keys(hiddenTabs).filter(key => !!hiddenTabs[key]);

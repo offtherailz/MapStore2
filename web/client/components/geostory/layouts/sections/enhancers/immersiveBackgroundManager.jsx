@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import React from 'react';
-import { compose, createEventHandler, withProps, mapPropsStream, withHandlers, setObservableConfig } from 'recompose';
+import { compose, createEventHandler, withProps, mapPropsStream, withHandlers } from 'recompose';
 import { findIndex, get, maxBy } from "lodash";
 import { Observable } from "rxjs";
 

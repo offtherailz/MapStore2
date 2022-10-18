@@ -9,7 +9,7 @@
 import expect from 'expect';
 
 import filtersStream from '../filtersStream';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 describe('rulegrid filterStream', () => {
     it('debounce addFilter$', (done) => {
         const setFilters = (filter) => {
@@ -17,8 +17,8 @@ describe('rulegrid filterStream', () => {
             expect(filter).toBe("WFS");
             done();
         };
-        const addFilter$ = Rx.Observable.from(["WF", "WFS"]);
-        const prop$ = Rx.Observable.of({setFilters, addFilter$});
+        const addFilter$ = Observable.from(["WF", "WFS"]);
+        const prop$ = Observable.of({setFilters, addFilter$});
         filtersStream(prop$).subscribe(() => {});
     });
 });

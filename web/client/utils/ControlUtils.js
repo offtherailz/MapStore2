@@ -7,7 +7,7 @@
  */
 
 import {setControlProperty} from "../actions/controls";
-import Rx from "rxjs";
+import {Observable} from 'rxjs';
 import {createControlEnabledSelector} from "../selectors/controls";
 import {START_DRAWING} from "../actions/annotations";
 import {CHANGE_DRAWING_STATUS} from "../actions/draw";
@@ -24,12 +24,12 @@ import {OPEN_FEATURE_GRID} from "../actions/featuregrid";
  * @returns {Observable<unknown>}
  */
 export const shutdownToolOnAnotherToolDrawing = (action$, store, toolName,
-    apply = (state, tool) => Rx.Observable.from([setControlProperty(tool, "enabled", null)]),
+    apply = (state, tool) => Observable.from([setControlProperty(tool, "enabled", null)]),
     isActiveCallback = (state, name) => createControlEnabledSelector(name)(state)
 ) =>
     action$.ofType(START_DRAWING, CHANGE_DRAWING_STATUS, REGISTER_EVENT_LISTENER, OPEN_FEATURE_GRID)
         .filter(({type, status, owner, eventName, toolName: name}) => {
-            const isActive = isActiveCallback(store.getState(), toolName);
+            const isActive = isActiveCallback(store.value, toolName);
             switch (type) {
             case OPEN_FEATURE_GRID:
                 return toolName !== 'featureGrid';
@@ -44,5 +44,5 @@ export const shutdownToolOnAnotherToolDrawing = (action$, store, toolName,
             }
         })
         .switchMap((action) => {
-            return isActiveCallback(store.getState(), toolName) ? apply(store.getState(), toolName, action) : Rx.Observable.empty();
+            return isActiveCallback(store.value, toolName) ? apply(store.value, toolName, action) : Observable.empty();
         });

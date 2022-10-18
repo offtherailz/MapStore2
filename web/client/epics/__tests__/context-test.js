@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import expect from 'expect';
 import { testEpic, testCombinedEpicStream } from './epicTestUtils';
@@ -129,11 +129,11 @@ describe('context epics', () => {
             };
             // TODO: these can be replaced with the effective epics that implement this functionality.
             // simulate load user session
-            const controlEpic = action$ => Rx.Observable.merge(
+            const controlEpic = action$ => Observable.merge(
             // simulate load user session
                 action$
                     .ofType(LOAD_USER_SESSION)
-                    .switchMap(() => Rx.Observable.of(userSessionLoaded(10, {
+                    .switchMap(() => Observable.of(userSessionLoaded(10, {
                         map: {},
                         context: {
                             userPlugins: []
@@ -142,12 +142,12 @@ describe('context epics', () => {
                 // simulate load map
                 action$
                     .ofType(LOAD_MAP_CONFIG)
-                    .switchMap(() => Rx.Observable.of(configureMap({})).delay(10))
+                    .switchMap(() => Observable.of(configureMap({})).delay(10))
             );
             // copies the actions emitted in an array so we can check them at the end.
             const spyEpic = a$ => a$.do(a => actions.push(a)).ignoreElements();
 
-            const startEpic = () => Rx.Observable.of(loadContext({ mapId, contextName }));
+            const startEpic = () => Observable.of(loadContext({ mapId, contextName }));
             const stopEpic = action$ => action$.filter(({ value, type }) => type === LOADING && !value);
             const mockStore = {
                 getState: () => ({

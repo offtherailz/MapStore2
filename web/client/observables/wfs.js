@@ -9,7 +9,7 @@
 import urlUtil from 'url';
 
 import { castArray, isNil, isObject } from 'lodash';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { parseString } from 'xml2js';
 import { stripPrefix } from 'xml2js/lib/processors';
 
@@ -141,7 +141,7 @@ const getFeatureUtilities = (searchUrl, filterObj, options = {}, downloadOption 
     });
 
     if (options.layer && options.layer.type === 'vector') {
-        return Rx.Observable.defer(() => new Promise((resolve) => {
+        return Observable.defer(() => new Promise((resolve) => {
             let features = createFeatureCollection(options.layer.features);
             let featuresFiltered = getFeaturesFiltered(features, filterObj);
             resolve(featuresFiltered);
@@ -169,7 +169,7 @@ export const getXMLFeature = (searchUrl, filterObj, options = {}, downloadOption
 
     const { data, queryString } = getFeatureUtilities(searchUrl, filterObj, options, downloadOption);
 
-    return Rx.Observable.defer(() =>
+    return Observable.defer(() =>
         axios.post(queryString, data, {
             timeout: 60000,
             responseType: 'arraybuffer',
@@ -192,7 +192,7 @@ export const getJSONFeature = (searchUrl, filterObj, options = {}) => {
 
     const { data, queryString } = getFeatureUtilities(searchUrl, filterObj, options);
 
-    return Rx.Observable.defer(() =>
+    return Observable.defer(() =>
         axios.post(queryString, data, {
             timeout: 60000,
             headers: { 'Accept': 'application/json', 'Content-Type': `application/xml` }
@@ -270,12 +270,12 @@ export const getLayerJSONFeature = ({ search = {}, url, name } = {}, filter, {so
         });
 
 export const describeFeatureType = ({layer}) =>
-    Rx.Observable.defer(() =>
+    Observable.defer(() =>
         axios.get(toDescribeURL(layer))).let(interceptOGCError);
 export const getLayerWFSCapabilities = ({layer}) =>
-    Rx.Observable.defer( () => axios.get(toLayerCapabilitiesURL(layer)))
+    Observable.defer( () => axios.get(toLayerCapabilitiesURL(layer)))
         .let(interceptOGCError)
-        .switchMap( response => Rx.Observable.bindNodeCallback( (data, callback) => parseString(data, {
+        .switchMap( response => Observable.bindNodeCallback( (data, callback) => parseString(data, {
             tagNameProcessors: [stripPrefix],
             explicitArray: false,
             mergeAttrs: true

@@ -1,5 +1,5 @@
 import expect from 'expect';
-import Rx from 'rxjs';
+import {Subject} from 'rxjs';
 import { loginSuccess, refreshSuccess } from '../../actions/security';
 
 
@@ -68,7 +68,7 @@ describe('KeycloakUtils', () => {
                 const epic = monitorKeycloak(provider);
                 const initSpy = expect.spyOn(kc, "init").andCallThrough();
                 const loginSpy = expect.spyOn(kc, "login").andCallThrough();
-                const actionSubject = new Rx.Subject();
+                const actionSubject = new Subject();
                 const action$ = actionSubject.asObservable();
                 action$.ofType = (a) => action$.filter(action => action.type === a); // Fake ofType method.
                 const store = {getState: () => (MOCK_STATE_LOGGED_OUT)};
@@ -91,7 +91,7 @@ describe('KeycloakUtils', () => {
                 const epic = monitorKeycloak(provider);
                 const initSpy = expect.spyOn(kc, "init").andCallThrough();
                 const loginSpy = expect.spyOn(kc, "login").andCallThrough();
-                const actionSubject = new Rx.Subject();
+                const actionSubject = new Subject();
                 const action$ = actionSubject.asObservable();
                 kc.afterInit = () => {
                     expect(initSpy).toHaveBeenCalled();
@@ -122,7 +122,7 @@ describe('KeycloakUtils', () => {
                 const loginSpy = expect.spyOn(kc, "login").andCallThrough();
                 const spyGoToPage = expect.spyOn(provider, "goToPage").andCallThrough();
 
-                const actionSubject = new Rx.Subject();
+                const actionSubject = new Subject();
                 const action$ = actionSubject.asObservable();
                 action$.ofType = (a) => action$.filter(action => action.type === a); // Fake ofType method.
                 const store = {getState: () => (MOCK_STATE_LOGGED_OUT)};
@@ -150,7 +150,7 @@ describe('KeycloakUtils', () => {
                 const epic = monitorKeycloak(provider);
                 const initSpy = expect.spyOn(kc, "init").andCallThrough();
                 const loginSpy = expect.spyOn(kc, "login").andCallThrough();
-                const actionSubject = new Rx.Subject();
+                const actionSubject = new Subject();
                 const action$ = actionSubject.asObservable();
                 setAuthenticated(kc);
                 action$.ofType = (a) => action$.filter(action => action.type === a); // Fake ofType method.
@@ -176,7 +176,7 @@ describe('KeycloakUtils', () => {
                 const epic = monitorKeycloak(provider);
                 const initSpy = expect.spyOn(kc, "init").andCallThrough();
                 const loginSpy = expect.spyOn(kc, "login").andCallThrough();
-                const actionSubject = new Rx.Subject();
+                const actionSubject = new Subject();
                 const action$ = actionSubject.asObservable();
 
                 setAuthenticated(kc);
@@ -204,7 +204,7 @@ describe('KeycloakUtils', () => {
                 const epic = monitorKeycloak(provider);
                 const initSpy = expect.spyOn(kc, "init").andCallThrough();
 
-                const actionSubject = new Rx.Subject();
+                const actionSubject = new Subject();
                 const action$ = actionSubject.asObservable();
                 action$.ofType = (a) => action$.filter(action => action.type === a); // Fake ofType method.
                 const store = {getState: () => (MOCK_STATE_LOGGED_IN)};
@@ -228,7 +228,7 @@ describe('KeycloakUtils', () => {
                 const epic = monitorKeycloak(provider);
                 const initSpy = expect.spyOn(kc, "init").andCallThrough();
 
-                const actionSubject = new Rx.Subject();
+                const actionSubject = new Subject();
                 const action$ = actionSubject.asObservable();
                 action$.ofType = (a) => action$.filter(action => action.type === a); // Fake ofType method.
                 const store = {getState: () => (MOCK_STATE_LOGGED_IN)};
@@ -254,7 +254,7 @@ describe('KeycloakUtils', () => {
                 const initSpy = expect.spyOn(kc, "init").andCallThrough();
                 const loginSpy = expect.spyOn(kc, "login").andCallThrough();
 
-                const actionSubject = new Rx.Subject();
+                const actionSubject = new Subject();
                 const action$ = actionSubject.asObservable();
                 action$.ofType = (a) => action$.filter(action => action.type === a); // Fake ofType method.
                 const store = {getState: () => (MOCK_STATE_LOGGED_IN)};

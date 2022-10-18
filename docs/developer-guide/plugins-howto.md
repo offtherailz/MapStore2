@@ -5,8 +5,8 @@ Creating a plugin is like assembling and connecting several pieces together into
 
 ## Introduction
 During this tutorial, you will learn how to create and configure plugins in a MapStore project.
-If you don't know how to work with MapStore projects, please read the [Projects Guide](mapstore-projects.md#mapstore-projects). 
-For this tutorial, a "standard project" is used. 
+If you don't know how to work with MapStore projects, please read the [Projects Guide](mapstore-projects.md#mapstore-projects).
+For this tutorial, a "standard project" is used.
 
 ## A plugin example
 
@@ -279,7 +279,7 @@ export default function(state = { text: 'Initial Text' }, action) {
 
 ### js/epics/sample.js
 ```javascript
-import * as Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import axios from 'axios';
 
 import { LOAD_DATA, loadedData, loadError } from '../actions/sample';
@@ -287,9 +287,9 @@ import { LOAD_DATA, loadedData, loadError } from '../actions/sample';
 export const loadDataEpic = (action$) => {
     return action$.ofType(LOAD_DATA)
         .switchMap(() => {
-            return Rx.Observable.defer(() => axios.get('version.txt'))
-                .switchMap((response) => Rx.Observable.of(loadedData(response.data)))
-                .catch(e => Rx.Observable.of(loadError(e.message)));
+            return Observable.defer(() => axios.get('version.txt'))
+                .switchMap((response) => Observable.of(loadedData(response.data)))
+                .catch(e => Observable.of(loadError(e.message)));
         });
 };
 

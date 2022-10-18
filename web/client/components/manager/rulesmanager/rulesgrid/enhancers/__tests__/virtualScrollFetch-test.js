@@ -9,7 +9,7 @@
 import expect from 'expect';
 
 import virtualScrollFetch from '../virtualScrollFetch';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import axios from '../../../../../../libs/ajax';
 const rulesInterceptor = (config) => {
     if (config.url.indexOf("/rules") !== -1) {
@@ -31,8 +31,8 @@ describe('rulegrid virtulaScrollFetch', () => {
         const onLoadError = (e) => {
             done(e);
         };
-        const pages$ = Rx.Observable.of({ pagesToLoad: [0], startPage: 0, endPage: 0, pages: {}});
-        const prop$ = Rx.Observable.of({size: 5,
+        const pages$ = Observable.of({ pagesToLoad: [0], startPage: 0, endPage: 0, pages: {}});
+        const prop$ = Observable.of({size: 5,
             maxStoredPages: 5,
             filters: {},
             onLoad,

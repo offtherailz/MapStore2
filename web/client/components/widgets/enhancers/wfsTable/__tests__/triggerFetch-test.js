@@ -7,7 +7,7 @@
  */
 
 import expect from 'expect';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import triggerFetch from '../triggerFetch';
 
@@ -25,7 +25,7 @@ describe('triggerFetch stream', () => {
                 viewParams: "a:b"
             }
         }];
-        triggerFetch(Rx.Observable.from(propsChanges))
+        triggerFetch(Observable.from(propsChanges))
             .bufferCount(3)
             .subscribe(
                 ([p1, p2]) => {
@@ -45,7 +45,7 @@ describe('triggerFetch stream', () => {
             ...base,
             filter: "TEST2"
         }];
-        triggerFetch(Rx.Observable.from(propsChanges))
+        triggerFetch(Observable.from(propsChanges))
             .bufferCount(2)
             .subscribe(
                 ([p1, p2]) => {

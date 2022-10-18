@@ -9,7 +9,7 @@
 import JSZip from 'jszip';
 import { every, get, some } from 'lodash';
 import { compose, createEventHandler, mapPropsStream } from 'recompose';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { isAnnotation } from '../../../../utils/AnnotationsUtils';
 import ConfigUtils from '../../../../utils/ConfigUtils';
@@ -135,9 +135,9 @@ export default compose(
         props$ => {
             const { handler: onDrop, stream: drop$ } = createEventHandler();
             const { handler: onWarnings, stream: warnings$} = createEventHandler();
-            return props$.combineLatest(
-                drop$.switchMap(
-                    files => Rx.Observable.from(files)
+            return Observable.from(props$).combineLatest(
+                Observable.from(drop$).switchMap(
+                    files => Observable.from(files)
                         .flatMap(checkFileType) // check file types are allowed
                         .flatMap(readFile(onWarnings)) // read files to convert to json
                         .reduce((result, jsonObjects) => ({ // divide files by type
@@ -160,7 +160,7 @@ export default compose(
                             loading: false,
                             files: filesMap
                         }))
-                        .catch(error => Rx.Observable.of({error, loading: false}))
+                        .catch(error => Observable.of({error, loading: false}))
                         .startWith({ loading: true})
                 )
                     .startWith({}),
@@ -170,7 +170,7 @@ export default compose(
                     onDrop
                 })
             ).combineLatest(
-                warnings$
+                Observable.from(warnings$)
                     .scan((warnings = [], warning) => ([...warnings, warning]), [])
                     .startWith(undefined),
                 (p1, warnings) => ({

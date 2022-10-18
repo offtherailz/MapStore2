@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import uuidv1 from 'uuid/v1';
 
 import {convertMeasuresToGeoJSON, getGeomTypeSelected} from '../utils/MeasurementUtils';
@@ -52,8 +52,8 @@ export const addAnnotationFromMeasureEpic = (action$, store) =>
                 visibility
             };
 
-            return Rx.Observable.from([
-                ...(createControlEnabledSelector('annotations')(store.getState()) ? [] : [setControlProperty('annotations', 'enabled', true)]),
+            return Observable.from([
+                ...(createControlEnabledSelector('annotations')(store.value) ? [] : [setControlProperty('annotations', 'enabled', true)]),
                 newAnnotation(),
                 setMeasurementConfig("exportToAnnotation", false),
                 setEditingFeature(newFeature)
@@ -64,7 +64,7 @@ export const addAsLayerEpic = (action$) =>
     action$.ofType(ADD_AS_LAYER)
         .switchMap(({features, textLabels, uom}) => {
             const layerFeature = convertMeasuresToGeoJSON(features, textLabels, uom, uuidv1());
-            return Rx.Observable.of(
+            return Observable.of(
                 addLayer({
                     type: 'vector',
                     id: uuidv1(),
@@ -78,20 +78,20 @@ export const addAsLayerEpic = (action$) =>
 
 export const openMeasureEpic = (action$, store) =>
     action$.ofType(SET_CONTROL_PROPERTY, TOGGLE_CONTROL)
-        .filter((action) => action.control === "measure" && isActiveSelector(store.getState()))
+        .filter((action) => action.control === "measure" && isActiveSelector(store.value))
         .switchMap(() => {
             const actions = [purgeMapInfoResults(), hideMapinfoMarker(),
                 registerEventListener('click', 'measure')];
-            const {showCoordinateEditor} = store.getState()?.controls?.measure || {};
+            const {showCoordinateEditor} = store.value?.controls?.measure || {};
             if (showCoordinateEditor) {
                 actions.push(updateDockPanelsList('measure', 'add', 'right'));
             }
-            return Rx.Observable.from(actions);
+            return Observable.from(actions);
         });
 
 export const closeMeasureEpics = (action$, store) =>
     action$.ofType(SET_CONTROL_PROPERTY, TOGGLE_CONTROL)
-        .filter(action => action.control === "measure" && !measureSelector(store.getState()))
+        .filter(action => action.control === "measure" && !measureSelector(store.value))
         .switchMap(() => {
             const newMeasureState = {
                 lineMeasureEnabled: false,
@@ -105,31 +105,31 @@ export const closeMeasureEpics = (action$, store) =>
             };
             const actions = [changeMeasurement(newMeasureState), cleanHighlight(), unRegisterEventListener('click', 'measure')];
 
-            const {showCoordinateEditor} = store.getState()?.controls?.measure || {};
+            const {showCoordinateEditor} = store.value?.controls?.measure || {};
             if (showCoordinateEditor) {
                 actions.push(updateDockPanelsList('measure', 'remove', 'right'));
             }
-            return Rx.Observable.from(actions);
+            return Observable.from(actions);
         });
 
 export const setMeasureStateFromAnnotationEpic = (action$, store) =>
     action$.ofType(SET_ANNOTATION_MEASUREMENT)
         .switchMap(({features, properties}) => {
-            const isGeomSelected = geomTypeSelector(store.getState()) === getGeomTypeSelected(features)?.[0];
-            return Rx.Observable.of( !isGeomSelected && changeMeasurement({geomType: getGeomTypeSelected(features)?.[0]}),
+            const isGeomSelected = geomTypeSelector(store.value) === getGeomTypeSelected(features)?.[0];
+            return Observable.of( !isGeomSelected && changeMeasurement({geomType: getGeomTypeSelected(features)?.[0]}),
                 setControlProperty("measure", "enabled", true),
                 setControlProperty("annotations", "enabled", false),
                 toggleVisibilityAnnotation(properties.id, false));
         });
 
-export const addCoordinatesEpic = (action$, {getState = () => {}}) =>
+export const addCoordinatesEpic = (action$, store) =>
     action$.ofType(CLICK_ON_MAP)
         .filter(() => {
-            const { showCoordinateEditor, enabled } = getState()?.controls?.measure || {};
+            const { showCoordinateEditor, enabled } = store.value?.controls?.measure || {};
             return showCoordinateEditor && enabled;
         } )
         .switchMap(({point}) => {
-            const { currentFeature: index, features = [], geomType } = getState()?.measurement || {};
+            const { currentFeature: index, features = [], geomType } = store.value?.measurement || {};
             const { lng: lon, lat } = point?.latlng || {};
             let coordinates = features[index]?.geometry?.coordinates || [];
             coordinates = geomType === 'Polygon' ? coordinates[0] : coordinates;
@@ -137,9 +137,9 @@ export const addCoordinatesEpic = (action$, {getState = () => {}}) =>
             if (invalidCoordinateIndex !== -1) {
                 coordinates = coordinates.map(c=> ({lon: c[0], lat: c[1]}));
                 coordinates[invalidCoordinateIndex] = {lon, lat};
-                return Rx.Observable.of(changeCoordinates(coordinates));
+                return Observable.of(changeCoordinates(coordinates));
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         });
 
 /**

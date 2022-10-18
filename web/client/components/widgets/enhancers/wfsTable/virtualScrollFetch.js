@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { getLayerJSONFeature } from '../../../../observables/wfs';
 import { getAttributesNames, getCurrentPaginationOptions, updatePages } from '../../../../utils/FeatureGridUtils';
@@ -46,7 +46,7 @@ export default pages$ => props$ => props$.switchMap(({
     .map(() => ({
         loading: false
     }))
-    .catch((e) => Rx.Observable.of({
+    .catch((e) => Observable.of({
         loading: false,
         error: e
     }).do(onLoadError))

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import axios from '../../libs/ajax';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 /**
  * Service validation or test exception
@@ -24,7 +24,7 @@ export class ServiceValidationError extends Error {
  *  @returns function that takes the service as parameter and return a stream. The stream emit the service again.
  */
 export const preprocess = (service) => {
-    return Rx.Observable.of(service);
+    return Observable.of(service);
 };
 
 /**
@@ -33,9 +33,9 @@ export const preprocess = (service) => {
  */
 export const validate = (service) => {
     if (service.title === "" || service.url === "") {
-        return Rx.Observable.throw(new ServiceValidationError("Validation Error", "catalog.notification.warningAddCatalogService"));
+        return Observable.throw(new ServiceValidationError("Validation Error", "catalog.notification.warningAddCatalogService"));
     }
-    return Rx.Observable.of(service);
+    return Observable.of(service);
 };
 
 /**
@@ -46,7 +46,7 @@ export const validate = (service) => {
 export const testService = ({ parseUrl = serviceUrl => serviceUrl }) => service => {
     const serviceError = "catalog.notification.errorServiceUrl";
 
-    return Rx.Observable.defer(
+    return Observable.defer(
         () => axios.get(parseUrl(service.url))
     ).catch(() => {
         throw new ServiceValidationError("Service Test error", serviceError);
@@ -54,7 +54,7 @@ export const testService = ({ parseUrl = serviceUrl => serviceUrl }) => service 
         if (result.error || result.data === "") {
             throw new ServiceValidationError("Service Test error", serviceError);
         }
-        return Rx.Observable.of(service);
+        return Observable.of(service);
     });
 };
 // END of standard validation tools

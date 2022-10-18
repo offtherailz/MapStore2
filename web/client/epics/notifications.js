@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
 */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { clear } from '../actions/notifications';
 import { LOCATION_CHANGE } from 'connected-react-router';
@@ -18,7 +18,7 @@ import { LOCATION_CHANGE } from 'connected-react-router';
  */
 export const clearNotificationOnLocationChange = action$ =>
     action$.ofType(LOCATION_CHANGE)
-        .switchMap(() => Rx.Observable.of(clear()));
+        .switchMap(() => Observable.of(clear()));
 
 /**
  * Epics for notifications

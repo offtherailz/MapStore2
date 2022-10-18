@@ -62,7 +62,7 @@ describe('Test StandardStore', () => {
                 mobile: {}
             }
         });
-        const maptype = store.getState().maptype.mapType;
+        const maptype = store.value.maptype.mapType;
         expect(maptype).toBe("openlayers");
     });
     it("tests applying the maptype reducer and an override from config", () => {
@@ -85,7 +85,7 @@ describe('Test StandardStore', () => {
                 mobile: {}
             }
         });
-        const maptype = store.getState().maptype.mapType;
+        const maptype = store.value.maptype.mapType;
         expect(maptype).toBe("leaflet");
         window.location.hash = oldHash;
     });

@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { setControlProperty } from '../actions/controls';
 import { mapHasPendingChangesSelector } from '../selectors/mapsave';
 import { dashboardHasPendingChangesSelector } from '../selectors/dashboardsave';
@@ -23,11 +23,11 @@ import { LOCATION_CHANGE } from 'connected-react-router';
  * If any, triggers to show confirm message.
  * Otherwise, if any, triggers the action passed in CHECK_PENDING_CHANGES action.
  */
-export const comparePendingChanges = (action$, { getState = () => { } }) =>
+export const comparePendingChanges = (action$, store) =>
     action$
         .ofType(CHECK_PENDING_CHANGES)
         .switchMap(({ action, source }) => {
-            const state = getState();
+            const state = store.value;
 
             const { currentPage } = feedbackMaskSelector(state);
 
@@ -36,17 +36,17 @@ export const comparePendingChanges = (action$, { getState = () => { } }) =>
             const isStoryToSave = currentPage === 'geostory' && storyHasPendingChanges(state);
             const isDashboardToSave = currentPage === 'dashboard' && dashboardHasPendingChangesSelector(state);
             if (isMapToSave || isStoryToSave || isDashboardToSave) {
-                return Rx.Observable.of(
+                return Observable.of(
                     setControlProperty('unsavedMap', 'enabled', true),
                     setControlProperty('unsavedMap', 'source', source, false)
                 ).merge(
                     // reset on location change
                     action$.ofType(LOCATION_CHANGE, LOGOUT).take(1).switchMap(() =>
-                        Rx.Observable.of(
+                        Observable.of(
                             setControlProperty('unsavedMap', 'enabled', false),
                             setControlProperty('unsavedMap', 'source', undefined)
                         )
                     ));
             }
-            return action ? Rx.Observable.of(action) : Rx.Observable.empty();
+            return action ? Observable.of(action) : Observable.empty();
         });

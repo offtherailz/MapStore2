@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { get, head, isArray, template, uniqBy } from 'lodash';
 import { success, error } from '../actions/notifications';
@@ -66,7 +66,7 @@ import { updateStyleService } from '../api/StyleEditor';
  */
 const getStyleCodeObservable = ({ status, styleName, baseUrl }) =>
     status === 'edit' ?
-        Rx.Observable.defer(() =>
+        Observable.defer(() =>
             StylesAPI.getStyleCodeByName({
                 baseUrl,
                 styleName
@@ -78,7 +78,7 @@ const getStyleCodeObservable = ({ status, styleName, baseUrl }) =>
                 )
         )
             .switchMap(([style, metadataNeedsReset]) => {
-                return Rx.Observable.of(
+                return Observable.of(
                     selectStyleTemplate({
                         languageVersion: style.languageVersion,
                         code: style.code,
@@ -98,37 +98,37 @@ const getStyleCodeObservable = ({ status, styleName, baseUrl }) =>
                     )
                 );
             })
-            .catch(err => Rx.Observable.of(errorStyle('edit', err)))
-        : Rx.Observable.empty();
+            .catch(err => Observable.of(errorStyle('edit', err)))
+        : Observable.empty();
 /*
  * This function returns an observable that delete styles.
  */
 const deleteStyle = ({styleName, baseUrl, onSuccess$, onError$}) =>
-    Rx.Observable.defer(() =>
+    Observable.defer(() =>
         StylesAPI.deleteStyle({
             baseUrl,
             styleName
         })
     )
-        .switchMap(() => onSuccess$ || Rx.Observable.empty())
-        .catch(() => onError$ || Rx.Observable.empty());
+        .switchMap(() => onSuccess$ || Observable.empty())
+        .catch(() => onError$ || Observable.empty());
 /*
  * Observable to delete temporary style from server and reset state of style editor
  */
 const resetStyleEditorObservable = state => {
     const styleName = temporaryIdSelector(state);
     const { baseUrl = '' } = styleServiceSelector(state);
-    return Rx.Observable.of(
+    return Observable.of(
         resetStyleEditor(),
         removeAdditionalLayer({ owner: STYLE_OWNER_NAME })
     )
-        .merge(styleName ? deleteStyle({styleName, baseUrl}) : Rx.Observable.empty());
+        .merge(styleName ? deleteStyle({styleName, baseUrl}) : Observable.empty());
 };
 /*
  * Observable to add a style to available style list and update the layer object on the server
  */
 const updateAvailableStylesObservable = ({baseUrl, layer, styleName, format, title, _abstract, metadata}) =>
-    Rx.Observable.defer(() =>
+    Observable.defer(() =>
         LayersAPI.updateAvailableStyles({
             baseUrl,
             layerName: layer.name,
@@ -146,19 +146,19 @@ const updateAvailableStylesObservable = ({baseUrl, layer, styleName, format, tit
             };
             const defaultStyle = head(layer.availableStyles);
             const availableStyles = layer.availableStyles && [defaultStyle, newStyle, ...layer.availableStyles.filter((sty, idx) => idx > 0)] || [newStyle];
-            return Rx.Observable.of(
+            return Observable.of(
                 updateSettingsParams({ availableStyles }, true),
                 loadedStyle()
             );
         })
-        .catch(() => Rx.Observable.of(loadedStyle()))
+        .catch(() => Observable.of(loadedStyle()))
         .startWith(loadingStyle('global'));
 
 /*
  * Observable to create/update style
  */
 const createUpdateStyleObservable = ({baseUrl, update, code, format, styleName, status, languageVersion, options}, successActions = [], errorActions = []) =>
-    Rx.Observable.defer(() =>
+    Observable.defer(() =>
         StylesAPI[update ? 'updateStyle' : 'createStyle']({
             baseUrl,
             code,
@@ -168,33 +168,33 @@ const createUpdateStyleObservable = ({baseUrl, update, code, format, styleName, 
             options
         })
     )
-        .switchMap(() => isArray(successActions) && Rx.Observable.of(loadedStyle(), ...successActions) || successActions)
-        .catch((err) => Rx.Observable.of(errorStyle(status, err), loadedStyle(), ...errorActions))
+        .switchMap(() => isArray(successActions) && Observable.of(loadedStyle(), ...successActions) || successActions)
+        .catch((err) => Observable.of(errorStyle(status, err), loadedStyle(), ...errorActions))
         .startWith(loadingStyle(status));
 
 /*
  * Observable to verify if getLayerCapabilities/getDescribeLayer are correctly updated
  */
 const updateLayerSettingsObservable = (action$, store, filter = () => true, startActions = [], endObservable = () => {}) =>
-    Rx.Observable.of(loadingStyle('global'), ...startActions)
+    Observable.of(loadingStyle('global'), ...startActions)
         .merge(
             action$.ofType(UPDATE_NODE)
                 .filter(() => {
-                    const layer = getSelectedLayer(store.getState());
+                    const layer = getSelectedLayer(store.value);
                     return filter(layer);
                 })
                 .switchMap(() => {
-                    const layer = getSelectedLayer(store.getState());
+                    const layer = getSelectedLayer(store.value);
                     return endObservable(layer);
                 })
-                .catch(err => Rx.Observable.of(errorStyle('global', err), loadedStyle()))
+                .catch(err => Observable.of(errorStyle('global', err), loadedStyle()))
                 .takeUntil(action$.ofType(LOADED_STYLE))
         );
 
 
 function getAvailableStylesFromLayerCapabilities(layer, reset) {
     if (!reset && layer.availableStyles) {
-        return Rx.Observable.of(
+        return Observable.of(
             updateSettingsParams({ availableStyles: layer.availableStyles  }),
             loadedStyle()
         );
@@ -203,13 +203,13 @@ function getAvailableStylesFromLayerCapabilities(layer, reset) {
         .switchMap((capabilities) => {
             const layerCapabilities = formatCapabitiliesOptions(capabilities);
             if (!layerCapabilities.availableStyles) {
-                return Rx.Observable.of(
+                return Observable.of(
                     errorStyle('availableStyles', { status: 401 }),
                     loadedStyle()
                 );
             }
 
-            return Rx.Observable.of(
+            return Observable.of(
                 updateSettingsParams({ availableStyles: layerCapabilities.availableStyles  }),
                 updateNode(layer.id, 'layer', { ...layerCapabilities }),
                 loadedStyle()
@@ -218,7 +218,7 @@ function getAvailableStylesFromLayerCapabilities(layer, reset) {
         })
         .catch((err) => {
             const errorType = err.message.indexOf("could not be unmarshalled") !== -1 ? "parsingCapabilities" : "global";
-            return Rx.Observable.of(errorStyle(errorType, err), loadedStyle());
+            return Observable.of(errorStyle(errorType, err), loadedStyle());
         })
         .startWith(loadingStyle('global'));
 }
@@ -241,18 +241,18 @@ function getAvailableStylesFromLayerCapabilities(layer, reset) {
 
 export const toggleStyleEditorEpic = (action$, store) =>
     action$.ofType(TOGGLE_STYLE_EDITOR)
-        .filter(() => !loadingStyleSelector(store.getState()))
+        .filter(() => !loadingStyleSelector(store.value))
         .switchMap((action) => {
 
-            const state = store.getState();
+            const state = store.value;
             const settings = layerSettingSelector(state);
             const isInitialized = !!get(settings, 'options.availableStyles');
 
             if (!action.enabled) return resetStyleEditorObservable(state);
-            if (enabledStyleEditorSelector(state) && isInitialized) return Rx.Observable.empty();
+            if (enabledStyleEditorSelector(state) && isInitialized) return Observable.empty();
 
             const layer = action.layer || getSelectedLayer(state);
-            if (!layer || layer && !layer.url) return Rx.Observable.empty();
+            if (!layer || layer && !layer.url) return Observable.empty();
 
             const geoserverName = findGeoServerName(layer);
             if (!geoserverName) {
@@ -263,19 +263,19 @@ export const toggleStyleEditorEpic = (action$, store) =>
             const baseUrl = `${layerUrl[0]}${geoserverName}`;
             const lastStyleService = styleServiceSelector(state);
 
-            return Rx.Observable.concat(
-                Rx.Observable.of(
+            return Observable.concat(
+                Observable.of(
                     loadingStyle('global'),
                     resetStyleEditor()
                 ),
-                Rx.Observable.defer(() => updateStyleService({
+                Observable.defer(() => updateStyleService({
                     baseUrl,
                     styleService: lastStyleService
                 }))
                     .switchMap((styleService) => {
-                        return Rx.Observable.concat(
-                            Rx.Observable.of(initStyleService(styleService)),
-                            Rx.Observable.defer(() =>
+                        return Observable.concat(
+                            Observable.of(initStyleService(styleService)),
+                            Observable.defer(() =>
                                 // use rest API to get the correct name and workspace of the styles
                                 LayersAPI.getLayer(baseUrl + 'rest/', layer.name)
                             )
@@ -286,13 +286,13 @@ export const toggleStyleEditorEpic = (action$, store) =>
                                         ...stylesConfig
                                     ], 'name');
                                     if (layerConfigAvailableStyles.length === 0) {
-                                        return Rx.Observable.of(
+                                        return Observable.of(
                                             errorStyle('availableStyles', { status: 401 }),
                                             loadedStyle()
                                         );
                                     }
 
-                                    return Rx.Observable.defer(() =>
+                                    return Observable.defer(() =>
                                         Promise.all([
                                             StylesAPI.getStylesInfo({
                                                 baseUrl,
@@ -322,7 +322,7 @@ export const toggleStyleEditorEpic = (action$, store) =>
                                                 })
                                                 : availableStylesRest;
 
-                                            return Rx.Observable.of(
+                                            return Observable.of(
                                                 updateAdditionalLayer(layer.id, STYLE_OWNER_NAME, 'override', {}),
                                                 updateSettingsParams({ availableStyles }),
                                                 updateNode(layer.id, 'layer', { availableStyles }),
@@ -351,7 +351,7 @@ export const updateLayerOnStatusChangeEpic = (action$, store) =>
         .filter(({ status }) => !!status)
         .switchMap((action) => {
 
-            const state = store.getState();
+            const state = store.value;
 
             const layer = getUpdatedLayer(state);
 
@@ -366,13 +366,13 @@ export const updateLayerOnStatusChangeEpic = (action$, store) =>
                 updatedLayer => updatedLayer && updatedLayer.describeLayer,
                 [ describeAction ],
                 (updatedLayer) => {
-                    return Rx.Observable.concat(
+                    return Observable.concat(
                         getStyleCodeObservable({
                             status: action.status,
                             styleName,
                             baseUrl
                         }),
-                        Rx.Observable.of(
+                        Observable.of(
                             setEditPermissionStyleEditor(!(updatedLayer
                                     && updatedLayer.describeLayer
                                     && updatedLayer.describeLayer.error === 401)),
@@ -397,7 +397,7 @@ export const updateTemporaryStyleEpic = (action$, store) =>
     action$.ofType(SELECT_STYLE_TEMPLATE, EDIT_STYLE_CODE)
         .switchMap(action => {
 
-            const state = store.getState();
+            const state = store.value;
             const temporaryId = temporaryIdSelector(state);
 
             const layer = getUpdatedLayer(state);
@@ -518,7 +518,7 @@ function getMD5Metadata(code) {
 export const createStyleEpic = (action$, store) =>
     action$.ofType(CREATE_STYLE)
         .switchMap(action => {
-            const state = store.getState();
+            const state = store.value;
             const code = codeStyleSelector(state);
             const layer = getUpdatedLayer(state);
             const { workspace } = getNameParts(layer.name);
@@ -541,7 +541,7 @@ export const createStyleEpic = (action$, store) =>
 
             const status = '';
             const newCode = template(code)({ styleTitle: title, styleAbstract: _abstract });
-            return Rx.Observable.defer(() =>
+            return Observable.defer(() =>
                 getMD5Metadata(newCode)
                     .then((msMD5Hash) =>
                         StylesAPI.createStyle({
@@ -556,7 +556,7 @@ export const createStyleEpic = (action$, store) =>
                         })
                     )
             )
-                .switchMap(() => Rx.Observable.of(
+                .switchMap(() => Observable.of(
                     updateOptionsByOwner(STYLE_OWNER_NAME, [{}]),
                     updateSettingsParams({style: styleName || ''}, true),
                     updateStatus(''),
@@ -564,7 +564,7 @@ export const createStyleEpic = (action$, store) =>
                     .merge(
                         updateAvailableStylesObservable({layer, styleName, format, title, _abstract, baseUrl, metadata})
                     ))
-                .catch((err) => Rx.Observable.of(
+                .catch((err) => Observable.of(
                     errorStyle(status, err),
                     loadedStyle(),
                     error({
@@ -587,7 +587,7 @@ export const updateStyleCodeEpic = (action$, store) =>
     action$.ofType(UPDATE_STYLE_CODE)
         .switchMap(() => {
 
-            const state = store.getState();
+            const state = store.value;
 
             const format = formatStyleSelector(state);
             const languageVersion = languageVersionStyleSelector(state);
@@ -612,7 +612,7 @@ export const updateStyleCodeEpic = (action$, store) =>
                     return style;
                 });
 
-            return Rx.Observable.defer(() =>
+            return Observable.defer(() =>
                 getMD5Metadata(code)
                     .then((msMD5Hash) =>
                         StylesAPI.updateStyle({
@@ -629,7 +629,7 @@ export const updateStyleCodeEpic = (action$, store) =>
                         })
                     )
             )
-                .switchMap(() => Rx.Observable.of(
+                .switchMap(() => Observable.of(
                     loadedStyle(),
                     updateNode(
                         layer.id,
@@ -655,7 +655,7 @@ export const updateStyleCodeEpic = (action$, store) =>
                         uid: "savedStyleTitle",
                         autoDismiss: 5
                     })))
-                .catch((err) => Rx.Observable.of(
+                .catch((err) => Observable.of(
                     errorStyle('global', err),
                     loadedStyle(),
                     error({
@@ -678,13 +678,13 @@ export const deleteStyleEpic = (action$, store) =>
         .filter(({styleName}) => !!styleName)
         .switchMap(({styleName}) => {
 
-            const state = store.getState();
+            const state = store.value;
             const layer = getUpdatedLayer(state);
             const { baseUrl = '' } = styleServiceSelector(state);
             const originalSettings = originalSettingsSelector(state);
             const initialSettings = initialSettingsSelector(state);
 
-            return Rx.Observable.defer(() =>
+            return Observable.defer(() =>
                 LayersAPI.removeStyles({
                     baseUrl,
                     layerName: layer.name,
@@ -693,8 +693,8 @@ export const deleteStyleEpic = (action$, store) =>
             )
                 .switchMap(() => {
                     const availableStyles = layer.availableStyles && layer.availableStyles.filter(({name}) => name !== styleName) || [];
-                    return Rx.Observable.concat(
-                        Rx.Observable.of(
+                    return Observable.concat(
+                        Observable.of(
                             updateSettingsParams({style: '', availableStyles}, true),
                             loadedStyle(),
                             // style has been deleted so original and initial settings must be overrided
@@ -704,7 +704,7 @@ export const deleteStyleEpic = (action$, store) =>
                         deleteStyle({
                             styleName,
                             baseUrl,
-                            onSuccess$: Rx.Observable.of(
+                            onSuccess$: Observable.of(
                                 success({
                                     title: "styleeditor.deletedStyleSuccessTitle",
                                     message: "styleeditor.deletedStyleSuccessMessage",
@@ -712,7 +712,7 @@ export const deleteStyleEpic = (action$, store) =>
                                     autoDismiss: 5
                                 })
                             ),
-                            onError$: Rx.Observable.of(
+                            onError$: Observable.of(
                                 error({
                                     title: "styleeditor.deletedStyleErrorTitle",
                                     message: "styleeditor.deletedStyleErrorMessage",
@@ -723,8 +723,8 @@ export const deleteStyleEpic = (action$, store) =>
                         })
                     );
                 })
-                .catch(() => Rx.Observable.of(loadedStyle()))
-                .startWith(() => Rx.Observable.of(loadingStyle('global')));
+                .catch(() => Observable.of(loadedStyle()))
+                .startWith(() => Observable.of(loadingStyle('global')));
         });
 /**
  * Gets every `SET_DEFAULT_STYLE` event.
@@ -736,11 +736,11 @@ export const deleteStyleEpic = (action$, store) =>
 export const setDefaultStyleEpic = (action$, store) =>
     action$.ofType(SET_DEFAULT_STYLE)
         .switchMap(() => {
-            const state = store.getState();
+            const state = store.value;
             const { baseUrl = '' } = styleServiceSelector(state);
             const layer = getUpdatedLayer(state);
             const styleName = selectedStyleSelector(state);
-            return Rx.Observable.defer(() =>
+            return Observable.defer(() =>
                 LayersAPI.updateDefaultStyle({
                     baseUrl,
                     layerName: layer.name,
@@ -751,7 +751,7 @@ export const setDefaultStyleEpic = (action$, store) =>
                     const defaultStyle = layer.availableStyles.filter(({ name }) => styleName === name);
                     const filteredStyles = layer.availableStyles.filter(({ name }) => styleName !== name);
                     const availableStyles = [...defaultStyle, ...filteredStyles];
-                    return Rx.Observable.of(
+                    return Observable.of(
                         updateSettingsParams({ availableStyles }, true),
                         success({
                             title: "styleeditor.setDefaultStyleSuccessTitle",
@@ -764,7 +764,7 @@ export const setDefaultStyleEpic = (action$, store) =>
                 })
                 .startWith(loadingStyle('global'))
                 .catch(() => {
-                    return Rx.Observable.of(
+                    return Observable.of(
                         error({
                             title: "styleeditor.setDefaultStyleErrorTitle",
                             message: "styleeditor.setDefaultStyleErrorMessage",

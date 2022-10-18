@@ -9,7 +9,7 @@
 import expect from 'expect';
 
 import triggerFetch from '../triggerFetch';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import axios from '../../../../../../libs/ajax';
 const triggerInterceptors = (config) => {
     if (config.url.indexOf("rules/count") !== -1) {
@@ -28,7 +28,7 @@ describe('rulegrid triggerFetch', () => {
             done();
         };
         const onLoadError = () => {};
-        const prop$ = Rx.Observable.of({version: 0, filters: {}, setLoading: () => {}, onLoad, onLoadError});
+        const prop$ = Observable.of({version: 0, filters: {}, setLoading: () => {}, onLoad, onLoadError});
         triggerFetch(prop$).subscribe({
             next: () => {},
             error: () => {},
@@ -48,7 +48,7 @@ describe('rulegrid triggerFetch', () => {
             expect(e.message).toExist();
             done();
         };
-        const prop$ = Rx.Observable.of({ version: 0, filters: {}, setLoading: () => { }, onLoad, onLoadError });
+        const prop$ = Observable.of({ version: 0, filters: {}, setLoading: () => { }, onLoad, onLoadError });
         triggerFetch(prop$).subscribe({
             next: () => { },
             error: () => { },

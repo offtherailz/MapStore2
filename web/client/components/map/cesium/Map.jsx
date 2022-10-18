@@ -14,7 +14,7 @@ import '@znemz/cesium-navigation/dist/index.css';
 import viewerCesiumNavigationMixin from '@znemz/cesium-navigation';
 
 import PropTypes from 'prop-types';
-import Rx from 'rxjs';
+import {Observable, Subject} from 'rxjs';
 import React, { useState, forwardRef } from 'react';
 import ReactDOM from 'react-dom';
 import ConfigUtils from '../../../utils/ConfigUtils';
@@ -411,8 +411,8 @@ class CesiumMap extends React.Component {
             PINCH_END: Cesium.ScreenSpaceEventType.PINCH_END,
             PINCH_MOVE: Cesium.ScreenSpaceEventType.PINCH_MOVE
         };
-        const clickStream$ = new Rx.Subject();
-        const pauserStream$ = new Rx.Subject();
+        const clickStream$ = new Subject();
+        const pauserStream$ = new Subject();
         Object.keys(types).forEach((type) => this.hand.setInputAction((movement) => {
             pauserStream$.next({type: types[type], movement});
             clickStream$.next({type: types[type], movement});
@@ -424,21 +424,21 @@ class CesiumMap extends React.Component {
          * If a pinch event is ended, wait to start listening left clicks. This to skip the LEFT_UP,LEFT_DOWN, LEFT_CLICK sequence that cesium triggers after a pinch end,
          * that othewise can not be distinguished from a normal click event.
          */
-        pauserStream$
+        Observable.from(pauserStream$
             .filter( ev => ev.type === types.PINCH_END )
-            .switchMap( () => Rx.Observable.of(true).concat(Rx.Observable.of(false).delay(500)))
-            .startWith(false)
+            .switchMap( () => Observable.of(true).concat(Observable.of(false).delay(500)))
+            .startWith(false))
             .switchMap(paused => {
                 // pause is realized by mapping the click stream or an infinite stream
-                return paused ? Rx.Observable.never() : clickStream$;
+                return paused ? Observable.never() : Observable.from(clickStream$);
             })
             .filter( ev => ev.type === types.LEFT_DOWN )
             .switchMap(({movement}) =>
-                clickStream$
+                Observable.from(clickStream$)
                     .filter( ev => ev.type === types.LEFT_CLICK )
                     .takeUntil(
-                        Rx.Observable.timer(500).merge(
-                            clickStream$
+                        Observable.timer(500).merge(
+                            Observable.from(clickStream$)
                                 .filter( ev =>
                                     ev.type !== types.LEFT_UP && ev.type !== types.LEFT_CLICK
                                 || ev.type === types.LEFT_UP && !samePosition(movement && movement.position, ev.movement && ev.movement.position)

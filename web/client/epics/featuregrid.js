@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import {get, head, isEmpty, find, castArray, includes, reduce} from 'lodash';
 import { LOCATION_CHANGE } from 'connected-react-router';
@@ -205,12 +205,12 @@ const setupDrawSupport = (state, original) => {
     const cleanFeatures = features.filter(ft => ft.geometry !== null || ft.id !== 'empty_row');
 
     if (cleanFeatures.length > 0) {
-        return Rx.Observable.from([
+        return Observable.from([
             changeDrawingStatus("drawOrEdit", geomType, "featureGrid", cleanFeatures, drawOptions)
         ]);
     }
 
-    return Rx.Observable.from([
+    return Observable.from([
         changeDrawingStatus("clean", "", "featureGrid", [], {})
     ]);
 };
@@ -241,7 +241,7 @@ const createChangesTransaction = (changes, newFeatures, {insert, update, propert
 const createDeleteTransaction = (features, {transaction, deleteFeature}) => transaction(
     features.map(deleteFeature)
 );
-const save = (url, body) => Rx.Observable.defer(() => axios.post(url, body, {headers: { 'Content-Type': 'application/xml'}}))
+const save = (url, body) => Observable.defer(() => axios.post(url, body, {headers: { 'Content-Type': 'application/xml'}}))
     .let(interceptOGCError);
 
 const createSaveChangesFlow = (changes = {}, newFeatures = [], describeFeatureType, url) => save(
@@ -254,8 +254,8 @@ const createDeleteFlow = (features, describeFeatureType, url) => save(
     createDeleteTransaction(features, requestBuilder(describeFeatureType))
 );
 const createLoadPageFlow = (store) => ({page, size, reason} = {}) => {
-    const state = store.getState();
-    return Rx.Observable.of( query(
+    const state = store.value;
+    return Observable.of( query(
         wfsURL(state),
         addPagination({
             ...(wfsFilter(state))
@@ -268,14 +268,14 @@ const createLoadPageFlow = (store) => ({page, size, reason} = {}) => {
 };
 
 const createInitialQueryFlow = (action$, store, {url, name, id} = {}) => {
-    const filterObj = get(store.getState(), `featuregrid.advancedFilters["${id}"]`);
+    const filterObj = get(store.value, `featuregrid.advancedFilters["${id}"]`);
     const createInitialQuery = () => createQuery(url, filterObj || {
         featureTypeName: name,
         filterType: 'OGC',
         ogcVersion: '1.1.0'
     });
 
-    return Rx.Observable.of(featureTypeSelected(url, name)).merge(
+    return Observable.of(featureTypeSelected(url, name)).merge(
         action$.ofType(FEATURE_TYPE_LOADED).filter(({typeName} = {}) => typeName === name)
             .map(createInitialQuery)
     );
@@ -292,11 +292,11 @@ const removeFilterFromWMSLayer = ({featuregrid: f} = {}) => {
 
 const updateFilterFunc = (store) => ({update = {}, append} = {}) => {
     // If an advanced filter is present it's filterFields should be composed with the action'
-    const {id} = selectedLayerSelector(store.getState());
-    const filterObj = {...get(store.getState(), `featuregrid.advancedFilters["${id}"]`)};
+    const {id} = selectedLayerSelector(store.value);
+    const filterObj = {...get(store.value, `featuregrid.advancedFilters["${id}"]`)};
     if (filterObj) {
         // TODO: make append with advanced filters work
-        const attributesFilter = getAttributeFilters(store.getState()) || {};
+        const attributesFilter = getAttributeFilters(store.value) || {};
         const columnsFilters = reduce(attributesFilter, (cFilters, value, attribute) => {
             return gridUpdateToQueryUpdate({attribute, ...value}, cFilters);
         }, {});
@@ -315,9 +315,9 @@ const updateFilterFunc = (store) => ({update = {}, append} = {}) => {
     }
     let u = update;
     if (append && !!update?.attribute) {
-        u = getAttributeFilters(store.getState())[update?.attribute];
+        u = getAttributeFilters(store.value)[update?.attribute];
     }
-    return updateQuery({updates: gridUpdateToQueryUpdate(u, wfsFilter(store.getState())), reason: u?.type});
+    return updateQuery({updates: gridUpdateToQueryUpdate(u, wfsFilter(store.value)), reason: u?.type});
 };
 
 
@@ -329,8 +329,8 @@ const updateFilterFunc = (store) => ({update = {}, append} = {}) => {
 
 export const featureGridBrowseData = (action$, store) =>
     action$.ofType(BROWSE_DATA).switchMap( ({layer}) => {
-        const currentTypeName = get(store.getState(), "query.typeName");
-        return Rx.Observable.of(
+        const currentTypeName = get(store.value, "query.typeName");
+        return Observable.of(
             ...(currentTypeName !== layer.name ? [reset()] : []),
             setControlProperty('drawer', 'enabled', false),
             setLayer(layer.id),
@@ -345,15 +345,15 @@ export const featureGridBrowseData = (action$, store) =>
  */
 export const featureGridLayerSelectionInitialization = (action$) =>
     action$.ofType(LAYER_SELECTED_FOR_SEARCH)
-        .switchMap( a => Rx.Observable.of(setLayer(a.id)));
+        .switchMap( a => Observable.of(setLayer(a.id)));
 /**
  * Intercepts query creation to perform the real query, setting page to 0
  * @memberof epics.featuregrid
  */
 export const featureGridStartupQuery = (action$, store) =>
     action$.ofType(QUERY_CREATE)
-        .switchMap(() => Rx.Observable.of(changePage(0))
-            .concat(modeSelector(store.getState()) === MODES.VIEW ? Rx.Observable.of(toggleViewMode()) : Rx.Observable.empty()));
+        .switchMap(() => Observable.of(changePage(0))
+            .concat(modeSelector(store.value) === MODES.VIEW ? Observable.of(toggleViewMode()) : Observable.empty()));
 /**
  * Create sorted queries on sort action
  * With virtualScroll active reset to page 0 but the grid will reload
@@ -363,15 +363,15 @@ export const featureGridStartupQuery = (action$, store) =>
 export const featureGridSort = (action$, store) =>
     action$.ofType(SORT_BY)
         .switchMap( ({sortBy, sortOrder}) =>
-            Rx.Observable.of( query(
-                wfsURL(store.getState()),
+            Observable.of( query(
+                wfsURL(store.value),
                 addPagination({
-                    ...wfsFilter(store.getState()),
+                    ...wfsFilter(store.value),
                     sortOptions: {sortBy, sortOrder}
                 },
-                getPagination(store.getState())
+                getPagination(store.value)
                 ),
-                queryOptionsSelector(store.getState())
+                queryOptionsSelector(store.value)
             ))
                 .merge(action$.ofType(QUERY_RESULT)
                     .map((ra) => featureGridQueryResult(get(ra, "result.features", []), [get(ra, "filterObj.pagination.startIndex")]))
@@ -385,7 +385,7 @@ export const featureGridSort = (action$, store) =>
  */
 export const featureGridUpdateGeometryFilter = (action$, store) =>
     action$.ofType(OPEN_FEATURE_GRID).switchMap(() => {
-        const originalSize = paginationSelector(store.getState())?.size;
+        const originalSize = paginationSelector(store.value)?.size;
         return action$
             .ofType(UPDATE_FILTER)
             // Enable event do not contain any value, only the "enable=true".
@@ -405,7 +405,7 @@ export const featureGridUpdateGeometryFilter = (action$, store) =>
                         if (i === 0) {
                             virtualScrollSet = true;
 
-                            return Rx.Observable.from([
+                            return Observable.from([
                                 // setting the page size to a big value, we allow
                                 // feature selection, ignoring the virtual scrolling
                                 setPagination(100000),
@@ -415,9 +415,9 @@ export const featureGridUpdateGeometryFilter = (action$, store) =>
                                 updateFilterFunc(store)(a)
                             ]);
                         }
-                        return Rx.Observable.of(updateFilterFunc(store)(a));
+                        return Observable.of(updateFilterFunc(store)(a));
                     })
-                    .takeUntil(Rx.Observable.merge(
+                    .takeUntil(Observable.merge(
                         action$.ofType(UPDATE_FILTER)
                             .filter(({ update = {} }) => update.type === 'geometry' && !update.enabled),
                         action$.ofType(CLOSE_FEATURE_GRID, LOCATION_CHANGE)
@@ -430,9 +430,9 @@ export const featureGridUpdateGeometryFilter = (action$, store) =>
                             .switchMap(a => {
                                 // reset the pagination to the original value if changed.
                                 if (virtualScrollSet) {
-                                    return Rx.Observable.of(setPagination(originalSize), updateFilterFunc(store)(a));
+                                    return Observable.of(setPagination(originalSize), updateFilterFunc(store)(a));
                                 }
-                                return Rx.Observable.of(updateFilterFunc(store)(a));
+                                return Observable.of(updateFilterFunc(store)(a));
                             })
                             // if closed, do not need to update
                             .takeUntil(action$.ofType(CLOSE_FEATURE_GRID, LOCATION_CHANGE))
@@ -442,15 +442,15 @@ export const featureGridUpdateGeometryFilter = (action$, store) =>
                             // if closed. the filter must be reset or a reopen (e.g. from advanced filter)
                             // could make inconsistent the UI.
                             const resetFilter = updateFilter({
-                                attribute: findGeometryProperty(describeSelector(store.getState()))?.name,
+                                attribute: findGeometryProperty(describeSelector(store.value))?.name,
                                 enabled: false,
                                 type: "geometry"
                             });
                             // if closed for other causes, need to restore anyway the pagination
                             if (virtualScrollSet) {
-                                return Rx.Observable.of(setPagination(originalSize), resetFilter, launchUpdateFilterFunc(resetFilter));
+                                return Observable.of(setPagination(originalSize), resetFilter, launchUpdateFilterFunc(resetFilter));
                             }
-                            return Rx.Observable.of(resetFilter, launchUpdateFilterFunc(resetFilter));
+                            return Observable.of(resetFilter, launchUpdateFilterFunc(resetFilter));
                         })
                     );
             });
@@ -463,7 +463,7 @@ export const featureGridUpdateGeometryFilter = (action$, store) =>
  * see #6366
   */
 export const launchUpdateFilterEpic = (action$, store) => action$.ofType(LAUNCH_UPDATE_FILTER_FUNC).switchMap((a) => {
-    return Rx.Observable.of(updateFilterFunc(store)(a.updateFilterAction));
+    return Observable.of(updateFilterFunc(store)(a.updateFilterAction));
 });
 /**
  * Performs the query when the text filters are updated
@@ -481,11 +481,11 @@ export const featureGridUpdateTextFilters = (action$, store) => action$.ofType(Q
  */
 export const enableGeometryFilterOnEditMode = (action$, store) =>
     action$.ofType(TOGGLE_MODE)
-        .filter(() => modeSelector(store.getState()) === MODES.EDIT)
+        .filter(() => modeSelector(store.value) === MODES.EDIT)
         .switchMap(() => {
-            const currentFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry') || {};
-            return currentFilter.value ? Rx.Observable.empty() : Rx.Observable.of(updateFilter({
-                attribute: findGeometryProperty(describeSelector(store.getState())).name,
+            const currentFilter = find(getAttributeFilters(store.value), f => f.type === 'geometry') || {};
+            return currentFilter.value ? Observable.empty() : Observable.of(updateFilter({
+                attribute: findGeometryProperty(describeSelector(store.value)).name,
                 enabled: true,
                 type: "geometry"
             }));
@@ -497,7 +497,7 @@ export const disableMultiSelect = (action$) =>
     action$.ofType(UPDATE_FILTER)
         .filter(({update = {}}) => update.type === 'geometry' && !update.enabled)
         .switchMap(() => {
-            return Rx.Observable.of(setSelectionOptions({multiselect: false}));
+            return Observable.of(setSelectionOptions({multiselect: false}));
         });
 export const handleClickOnMap = (action$, store) =>
     action$.ofType(UPDATE_FILTER)
@@ -505,19 +505,19 @@ export const handleClickOnMap = (action$, store) =>
         .switchMap(() =>
             action$.ofType(CLICK_ON_MAP).switchMap(({point}) => {
                 const {latlng, pixel, modifiers: {ctrl, metaKey}} = point;
-                const currentFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry') || {};
+                const currentFilter = find(getAttributeFilters(store.value), f => f.type === 'geometry') || {};
 
-                const projection = projectionSelector(store.getState());
+                const projection = projectionSelector(store.value);
                 const center = CoordinatesUtils.reproject([latlng.lng, latlng.lat], 'EPSG:4326', projection);
                 const hook = MapUtils.getHook(MapUtils.GET_COORDINATES_FROM_PIXEL_HOOK);
                 const radius = CoordinatesUtils.calculateCircleRadiusFromPixel(hook, pixel, center, 4);
 
-                return currentFilter.deactivated ? Rx.Observable.empty() : Rx.Observable.of(
+                return currentFilter.deactivated ? Observable.empty() : Observable.of(
                     setSelectionOptions({multiselect: (ctrl || metaKey) ?? false}),
                     updateFilter({
                         ...currentFilter,
                         value: {
-                            attribute: currentFilter.attribute || get(spatialFieldSelector(store.getState()), 'attribute'),
+                            attribute: currentFilter.attribute || get(spatialFieldSelector(store.value), 'attribute'),
                             geometry: {
                                 center: [center.x, center.y],
                                 coordinates: CoordinatesUtils.calculateCircleCoordinates(center, radius, 12),
@@ -531,7 +531,7 @@ export const handleClickOnMap = (action$, store) =>
                         }
                     }, ctrl || metaKey));
             })
-                .takeUntil(Rx.Observable.merge(
+                .takeUntil(Observable.merge(
                     action$.ofType(UPDATE_FILTER).filter(({update = {}}) => update.type === 'geometry' && !update.enabled),
                     action$.ofType(LOCATION_CHANGE)
                 )));
@@ -542,10 +542,10 @@ export const handleBoxSelectionDrawEnd =  (action$, store) =>
             return action$.ofType(BOX_END).switchMap(({boxEndInfo}) => {
                 const { boxExtent, modifiers: {ctrl, metaKey} } = boxEndInfo;
                 const geom = CoordinatesUtils.getPolygonFromExtent(boxExtent);
-                const projection = projectionSelector(store.getState());
-                const currentFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry') || {};
+                const projection = projectionSelector(store.value);
+                const currentFilter = find(getAttributeFilters(store.value), f => f.type === 'geometry') || {};
 
-                return currentFilter.deactivated ? Rx.Observable.empty() : Rx.Observable.of(
+                return currentFilter.deactivated ? Observable.empty() : Observable.of(
                     setSelectionOptions({multiselect: (ctrl || metaKey) ?? false}),
                     updateFilter({
                         ...currentFilter,
@@ -554,13 +554,13 @@ export const handleBoxSelectionDrawEnd =  (action$, store) =>
                                 ...geom.geometry,
                                 projection
                             },
-                            attribute: currentFilter.attribute || get(spatialFieldSelector(store.getState()), 'attribute'),
+                            attribute: currentFilter.attribute || get(spatialFieldSelector(store.value), 'attribute'),
                             method: "Rectangle",
                             operation: "INTERSECTS"
                         }
                     }, ctrl || metaKey));
             })
-                .takeUntil(Rx.Observable.merge(
+                .takeUntil(Observable.merge(
                     action$.ofType(UPDATE_FILTER).filter(({update = {}}) => update.type === 'geometry' && !update.enabled)
                 ));
         });
@@ -568,80 +568,80 @@ export const activateBoxSelectionTool = (action$) =>
     action$.ofType(UPDATE_FILTER)
         .filter(({update = {}}) => update.type === 'geometry' && update.enabled)
         .switchMap( () => {
-            return Rx.Observable.of(changeBoxSelectionStatus("start"));
+            return Observable.of(changeBoxSelectionStatus("start"));
         });
 export const deactivateBoxSelectionTool = (action$) =>
-    Rx.Observable.merge(
+    Observable.merge(
         action$.ofType(UPDATE_FILTER).filter(({update = {}}) => update.type === 'geometry' && !update.enabled),
         action$.ofType(CLOSE_FEATURE_GRID)
     ).switchMap(() => {
-        return Rx.Observable.of(changeBoxSelectionStatus("end"));
+        return Observable.of(changeBoxSelectionStatus("end"));
     });
 export const selectFeaturesOnMapClickResult = (action$, store) =>
     action$.ofType(QUERY_RESULT)
         .filter(({reason}) => reason === 'geometry')
         .switchMap(({result}) => {
             let features = get(result, 'features');
-            const multipleSelect = multiSelect(store.getState());
+            const multipleSelect = multiSelect(store.value);
 
-            const geometryFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry');
-            return Rx.Observable.of(
+            const geometryFilter = find(getAttributeFilters(store.value), f => f.type === 'geometry');
+            return Observable.of(
                 selectFeatures(
                     features.length > 0 && geometryFilter && geometryFilter.value ? [...features] : [],
                     multipleSelect));
         });
 export const activateTemporaryChangesEpic = (action$) =>
     action$.ofType(ACTIVATE_TEMPORARY_CHANGES)
-        .flatMap(({activated}) => Rx.Observable.of(
+        .flatMap(({activated}) => Observable.of(
             disableToolbar(activated),
             deactivateGeometryFilterAction(activated)
         ));
 export const handleGeometryFilterActivation = (action$, store) =>
     action$.ofType(START_DRAWING_FEATURE)
         .flatMap(() => {
-            const geometryFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry') || {};
-            const hasChanges = hasChangesSelector(store.getState());
-            const hasNewFeatures = hasNewFeaturesSelector(store.getState());
-            return Rx.Observable.of(updateFilter({
+            const geometryFilter = find(getAttributeFilters(store.value), f => f.type === 'geometry') || {};
+            const hasChanges = hasChangesSelector(store.value);
+            const hasNewFeatures = hasNewFeaturesSelector(store.value);
+            return Observable.of(updateFilter({
                 ...geometryFilter,
                 type: 'geometry',
-                attribute: geometryFilter.attribute || get(spatialFieldSelector(store.getState()), 'attribute'),
+                attribute: geometryFilter.attribute || get(spatialFieldSelector(store.value), 'attribute'),
                 deactivated: !hasChanges && !hasNewFeatures ? !geometryFilter.deactivated : true
             }));
         });
 export const deactivateGeometryFilter = (action$, store) =>
-    Rx.Observable.merge(
+    Observable.merge(
         action$.ofType(CREATE_NEW_FEATURE, GEOMETRY_CHANGED, DELETE_GEOMETRY, FEATURES_MODIFIED),
         action$.ofType(DEACTIVATE_GEOMETRY_FILTER).filter(({deactivated}) => !!deactivated)
     )
         .flatMap(() => {
-            const geometryFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry') || {};
+            const geometryFilter = find(getAttributeFilters(store.value), f => f.type === 'geometry') || {};
             return !geometryFilter.deactivated ?
-                Rx.Observable.of(updateFilter({
+                Observable.of(updateFilter({
                     ...geometryFilter,
                     type: 'geometry',
-                    attribute: geometryFilter.attribute || get(spatialFieldSelector(store.getState()), 'attribute'),
+                    attribute: geometryFilter.attribute || get(spatialFieldSelector(store.value), 'attribute'),
                     deactivated: true
                 })) :
-                Rx.Observable.empty();
+                Observable.empty();
         });
 export const activateGeometryFilter = (action$, store) =>
-    Rx.Observable.merge(
+    Observable.merge(
         action$.ofType(SAVE_SUCCESS, CLEAR_CHANGES),
         action$.ofType(DEACTIVATE_GEOMETRY_FILTER).filter(({deactivated}) => !deactivated)
     )
         .flatMap(() => {
-            const geometryFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry') || {};
-            const hasChanges = hasChangesSelector(store.getState());
-            const hasNewFeatures = hasNewFeaturesSelector(store.getState());
+            const geometryFilter = find(getAttributeFilters(store.value), f => f.type === 'geometry') || {};
+            const hasChanges = hasChangesSelector(store.value);
+            const hasNewFeatures = hasNewFeaturesSelector(store.value);
             return geometryFilter.deactivated && !hasChanges && !hasNewFeatures ?
-                Rx.Observable.of(updateFilter({
+                Observable.of(updateFilter({
                     ...geometryFilter,
                     type: 'geometry',
-                    attribute: geometryFilter.attribute || get(spatialFieldSelector(store.getState()), 'attribute'),
+                    attribute: geometryFilter.attribute || get(spatialFieldSelector(store.value), 'attribute'),
                     deactivated: false
                 })) :
-                Rx.Observable.empty();
+                Observable.empty();
         });
 /**
  * perform paginated query on page change
@@ -654,10 +654,10 @@ export const featureGridChangePage = (action$, store) =>
             .merge(action$.ofType(QUERY_RESULT)
                 .map((ra) => {
                     let features = get(ra, "result.features", []);
-                    const multipleSelect = multiSelect(store.getState());
-                    const geometryFilter = find(getAttributeFilters(store.getState()), f => f.type === 'geometry');
+                    const multipleSelect = multiSelect(store.value);
+                    const geometryFilter = find(getAttributeFilters(store.value), f => f.type === 'geometry');
                     if (multipleSelect && geometryFilter?.enabled) {
-                        features = selectedFeaturesSelector(store.getState());
+                        features = selectedFeaturesSelector(store.value);
                     }
                     // TODO: Handle pagination when multi-select due to control
                     return featureGridQueryResult(features, [get(ra, "filterObj.pagination.startIndex")]);
@@ -674,20 +674,20 @@ export const featureGridChangePage = (action$, store) =>
  */
 export const featureGridReloadPageOnSaveSuccess = (action$, store) =>
     action$.ofType(SAVE_SUCCESS).switchMap( ({page, size} = {}) =>
-        Rx.Observable.of(
+        Observable.of(
             query(
-                wfsURL(store.getState()),
+                wfsURL(store.value),
                 addPagination({
-                    ...wfsFilter(store.getState())
+                    ...wfsFilter(store.value)
                 },
-                getPagination(store.getState(), {page: page, size})
+                getPagination(store.value, {page: page, size})
                 ),
-                queryOptionsSelector(store.getState())
+                queryOptionsSelector(store.value)
             ),
-            refreshLayerVersion(selectedLayerIdSelector(store.getState()))
+            refreshLayerVersion(selectedLayerIdSelector(store.value))
         )
             .merge(action$.ofType(QUERY_RESULT)
-                .map((ra) => Rx.Observable.of(clearChanges(), featureGridQueryResult(get(ra, "result.features", []), [get(ra, "filterObj.pagination.startIndex")]))
+                .map((ra) => Observable.of(clearChanges(), featureGridQueryResult(get(ra, "result.features", []), [get(ra, "filterObj.pagination.startIndex")]))
                 )
                 .mergeAll()
                 .takeUntil(action$.ofType(QUERY_ERROR))
@@ -703,22 +703,22 @@ export const featureGridReloadPageOnSaveSuccess = (action$, store) =>
  */
 export const updateSelectedOnSaveOrCloseFeatureGrid = (action$) =>
     action$.ofType(SAVE_SUCCESS, CLOSE_FEATURE_GRID).switchMap(() => {
-        return Rx.Observable.of(selectFeatures([]));
+        return Observable.of(selectFeatures([]));
     });
 /**
  * trigger WFS transaction stream on SAVE_CHANGES action
  */
 export const savePendingFeatureGridChanges = (action$, store) =>
     action$.ofType(SAVE_CHANGES).switchMap( () =>
-        Rx.Observable.of(featureSaving())
+        Observable.of(featureSaving())
             .concat(
                 createSaveChangesFlow(
-                    changesMapSelector(store.getState()),
-                    newFeaturesSelector(store.getState()),
-                    describeSelector(store.getState()),
-                    wfsURL(store.getState())
+                    changesMapSelector(store.value),
+                    newFeaturesSelector(store.value),
+                    describeSelector(store.value),
+                    wfsURL(store.value)
                 ).map(() => saveSuccess())
-                    .catch((e) => Rx.Observable.of(saveError(), error({
+                    .catch((e) => Observable.of(saveError(), error({
                         title: "featuregrid.errorSaving",
                         message: e.message || "Unknown Exception",
                         uid: "saveError",
@@ -732,19 +732,19 @@ export const savePendingFeatureGridChanges = (action$, store) =>
  */
 export const deleteSelectedFeatureGridFeatures = (action$, store) =>
     action$.ofType(DELETE_SELECTED_FEATURES).switchMap( () =>
-        Rx.Observable.of(featureSaving())
+        Observable.of(featureSaving())
             .concat(
                 createDeleteFlow(
-                    selectedFeaturesSelector(store.getState()),
-                    describeSelector(store.getState()),
-                    wfsURL(store.getState())
+                    selectedFeaturesSelector(store.value),
+                    describeSelector(store.value),
+                    wfsURL(store.value)
                 ).map(() => saveSuccess())
                 // close window
-                    .catch((e) => Rx.Observable.of(saveError(), error({
+                    .catch((e) => Observable.of(saveError(), error({
                         title: "featuregrid.errorSaving",
                         message: e.message || "Unknown Exception",
                         uid: "saveError"
-                    }))).concat(Rx.Observable.of(
+                    }))).concat(Observable.of(
                         toggleTool("deleteConfirm"),
                         clearSelection()
                     ))
@@ -756,7 +756,7 @@ export const deleteSelectedFeatureGridFeatures = (action$, store) =>
  */
 export const handleEditFeature = (action$, store) => action$.ofType(START_EDITING_FEATURE)
     .switchMap( () => {
-        const state = store.getState();
+        const state = store.value;
         const describe = describeSelector(state);
         const defaultFeatureProj = getDefaultFeatureProjection();
         const geomType = findGeometryProperty(describe).localType;
@@ -771,7 +771,7 @@ export const handleEditFeature = (action$, store) => action$.ofType(START_EDITIN
         if (changes[feature.id] && changes[feature.id] && changes[feature.id].geometry) {
             feature.geometry = changes[feature.id].geometry;
         }
-        return Rx.Observable.of(changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions));
+        return Observable.of(changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions));
     });
 /**
  * handle drawing actions on START_DRAWING_FEATURE action
@@ -779,7 +779,7 @@ export const handleEditFeature = (action$, store) => action$.ofType(START_EDITIN
  */
 export const handleDrawFeature = (action$, store) => action$.ofType(START_DRAWING_FEATURE)
     .switchMap( () => {
-        const state = store.getState();
+        const state = store.value;
         const describe = describeSelector(state);
         const defaultFeatureProj = getDefaultFeatureProjection();
         const geomType = findGeometryProperty(describe).localType;
@@ -797,16 +797,16 @@ export const handleDrawFeature = (action$, store) => action$.ofType(START_DRAWIN
             editEnabled: !isDrawingSelector(state),
             drawEnabled: isDrawingSelector(state)
         };
-        return Rx.Observable.of(changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions));
+        return Observable.of(changeDrawingStatus("drawOrEdit", geomType, "featureGrid", [feature], drawOptions));
     });
 export const resetEditingOnFeatureGridClose = (action$, store) => action$.ofType(OPEN_FEATURE_GRID).switchMap( () =>
     action$.ofType(TOGGLE_MODE)
-        .filter(() => modeSelector(store.getState()) === MODES.EDIT)
+        .filter(() => modeSelector(store.value) === MODES.EDIT)
         .take(1)
         .switchMap( () =>
             action$.ofType(LOCATION_CHANGE, CLOSE_FEATURE_GRID)
                 .take(1)
-                .switchMap(() => Rx.Observable.of(drawSupportReset())))
+                .switchMap(() => Observable.of(drawSupportReset())))
 
 );
 
@@ -820,12 +820,12 @@ export const closeRightPanelOnFeatureGridOpen = (action$, store) =>
     action$.ofType(OPEN_FEATURE_GRID)
         .switchMap( () => {
             const actions = [];
-            const state = store.getState();
+            const state = store.value;
             const rightPanels = dockPanelsSelector(state).right;
             rightPanels.forEach(panel => {
                 if (createControlEnabledSelector(panel)(state)) actions.push(setControlProperty(panel, 'enabled', false));
             });
-            return Rx.Observable.from(actions);
+            return Observable.from(actions);
         });
 
 /**
@@ -836,7 +836,7 @@ export const closeRightPanelOnFeatureGridOpen = (action$, store) =>
  */
 export const closeFeatureGridOnDrawingToolOpen = (action$, store) =>
     shutdownToolOnAnotherToolDrawing(action$, store, 'featureGrid',
-        () => Rx.Observable.from([closeFeatureGrid()]),
+        () => Observable.from([closeFeatureGrid()]),
         (state) => isFeatureGridOpen(state)
     );
 
@@ -849,7 +849,7 @@ export const onFeatureGridGeometryEditing = (action$, store) => action$.ofType(G
     .filter(a => a.owner === "featureGrid")
     .delay(500) // delay to avoid race condition in draw interactions
     .switchMap( (a) => {
-        const state = store.getState();
+        const state = store.value;
         const defaultFeatureProj = getDefaultFeatureProjection();
         const drawOptions = {
             featureProjection: defaultFeatureProj,
@@ -864,9 +864,9 @@ export const onFeatureGridGeometryEditing = (action$, store) => action$.ofType(G
 
         // use one of the features to get drawing method i.e. feature.geometry.type
         let feature = assign({}, head(a.features), {id: selectedFeatureSelector(state).id, _new: selectedFeatureSelector(state)._new, type: "Feature"});
-        let enableEdit = a.enableEdit === "enterEditMode" ? Rx.Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", changedFeatures, drawOptions)) : Rx.Observable.empty();
+        let enableEdit = a.enableEdit === "enterEditMode" ? Observable.of(changeDrawingStatus("drawOrEdit", feature.geometry.type, "featureGrid", changedFeatures, drawOptions)) : Observable.empty();
 
-        return Rx.Observable.of(geometryChanged(changedFeatures)).concat(enableEdit);
+        return Observable.of(geometryChanged(changedFeatures)).concat(enableEdit);
     });
 /**
  * Manage delete geometry action flow
@@ -874,8 +874,8 @@ export const onFeatureGridGeometryEditing = (action$, store) => action$.ofType(G
  */
 export const deleteGeometryFeature = (action$, store) => action$.ofType(DELETE_GEOMETRY)
     .switchMap( () => {
-        const state = store.getState();
-        return Rx.Observable.from([
+        const state = store.value;
+        return Observable.from([
             deleteGeometryFeatureAction(selectedFeaturesSelector(state)),
             drawSupportReset()
         ]);
@@ -885,9 +885,9 @@ export const deleteGeometryFeature = (action$, store) => action$.ofType(DELETE_G
  * @memberof epics.featuregrid
  */
 export const triggerDrawSupportOnSelectionChange = (action$, store) => action$.ofType(SELECT_FEATURES, DESELECT_FEATURES, CLEAR_CHANGES, TOGGLE_MODE)
-    .filter(() => modeSelector(store.getState()) === MODES.EDIT && hasSupportedGeometry(store.getState()))
+    .filter(() => modeSelector(store.value) === MODES.EDIT && hasSupportedGeometry(store.value))
     .switchMap( (a) => {
-        const state = store.getState();
+        const state = store.value;
         let useOriginal = a.type === CLEAR_CHANGES;
         return setupDrawSupport(state, useOriginal);
     });
@@ -896,7 +896,7 @@ export const triggerDrawSupportOnSelectionChange = (action$, store) => action$.o
  */
 export const onFeatureGridCreateNewFeature = (action$) => action$.ofType(CREATE_NEW_FEATURE)
     .switchMap( () => {
-        return Rx.Observable.of(drawSupportReset());
+        return Observable.of(drawSupportReset());
     });
 /**
  * control highlight support on view mode.
@@ -905,17 +905,17 @@ export const onFeatureGridCreateNewFeature = (action$) => action$.ofType(CREATE_
 export const setHighlightFeaturesPath = (action$, store) => action$.ofType(TOGGLE_MODE)
     .switchMap( (a) => {
         if (a.mode === MODES.VIEW) {
-            return Rx.Observable.of(drawSupportReset(), setHighlightFeaturesPathAction("featuregrid.select"));
+            return Observable.of(drawSupportReset(), setHighlightFeaturesPathAction("featuregrid.select"));
         }
-        if (a.mode === MODES.EDIT && !hasSupportedGeometry(store.getState())) {
-            return Rx.Observable.of(drawSupportReset(), setHighlightFeaturesPathAction("featuregrid.select"), warning({
+        if (a.mode === MODES.EDIT && !hasSupportedGeometry(store.value)) {
+            return Observable.of(drawSupportReset(), setHighlightFeaturesPathAction("featuregrid.select"), warning({
                 title: "featuregrid.notSupportedGeometryTitle",
                 message: "featuregrid.notSupportedGeometry",
                 uid: "notSupportedGeometryWarning",
                 autoDismiss: 5
             }));
         }
-        return Rx.Observable.of(setHighlightFeaturesPathAction());
+        return Observable.of(setHighlightFeaturesPathAction());
     });
 /**
  * Restores the view mode on location change.
@@ -926,7 +926,7 @@ export const resetGridOnLocationChange = action$ =>
         action$.ofType(LOCATION_CHANGE)
             .take(1)
             .switchMap(() =>
-                Rx.Observable.of(
+                Observable.of(
                     toggleViewMode(),
                     closeFeatureGrid()
                 )
@@ -935,8 +935,8 @@ export const resetGridOnLocationChange = action$ =>
     );
 export const resetQueryPanel = (action$, store) =>
     action$.ofType(LOCATION_CHANGE).switchMap( () => {
-        return queryPanelSelector(store.getState()) ? Rx.Observable.of(setControlProperty('queryPanel', "enabled", false))
-            : Rx.Observable.empty();
+        return queryPanelSelector(store.value) ? Observable.of(setControlProperty('queryPanel', "enabled", false))
+            : Observable.empty();
     }
     );
 /**
@@ -946,22 +946,22 @@ export const resetQueryPanel = (action$, store) =>
 export const autoCloseFeatureGridEpicOnDrowerOpen = (action$, store) =>
     action$.ofType(OPEN_FEATURE_GRID).switchMap(() =>
         action$.ofType(TOGGLE_CONTROL)
-            .filter(action => action.control && action.control === 'drawer' && isFeatureGridOpen(store.getState()))
-            .switchMap(() => Rx.Observable.of(closeFeatureGrid(), selectFeatures([])))
+            .filter(action => action.control && action.control === 'drawer' && isFeatureGridOpen(store.value))
+            .switchMap(() => Observable.of(closeFeatureGrid(), selectFeatures([])))
             .takeUntil(action$.ofType(LOCATION_CHANGE))
     );
 export const askChangesConfirmOnFeatureGridClose = (action$, store) => action$.ofType(CLOSE_FEATURE_GRID_CONFIRM).switchMap( () => {
-    const state = store.getState();
+    const state = store.value;
     if (hasChangesSelector(state) || hasNewFeaturesSelector(state)) {
-        return Rx.Observable.of(toggleTool("featureCloseConfirm", true));
+        return Observable.of(toggleTool("featureCloseConfirm", true));
     }
-    return Rx.Observable.of(closeFeatureGrid());
+    return Observable.of(closeFeatureGrid());
 });
 export const onClearChangeConfirmedFeatureGrid = (action$) => action$.ofType(CLEAR_CHANGES_CONFIRMED)
-    .switchMap( () => Rx.Observable.of(clearChanges(), toggleTool("clearConfirm", false)));
+    .switchMap( () => Observable.of(clearChanges(), toggleTool("clearConfirm", false)));
 export const onCloseFeatureGridConfirmed = (action$) => action$.ofType(FEATURE_GRID_CLOSE_CONFIRMED)
     .switchMap( () => {
-        return Rx.Observable.of(setControlProperty("drawer", "enabled", false), toggleTool("featureCloseConfirm", false));
+        return Observable.of(setControlProperty("drawer", "enabled", false), toggleTool("featureCloseConfirm", false));
     });
 /**
  * Removes the WMSFilter from the layer when the feature grid is closed.
@@ -975,9 +975,9 @@ export const removeWmsFilterOnGridClose = (action$, store) =>
             // to start the flow before OPEN_ADVANCED_SEARCH
             action$.ofType(CLOSE_FEATURE_GRID).delay(50)
                 // and WMS filter is active
-                .filter(() => isSyncWmsActive(store.getState()))
+                .filter(() => isSyncWmsActive(store.value))
                 // remove the WMS Filter
-                .switchMap(() => Rx.Observable.of(removeFilterFromWMSLayer(store.getState())))
+                .switchMap(() => Observable.of(removeFilterFromWMSLayer(store.value)))
                 // but stop listening for close event if feature info, open search or location
                 // change are performed before it
                 .takeUntil(action$.ofType(LOCATION_CHANGE, FEATURE_INFO_CLICK, OPEN_ADVANCED_SEARCH))
@@ -990,16 +990,16 @@ export const autoReopenFeatureGridOnFeatureInfoClose = (action$) =>
         // need to finalize the flow before listen the next open event to avoid
         // to catch open feature info triggered by this flow or advanced search
         .switchMap(() =>
-            Rx.Observable.race(
+            Observable.race(
                 action$.ofType(FEATURE_INFO_CLICK).take(1),
                 action$.ofType(CLOSE_FEATURE_GRID).take(1)
             ).exhaustMap((action) => action.type === CLOSE_FEATURE_GRID
                 // a close event stops the flow living it free to listen the next event
-                ? Rx.Observable.empty()
+                ? Observable.empty()
                 : action$
                     // if feature info was clicked, wait for a feature info close to reopen the feature grid
                     .ofType(HIDE_MAPINFO_MARKER)
-                    .switchMap(() => Rx.Observable.of(openFeatureGrid()))
+                    .switchMap(() => Observable.of(openFeatureGrid()))
 
             ).takeUntil(
                 action$.ofType(LOCATION_CHANGE, TOGGLE_CONTROL)
@@ -1030,20 +1030,20 @@ export const autoReopenFeatureGridOnFeatureInfoClose = (action$) =>
         );
 export const onOpenAdvancedSearch = (action$, store) =>
     action$.ofType(OPEN_ADVANCED_SEARCH).switchMap(() => {
-        return Rx.Observable.of(
+        return Observable.of(
             // hide selected features from map
             selectFeatures([]),
-            loadFilter(get(store.getState(), `featuregrid.advancedFilters["${selectedLayerIdSelector(store.getState())}"]`)),
+            loadFilter(get(store.value, `featuregrid.advancedFilters["${selectedLayerIdSelector(store.value)}"]`)),
             closeFeatureGrid(),
             setControlProperty('queryPanel', "enabled", true)
         )
             .merge(
-                Rx.Observable.race(
+                Observable.race(
                     action$.ofType(QUERY_FORM_SEARCH).mergeMap((action) => {
                     // merge advanced filter with columns filters
-                        return Rx.Observable.of(
+                        return Observable.of(
                             createQuery(action.searchUrl, action.filterObj),
-                            storeAdvancedSearchFilter(assign({}, queryFormUiStateSelector(store.getState()), action.filterObj)),
+                            storeAdvancedSearchFilter(assign({}, queryFormUiStateSelector(store.value), action.filterObj)),
                             setControlProperty('queryPanel', "enabled", false),
                             openFeatureGrid()
                         );
@@ -1051,17 +1051,17 @@ export const onOpenAdvancedSearch = (action$, store) =>
                     action$.ofType(TOGGLE_CONTROL)
                         .filter(({control, property} = {}) => control === "queryPanel" && (!property || property === "enabled"))
                         .mergeMap(() => {
-                            const {drawStatus} = (store.getState()).draw || {};
+                            const {drawStatus} = (store.value).draw || {};
                             const acts = (drawStatus !== 'clean') ? [changeDrawingStatus("clean", "", "featureGrid", [], {})] : [];
-                            return Rx.Observable.from(acts.concat(openFeatureGrid()));
+                            return Observable.from(acts.concat(openFeatureGrid()));
                         }
                         )
                 ).takeUntil(action$.ofType(OPEN_FEATURE_GRID, LOCATION_CHANGE))
             );
     });
 export const onFeatureGridZoomAll = (action$, store) =>
-    action$.ofType(ZOOM_ALL).filter(() => !get(store.getState(), "featuregird.virtualScroll", false)).switchMap(() =>
-        Rx.Observable.of(zoomToExtent(bbox(featureCollectionResultSelector(store.getState())), "EPSG:4326"))
+    action$.ofType(ZOOM_ALL).filter(() => !get(store.value, "featuregird.virtualScroll", false)).switchMap(() =>
+        Observable.of(zoomToExtent(bbox(featureCollectionResultSelector(store.value)), "EPSG:4326"))
 
     );
 /**
@@ -1073,7 +1073,7 @@ export const resetControlsOnEnterInEditMode = (action$) =>
 export const closeIdentifyWhenOpenFeatureGrid = (action$) =>
     action$.ofType(OPEN_FEATURE_GRID)
         .switchMap(() => {
-            return Rx.Observable.of(closeIdentify());
+            return Observable.of(closeIdentify());
         });
 /**
  * start sync filter with wms layer
@@ -1084,24 +1084,24 @@ export const closeIdentifyWhenOpenFeatureGrid = (action$) =>
  */
 export const startSyncWmsFilter = (action$, store) =>
     action$.ofType(TOGGLE_SYNC_WMS)
-        .filter( () => isSyncWmsActive(store.getState()))
+        .filter( () => isSyncWmsActive(store.value))
         .mapTo(startSyncWMS());
 /**
  * stop sync filter with wms layer
  */
 export const stopSyncWmsFilter = (action$, store) =>
     action$.ofType(TOGGLE_SYNC_WMS)
-        .filter( () => !isSyncWmsActive(store.getState()))
-        .switchMap(() => Rx.Observable.from([removeFilterFromWMSLayer(store.getState()), {type: STOP_SYNC_WMS}]));
+        .filter( () => !isSyncWmsActive(store.value))
+        .switchMap(() => Observable.from([removeFilterFromWMSLayer(store.value), {type: STOP_SYNC_WMS}]));
 
 /**
      * Deactivate map sync when featuregrid closes if it was active
      */
 export const deactivateSyncWmsFilterOnFeatureGridClose = (action$, store) =>
     action$.ofType(CLOSE_FEATURE_GRID)
-        .filter(() => isSyncWmsActive(store.getState()))
+        .filter(() => isSyncWmsActive(store.value))
         .switchMap(() => {
-            return Rx.Observable.of(toggleSyncWms());
+            return Observable.of(toggleSyncWms());
         });
 /**
  * Sync map with filter.
@@ -1110,31 +1110,31 @@ export const deactivateSyncWmsFilterOnFeatureGridClose = (action$, store) =>
 export const syncMapWmsFilter = (action$, store) =>
     action$.ofType(QUERY_CREATE, UPDATE_QUERY).
         filter((a) => {
-            const {disableQuickFilterSync} = (store.getState()).featuregrid;
+            const {disableQuickFilterSync} = (store.value).featuregrid;
             return a.type === QUERY_CREATE || !disableQuickFilterSync;
         })
         .switchMap(() => {
-            const {query: q, featuregrid: f} = store.getState();
+            const {query: q, featuregrid: f} = store.value;
             const layerId = (f || {}).selectedLayer;
             const filter = (q || {}).filterObj;
-            return Rx.Observable.merge(
-                Rx.Observable.of(isSyncWmsActive(store.getState())).filter(a => a),
+            return Observable.merge(
+                Observable.of(isSyncWmsActive(store.value)).filter(a => a),
                 action$.ofType(START_SYNC_WMS))
                 .mergeMap(() => {
-                    return Rx.Observable.of(addFilterToWMSLayer(layerId, filter));
+                    return Observable.of(addFilterToWMSLayer(layerId, filter));
                 });
         });
-export const virtualScrollLoadFeatures = (action$, {getState}) =>
+export const virtualScrollLoadFeatures = (action$, store) =>
     action$.ofType(LOAD_MORE_FEATURES)
-        .filter(() => !featureLoadingSelector(getState()))
+        .filter(() => !featureLoadingSelector(store.value))
         .switchMap( ac => {
-            const state = getState();
+            const state = store.value;
             const {startPage, endPage} = ac.pages;
             const {pages: oldPages, pagination} = state.featuregrid;
             const size = get(pagination, "size");
             const nPs = getPagesToLoad(startPage, endPage, oldPages, size);
             const needPages = (nPs[1] - nPs[0] + 1 );
-            return Rx.Observable.of( query(wfsURL(state),
+            return Observable.of( query(wfsURL(state),
                 addPagination({
                     ...(wfsFilter(state))
                 },
@@ -1145,7 +1145,7 @@ export const virtualScrollLoadFeatures = (action$, {getState}) =>
                 .merge( action$.ofType(QUERY_RESULT)
                     .filter(() => nPs.length > 0)
                     .map(({result = {}, filterObj} = {}) => {
-                        const {features: oldFeatures, maxStoredPages} = (getState()).featuregrid;
+                        const {features: oldFeatures, maxStoredPages} = (store.value).featuregrid;
                         const startIndex = get(filterObj, "pagination.startIndex");
                         const { pages, features } = updatePages(
                             result,
@@ -1168,22 +1168,22 @@ export const virtualScrollLoadFeatures = (action$, {getState}) =>
  * Implements synchronization with time dimension for the feature grid.
  * Performs again createQuery when time changes or if timeSync is toggled
  */
-export const replayOnTimeDimensionChange = (action$, { getState = () => { } } = {}) =>
+export const replayOnTimeDimensionChange = (action$, store = {}) =>
     action$
         // when time is updated...
         .ofType(CHANGE_LAYER_PARAMS) // UPDATE_LAYERS_DIMENSION triggers, CHANGE_LAYER_PARAMS, that is the effective event
         .filter(({layer = [], params = {}}) =>
             // if the parameter change is for the time of the feature grid selected layer...
-            includes(castArray(layer), selectedLayerIdSelector(getState()))
+            includes(castArray(layer), selectedLayerIdSelector(store.value))
             && includes(Object.keys(params), "time")
-            && timeSyncActive(getState()) // ... and the sync is active ...
+            && timeSyncActive(store.value) // ... and the sync is active ...
         )
         // or when time sync is enabled/disabled
         .merge(
             action$.ofType(SET_TIME_SYNC) // note: this triggers reload on toggle time sync on/off
 
         ).filter(() =>
-            isFeatureGridOpen(getState()) // ... if the feature grid is open ...
+            isFeatureGridOpen(store.value) // ... if the feature grid is open ...
         )
         // ...then take the last query action performed, ...
         .withLatestFrom(
@@ -1192,53 +1192,53 @@ export const replayOnTimeDimensionChange = (action$, { getState = () => { } } = 
         )
         // ... and emit createQuery with same parameters
         .switchMap(action =>
-            Rx.Observable.of(
+            Observable.of(
                 createQuery(action.searchUrl, action.filterObj)
             )
         );
-export const hideFeatureGridOnDrawerOpenMobile = (action$, { getState } = {}) =>
+export const hideFeatureGridOnDrawerOpenMobile = (action$, store = {}) =>
     action$
         .ofType(TOGGLE_CONTROL)
         .filter(({ control } = {}) =>
             control === 'drawer'
-            && getState().browser
-            && getState().browser.mobile
-            && drawerEnabledControlSelector(getState())
+            && store.value.browser
+            && store.value.browser.mobile
+            && drawerEnabledControlSelector(store.value)
         )
-        .switchMap(() => Rx.Observable.of(hideMapinfoMarker(), openFeatureGrid()));
-export const hideDrawerOnFeatureGridOpenMobile = (action$, { getState } = {}) =>
+        .switchMap(() => Observable.of(hideMapinfoMarker(), openFeatureGrid()));
+export const hideDrawerOnFeatureGridOpenMobile = (action$, store = {}) =>
     action$
         .ofType(FEATURE_INFO_CLICK)
         .filter(() =>
-            getState().browser
-            && getState().browser.mobile
-            && drawerEnabledControlSelector(getState())
+            store.value.browser
+            && store.value.browser.mobile
+            && drawerEnabledControlSelector(store.value)
         )
         .mapTo(toggleControl('drawer', 'enabled'));
 
-export const setDefaultSnappingLayerOnFeatureGridOpen = (action$, { getState } = {}) =>
+export const setDefaultSnappingLayerOnFeatureGridOpen = (action$, store = {}) =>
     action$
         .ofType(SET_LAYER)
         .switchMap(() => {
-            const selectedLayerId = selectedLayerSelector(getState())?.id;
-            return Rx.Observable.of(setSnappingLayer(selectedLayerId));
+            const selectedLayerId = selectedLayerSelector(store.value)?.id;
+            return Observable.of(setSnappingLayer(selectedLayerId));
         });
 
-export const resetSnappingLayerOnFeatureGridClosed = (action$, { getState } = {}) =>
+export const resetSnappingLayerOnFeatureGridClosed = (action$, store = {}) =>
     action$
         .ofType(CLOSE_FEATURE_GRID)
         .switchMap(() => {
             const actions = [setSnappingLayer(false)];
-            isSnappingActive(getState()) && actions.push(toggleSnapping());
-            return Rx.Observable.from(actions);
+            isSnappingActive(store.value) && actions.push(toggleSnapping());
+            return Observable.from(actions);
         });
 
-export const toggleSnappingOffOnFeatureGridViewMode = (action$, { getState } = {}) =>
+export const toggleSnappingOffOnFeatureGridViewMode = (action$, store = {}) =>
     action$
         .ofType(TOGGLE_MODE)
         .filter((a) => a.mode === "VIEW")
         .switchMap(() => {
             const actions = [];
-            isSnappingActive(getState()) && actions.push(toggleSnapping());
-            return Rx.Observable.from(actions);
+            isSnappingActive(store.value) && actions.push(toggleSnapping());
+            return Observable.from(actions);
         });

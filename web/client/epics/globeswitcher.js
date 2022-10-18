@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { TOGGLE_3D } from '../actions/globeswitcher';
 import { changeMapType } from '../actions/maptype';
 import { last2dMapTypeSelector } from './../selectors/maptype';
@@ -20,9 +20,9 @@ export const updateRouteOn3dSwitch = (action$, store) =>
 
     action$.ofType(TOGGLE_3D)
         .switchMap((action) => {
-            const last2dMapType = last2dMapTypeSelector(store.getState());
+            const last2dMapType = last2dMapTypeSelector(store.value);
 
-            return Rx.Observable.from([
+            return Observable.from([
                 changeMapType(action.originalMapType !== "cesium" ? "cesium" : last2dMapType),
                 closeDetailsPanel()
             ]);

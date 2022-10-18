@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { changeLayerProperties, clearLayers } from '../actions/layers';
 
@@ -46,18 +46,18 @@ export const handleCreationBackgroundError = (action$, store) =>
     // added delay because the CREATION_ERROR_LAYER needs to be initialized after MAP_CONFIG_LOADED
         .delay(500)
         .filter(a => {
-            const currentBackground = currentBackgroundLayerSelector(store.getState());
+            const currentBackground = currentBackgroundLayerSelector(store.value);
             return currentBackground && a.options.id === currentBackground.id && a.options.group === "background";
         })
         .switchMap((a) => {
-            const maptype = mapTypeSelector(store.getState());
+            const maptype = mapTypeSelector(store.value);
             // consider only the supported backgrounds, removing the layer that generated an error on creation
-            const firstSupportedBackgroundLayer = head(allBackgroundLayerSelector(store.getState()).filter(l => {
+            const firstSupportedBackgroundLayer = head(allBackgroundLayerSelector(store.value).filter(l => {
                 return isSupportedLayer(l, maptype) && l.id !== a.options.id;
             }));
 
             return !!firstSupportedBackgroundLayer ?
-                Rx.Observable.from([
+                Observable.from([
                     changeLayerProperties(firstSupportedBackgroundLayer.id, {visibility: true}),
                     setControlProperty('backgroundSelector', 'currentLayer', firstSupportedBackgroundLayer),
                     setControlProperty('backgroundSelector', 'tempLayer', firstSupportedBackgroundLayer),
@@ -69,7 +69,7 @@ export const handleCreationBackgroundError = (action$, store) =>
                         },
                         position: "tc"
                     })
-                ]) : Rx.Observable.of(warning({
+                ]) : Observable.of(warning({
                     title: "warning",
                     message: "notification.noBackgroundLayerSupported",
                     action: {
@@ -83,24 +83,24 @@ export const handleCreationLayerError = (action$, store) =>
     // added delay because the CREATION_ERROR_LAYER needs to be initialized after MAP_CONFIG_LOADED
         .delay(500)
         .switchMap((a) => {
-            const maptype = mapTypeSelector(store.getState());
-            const layer = getLayerFromId(store.getState(), a.options.id);
-            return !!layer && isSupportedLayer(layer, maptype) ? Rx.Observable.from([
+            const maptype = mapTypeSelector(store.value);
+            const layer = getLayerFromId(store.value, a.options.id);
+            return !!layer && isSupportedLayer(layer, maptype) ? Observable.from([
                 changeLayerProperties(a.options.id, {invalid: true})
-            ]) : Rx.Observable.empty();
+            ]) : Observable.empty();
         });
 
 export const resetLimitsOnInit = (action$, store) =>
     action$.ofType(MAP_CONFIG_LOADED, CHANGE_MAP_CRS)
         .switchMap(() => {
-            const confExtentCrs = configuredExtentCrsSelector(store.getState());
-            const restrictedExtent = configuredRestrictedExtentSelector(store.getState());
-            const minZoom = configuredMinZoomSelector(store.getState());
-            return Rx.Observable.of(changeMapLimits({ restrictedExtent, crs: confExtentCrs, minZoom}));
+            const confExtentCrs = configuredExtentCrsSelector(store.value);
+            const restrictedExtent = configuredRestrictedExtentSelector(store.value);
+            const minZoom = configuredMinZoomSelector(store.value);
+            return Observable.of(changeMapLimits({ restrictedExtent, crs: confExtentCrs, minZoom}));
         });
 
 export const resetMapOnInit = action$ =>
-    action$.ofType(INIT_MAP).switchMap(() => Rx.Observable.of(
+    action$.ofType(INIT_MAP).switchMap(() => Observable.of(
         removeAllAdditionalLayers(),
         resetControls(),
         clearLayers(),
@@ -165,7 +165,7 @@ export const legacyZoomToExtent = (action, mapState) => {
         }
         let newBounds = { minx: bounds[0], miny: bounds[1], maxx: bounds[2], maxy: bounds[3] };
         let newBbox = { ...mapState.bbox, bounds: newBounds };
-        return Rx.Observable.of(changeMapView(
+        return Observable.of(changeMapView(
             center,
             zoom,
             newBbox,
@@ -175,7 +175,7 @@ export const legacyZoomToExtent = (action, mapState) => {
             mapState.viewerOptions
         ));
     }
-    return Rx.Observable.empty();
+    return Observable.empty();
 };
 
 
@@ -184,14 +184,14 @@ export const legacyZoomToExtent = (action, mapState) => {
  * (mapping libraries have maxZoom and padding support). Otherwise, triggers a changeMapView to emulate the same operation.
  * @memberof epics.map
  */
-export const zoomToExtentEpic = (action$, {getState = () => {} }) =>
+export const zoomToExtentEpic = (action$, store) =>
     action$.ofType(ZOOM_TO_EXTENT).switchMap(( action ) => {
         const extent = toBoundsArray(action.extent);
         if (!extent) {
-            return Rx.Observable.empty();
+            return Observable.empty();
         }
         const hook = MapUtils.getHook(MapUtils.ZOOM_TO_EXTENT_HOOK);
-        const padding = mapPaddingSelector(getState());
+        const padding = mapPaddingSelector(store.value);
         if (hook) {
             const { crs, maxZoom, options = {} } = action;
             hook(extent, {
@@ -200,23 +200,23 @@ export const zoomToExtentEpic = (action$, {getState = () => {} }) =>
                 maxZoom,
                 ...options
             });
-            return Rx.Observable.empty();
+            return Observable.empty();
         }
-        return legacyZoomToExtent({...action, extent}, mapSelector(getState()) );
+        return legacyZoomToExtent({...action, extent}, mapSelector(store.value) );
     });
 /**
  * It checks user's permissions on current map on LOGIN_SUCCESS event
  * @memberof epics.map
  * @param {object} action$
  */
-export const checkMapPermissions = (action$, {getState = () => {} }) =>
+export const checkMapPermissions = (action$, store) =>
     action$.ofType(LOGIN_SUCCESS)
         .filter(() => {
-            const mapId = mapIdSelector(getState());
+            const mapId = mapIdSelector(store.value);
             return mapId; // sometimes mapId is null
         })
         .map(() => {
-            const mapId = mapIdSelector(getState());
+            const mapId = mapIdSelector(store.value);
             return loadMapInfo(mapId);
         });
 

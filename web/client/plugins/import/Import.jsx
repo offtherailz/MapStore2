@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
+import { Observable } from 'rxjs';
 import { compose, branch, mapPropsStream, renderComponent, renderNothing } from 'recompose';
 
 import { createStructuredSelector } from 'reselect';
@@ -17,11 +17,11 @@ import { mapSelector } from '../../selectors/map';
 
 export default compose(
     mapPropsStream(
-        props$ => props$.merge(
-            props$
+        props$ => Observable.from(props$).merge(
+            Observable.from(props$)
                 .filter(({ layers }) => layers && layers.length > 0)
                 .exhaustMap(() =>
-                    props$.filter(({ layers }) => !layers || layers.length === 0)
+                    Observable.from(props$).filter(({ layers }) => !layers || layers.length === 0)
                         .take(1)
                         .do(({ onClose = () => { } }) => onClose && onClose()).ignoreElements()
                 )

@@ -117,7 +117,7 @@ export const getPluginForTest = (pluginDef, storeState, plugins, testEpics = [],
     );
     const rootEpic = combineEpics.apply(null, [...pluginEpics, ...pluginsEpics, ...castArray(testEpics)]);
     const epicMiddleware = createEpicMiddleware();
-epicMiddleware.run();
+    epicMiddleware.run();
 
     const store = applyMiddleware(thunkMiddleware, epicMiddleware, createRegisterActionsMiddleware(actions))(createStore)(reducer, storeState);
     const pluginProps = items?.length ? {items} : undefined;

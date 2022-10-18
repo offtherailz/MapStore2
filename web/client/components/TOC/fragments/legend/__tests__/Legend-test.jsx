@@ -9,7 +9,7 @@
 import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import Legend from '../Legend';
 
@@ -69,7 +69,7 @@ describe("test the Layer legend", () => {
             "format": "image/png"
         };
         var tb = ReactDOM.render(<Legend layer={layer} />, document.getElementById("container"));
-        const sub = Rx.Observable.interval(100)
+        const sub = Observable.interval(100)
             .filter(() => tb && tb.state.error)
             .subscribe(() => {
                 let thumbs = TestUtils.scryRenderedDOMComponentsWithTag(tb, "img");
@@ -88,7 +88,7 @@ describe("test the Layer legend", () => {
             "format": "image/png"
         };
         var tb = ReactDOM.render(<Legend layer={layer} />, document.getElementById("container"));
-        const sub = Rx.Observable.interval(100)
+        const sub = Observable.interval(100)
             .filter(() => tb && tb.state.error)
             .subscribe(() => {
                 let thumbs = TestUtils.scryRenderedDOMComponentsWithTag(tb, "img");
@@ -111,7 +111,7 @@ describe("test the Layer legend", () => {
             "format": "image/png"
         };
         var tb = ReactDOM.render(<Legend layer={layer} />, document.getElementById("container"));
-        const sub = Rx.Observable.interval(100)
+        const sub = Observable.interval(100)
             .filter(() => tb && tb.state.error)
             .subscribe(() => {
                 let thumbs = TestUtils.scryRenderedDOMComponentsWithTag(tb, "img");

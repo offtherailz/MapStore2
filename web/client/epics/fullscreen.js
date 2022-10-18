@@ -11,7 +11,7 @@ import { head, last } from 'lodash';
 import { setControlProperty } from '../actions/controls';
 import { TOGGLE_FULLSCREEN } from '../actions/fullscreen';
 import ConfigUtils from '../utils/ConfigUtils';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 const getFullScreenEvent = () => {
     let candidates = [
@@ -41,12 +41,12 @@ export const toggleFullscreenEpic = action$ =>
         } else if (element && !action.enable) {
             screenfull.exit();
         }
-        return Rx.Observable.merge(
-            Rx.Observable.fromEvent(document, getFullScreenEvent())
+        return Observable.merge(
+            Observable.fromEvent(document, getFullScreenEvent())
                 .filter(() => screenfull.element !== element)
                 .map( () => setControlProperty("fullscreen", "enabled", false) ),
-            Rx.Observable.of(setControlProperty("fullscreen", "enabled", action.enable)),
-            Rx.Observable.fromEvent(window, "hashchange")
+            Observable.of(setControlProperty("fullscreen", "enabled", action.enable)),
+            Observable.fromEvent(window, "hashchange")
                 .do(() => screenfull.exit())
                 .map( () => setControlProperty("fullscreen", "enabled", false) )
         );

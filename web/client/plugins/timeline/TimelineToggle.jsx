@@ -7,7 +7,7 @@
  */
 import React from 'react';
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import Message from '../../components/I18N/Message';
 import { Glyphicon } from 'react-bootstrap';
 import { setCollapsed } from '../../actions/timeline';
@@ -21,7 +21,7 @@ import RButton from '../../components/misc/Button';
 
 /**
  * Creates the properties to toggle the hint popover.
- * @param {Rx.Observable} props$ stream of props
+ * @param {Observable} props$ stream of props
  */
 const togglePopover = props$ =>
     props$
@@ -31,11 +31,11 @@ const togglePopover = props$ =>
         .take(1)
         // show popover for 5 seconds
         .switchMap(({ collapseHintPopoverOptions }) =>
-            Rx.Observable.timer(5000)
+            Observable.timer(5000)
                 .startWith({
                     popoverOptions: collapseHintPopoverOptions
                 })
-                .concat(Rx.Observable.of({
+                .concat(Observable.of({
                 }))
         ).startWith({});
 

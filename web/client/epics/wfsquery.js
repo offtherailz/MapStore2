@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable, asyncScheduler} from 'rxjs';
 
 import axios from '../libs/ajax';
 
@@ -96,16 +96,16 @@ export const featureTypeSelectedEpic = (action$, store) =>
     action$.ofType(FEATURE_TYPE_SELECTED)
         .filter(action => action.url && action.typeName)
         .switchMap(action => {
-            const state = store.getState();
+            const state = store.value;
             if (isDescribeLoaded(state, action.typeName)) {
                 const info = extractInfo(layerDescribeSelector(state, action.typeName));
                 const geometry = info.geometry[0] && info.geometry[0].attribute ? info.geometry[0].attribute : 'the_geom';
-                return Rx.Observable.of(featureTypeLoaded(action.typeName, info), changeSpatialAttribute(geometry), Rx.Scheduler.async); // async scheduler is needed to allow invokers of `FEATURE_TYPE_SELECTED` to intercept `FEATURE_TYPE_LOADED` action as response.
+                return Observable.of(featureTypeLoaded(action.typeName, info), changeSpatialAttribute(geometry), asyncScheduler); // async scheduler is needed to allow invokers of `FEATURE_TYPE_SELECTED` to intercept `FEATURE_TYPE_LOADED` action as response.
             }
 
             const selectedLayer = selectedLayerSelector(state);
             if (selectedLayer && selectedLayer.type === 'vector') {
-                return Rx.Observable.defer( () =>axios.get(action.url))
+                return Observable.defer( () =>axios.get(action.url))
                     .map((response) => {
 
                         var originalData = {
@@ -129,23 +129,23 @@ export const featureTypeSelectedEpic = (action$, store) =>
                                 resolve(featureTypeLoaded(action.typeName, info));
                             });
                         });
-                        return Rx.Observable.defer( () => promiseFeatureType);
+                        return Observable.defer( () => promiseFeatureType);
                     })
                     .mergeAll();
 
             }
 
-            return Rx.Observable.defer( () => axios.get(ConfigUtils.filterUrlParams(action.url, authkeyParamNameSelector(store.getState())) + '?service=WFS&version=1.1.0&request=DescribeFeatureType&typeName=' + action.typeName + '&outputFormat=application/json'))
+            return Observable.defer( () => axios.get(ConfigUtils.filterUrlParams(action.url, authkeyParamNameSelector(store.value)) + '?service=WFS&version=1.1.0&request=DescribeFeatureType&typeName=' + action.typeName + '&outputFormat=application/json'))
                 .map((response) => {
                     if (typeof response.data === 'object' && response.data.featureTypes && response.data.featureTypes[0]) {
                         const info = extractInfo(response.data);
                         const geometry = info.geometry[0] && info.geometry[0].attribute ? info.geometry[0].attribute : 'the_geom';
-                        return Rx.Observable.from([changeSpatialAttribute(geometry), featureTypeLoaded(action.typeName, info)]);
+                        return Observable.from([changeSpatialAttribute(geometry), featureTypeLoaded(action.typeName, info)]);
                     }
                     try {
                         JSON.parse(response.data);
                     } catch (e) {
-                        return Rx.Observable.from([
+                        return Observable.from([
                             featureTypeError(action.typeName, 'Error from WFS: ' + e.message),
                             notifications.error({
                                 title: 'warning',
@@ -155,10 +155,10 @@ export const featureTypeSelectedEpic = (action$, store) =>
                             })
                         ]);
                     }
-                    return Rx.Observable.from([featureTypeError(action.typeName, 'Error: feature types are empty')]);
+                    return Observable.from([featureTypeError(action.typeName, 'Error: feature types are empty')]);
                 })
                 .mergeAll()
-                .catch(e => Rx.Observable.of(featureTypeError(action.typeName, e.message || e.statusText)));
+                .catch(e => Observable.of(featureTypeError(action.typeName, e.message || e.statusText)));
         });
 
 /**
@@ -171,13 +171,13 @@ export const featureTypeSelectedEpic = (action$, store) =>
 export const wfsQueryEpic = (action$, store) =>
     action$.ofType(QUERY)
         .switchMap(action => {
-            const defaultSortOptions = getDefaultSortOptions(getFirstAttribute(store.getState()));
+            const defaultSortOptions = getDefaultSortOptions(getFirstAttribute(store.value));
             const sortOptions = action?.filterObj?.sortOptions || defaultSortOptions;
-            const totalFeatures = paginationInfo.totalFeatures(store.getState());
-            const searchUrl = ConfigUtils.filterUrlParams(action.searchUrl, authkeyParamNameSelector(store.getState()));
+            const totalFeatures = paginationInfo.totalFeatures(store.value);
+            const searchUrl = ConfigUtils.filterUrlParams(action.searchUrl, authkeyParamNameSelector(store.value));
             // getSelected Layer and merge layerFilter and cql_filter in params  with action filter
-            const layer = selectedLayerSelector(store.getState());
-            const useLayerFilter = useLayerFilterSelector(store.getState());
+            const layer = selectedLayerSelector(store.value);
+            const useLayerFilter = useLayerFilterSelector(store.value);
 
             const {layerFilter, params = {}} = layer ?? {};
             const cqlFilter = params?.[find(Object.keys(params || {}), (k = "") => k.toLowerCase() === "cql_filter")];
@@ -185,7 +185,7 @@ export const wfsQueryEpic = (action$, store) =>
             const ogcFilter = layer?.type === "vector" ?
                 action.filterObj
                 : mergeFiltersToOGC({ogcVersion: '1.1.0'}, cqlFilter, useLayerFilter ? layerFilter : null, action.filterObj);
-            const { url, options: queryOptions } = addTimeParameter(searchUrl, action.queryOptions || {}, store.getState());
+            const { url, options: queryOptions } = addTimeParameter(searchUrl, action.queryOptions || {}, store.value);
             const options = {
                 ...action.filterObj.pagination,
                 totalFeatures,
@@ -195,12 +195,12 @@ export const wfsQueryEpic = (action$, store) =>
             };
 
             // TODO refactor, the layer that should be used should be the used when the feature grid is opened from the toc, see #6430
-            return Rx.Observable.merge(
-                getLayerJSONFeature({...layer, name: action.filterObj.featureTypeName || layer?.name, search: {...(layer?.search ?? {}), url}}, ogcFilter, options)
+            return Observable.merge(
+                Observable.from(getLayerJSONFeature({...layer, name: action.filterObj.featureTypeName || layer?.name, search: {...(layer?.search ?? {}), url}}, ogcFilter, options)
                     .map(data => querySearchResponse(data, action.searchUrl, action.filterObj, action.queryOptions, action.reason))
-                    .catch(error => Rx.Observable.of(queryError(error)))
-                    .startWith(featureLoading(true))
-                    .concat(Rx.Observable.of(featureLoading(false)), Rx.Observable.of(layerLoad(layer?.id)))
+                    .catch(error => Observable.of(queryError(error)))
+                    .startWith(featureLoading(true)))
+                    .concat(Observable.of(featureLoading(false)), Observable.of(layerLoad(layer?.id)))
             ).takeUntil(action$.ofType(UPDATE_QUERY));
         });
 
@@ -215,23 +215,23 @@ export const viewportSelectedEpic = (action$, store) =>
     action$.ofType(SELECT_VIEWPORT_SPATIAL_METHOD, CHANGE_MAP_VIEW)
         .switchMap((action) => {
             // calculate new geometry from map properties only for viewport
-            const map = action.type === CHANGE_MAP_VIEW ? action : mapSelector(store.getState());
+            const map = action.type === CHANGE_MAP_VIEW ? action : mapSelector(store.value);
             if ((action.type === SELECT_VIEWPORT_SPATIAL_METHOD
-            || action.type === CHANGE_MAP_VIEW && spatialFieldMethodSelector(store.getState()) === "Viewport")
+            || action.type === CHANGE_MAP_VIEW && spatialFieldMethodSelector(store.value) === "Viewport")
             && map.bbox && map.bbox.bounds && map.bbox.crs) {
                 const bounds = Object.keys(map.bbox.bounds).reduce((p, c) => {
                     return assign({}, p, {[c]: parseFloat(map.bbox.bounds[c])});
                 }, {});
-                return Rx.Observable.of(updateGeometrySpatialField(CoordinatesUtils.getViewportGeometry(bounds, map.bbox.crs)));
+                return Observable.of(updateGeometrySpatialField(CoordinatesUtils.getViewportGeometry(bounds, map.bbox.crs)));
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         });
 
 
 export const redrawSpatialFilterEpic = (action$, store) =>
     action$.ofType(INIT_QUERY_PANEL)
         .switchMap(() => {
-            const state = store.getState();
+            const state = store.value;
             const spatialField = spatialFieldSelector(state);
             const feature = {
                 type: "Feature",
@@ -244,7 +244,7 @@ export const redrawSpatialFilterEpic = (action$, store) =>
                 changeDrawingStatus("drawOrEdit", spatialField.method || '', "queryform", [feature], {featureProjection: spatialFieldGeomProjSelector(state), drawEnabled: false, editEnabled: false}) :
                 changeDrawingStatus("clean", spatialField.method || '', "queryform", [], {drawEnabled: false, editEnabled: false});
             // if a geometry is present it will redraw the spatial field
-            return Rx.Observable.of(drawSpatialFilter);
+            return Observable.of(drawSpatialFilter);
         });
 
 

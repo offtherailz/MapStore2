@@ -48,7 +48,7 @@ describe('AddGroup Plugin', () => {
         ReactDOM.render(<Plugin />, document.getElementById("container"));
         const btn = document.getElementsByTagName('button')[0];
         ReactTestUtils.Simulate.click(btn);
-        expect(store.getState().controls.addgroup.enabled).toBe(false);
+        expect(store.value.controls.addgroup.enabled).toBe(false);
     });
 
     it('Add Group on confirm', () => {
@@ -72,13 +72,13 @@ describe('AddGroup Plugin', () => {
         });
         const btn = document.getElementsByTagName('button')[1];
         ReactTestUtils.Simulate.click(btn);
-        expect(store.getState().layers.groups.length).toBe(2);
-        expect(store.getState().layers.groups[1].title).toBe('newgroup');
-        expect(store.getState().layers.groups[1].name).toExist();
-        expect(store.getState().layers.groups[1].name.length).toBe(36);
-        expect(store.getState().layers.groups[1].id).toExist();
-        expect(store.getState().layers.groups[1].id.length).toBe(36);
-        expect(store.getState().layers.groups[1].nodes.length).toBe(0);
+        expect(store.value.layers.groups.length).toBe(2);
+        expect(store.value.layers.groups[1].title).toBe('newgroup');
+        expect(store.value.layers.groups[1].name).toExist();
+        expect(store.value.layers.groups[1].name.length).toBe(36);
+        expect(store.value.layers.groups[1].id).toExist();
+        expect(store.value.layers.groups[1].id.length).toBe(36);
+        expect(store.value.layers.groups[1].nodes.length).toBe(0);
     });
 
     it('Add Nested Group on confirm', () => {
@@ -103,10 +103,10 @@ describe('AddGroup Plugin', () => {
         });
         const btn = document.getElementsByTagName('button')[1];
         ReactTestUtils.Simulate.click(btn);
-        expect(store.getState().layers.groups.length).toBe(1);
-        expect(store.getState().layers.groups[0].nodes.length).toBe(1);
-        expect(store.getState().layers.groups[0].nodes[0].nodes.length).toBe(1);
-        const newgroup = store.getState().layers.groups[0].nodes[0].nodes[0];
+        expect(store.value.layers.groups.length).toBe(1);
+        expect(store.value.layers.groups[0].nodes.length).toBe(1);
+        expect(store.value.layers.groups[0].nodes[0].nodes.length).toBe(1);
+        const newgroup = store.value.layers.groups[0].nodes[0].nodes[0];
         expect(newgroup.title).toBe('newgroup');
         expect(newgroup.name).toExist();
         expect(newgroup.name.length).toBe(36);

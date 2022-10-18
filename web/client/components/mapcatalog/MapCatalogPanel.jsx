@@ -8,7 +8,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { isArray, zip, split, isNil, bind } from 'lodash';
 import { compose, getContext } from 'recompose';
 import { Glyphicon } from 'react-bootstrap';
@@ -29,13 +29,13 @@ import MapCatalog from '../maps/MapCatalog';
 const getContextNames = ({results, ...other}) => {
     const maps = isArray(results) ? results : (results === "" ? [] : [results]);
     return maps.length === 0 ?
-        Rx.Observable.of({results, ...other}) :
-        Rx.Observable.forkJoin(
+        Observable.of({results, ...other}) :
+        Observable.forkJoin(
             maps.map(({context}) => context ?
                 getResource(context, {includeAttributes: false, withData: false, withPermissions: false})
-                    .switchMap(resource => Rx.Observable.of(resource.name))
-                    .catch(() => Rx.Observable.of(null)) :
-                Rx.Observable.of(null))
+                    .switchMap(resource => Observable.of(resource.name))
+                    .catch(() => Observable.of(null)) :
+                Observable.of(null))
         ).map(contextNames => ({
             results: zip(maps, contextNames).map(
                 ([curMap, contextName]) => ({...curMap, contextName})),
@@ -43,7 +43,7 @@ const getContextNames = ({results, ...other}) => {
         }));
 };
 
-const searchMaps = ({searchText, opts}) => Rx.Observable.defer(() => Api.getResourcesByCategory(
+const searchMaps = ({searchText, opts}) => Observable.defer(() => Api.getResourcesByCategory(
     'MAP',
     searchText || '*',
     opts
@@ -52,7 +52,7 @@ const searchMaps = ({searchText, opts}) => Rx.Observable.defer(() => Api.getReso
         items: result.results,
         total: result.totalCount,
         loading: false
-    })).catch(() => Rx.Observable.of({
+    })).catch(() => Observable.of({
         items: [],
         total: 0,
         loading: false

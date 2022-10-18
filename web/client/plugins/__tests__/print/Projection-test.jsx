@@ -108,7 +108,7 @@ describe('PrintProjection Plugin', () => {
         getPrintProjectionPlugin().then(({ Plugin, store }) => {
             try {
                 ReactDOM.render(<Plugin projections={[{"name": "Mercator", "value": "EPSG:3857"}, {"name": "WGS84", "value": "EPSG:4326"}]}/>, document.getElementById("container"));
-                callMapTransformer(store.getState(), (map) => {
+                callMapTransformer(store.value, (map) => {
                     expect(map.projection).toBe('EPSG:3857');
                     done();
                 });
@@ -128,7 +128,7 @@ describe('PrintProjection Plugin', () => {
                         value: "EPSG:4326"
                     }
                 });
-                callMapTransformer(store.getState(), (map) => {
+                callMapTransformer(store.value, (map) => {
                     expect(map.projection).toBe('EPSG:4326');
                     done();
                 });
@@ -148,7 +148,7 @@ describe('PrintProjection Plugin', () => {
                         value: "EPSG:4326"
                     }
                 });
-                callValidator(store.getState(), (validation) => {
+                callValidator(store.value, (validation) => {
                     expect(validation).toExist();
                     expect(validation.valid).toBe(false);
                     expect(validation.errors.length).toBe(1);
@@ -170,7 +170,7 @@ describe('PrintProjection Plugin', () => {
                         value: "EPSG:4326"
                     }
                 });
-                callValidator(store.getState(), (validation) => {
+                callValidator(store.value, (validation) => {
                     expect(validation).toExist();
                     expect(validation.valid).toBe(true);
                     done();

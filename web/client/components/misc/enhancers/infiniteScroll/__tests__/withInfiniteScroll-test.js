@@ -9,7 +9,7 @@
 import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { lifecycle, setObservableConfig } from 'recompose';
+import { lifecycle } from 'recompose';
 
 import { Observable } from 'rxjs';
 

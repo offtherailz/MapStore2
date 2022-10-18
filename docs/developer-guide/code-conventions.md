@@ -26,9 +26,9 @@ When a selector retrieves data from more than one state slices, you should place
 
 If you don't work on a core functionality, where the state is shared between many components, defining the selector directly in the plug-in is not denied.
 
-## Prefer plugin configuration over `initialState` 
+## Prefer plugin configuration over `initialState`
 
-In order to create self contained plugins that can be reused you should prefer to configure the plugins using `cfg`. Using `initialState` should be considered deprecated. When the configuration is needed at an higher level (e.g. application state, for epics or to share this information), you should properly initialize the state of the plugin on your own triggering an action on mount/unmont. (`cfg` are passed to the plugin as react props). 
+In order to create self contained plugins that can be reused you should prefer to configure the plugins using `cfg`. Using `initialState` should be considered deprecated. When the configuration is needed at an higher level (e.g. application state, for epics or to share this information), you should properly initialize the state of the plugin on your own triggering an action on mount/unmont. (`cfg` are passed to the plugin as react props).
 
 
 ## Use custom axios version for async requests
@@ -38,7 +38,7 @@ Using `web/client/libs/ajax` (a customized axios with some interceptors)  for AJ
 Using axios + RxJS means that you will have to wrap axios calls in something like:
 
 ```javascript
-Rx.Observable.defer( () => axios.post(...)).map...
+Observable.defer( () => axios.post(...)).map...
 ```
 
 Use defer to allow the usage of RxJS retry. We still not support real AJAX cancellation at all, but we would like to provide some utility function/operator to bind `axios` cancellation functionalities into the RxJS flow in the future.

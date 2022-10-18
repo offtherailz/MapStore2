@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import {push} from 'connected-react-router';
 import GeoStoreApi from '../api/GeoStoreDAO';
 import {wrapStartStop} from '../observables/epics';
@@ -45,12 +45,12 @@ export const contextManagerSearchContextsEpic = action$ => action$
         options: options || {params: {start: 0, limit: 12}}
     }))
     .switchMap(({text, options}) =>
-        Rx.Observable.defer(() => GeoStoreApi.getResourcesByCategory("CONTEXT", text, options))
+        Observable.defer(() => GeoStoreApi.getResourcesByCategory("CONTEXT", text, options))
             .map(results => contextsListLoaded(results, text, options))
             .let(wrapStartStop(
                 contextsLoading(true, "loading"),
                 contextsLoading(false, "loading"),
-                () => Rx.Observable.of(error({
+                () => Observable.of(error({
                     title: "notification.error",
                     message: "resources.contexts.errorLoadingContexts",
                     autoDismiss: 6,
@@ -62,11 +62,11 @@ export const contextManagerSearchContextsEpic = action$ => action$
 export const editContext = action$ => action$
     .ofType(EDIT_CONTEXT)
     .switchMap(({resource}) => resource ?
-        Rx.Observable.of(
+        Observable.of(
             clearContextCreator(),
             push(`/context-creator/${resource.id}`)
         ) :
-        Rx.Observable.empty()
+        Observable.empty()
     );
 
 export const contextManagerDeleteContextEpic = action$ => action$
@@ -75,7 +75,7 @@ export const contextManagerDeleteContextEpic = action$ => action$
     .let(wrapStartStop(
         contextsLoading(true, "loading"),
         contextsLoading(false, "loading"),
-        () => Rx.Observable.of(error({
+        () => Observable.of(error({
             title: "notification.error",
             message: "resources.contexts.deleteError",
             autoDismiss: 6,
@@ -85,12 +85,12 @@ export const contextManagerDeleteContextEpic = action$ => action$
 
 export const resetContextSearch = action$ => action$
     .ofType(SEARCH_RESET)
-    .switchMap(() => Rx.Observable.of(searchContexts('', {params: {start: 0, limit: 12}})));
+    .switchMap(() => Observable.of(searchContexts('', {params: {start: 0, limit: 12}})));
 
 export const contextManagerReloadOnContexts = (action$, store) => action$
     .ofType(CONTEXT_DELETED, RELOAD_CONTEXTS, ATTRIBUTE_UPDATED, CONTEXT_SAVED)
     .delay(1000)
-    .switchMap(() => Rx.Observable.of(searchContexts(
-        searchTextSelector(store.getState()),
-        calculateNewParams(store.getState())
+    .switchMap(() => Observable.of(searchContexts(
+        searchTextSelector(store.value),
+        calculateNewParams(store.value)
     )));

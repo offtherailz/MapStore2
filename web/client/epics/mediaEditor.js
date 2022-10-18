@@ -44,10 +44,10 @@ import {find, includes, isEmpty} from "lodash";
 export const loadMediaEditorDataEpic = (action$, store) =>
     action$.ofType(SHOW, LOAD_MEDIA, SET_MEDIA_TYPE, SET_MEDIA_SERVICE)
         .switchMap((action) => {
-            const state = store.getState();
+            const state = store.value;
             const sourceId = action.sourceId || sourceIdSelector(state);
             const mediaType = action.mediaType || currentMediaTypeSelector(state);
-            const resources = currentResourcesSelector(store.getState()) || [];
+            const resources = currentResourcesSelector(store.value) || [];
             const selectedId = selectedIdSelector(state);
             const pageSize = 10;
             const page = action.params?.page ? action.params.page : 1;
@@ -104,9 +104,9 @@ export const loadMediaEditorDataEpic = (action$, store) =>
 export const editorSaveUpdateMediaEpic = (action$, store) =>
     action$.ofType(SAVE_MEDIA)
         .switchMap(({mediaType = "image", source, data}) => {
-            const editing = editingSelector(store.getState());
+            const editing = editingSelector(store.value);
             const sourceOptions = {
-                ...selectedSourceSelector(store.getState()),
+                ...selectedSourceSelector(store.value),
                 store
             };
             const handler = editing ?
@@ -135,12 +135,12 @@ export const editorSaveUpdateMediaEpic = (action$, store) =>
  * @param {Observable} action$ stream of actions
  * @param {object} store redux store
  */
-export const mediaEditorNewMap = (action$, {getState} ) =>
+export const mediaEditorNewMap = (action$, store ) =>
     action$.ofType(MAP_EDITOR_SHOW)
         .filter(({owner, map}) => owner === 'mediaEditor' && !map)
         .switchMap(() => {
             const switchToEditStream = action$.ofType(SAVE).switchMap(({map}) => {
-                const currentResources = currentResourcesSelector(getState()) || [];
+                const currentResources = currentResourcesSelector(store.value) || [];
                 const resId = uuid();
                 return Observable.from([loadMediaSuccess({
                     mediaType: MediaTypes.MAP,
@@ -164,12 +164,12 @@ export const mediaEditorNewMap = (action$, {getState} ) =>
 * @param {Observable} action$ stream of actions
 * @param {object} store redux store
 */
-export const mediaEditorEditMap = (action$, {getState}) =>
+export const mediaEditorEditMap = (action$, store) =>
     action$.ofType(MAP_EDITOR_SHOW)
         .filter(({owner, map}) => owner === 'mediaEditor' && !!map)
         .switchMap(() => action$.ofType(SAVE)
             .switchMap(({map: editedMap}) => {
-                const selectedItems = selectedItemSelector(getState());
+                const selectedItems = selectedItemSelector(store.value);
                 return Observable.from([updateItem({...selectedItems, data: {...editedMap}}, "replace"), hideMapEditor()]);
             })
             .takeUntil(action$.ofType(HIDE))
@@ -181,10 +181,10 @@ export const mediaEditorEditMap = (action$, {getState}) =>
  * @param {Observable} action$ stream of actions
  * @param {object} store redux store
  */
-export const reloadMediaResources = (action$, {getState}) =>
+export const reloadMediaResources = (action$, store) =>
     action$.ofType(EDITING_MEDIA, ADDING_MEDIA)
         .filter(({editing = true, adding = true}) => editing === false || adding === false)
-        .map(() => loadMedia(undefined, currentMediaTypeSelector(getState()), SourceTypes.GEOSTORY));
+        .map(() => loadMedia(undefined, currentMediaTypeSelector(store.value), SourceTypes.GEOSTORY));
 
 /**
  * Handle the import of a resource from en external source to local source
@@ -196,7 +196,7 @@ export const reloadMediaResources = (action$, {getState}) =>
 export const importInLocalSource = (action$, store) =>
     action$.ofType(IMPORT_IN_LOCAL)
         .switchMap(({resource, sourceType}) => {
-            const sources = sourcesSelector(store.getState());
+            const sources = sourcesSelector(store.value);
             const sourceId = findKey(sources, ({type}) => sourceType === type);
             const source = {
                 ...sources[sourceId],
@@ -226,7 +226,7 @@ export const editRemoteMap = (action$, store) =>
     action$.ofType(MAP_EDITOR_SHOW).filter(({owner, map}) => owner === 'mediaEditorEditRemote' && !!map)
         .switchMap(({map: {data: resource} = {}} = {}) => {
             return action$.ofType(SAVE).switchMap(({map}) => {
-                const sources = sourcesSelector(store.getState());
+                const sources = sourcesSelector(store.value);
                 const sourceId = findKey(sources, ({type}) => SourceTypes.GEOSTORY === type);
                 const source = {
                     ...sources[sourceId],
@@ -256,14 +256,14 @@ export const removeMediaEpic = (action$, store) =>
     action$.ofType(REMOVE_MEDIA)
         .switchMap(({mediaType}) => {
             const source = {
-                ...selectedSourceSelector(store.getState()),
+                ...selectedSourceSelector(store.value),
                 store
             };
             const handler = mediaAPI(source).remove({ mediaType });
             return handler
                 .switchMap(() => {
                     return Observable.of(
-                        loadMedia(undefined, currentMediaTypeSelector(store.getState()), SourceTypes.GEOSTORY));
+                        loadMedia(undefined, currentMediaTypeSelector(store.value), SourceTypes.GEOSTORY));
                 });
         });
 /**
@@ -275,10 +275,10 @@ export const removeMediaEpic = (action$, store) =>
 export const updateSelectedItem = (action$, store) =>
     action$.ofType(SELECT_ITEM)
         .switchMap(() => {
-            const state = store.getState();
+            const state = store.value;
             const selectedItem = selectedItemSelector(state);
             const source = {
-                ...selectedSourceSelector(store.getState()),
+                ...selectedSourceSelector(store.value),
                 store
             };
             return mediaAPI(source).getData({ selectedItem })

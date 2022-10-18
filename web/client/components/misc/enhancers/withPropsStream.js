@@ -10,7 +10,7 @@
 import { mapPropsStream } from 'recompose';
 
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 /**
  * implements the stream version of withProps
  * as the mapPropsStream implements mapProps with stream.
@@ -21,7 +21,7 @@ import Rx from 'rxjs';
  */
 
 export default propStreamFactory => mapPropsStream(props$ => {
-    const newProps$ = propStreamFactory(props$) || Rx.Observable.empty();
+    const newProps$ = propStreamFactory(props$) || Observable.empty();
     return newProps$.startWith({}).combineLatest(props$, (overrides = {}, props = {}) => ({
         ...props,
         ...overrides

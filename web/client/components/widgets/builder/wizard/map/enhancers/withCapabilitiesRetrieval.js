@@ -7,7 +7,7 @@
  */
 
 import { createEventHandler, mapPropsStream } from 'recompose';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { getLayerCapabilities } from '../../../../../../observables/wms';
 
@@ -28,7 +28,7 @@ export default mapPropsStream(props$ => {
                     })).startWith({
                         capabilitiesLoading: true
                     }))
-                .catch((error) => Rx.Observable.of({ capabilitiesLoading: null, capabilities: { error: "error getting capabilities", details: error }, description: null }))
+                .catch((error) => Observable.of({ capabilitiesLoading: null, capabilities: { error: "error getting capabilities", details: error }, description: null }))
         )
         .startWith({})
         .combineLatest(props$, (elementProps = {}, props = {}) => ({

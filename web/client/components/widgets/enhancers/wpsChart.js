@@ -8,7 +8,7 @@
 
 import { isNil, isObject } from 'lodash';
 import { compose, withProps } from 'recompose';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import wpsAggregate from '../../../observables/wps/aggregate';
 import { getWpsUrl } from '../../../utils/LayersUtils';
@@ -75,7 +75,7 @@ const dataStreamFactory = ($props) =>
                     classifications: {dataKey: options.classificationAttribute},
                     xAxis: {dataKey: data.GroupByAttributes[0]}
                 })).do(onLoad)
-                    .catch((e) => Rx.Observable.of({
+                    .catch((e) => Observable.of({
                         loading: false,
                         error: e,
                         data: []

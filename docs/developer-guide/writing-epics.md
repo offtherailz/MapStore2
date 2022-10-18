@@ -51,7 +51,7 @@ A simple epic in mapstore can be this one:
 ```javascript
 const fetchUserEpic = (action$, store) => action$
     .ofType(MAP_CONFIG_LOADED)
-    .filter(() => isMapLoadConfigurationEnabled(store.getState()))
+    .filter(() => isMapLoadConfigurationEnabled(store.value))
     .map({
         type: NOTIFICATION,
         message: "Map Loaded"
@@ -94,7 +94,7 @@ Of course instead of emitting the plain object, you can use an action creator, l
 ```javascript
 const notifyMapLoaded = (action$, store) => action$
     .ofType(MAP_CONFIG_LOADED)
-    .filter(() => isMapLoadConfigurationEnabled(store.getState()))
+    .filter(() => isMapLoadConfigurationEnabled(store.value))
     .map(info({
         message: "Map Loaded"
     }))
@@ -122,9 +122,9 @@ Example:
 const countDown = action$ => action$
     .ofType(START_COUNTDOWN)
     .switchMap( ({seconds}) =>
-        Rx.Observable.interval(1000)
+        Observable.interval(1000)
             .map( (value) => updateTime(seconds - value))
-            .takeUntil(Rx.Observable.timer(seconds * 1000))
+            .takeUntil(Observable.timer(seconds * 1000))
     );
 ```
 
@@ -136,10 +136,10 @@ vv switchMap vvvvvvvvvvvvvvvvvvvvvvvvvv
 
 In this epic, every time `START_COUNTDOWN` action is performed, the `switchMap` operator's argument function will be executed. The argument function of `switchMap` must return an Observable. Every value emitted on this stream will be projected on the main flow.
 
-So on the first `START_COUNTDOWN` the timer starts (`Rx.Observable.interval(1000)`). The timer will emit an incremental value (0, 1, 2, ...) every 1000 milliseconds. This value is used to trigger another action to emit on redux (using an action creator called `updateTime`, for instance).
+So on the first `START_COUNTDOWN` the timer starts (`Observable.interval(1000)`). The timer will emit an incremental value (0, 1, 2, ...) every 1000 milliseconds. This value is used to trigger another action to emit on redux (using an action creator called `updateTime`, for instance).
 
 At the end the stream will be closed after the n seconds because of the takeUntil:
-`.takeUntil(Rx.Observable.timer(seconds * 1000))` unsubscribes the observable when the stream passed as function emits a value.
+`.takeUntil(Observable.timer(seconds * 1000))` unsubscribes the observable when the stream passed as function emits a value.
 
 `switchMap` operator unsubscribes its observable ( so stops getting events from it ) even if another event comes on the main stream (so in this case another `START_COUNTDOWN` action).
 
@@ -158,10 +158,10 @@ const countDown = action$ => action$
     .ofType(START_COUNTDOWN)
     // mergeMap do not stops the flows already created.
     .mergeMap( ({seconds, id}) => // the id of the new countdown is in the action
-        Rx.Observable.interval(1000)
+        Observable.interval(1000)
             // emit an action that updates the coundown for the specific id
             .map( (value) => updateTime(seconds - value, id))
-            .takeUntil(Rx.Observable.timer(seconds * 1000))
+            .takeUntil(Observable.timer(seconds * 1000))
     );
 ```
 
@@ -192,7 +192,7 @@ const axios = require('../libs/ajax');
 const fetchDataEpic = (action$, store) => action$
     .ofType(FETCH_DATA)
     .switchMap(
-        Rx.Observable.defer(() => axios.get("MY_DATA")) // defer gets a function
+        Observable.defer(() => axios.get("MY_DATA")) // defer gets a function
             map(response => dataFetched(response.data))
     );
 ```
@@ -203,7 +203,7 @@ All the epics attached to plugins or extension will be registered once plugin is
 
 Each registered epic can be in one of two possible states:
 
-   **muted**: no reaction to the actions that comes in   
+   **muted**: no reaction to the actions that comes in
    **unmuted**: reacting to the listed actions
 
 
@@ -221,10 +221,10 @@ Though, it might be the case that one of your epics will return internal stream,
 ```js
 export const dummyEpic = (action$, store) => action$.ofType(ACTION)
     .switchMap(() => {
-        return Rx.Observable.interval(1000)
+        return Observable.interval(1000)
             .switchMap(() => {
                 console.log('TEST');
-                return Rx.Observable.empty();
+                return Observable.empty();
             });
     });
 ```
@@ -237,11 +237,11 @@ Combined with `semaphore` it allows to mute internal stream whenever epic is mut
 ```js
 export const dummyEpic = (action$, store, { pluginRenderStream$ }) => action$.ofType(ACTION)
     .switchMap(() => {
-        return Rx.Observable.interval(1000)
+        return Observable.interval(1000)
             .let(semaphore(pluginRenderStream$.startWith(true)))
             .switchMap(() => {
                 console.log('TEST');
-                return Rx.Observable.empty();
+                return Observable.empty();
             });
     });
 ```

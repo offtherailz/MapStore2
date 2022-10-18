@@ -9,7 +9,7 @@
 import { castArray } from 'lodash';
 import React from 'react';
 import { compose, mapPropsStream, withProps } from 'recompose';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { getResources } from '../../../api/persistence';
 import Message from '../../I18N/Message';
@@ -49,7 +49,7 @@ const loadPage = ({ text = "*", options = {} }, page = 0) => getResources({
     }
 })
     .map(resToProps)
-    .catch(e => Rx.Observable.of({
+    .catch(e => Observable.of({
         error: e,
         items: [],
         total: 0

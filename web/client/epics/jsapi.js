@@ -1,7 +1,7 @@
-import Rx from 'rxjs';
+import {Observable, Subject} from 'rxjs';
 
 export const generateActionTrigger = (startAction) => {
-    var eventStream = new Rx.Subject();
+    var eventStream = new Subject();
     let init = false;
     const buffer = [];
     eventStream.publish();
@@ -11,7 +11,7 @@ export const generateActionTrigger = (startAction) => {
         epic: (action$) =>
             action$.ofType(startAction).take(1).switchMap(() => {
                 init = true;
-                return Rx.Observable.from(buffer).concat(eventStream);
+                return Observable.from(buffer).concat(eventStream);
             })
     };
 };

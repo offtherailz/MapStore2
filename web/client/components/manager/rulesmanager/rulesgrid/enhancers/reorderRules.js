@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 const samePages = ({pages: oP}, {pages: nP}) => oP === nP;
 import { moveRules } from '../../../../../observables/rulesmanager';
@@ -23,7 +23,7 @@ export default () => (prop$) =>
                     setData({pages, editing: true});
                     setLoading(true);
                     return moveRules(targetPriority, rules)
-                        .catch((e) => Rx.Observable.of({
+                        .catch((e) => Observable.of({
                             error: e
                         }).do(() => onLoadError({
                             title: "rulesmanager.errorTitle",

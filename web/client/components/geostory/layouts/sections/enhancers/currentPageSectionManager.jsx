@@ -5,12 +5,9 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { compose, createEventHandler, mapPropsStream, setObservableConfig } from 'recompose';
+import { compose, createEventHandler, mapPropsStream } from 'recompose';
 import { get, minBy} from "lodash";
 import { Observable } from "rxjs";
-
-// TODO: externalize
-
 
 /**
  * Handles the intersection event stream into calls to `updateCurrentPage`, when the current section changes.

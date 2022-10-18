@@ -9,7 +9,7 @@ import ReactDOM from 'react-dom';
 import expect from 'expect';
 import {wrapEpics} from '../EpicsUtils';
 import {isArray} from "lodash";
-import Rx from 'rxjs';
+import {Subject} from 'rxjs';
 import { ActionsObservable } from 'redux-observable';
 
 describe('EpicsUtils', () => {
@@ -38,7 +38,7 @@ describe('EpicsUtils', () => {
         const wrapped = wrapEpics(sampleEpics, customWrapper);
         expect(isArray(wrapped)).toBe(true);
         expect(wrapped.length).toBe(1);
-        const actions = new Rx.Subject();
+        const actions = new Subject();
         const actions$ = new ActionsObservable(actions);
         wrapped[0](actions$);
         expect(counter).toBe(1);

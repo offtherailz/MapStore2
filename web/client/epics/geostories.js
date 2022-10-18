@@ -46,12 +46,12 @@ export const searchGeostoriesOnMapSearch = action$ =>
     action$.ofType(MAPS_LIST_LOADING)
         .switchMap(({ searchText }) => Observable.of(searchGeostoriesAction(searchText)));
 
-export const searchGeostories = (action$, { getState = () => { } }) =>
+export const searchGeostories = (action$, store) =>
     action$.ofType(SEARCH_GEOSTORIES)
         .map( ({params, searchText, geoStoreUrl}) => ({
             searchText,
             options: {
-                params: params || searchParamsSelector(getState()) || {start: 0, limit: 12},
+                params: params || searchParamsSelector(store.value) || {start: 0, limit: 12},
                 ...(geoStoreUrl ? { baseURL: geoStoreUrl } : {})
             }
         }))
@@ -83,12 +83,12 @@ export const deleteGeostory = action$ => action$
             position: "tc"
         }))
     ));
-export const reloadOnGeostories = (action$, { getState = () => { } }) =>
+export const reloadOnGeostories = (action$, store) =>
     action$.ofType(GEOSTORY_DELETED, RELOAD, ATTRIBUTE_UPDATED, GEOSTORY_SAVED, LOGIN_SUCCESS, LOGOUT)
         .delay(1000) // delay as a workaround for geostore issue #178
         .switchMap( () => Observable.of(searchGeostoriesAction(
-            searchTextSelector(getState()),
-            calculateNewParams(getState())
+            searchTextSelector(store.value),
+            calculateNewParams(store.value)
         )));
 
 

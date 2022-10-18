@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { get } from 'lodash';
 import { setCollapsed as setTimelineCollapsed, SET_COLLAPSED } from '../actions/timeline';
@@ -31,9 +31,9 @@ const areWidgetsExpanded = state =>
     (getVisibleFloatingWidgets(state) || []).filter(w => !(get(w, 'dataGrid.static'))).length > 0;
 
 const notifyCollapsedTimeline = (messageProps) => stream$ =>
-    stream$
+    (stream$)
         .take(1)
-        .switchMap(() => Rx.Observable.of(info({
+        .switchMap(() => Observable.of(info({
             ...messageProps,
             autoDismiss: 8,
             position: "tr",
@@ -50,15 +50,15 @@ const notifyCollapsedTimeline = (messageProps) => stream$ =>
  * Manages mutual exclusion of visibility between timeline and widgets.
  * This collapse timeline when one widget is expanded or added to the map
  */
-export const collapseTimelineOnWidgetsEvents = (action$, { getState = () => { } } = {}) =>
-    Rx.Observable.merge(
+export const collapseTimelineOnWidgetsEvents = (action$, store = {}) =>
+    Observable.merge(
         // if there are some (not pinned) widgets
         action$.ofType(TOGGLE_COLLAPSE, TOGGLE_COLLAPSE_ALL, MAP_CONFIG_LOADED, UPDATE_PROPERTY, INSERT)
             .filter(() =>
-                areWidgetsExpanded(getState()) && isTimelineVisible(getState())
+                areWidgetsExpanded(store.value) && isTimelineVisible(store.value)
             )
     )
-        .switchMap(() => Rx.Observable.of(setTimelineCollapsed(true)))
+        .switchMap(() => Observable.of(setTimelineCollapsed(true)))
         .let(notifyCollapsedTimeline({
             title: "widgets.tray.notifications.collapsed.timelineTitle",
             message: "widgets.tray.notifications.collapsed.message"
@@ -67,19 +67,19 @@ export const collapseTimelineOnWidgetsEvents = (action$, { getState = () => { } 
  * Manages mutual exclusion of visibility between timeline and widgets.
  * This collapse widgets when timeline is expanded or added to the map
  */
-export const collapseWidgetsOnTimelineEvents = (action$, { getState = () => { } } = {}) =>
-    Rx.Observable.merge(
+export const collapseWidgetsOnTimelineEvents = (action$, store = {}) =>
+    Observable.merge(
         // when expand timeline...
         action$.ofType(SET_COLLAPSED).filter(({ collapsed }) => !collapsed),
         // ... or add some dimensions ...
         action$.ofType(CHANGE_LAYER_PROPERTIES).filter(({ newProperties = {} } = {}) => newProperties.dimensions)
     )// ...if there are widgets not collapsed
         .filter(() =>
-            areWidgetsExpanded(getState())
-        && hasTimelineLayers(getState())
-        && isTimelineVisible(getState())
+            areWidgetsExpanded(store.value)
+        && hasTimelineLayers(store.value)
+        && isTimelineVisible(store.value)
         )
-        .switchMap(() => Rx.Observable.of(toggleCollapseAll())).let(notifyCollapsedTimeline({
+        .switchMap(() => Observable.of(toggleCollapseAll())).let(notifyCollapsedTimeline({
             title: "widgets.tray.notifications.collapsed.widgetsTitle",
             message: "widgets.tray.notifications.collapsed.message"
         }));
@@ -87,15 +87,15 @@ export const collapseWidgetsOnTimelineEvents = (action$, { getState = () => { } 
  * When widgets tray disappears, the timeline have to be expanded anyway.
  * Otherwise it stays in collapsed state without any possibility to expand (tray is hidden)
  */
-export const expandTimelineIfCollapsedOnTrayUnmount = (action$, { getState = () => { } } = {}) =>
+export const expandTimelineIfCollapsedOnTrayUnmount = (action$, store = {}) =>
     // on map load or when widgets has been removed (or pinned/unpinned)...
     action$.ofType(DELETE, UPDATE_PROPERTY, MAP_CONFIG_LOADED)
         // ... if timeline is present (hasLayers) and it is collapsed...
-        .filter(() => !isTimelineVisible(getState()) && hasTimelineLayers(getState()))
+        .filter(() => !isTimelineVisible(store.value) && hasTimelineLayers(store.value))
         // ... and the widget tray is not visible (so when there are no widget expanded anymore, pinned excluded) ...
-        .filter(() => !areWidgetsExpanded(getState()))
+        .filter(() => !areWidgetsExpanded(store.value))
         // ... then force expand timeline
-        .switchMap(() => Rx.Observable.of(setTimelineCollapsed(false)));
+        .switchMap(() => Observable.of(setTimelineCollapsed(false)));
 
 export default {
     collapseTimelineOnWidgetsEvents,

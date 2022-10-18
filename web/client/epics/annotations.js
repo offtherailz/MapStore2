@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { head, findIndex, castArray, isArray, find, values, isEmpty, isUndefined, get } from 'lodash';
 import assign from 'object-assign';
 import axios from 'axios';
@@ -215,7 +215,7 @@ const createNewFeature = (action) => {
 export default {
     addAnnotationsLayerEpic: (action$, store) => action$.ofType(MAP_CONFIG_LOADED)
         .switchMap(() => {
-            const annotationsLayer = annotationsLayerSelector(store.getState());
+            const annotationsLayer = annotationsLayerSelector(store.value);
             if (annotationsLayer) {
                 const {visibility = false, features: annotationFeatures = []} = annotationsLayer;
                 // parsing old style structure
@@ -240,17 +240,17 @@ export default {
                     })};
                 });
 
-                return Rx.Observable.of(updateNode(ANNOTATIONS, 'layer', {
+                return Observable.of(updateNode(ANNOTATIONS, 'layer', {
                     features,
                     style: {},
                     visibility
                 }));
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         }),
     editAnnotationEpic: (action$, store) => action$.ofType(EDIT_ANNOTATION)
         .switchMap(() => {
-            const state = store.getState();
+            const state = store.value;
             const feature = state.annotations.editing;
             const type = state.annotations.featureType;
             const multiGeom = multiGeometrySelector(state);
@@ -273,44 +273,44 @@ export default {
             ];
             actions = isMeasureType ? actions.concat(changeMeasurement({geomType: null})) : actions;
             // parsing styles searching for missing symbols, therefore updating it with a missing symbol
-            return Rx.Observable.from(actions);
+            return Observable.from(actions);
         }),
     newAnnotationEpic: (action$) => action$.ofType(NEW_ANNOTATION)
         .switchMap(() => {
-            return Rx.Observable.from([
+            return Observable.from([
                 hideMapinfoMarker()
             ]);
         }),
     addAnnotationEpic: (action$, store) => action$.ofType(ADD_NEW_FEATURE)
         .switchMap(() => {
-            const state = store.getState();
+            const state = store.value;
             const feature = state.annotations.editing;
-            return Rx.Observable.from([
+            return Observable.from([
                 toggleVisibilityAnnotation(feature?.properties?.id, false),
-                getSelectDrawStatus(store.getState()),
+                getSelectDrawStatus(store.value),
                 hideMapinfoMarker()
             ]);
         }),
     setEditingFeatureEpic: (action$, store) => action$.ofType(SET_EDITING_FEATURE)
         .switchMap((action) => {
             const {properties, visibility} = action.feature || {};
-            return Rx.Observable.of(
+            return Observable.of(
                 toggleVisibilityAnnotation(properties.id, visibility),
-                getSelectDrawStatus(store.getState()),
+                getSelectDrawStatus(store.value),
                 hideMapinfoMarker()
             );
         }),
     disableInteractionsEpic: (action$, store) => action$.ofType(TOGGLE_STYLE)
         .switchMap(() => {
-            const isStylingActive = store.getState() && store.getState().annotations && store.getState().annotations.styling;
-            return Rx.Observable.from([
-                isStylingActive ? getReadOnlyDrawStatus(store.getState()) : getEditingGeomDrawStatus(store.getState())
+            const isStylingActive = store.value && store.value.annotations && store.value.annotations.styling;
+            return Observable.from([
+                isStylingActive ? getReadOnlyDrawStatus(store.value) : getEditingGeomDrawStatus(store.value)
             ]);
         }),
     removeAnnotationEpic: (action$, store) => action$.ofType(CONFIRM_REMOVE_ANNOTATION)
         .switchMap((action) => {
             if (action.attribute === 'geometry') {
-                let state = store.getState();
+                let state = store.value;
                 let { editing: feature } = modifySelectedInEdited(state.annotations.selected, state.annotations.editing);
                 const type = state.annotations.featureType;
                 const multiGeom = multiGeometrySelector(state);
@@ -327,13 +327,13 @@ export default {
                     geodesic: getGeodesicProperty(state)
                 };
 
-                return Rx.Observable.from([
+                return Observable.from([
                     changeDrawingStatus("replace", type, ANNOTATIONS, [feature], {}),
                     changeDrawingStatus("drawOrEdit", type, ANNOTATIONS, [feature], drawOptions, assign({}, feature.style, {highlight: false}))
                 ]);
             }
-            const newFeatures = annotationsLayerSelector(store.getState()).features.filter(f => f.properties.id !== action.id);
-            return Rx.Observable.from([
+            const newFeatures = annotationsLayerSelector(store.value).features.filter(f => f.properties.id !== action.id);
+            return Observable.from([
                 updateNode(ANNOTATIONS, 'layer', {
                     features: newFeatures
                 }),
@@ -345,7 +345,7 @@ export default {
         }),
     openEditorEpic: action$ => action$.ofType(OPEN_EDITOR)
         .switchMap((action) => {
-            return Rx.Observable.from([
+            return Observable.from([
                 closeIdentify(),
                 setControlProperty(ANNOTATIONS, "enabled", true),
                 showAnnotation(action.id),
@@ -354,10 +354,10 @@ export default {
         }),
     saveAnnotationEpic: (action$, store) => action$.ofType(SAVE_ANNOTATION)
         .switchMap((action) => {
-            const annotationsLayer = head(store.getState().layers.flat.filter(l => l.id === ANNOTATIONS));
+            const annotationsLayer = head(store.value.layers.flat.filter(l => l.id === ANNOTATIONS));
             const featureCollection = action.geometry;
-            return Rx.Observable.from((annotationsLayer ? [updateNode(ANNOTATIONS, 'layer', {
-                features: annotationsLayerSelector(store.getState()).features.map(f => assign({}, f, {
+            return Observable.from((annotationsLayer ? [updateNode(ANNOTATIONS, 'layer', {
+                features: annotationsLayerSelector(store.value).features.map(f => assign({}, f, {
                     properties: f.properties.id === action.id ? assign({}, f.properties, action.properties, action.fields) : f.properties,
                     features: f.properties.id === action.id ? featureCollection : f.features,
                     style: f.properties.id === action.id ? action.style : f.style
@@ -375,29 +375,29 @@ export default {
                     handleClickOnLayer: true
                 })
             ]).concat([
-                changeDrawingStatus("clean", store.getState().annotations.featureType || '', ANNOTATIONS, [], {}),
+                changeDrawingStatus("clean", store.value.annotations.featureType || '', ANNOTATIONS, [], {}),
                 ...(action.newFeature ? [toggleVisibilityAnnotation(action.id, true)] : [])
             ]));
         }),
     cancelEditAnnotationEpic: (action$, store) => action$.ofType(CANCEL_EDIT_ANNOTATION)
         .switchMap((action) => {
             const {id, visibility} = action?.properties || {};
-            return Rx.Observable.from([
-                changeDrawingStatus("clean", store.getState().annotations.featureType || '', ANNOTATIONS, [], {}),
+            return Observable.from([
+                changeDrawingStatus("clean", store.value.annotations.featureType || '', ANNOTATIONS, [], {}),
                 toggleVisibilityAnnotation(id, visibility)
             ]);
         }),
     purgeMapInfoEpic: (action$, store) => action$.ofType( PURGE_MAPINFO_RESULTS)
-        .filter(() => get(store.getState(), 'draw.drawOwner', '') === ANNOTATIONS)
+        .filter(() => get(store.value, 'draw.drawOwner', '') === ANNOTATIONS)
         .switchMap(() => {
-            return Rx.Observable.from([
-                changeDrawingStatus("clean", store.getState().annotations.featureType || '', ANNOTATIONS, [], {})
+            return Observable.from([
+                changeDrawingStatus("clean", store.value.annotations.featureType || '', ANNOTATIONS, [], {})
             ]);
         }),
     startDrawingMultiGeomEpic: (action$, store) => action$.ofType(START_DRAWING)
-        .filter(() => store.getState().annotations.editing.features && !!store.getState().annotations.editing.features.length || store.getState().annotations.featureType === "Circle")
+        .filter(() => store.value.annotations.editing.features && !!store.value.annotations.editing.features.length || store.value.annotations.featureType === "Circle")
         .switchMap( () => {
-            const state = store.getState();
+            const state = store.value;
             const feature = state.annotations.editing;
             const type = state.annotations.featureType;
             const defaultTextAnnotation = state.annotations.defaultTextAnnotation;
@@ -414,46 +414,46 @@ export default {
                 addClickCallback: true,
                 geodesic: getGeodesicProperty(state)
             };
-            return Rx.Observable.of(changeDrawingStatus("drawOrEdit", type, ANNOTATIONS, [feature], drawOptions, assign({}, feature.style, {highlight: false})));
+            return Observable.of(changeDrawingStatus("drawOrEdit", type, ANNOTATIONS, [feature], drawOptions, assign({}, feature.style, {highlight: false})));
         }),
     endDrawGeomEpic: (action$, store) => action$.ofType(GEOMETRY_CHANGED)
         .filter(action => action.owner === ANNOTATIONS)
         .switchMap( (action) => {
-            return Rx.Observable.from([
+            return Observable.from([
                 updateAnnotationGeometry(mergeGeometry(action.features), action.textChanged, action.circleChanged)
-            ].concat(!multiGeometrySelector(store.getState()) && store.getState().annotations.drawing ? [toggleAdd()] : []));
+            ].concat(!multiGeometrySelector(store.value) && store.value.annotations.drawing ? [toggleAdd()] : []));
         }),
     setAnnotationStyleEpic: (action$, store) => action$.ofType(SET_STYLE)
         .switchMap( () => {
             // TODO verify if we need to override the style here or in the store
-            let feature = validateFeatureCollection(store.getState().annotations.editing);
+            let feature = validateFeatureCollection(store.value.annotations.editing);
             const features = feature.features;
-            const selected = store.getState().annotations.selected;
+            const selected = store.value.annotations.selected;
             let ftChanged = find(features, f => f.properties.id === selected.properties.id); // can use also selected.style
 
             let projectedFeature = reprojectGeoJson(ftChanged, "EPSG:4326", "EPSG:3857");
-            return Rx.Observable.from([
-                changeDrawingStatus("updateStyle", store.getState().annotations.featureType, ANNOTATIONS, [projectedFeature], {}, assign({}, selected.style, {highlight: false}))
+            return Observable.from([
+                changeDrawingStatus("updateStyle", store.value.annotations.featureType, ANNOTATIONS, [projectedFeature], {}, assign({}, selected.style, {highlight: false}))
             ]
             );
         }),
     restoreStyleEpic: (action$, store) => action$.ofType(RESTORE_STYLE)
         .switchMap( () => {
-            const {styling, editing} = store.getState().annotations;
+            const {styling, editing} = store.value.annotations;
             const {style, ...feature} = editing;
-            return Rx.Observable.from([
-                changeDrawingStatus("replace", store.getState().annotations.featureType, ANNOTATIONS, [feature], {}, style),
-                setStyle(store.getState().annotations.originalStyle),
-                getSelectDrawStatus(store.getState()),
+            return Observable.from([
+                changeDrawingStatus("replace", store.value.annotations.featureType, ANNOTATIONS, [feature], {}, style),
+                setStyle(store.value.annotations.originalStyle),
+                getSelectDrawStatus(store.value),
                 toggleStyle(!styling)
             ]
             );
         }),
     highlightAnnotationEpic: (action$, store) => action$.ofType(HIGHLIGHT)
         .switchMap((action) => {
-            return Rx.Observable.of(
+            return Observable.of(
                 updateNode(ANNOTATIONS, 'layer', {
-                    features: annotationsLayerSelector(store.getState()).features.map(f => f.properties.id === action.id ? assign({}, f, {
+                    features: annotationsLayerSelector(store.value).features.map(f => f.properties.id === action.id ? assign({}, f, {
                         features: f.features && f.features.length && f.features.map(highlightedFt => assign({}, highlightedFt, {
                             style: castArray(highlightedFt.style).map(s => assign({}, s, {
                                 highlight: true
@@ -471,7 +471,7 @@ export default {
             const feature = (f, visibility = false) => assign({}, f, {
                 properties: {...f.properties, visibility}
             });
-            const state = store.getState();
+            const state = store.value;
             let isLayerPropertyChange = action.layer === ANNOTATIONS;
             const annotationLayers = annotationsLayerSelector(state);
             const isAnnotationEditing =  !isEmpty(editingSelector(state));
@@ -484,31 +484,31 @@ export default {
                     : (f.properties.id === action.id)
                         ? feature(f, !isUndefined(action.visibility) ? action.visibility : !f.properties.visibility) : f);
                 const layerVisibility = !!features?.filter(f => f.properties.visibility)?.length;
-                return Rx.Observable.of(updateNode(ANNOTATIONS, 'layer', {features,
+                return Observable.of(updateNode(ANNOTATIONS, 'layer', {features,
                     // Update visibility of the layer when not in edit mode
                     ...(!isAnnotationEditing && {visibility: layerVisibility})
                 }));
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         }),
     hideAnnotationGroupEpic: (action$, store) => action$.ofType(CHANGE_GROUP_PROPERTIES)
         .filter(action=> {
-            const groupUpdated = head((groupsSelector(store.getState()) || []).filter(group => group.id === action.group));
+            const groupUpdated = head((groupsSelector(store.value) || []).filter(group => group.id === action.group));
             return findIndex(groupUpdated.nodes, node => node.id === ANNOTATIONS) !== -1 && !isUndefined(action.newProperties.visibility);
         }).switchMap(action=> {
-            const state = store.getState();
+            const state = store.value;
             const annotationLayers = annotationsLayerSelector(state);
             if (!isEmpty(annotationLayers) && !isEmpty(annotationLayers.features)) {
                 const features = annotationLayers.features.map(ft=> ({...ft, properties: {...ft.properties, visibility: action.newProperties.visibility}}));
-                return Rx.Observable.of(updateNode(ANNOTATIONS, 'layer', {features}));
+                return Observable.of(updateNode(ANNOTATIONS, 'layer', {features}));
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         }),
     cleanHighlightAnnotationEpic: (action$, store) => action$.ofType(CLEAN_HIGHLIGHT)
         .switchMap(() => {
-            const annotationsLayer = annotationsLayerSelector(store.getState());
+            const annotationsLayer = annotationsLayerSelector(store.value);
             if (annotationsLayer && annotationsLayer.features && annotationsLayer.features.length) {
-                return Rx.Observable.of(
+                return Observable.of(
                     updateNode(ANNOTATIONS, 'layer', {
                         features: annotationsLayer.features.map(f => assign({}, f, {
                             features: f.features && f.features.length && f.features.map(highlightedFt => assign({}, highlightedFt, {
@@ -520,38 +520,38 @@ export default {
                     })
                 );
             }
-            return Rx.Observable.empty();
+            return Observable.empty();
         }),
     /**
         this epic closes annotation once other tools takes control over drawing
         */
     tearDownByDrawingToolsEpic: (action$, store) => shutdownToolOnAnotherToolDrawing(action$, store, 'annotations',
-        () => Rx.Observable.of(purgeMapInfoResults())),
+        () => Observable.of(purgeMapInfoResults())),
     closeAnnotationsEpic: (action$, store) => action$.ofType(TOGGLE_CONTROL)
-        .filter((action) => action.control === ANNOTATIONS && !store.getState().controls.annotations.enabled)
+        .filter((action) => action.control === ANNOTATIONS && !store.value.controls.annotations.enabled)
         .switchMap(() => {
-            return Rx.Observable.from([
+            return Observable.from([
                 cleanHighlight(),
-                changeDrawingStatus("clean", store.getState().annotations?.featureType || '', ANNOTATIONS, [], {})
+                changeDrawingStatus("clean", store.value.annotations?.featureType || '', ANNOTATIONS, [], {})
             ]);
         }),
     confirmCloseAnnotationsEpic: (action$, store) => action$.ofType(CONFIRM_CLOSE_ANNOTATIONS)
         .switchMap((action) => {
             const {id, visibility} = action?.properties || {};
-            return Rx.Observable.from((
-                store.getState().controls.annotations && store.getState().controls.annotations.enabled ?
+            return Observable.from((
+                store.value.controls.annotations && store.value.controls.annotations.enabled ?
                     [toggleControl(ANNOTATIONS), toggleVisibilityAnnotation(id, visibility)] : [])
                 .concat([purgeMapInfoResults()]));
         }),
-    downloadAnnotations: (action$, {getState}) => action$.ofType(DOWNLOAD)
+    downloadAnnotations: (action$, store) => action$.ofType(DOWNLOAD)
         .switchMap(({annotation}) => {
             try {
-                const annotations = annotation && [annotation] || (annotationsLayerSelector(getState())).features;
-                const mapName = mapNameSelector(getState());
+                const annotations = annotation && [annotation] || (annotationsLayerSelector(store.value)).features;
+                const mapName = mapNameSelector(store.value);
                 saveAs(new Blob([JSON.stringify({features: annotations, type: ANNOTATION_TYPE})], {type: "application/json;charset=utf-8"}), `${ mapName.length > 0 && mapName || "Annotations"}.json`);
-                return Rx.Observable.empty();
+                return Observable.empty();
             } catch (e) {
-                return Rx.Observable.of(error({
+                return Observable.of(error({
                     title: "annotations.title",
                     message: "annotations.downloadError",
                     autoDismiss: 5,
@@ -559,10 +559,10 @@ export default {
                 }));
             }
         }),
-    onLoadAnnotations: (action$, {getState}) => action$.ofType(LOAD_ANNOTATIONS)
+    onLoadAnnotations: (action$, store) => action$.ofType(LOAD_ANNOTATIONS)
         .switchMap(({features, override}) => {
-            const annotationsLayer = annotationsLayerSelector(getState());
-            const {messages = {}} = (getState()).locale || {};
+            const annotationsLayer = annotationsLayerSelector(store.value);
+            const {messages = {}} = (store.value).locale || {};
             const oldFeature = annotationsLayer && annotationsLayer.features || [];
             const normFeatures = features.map((a) => normalizeAnnotation(a, messages));
             const newFeatures = override ? normFeatures : oldFeature.concat(normFeatures);
@@ -576,11 +576,11 @@ export default {
                 features: newFeatures,
                 handleClickOnLayer: true
             });
-            return Rx.Observable.of(action);
+            return Observable.of(action);
         }),
-    onChangedSelectedFeatureEpic: (action$, {getState}) => action$.ofType(CHANGED_SELECTED )
+    onChangedSelectedFeatureEpic: (action$, store) => action$.ofType(CHANGED_SELECTED )
         .switchMap(({}) => {
-            const state = getState();
+            const state = store.value;
             let { selected, editing: feature } = modifySelectedInEdited(state.annotations.selected, state.annotations.editing);
 
             let method = selected.geometry.type;
@@ -601,11 +601,11 @@ export default {
                 addClickCallback: true,
                 geodesic: getGeodesicProperty(state)
             }, assign({}, style, {highlight: false}));
-            return Rx.Observable.of(action);
+            return Observable.of(action);
         }),
-    onBackToEditingFeatureEpic: (action$, {getState}) => action$.ofType( RESET_COORD_EDITOR, CONFIRM_DELETE_FEATURE, UNSELECT_FEATURE )
+    onBackToEditingFeatureEpic: (action$, store) => action$.ofType( RESET_COORD_EDITOR, CONFIRM_DELETE_FEATURE, UNSELECT_FEATURE )
         .switchMap(({}) => {
-            const state = getState();
+            const state = store.value;
             const feature = state.annotations.editing;
             const multiGeometry = multiGeometrySelector(state);
             const style = feature.style;
@@ -618,11 +618,11 @@ export default {
                 selectEnabled: true,
                 transformToFeatureCollection: true
             }, assign({}, style, {highlight: false}));
-            return Rx.Observable.of(action);
+            return Observable.of(action);
         }),
-    redrawOnChangeTextEpic: (action$, {getState}) => action$.ofType( CHANGE_TEXT )
+    redrawOnChangeTextEpic: (action$, store) => action$.ofType( CHANGE_TEXT )
         .switchMap(() => {
-            const state = getState();
+            const state = store.value;
             let feature = state.annotations.editing;
             let selected = state.annotations.selected;
             const multiGeometry = multiGeometrySelector(state);
@@ -659,11 +659,11 @@ export default {
                 transformToFeatureCollection: true,
                 addClickCallback: true
             }, assign({}, style, {highlight: false}));
-            return Rx.Observable.of(action);
+            return Observable.of(action);
         }),
-    redrawOnChangeRadiusEpic: (action$, {getState}) => action$.ofType( CHANGE_RADIUS )
+    redrawOnChangeRadiusEpic: (action$, store) => action$.ofType( CHANGE_RADIUS )
         .switchMap(() => {
-            const state = getState();
+            const state = store.value;
             let feature = state.annotations.editing;
             let selected = state.annotations.selected;
             const multiGeometry = multiGeometrySelector(state);
@@ -698,11 +698,11 @@ export default {
                 addClickCallback: true,
                 geodesic: getGeodesicProperty(state)
             }, assign({}, style, {highlight: false}));
-            return Rx.Observable.of(action);
+            return Observable.of(action);
         }),
-    editSelectedFeatureEpic: (action$, {getState}) => action$.ofType(FEATURES_SELECTED)
+    editSelectedFeatureEpic: (action$, store) => action$.ofType(FEATURES_SELECTED)
         .switchMap(() => {
-            const state = getState();
+            const state = store.value;
             const feature = state.annotations.editing;
             const selected = state.annotations.selected;
             const multiGeometry = multiGeometrySelector(state);
@@ -726,24 +726,24 @@ export default {
                 addClickCallback: true,
                 geodesic: getGeodesicProperty(state)
             }, assign({}, style, {highlight: false}));
-            return Rx.Observable.of( changeDrawingStatus("clean"), action);
+            return Observable.of( changeDrawingStatus("clean"), action);
         }),
-    highlightGeometryEpic: (action$, {getState}) => action$.ofType(GEOMETRY_HIGHLIGHT)
+    highlightGeometryEpic: (action$, store) => action$.ofType(GEOMETRY_HIGHLIGHT)
         .switchMap(({id = '', state: highlight = true}) => {
-            const state = getState();
+            const state = store.value;
             const {editing, featureType: type} = state.annotations;
             const ftChangedIndex = findIndex(editing.features, (f) => f.properties.id === id);
             const selectedGeoJSON = editing.features[ftChangedIndex];
             const styleChanged = castArray(selectedGeoJSON.style).map(s => ({...s, highlight}));
             const action = changeDrawingStatus("updateStyle", type, ANNOTATIONS, [
                 set(`features[${ftChangedIndex}]`, set("style", styleChanged, selectedGeoJSON), editing)], {transformToFeatureCollection: true}, assign({}, editing.style, {highlight: false}));
-            return Rx.Observable.of( changeDrawingStatus("clean"), action);
+            return Observable.of( changeDrawingStatus("clean"), action);
         }),
-    editCircleFeatureEpic: (action$, {getState}) => action$.ofType(DRAWING_FEATURE)
+    editCircleFeatureEpic: (action$, store) => action$.ofType(DRAWING_FEATURE)
         .filter(a => a.features[0].properties && a.features[0].properties.isCircle)
         .delay(300)
         .switchMap(() => {
-            const state = getState();
+            const state = store.value;
             const feature = state.annotations.editing;
             const multiGeometry = multiGeometrySelector(state);
             const style = feature.style;
@@ -760,7 +760,7 @@ export default {
                 addClickCallback: true,
                 geodesic: getGeodesicProperty(state)
             }, assign({}, style, {highlight: false}));
-            return Rx.Observable.of(action);
+            return Observable.of(action);
         }),
     /**
      * Fetches style information from server and sets default styles using specified parameters.
@@ -768,7 +768,7 @@ export default {
      */
     loadDefaultAnnotationsStylesEpic: (action$, store) => action$.ofType(LOAD_DEFAULT_STYLES)
         .switchMap(({shape = DEFAULT_SHAPE, size = 64, fillColor = '#000000', strokeColor = '#000000', symbolsPath = DEFAULT_PATH}) => {
-            const symbolErrors = symbolErrorsSelector(store.getState()) || [];
+            const symbolErrors = symbolErrorsSelector(store.value) || [];
 
             const pointTypesFlows = {
                 symbol: () => {
@@ -780,11 +780,11 @@ export default {
                         color: strokeColor,
                         symbolUrl: symbolsPath + shape + ".svg"
                     };
-                    return Rx.Observable.defer(() => axios.get(defaultSymbolStyle.symbolUrl)
+                    return Observable.defer(() => axios.get(defaultSymbolStyle.symbolUrl)
                         .then(() => createSvgUrl(defaultSymbolStyle, defaultSymbolStyle.symbolUrlCustomized || defaultSymbolStyle.symbolUrl)))
                         .map((symbolUrlCustomized) => setDefaultStyle('POINT.symbol', {...defaultSymbolStyle, symbolUrlCustomized}))
                         .catch(() => {
-                            return Rx.Observable.of(
+                            return Observable.of(
                                 setErrorSymbol(symbolErrors.concat(['loading_symbol' + shape])),
                                 setDefaultStyle('POINT.symbol', {
                                     ...defaultSymbolStyle,
@@ -796,13 +796,13 @@ export default {
                         });
                 },
                 marker: () => {
-                    return Rx.Observable.of(setDefaultStyle('POINT.marker', STYLE_POINT_MARKER));
+                    return Observable.of(setDefaultStyle('POINT.marker', STYLE_POINT_MARKER));
                 }
             };
 
-            return Rx.Observable.merge(...values(pointTypesFlows).map(flowFunc => flowFunc()))
+            return Observable.merge(...values(pointTypesFlows).map(flowFunc => flowFunc()))
                 .startWith(loading(true))
-                .concat(Rx.Observable.of(loading(false)));
+                .concat(Observable.of(loading(false)));
         })
 
 };

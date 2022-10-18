@@ -8,7 +8,7 @@
 
 import { get, isArray, isEqual, isObject, zip } from 'lodash';
 import { compose, lifecycle, withState } from 'recompose';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import DAO from '../../../api/GeoStoreDAO';
 import { getResource } from '../../../api/persistence';
@@ -47,16 +47,16 @@ const searchFeaturedMaps = (start, limit, searchText = '') => {
         const extResource = get(results, 'ExtResourceList.Resource', []);
         const maps = (isArray(extResource) ? extResource : [extResource]).map(res => ({...res, ...parseAttributes(res)}));
         return maps.length === 0 ?
-            Rx.Observable.of(makeExtResource(results, maps)) :
-            Rx.Observable.forkJoin(
+            Observable.of(makeExtResource(results, maps)) :
+            Observable.forkJoin(
                 maps.map(({context}) => context ?
                     getResource(context, {includeAttributes: false, withData: false, withPermissions: false})
-                        .switchMap(resource => Rx.Observable.of(resource.name))
-                        .catch(() => Rx.Observable.of(null)) :
-                    Rx.Observable.of(null))
+                        .switchMap(resource => Observable.of(resource.name))
+                        .catch(() => Observable.of(null)) :
+                    Observable.of(null))
             ).map(contextNames => makeExtResource(results, maps, contextNames));
     };
-    return Rx.Observable.fromPromise(
+    return Observable.fromPromise(
         DAO.searchListByAttributes({
             AND: {
                 ...searchObj,
@@ -77,7 +77,7 @@ const searchFeaturedMaps = (start, limit, searchText = '') => {
             }
         })
             .then(results => results)
-    ).switchMap(results => getContextNames(results)).catch(() => Rx.Observable.of(null));
+    ).switchMap(results => getContextNames(results)).catch(() => Observable.of(null));
 };
 const getIcon = record => {
     const cat = get(record, "category.name");

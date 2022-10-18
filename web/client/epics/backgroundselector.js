@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { head } from 'lodash';
 
@@ -37,7 +37,7 @@ import { formatCapabitiliesOptions } from '../utils/LayersUtils';
 
 const accessMetadataExplorer = (action$) =>
     action$.ofType(ADD_BACKGROUND)
-        .switchMap(() => Rx.Observable.of(
+        .switchMap(() => Observable.of(
             setControlProperty('metadataexplorer', 'enabled', true),
             allowBackgroundsDeletion(false),
             changeSelectedService('default_map_backgrounds')
@@ -46,11 +46,11 @@ const accessMetadataExplorer = (action$) =>
 const addBackgroundPropertiesEpic = (action$) =>
     action$.ofType(ADD_BACKGROUND_PROPERTIES)
         .switchMap(({modalParams}) => {
-            const defaultAction = Rx.Observable.of(setBackgroundModalParams({...modalParams, loading: false}));
+            const defaultAction = Observable.of(setBackgroundModalParams({...modalParams, loading: false}));
             return modalParams.layer && modalParams.layer.type === 'wms' ?
-                Rx.Observable.of(setBackgroundModalParams({...modalParams, loading: true}))
+                Observable.of(setBackgroundModalParams({...modalParams, loading: true}))
                     .concat(getLayerCapabilities(modalParams.layer)
-                        .switchMap(capabilities => Rx.Observable.of(
+                        .switchMap(capabilities => Observable.of(
                             setBackgroundModalParams({...modalParams, loading: false, capabilities: formatCapabitiliesOptions(capabilities)})
                         ))
                         .catch(() => defaultAction)
@@ -77,17 +77,17 @@ const backgroundsListInit = (action$) =>
                 return changeLayerProperties(background.id, {thumbURL: toBlob(background.thumbnail)});
             });
             const currentBackground = head(backgroundLayers.filter(layer => layer.visibility));
-            return Rx.Observable.of(...layerUpdateActions.concat(createBackgroundsList(backgrounds)),
+            return Observable.of(...layerUpdateActions.concat(createBackgroundsList(backgrounds)),
                 ...(currentBackground ? [setCurrentBackgroundLayer(currentBackground.id)] : []));
         });
 
 const setCurrentBackgroundLayerEpic = (action$, store) =>
     action$.ofType(SET_CURRENT_BACKGROUND_LAYER)
         .switchMap(({layerId}) => {
-            const state = store.getState();
+            const state = store.value;
             const layer = getLayerFromId(state, layerId);
 
-            return Rx.Observable.of(...(layer && layer.group === 'background' ? [
+            return Observable.of(...(layer && layer.group === 'background' ? [
                 setControlProperty('backgroundSelector', 'tempLayer', layer),
                 setControlProperty('backgroundSelector', 'currentLayer', layer)
             ] : []));
@@ -96,40 +96,40 @@ const setCurrentBackgroundLayerEpic = (action$, store) =>
 const backgroundAddedEpic = (action$, store) =>
     action$.ofType(BACKGROUND_ADDED)
         .mergeMap(({layerId}) => {
-            const state = store.getState();
+            const state = store.value;
             const addedLayer = getLayerFromId(state, layerId);
-            return addedLayer ? Rx.Observable.of(
+            return addedLayer ? Observable.of(
                 changeLayerProperties(addedLayer.id, {visibility: true}),
                 setCurrentBackgroundLayer(addedLayer.id),
                 clearModalParameters()
-            ) : Rx.Observable.empty();
+            ) : Observable.empty();
         });
 
 const backgroundEditedEpic = (action$, store) =>
     action$.ofType(BACKGROUND_EDITED)
         .mergeMap(({layerId}) => {
-            const state = store.getState();
+            const state = store.value;
             const editedLayer = getLayerFromId(state, layerId);
-            return editedLayer ? Rx.Observable.of(
+            return editedLayer ? Observable.of(
                 clearModalParameters()
-            ) : Rx.Observable.empty();
+            ) : Observable.empty();
         });
 
 const backgroundRemovedEpic = (action$, store) =>
     action$.ofType(REMOVE_BACKGROUND)
         .mergeMap(({backgroundId}) => {
-            const state = store.getState();
+            const state = store.value;
             const layerToRemove = getLayerFromId(state, backgroundId);
             const backgroundLayers = backgroundLayersSelector(state) || [];
             const currentLayer = currentBackgroundSelector(state) || {};
             const nextLayer = backgroundId === currentLayer.id ?
                 head(backgroundLayers.filter(laa => laa.id !== backgroundId && !laa.invalid)) :
                 currentLayer;
-            return layerToRemove ? Rx.Observable.of(
+            return layerToRemove ? Observable.of(
                 removeNode(backgroundId, 'layers'),
                 changeLayerProperties(nextLayer.id, {visibility: true}),
                 setCurrentBackgroundLayer(nextLayer.id)
-            ) : Rx.Observable.empty();
+            ) : Observable.empty();
         });
 
 /**
@@ -144,7 +144,7 @@ const syncSelectedBackgroundEpic = (action$) =>
             action$.ofType(ADD_LAYER)
                 .filter(({layer}) => layer.id === id)
                 .switchMap(() => {
-                    return Rx.Observable.of(backgroundAdded(id));
+                    return Observable.of(backgroundAdded(id));
                 })
                 .takeUntil(action$.ofType(BACKGROUND_ADDED)));
 

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import expect from 'expect';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -87,7 +87,7 @@ describe('Login Plugin', () => {
                     // test the confirm button click event causes logout action.
                     expect(redirectUrl).toBeFalsy();
                     done();
-                    return  Rx.Observable.empty();
+                    return  Observable.empty();
                 })
             ], { security, controls });
             ReactDOM.render(<OmniBarPlugin items={[{ ...PluginImpl.OmniBar, plugin: PluginImpl}]} />, document.getElementById("container"));
@@ -115,7 +115,7 @@ describe('Login Plugin', () => {
                     expect(property).toEqual('enabled');
                     expect(value).toEqual(false);
                     done();
-                    return Rx.Observable.empty();
+                    return Observable.empty();
                 })
             ], { security, controls });
             ReactDOM.render(<OmniBarPlugin items={[{ ...PluginImpl.OmniBar, plugin: PluginImpl }]} />, document.getElementById("container"));

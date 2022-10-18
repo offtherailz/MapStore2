@@ -1,4 +1,4 @@
-import Rx from 'rxjs';
+import {Observable, Subject} from 'rxjs';
 import { openIDLogin, onLogout } from '../actions/login';
 import {getToken, getRefreshToken} from '../utils/SecurityUtils';
 
@@ -73,7 +73,7 @@ export const clearClients = function() {
     clients = {};
 };
 const isLoggingIn = () => !!getCookieValue('authProvider'); // temporary token is set here when logging in with OpenID via GeoStore.
-const isLoggedInWithSSOProvider = (store, ssoProvider) => isLoggedIn(store.getState()) && authProviderSelector(store.getState()) === ssoProvider.provider;
+const isLoggedInWithSSOProvider = (store, ssoProvider) => isLoggedIn(store.value) && authProviderSelector(store.value) === ssoProvider.provider;
 
 /**
  * A function that initializes a Keycloak instance and returns an observable that emits
@@ -87,7 +87,7 @@ const isLoggedInWithSSOProvider = (store, ssoProvider) => isLoggedIn(store.getSt
  *  - scheduleRefresh: there is a session with expire token, so we need to schedule a refresh before it expires
  */
 const initKeycloakSSO = (keycloak) => (ssoProvider, store) => {
-    const commandSubject = new Rx.Subject();
+    const commandSubject = new Subject();
     const token = getToken();
     const refreshToken = getRefreshToken();
     logger("initializing keycloak sso, cause", ssoProvider.cause?.type ?? ssoProvider.cause.toString());
@@ -100,7 +100,7 @@ const initKeycloakSSO = (keycloak) => (ssoProvider, store) => {
         adapter: {
             login() {
                 // check if is not logged in or if is logging in via openid
-                if (!isLoggedIn(store.getState()) && !isLoggingIn()) {
+                if (!isLoggedIn(store.value) && !isLoggingIn()) {
                     commandSubject.next("login");
                 // token for keycloak is not initialized. Reinit the client to set the token.
                 } else if (!keycloak.authenticated && isLoggedInWithSSOProvider(store, ssoProvider) ) {
@@ -133,7 +133,7 @@ const initKeycloakSSO = (keycloak) => (ssoProvider, store) => {
                 commandSubject.next("scheduleRefresh");
             }
         // not logged in keycloak or in MapStore session, schedule login monitoring.
-        } else if (!keycloak.authenticated && !isLoggedIn(store.getState())) {
+        } else if (!keycloak.authenticated && !isLoggedIn(store.value)) {
             commandSubject.next("noSessionFound");
         }
     })
@@ -158,8 +158,8 @@ const initKeycloakSSO = (keycloak) => (ssoProvider, store) => {
  * @returns {Observable} the observable that emits the login/logout redux actions
  */
 export const monitorKeycloak = (ssoProvider) => (action$, store) => {
-    const initSubject = new Rx.Subject(); // commands emitted here are "retry" and "syncToken"
-    return Rx.Observable.of(ssoProvider)
+    const initSubject = new Subject(); // commands emitted here are "retry" and "syncToken"
+    return Observable.of(ssoProvider)
         // re-init on login success to set up the token
         .merge(
             action$.ofType(LOGIN_SUCCESS)
@@ -180,11 +180,11 @@ export const monitorKeycloak = (ssoProvider) => (action$, store) => {
         .map( cause => ({...ssoProvider, cause}))
         .combineLatest(
             // Initial preload of Keycloak client lib
-            Rx.Observable.defer(
+            Observable.defer(
                 () => getKeycloakClient(ssoProvider)
             ).catch(e => {
                 console.error("Cannot load keycloak JS API for Single sign on support", e);
-                return Rx.Observable.empty(); // TODO: notification
+                return Observable.empty(); // TODO: notification
             }),
             (provider, keycloak) => ({provider, keycloak})
         )
@@ -195,23 +195,23 @@ export const monitorKeycloak = (ssoProvider) => (action$, store) => {
                 .switchMap((command) => {
                     switch (command) {
                     case "login":
-                        return Rx.Observable.of(openIDLogin(ssoProvider, ssoProvider.goToPage)); // loginOpts are useful for mock testing
+                        return Observable.of(openIDLogin(ssoProvider, ssoProvider.goToPage)); // loginOpts are useful for mock testing
                     case "logout":
                         // on logout schedule, toggle logout and schedule a retry after a while
                         // to restart to monitor login events.
-                        Rx.Observable.timer(keycloak.messageReceiveTimeout ?? 10000).takeUntil(action$.ofType(LOGIN_SUCCESS, REFRESH_SUCCESS, LOGOUT)).subscribe(() => { initSubject.next("retry"); });
+                        Observable.timer(keycloak.messageReceiveTimeout ?? 10000).takeUntil(action$.ofType(LOGIN_SUCCESS, REFRESH_SUCCESS, LOGOUT)).subscribe(() => { initSubject.next("retry"); });
                         if (isLoggedInWithSSOProvider(store, ssoProvider)) {
-                            return Rx.Observable.of(onLogout(ssoProvider));
+                            return Observable.of(onLogout(ssoProvider));
                         }
-                        return Rx.Observable.empty();
+                        return Observable.empty();
                     case "syncToken":
                         // When logged in but token was not applied on init, re-init the keycloak client
                         initSubject.next("syncToken");
-                        return Rx.Observable.empty();
+                        return Observable.empty();
                     case "noSessionFound":
                         // scheduling a re-init to emulate login monitoring.
-                        Rx.Observable.timer(keycloak.messageReceiveTimeout ?? 10000).takeUntil(action$.ofType(LOGIN_SUCCESS, REFRESH_SUCCESS, LOGOUT)).subscribe(() => { initSubject.next("retry"); });
-                        return Rx.Observable.empty();
+                        Observable.timer(keycloak.messageReceiveTimeout ?? 10000).takeUntil(action$.ofType(LOGIN_SUCCESS, REFRESH_SUCCESS, LOGOUT)).subscribe(() => { initSubject.next("retry"); });
+                        return Observable.empty();
                     case "scheduleRefresh":
                         // schedule refresh token from normal epic
                         const exp = new Date(keycloak.tokenParsed.exp * 1000);
@@ -220,20 +220,20 @@ export const monitorKeycloak = (ssoProvider) => (action$, store) => {
                         if (refreshExp > now) {
                             if (exp < now) {
                                 logger("Token expired, scheduling refresh");
-                                return Rx.Observable.of(refreshAccessToken());
+                                return Observable.of(refreshAccessToken());
                             }
                             // refreshInterval is useful for testing
                             const nextRefreshTime = ssoProvider.refreshInterval ?? Math.max(((exp - now) / 2), 10);
                             logger("Token will expire in", (exp - now) / 1000, "seconds, scheduling refresh in", nextRefreshTime / 1000, "seconds");
-                            return Rx.Observable.timer(nextRefreshTime).takeUntil(action$.ofType(LOGIN_SUCCESS, REFRESH_SUCCESS, LOGOUT)).mapTo(refreshAccessToken()).do(() => {
+                            return Observable.timer(nextRefreshTime).takeUntil(action$.ofType(LOGIN_SUCCESS, REFRESH_SUCCESS, LOGOUT)).mapTo(refreshAccessToken()).do(() => {
                                 logger("refreshing token");
                             });
                         }
                         // if also refresh token is expired (logout not necessary, because it is already done by MapStore)
-                        return Rx.Observable.empty();
+                        return Observable.empty();
                     default:
                         console.error("Unknown command", command);
-                        return Rx.Observable.empty();
+                        return Observable.empty();
                     }
                 }).merge(
                     // this IFRAME creation forces on logout the keycloak session update, to prevent

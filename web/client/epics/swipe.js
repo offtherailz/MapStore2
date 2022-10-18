@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { SELECT_NODE } from '../actions/layers';
 import { setActive } from '../actions/swipe';
@@ -22,21 +22,21 @@ import { layerSwipeSettingsSelector } from '../selectors/swipe';
 export const resetLayerSwipeSettingsEpic = (action$, store) =>
     action$.ofType(SELECT_NODE)
         .switchMap(({nodeType}) => {
-            const state = store.getState();
+            const state = store.value;
             const swipeSettings = layerSwipeSettingsSelector(state);
             return (
                 swipeSettings.active && nodeType === 'group')
-                ? Rx.Observable.of(setActive(false))
-                : Rx.Observable.empty();
+                ? Observable.of(setActive(false))
+                : Observable.empty();
         });
 
 export const deactivateSwipeToolOnSwitchMaps = (action$, store) =>
     action$.ofType(LOCATION_CHANGE)
         .switchMap(() => {
-            const swipeSettings = layerSwipeSettingsSelector(store.getState());
+            const swipeSettings = layerSwipeSettingsSelector(store.value);
             return swipeSettings.active
-                ? Rx.Observable.of(setActive(false))
-                : Rx.Observable.empty();
+                ? Observable.of(setActive(false))
+                : Observable.empty();
         });
 
 /**

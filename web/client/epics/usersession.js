@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { error, success } from '../actions/notifications';
 import { SAVE_USER_SESSION, LOAD_USER_SESSION, REMOVE_USER_SESSION, USER_SESSION_REMOVED,
@@ -52,7 +52,7 @@ const saveUserSessionErrorStatusToMessage = (status) => {
 export const saveUserSessionEpicCreator = (sessionSelector = userSessionToSaveSelector, nameSelector = userSessionNameSelector, idSelector = userSessionIdSelector) => (action$, store) => action$
     .ofType(SAVE_USER_SESSION)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const session = sessionSelector(state);
         const id = idSelector(state);
         const name = nameSelector(state);
@@ -60,17 +60,17 @@ export const saveUserSessionEpicCreator = (sessionSelector = userSessionToSaveSe
         // no behaviour defined for not logged users defied yet
         // SAVE_USER_SESSION should not be triggered in this case.
         if (!userName) {
-            return Rx.Observable.empty();
+            return Observable.empty();
         }
         return writeSession(id, name, userName, session).switchMap(rid => {
-            return Rx.Observable.of(
+            return Observable.of(
                 userSessionSaved(rid, session)
             );
         }).let(wrapStartStop(
             loading(true, 'userSessionSaving'),
             loading(false, 'userSessionSaving'),
             ({ status, data }) => {
-                return Rx.Observable.of(error({
+                return Observable.of(error({
                     title: 'userSession.saveErrorNotification.titleContext',
                     message: saveUserSessionErrorStatusToMessage(status),
                     position: "tc",
@@ -93,11 +93,11 @@ export const saveUserSessionEpicCreator = (sessionSelector = userSessionToSaveSe
 export const autoSaveSessionEpicCreator = (frequency, finalAction) =>
     (action$, store) => action$.ofType(USER_SESSION_START_SAVING)
         .switchMap(() =>
-            Rx.Observable.interval(frequency || userSessionSaveFrequencySelector(store.getState()))
-                .filter(() => isAutoSaveEnabled(store.getState()))
-                .switchMap(() => Rx.Observable.of(saveUserSession()))
+            Observable.interval(frequency || userSessionSaveFrequencySelector(store.value))
+                .filter(() => isAutoSaveEnabled(store.value))
+                .switchMap(() => Observable.of(saveUserSession()))
                 .takeUntil(action$.ofType(USER_SESSION_STOP_SAVING))
-                .concat(finalAction ? Rx.Observable.of(finalAction()) : Rx.Observable.empty())
+                .concat(finalAction ? Observable.of(finalAction()) : Observable.empty())
         );
 
 /**
@@ -107,16 +107,16 @@ export const autoSaveSessionEpicCreator = (frequency, finalAction) =>
  */
 export const loadUserSessionEpicCreator = (nameSelector = userSessionNameSelector) => (action$, store) =>
     action$.ofType(LOAD_USER_SESSION).switchMap(({name}) => {
-        const state = store.getState();
+        const state = store.value;
         const sessionName = name || nameSelector(state);
         return getSession(sessionName)
-            .switchMap(([id, session]) => Rx.Observable.of(
+            .switchMap(([id, session]) => Observable.of(
                 userSessionLoaded(id, session)
             ))
             .let(wrapStartStop(
                 loading(true, 'userSessionLoading'),
                 loading(false, 'userSessionLoading'),
-                () => Rx.Observable.of(userSessionLoaded(undefined, undefined))
+                () => Observable.of(userSessionLoaded(undefined, undefined))
             ));
     });
 
@@ -135,16 +135,16 @@ export const loadUserSessionEpicCreator = (nameSelector = userSessionNameSelecto
  */
 export const removeUserSessionEpicCreator = (idSelector = userSessionIdSelector) => (action$, store) =>
     action$.ofType(REMOVE_USER_SESSION).switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const sessionId = idSelector(state);
 
-        return removeSession(sessionId).switchMap(() => Rx.Observable.of(userSessionRemoved(), closeFeatureGrid(), resetSearch(), success({
+        return removeSession(sessionId).switchMap(() => Observable.of(userSessionRemoved(), closeFeatureGrid(), resetSearch(), success({
             title: "success",
             message: "userSession.successRemoved"
         }))).let(wrapStartStop(
             loading(true, 'userSessionRemoving'),
             loading(false, 'userSessionRemoving'),
-            () => Rx.Observable.of(error({
+            () => Observable.of(error({
                 title: 'userSession.removeErrorNotification.titleContext',
                 message: 'userSession.removeErrorNotification.defaultMessage',
                 position: "tc",
@@ -159,15 +159,15 @@ export const removeUserSessionEpicCreator = (idSelector = userSessionIdSelector)
  * @param {observable} action$ stream of actions
  * @param {object} store
  */
-export const reloadOriginalConfigEpic = (action$, { getState = () => { } } = {}) =>
+export const reloadOriginalConfigEpic = (action$, store = {}) =>
     action$.ofType(USER_SESSION_REMOVED).switchMap(() => {
-        const mapConfig = originalConfigSelector(getState());
-        const mapId = getState()?.mapInitialConfig?.mapId;
-        return Rx.Observable.of(loadMapConfig(null, mapId, mapConfig, undefined, {}), userSessionStartSaving());
+        const mapConfig = originalConfigSelector(store.value);
+        const mapId = store.value?.mapInitialConfig?.mapId;
+        return Observable.of(loadMapConfig(null, mapId, mapConfig, undefined, {}), userSessionStartSaving());
     });
 
 export const stopSaveSessionEpic = (action$) =>
     // when auto save is activated
     action$.ofType(USER_SESSION_START_SAVING).switchMap(() =>
         action$.ofType(USER_SESSION_REMOVED, LOCATION_CHANGE, LOGOUT)
-            .switchMap(() => Rx.Observable.of(userSessionStopSaving())));
+            .switchMap(() => Observable.of(userSessionStopSaving())));

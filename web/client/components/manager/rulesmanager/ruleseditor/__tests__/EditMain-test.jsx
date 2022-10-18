@@ -13,7 +13,6 @@ import expect from 'expect';
 import { Provider } from 'react-redux';
 import Editor from '../EditMain.jsx';
 import configureMockStore from 'redux-mock-store';
-import { setObservableConfig } from 'recompose';
 
 const mockStore = configureMockStore();
 

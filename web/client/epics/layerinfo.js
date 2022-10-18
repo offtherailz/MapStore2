@@ -36,11 +36,11 @@ const extractLayerData = layer => pick(layer, 'id', 'name', 'title', 'descriptio
 export const layerInfoSetupLayersEpic = (action$, store) => action$
     .ofType(SET_CONTROL_PROPERTIES, SET_CONTROL_PROPERTY, TOGGLE_CONTROL)
     .filter(({type, control, property, properties = []}) =>
-        !!layerInfoControlEnabledSelector(store.getState()) &&
+        !!layerInfoControlEnabledSelector(store.value) &&
         control === 'layerinfo' &&
         (property === 'enabled' || findIndex(keys(properties), prop => prop === 'enabled') > -1 || type === TOGGLE_CONTROL))
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const layers = mapLayersSelector(state);
 
         return Observable.of(
@@ -75,7 +75,7 @@ export const layerInfoSyncLayersEpic = (action$, store) => action$
             resetSyncStatus(layers.length),
             loading(true, 'syncingLayers'),
             setError(),
-            ...layersSelector(store.getState()).map(layer => updateLayer({id: layer.id, syncStatus: 'none'})),
+            ...layersSelector(store.value).map(layer => updateLayer({id: layer.id, syncStatus: 'none'})),
             ...layers.map(layer => updateLayer({id: layer.id, selected: false, syncStatus: 'updating'}))
         ).concat(
             Observable.merge(

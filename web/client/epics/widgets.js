@@ -1,4 +1,5 @@
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
+import {filter, switchMap, startWith} from 'rxjs/operators';
 import { endsWith, has, get, includes, isEqual, omit, omitBy } from 'lodash';
 
 import {
@@ -83,10 +84,13 @@ const outerHTML = (node) => {
  * This is needed to avoid widget clear when LOCATION_CHANGE because of a map save.
  */
 const getValidLocationChange = action$ =>
-    action$.ofType(SAVING_MAP, MAP_CREATED, MAP_ERROR)
-        .startWith({type: MAP_CONFIG_LOADED}) // just dummy action to trigger the first switchMap
-        .switchMap(action => action.type === SAVING_MAP ? Rx.Observable.never() : action$)
-        .filter(({type} = {}) => type === LOCATION_CHANGE);
+    Observable.from(action$.ofType(SAVING_MAP, MAP_CREATED, MAP_ERROR).pipe(
+        startWith({type: MAP_CONFIG_LOADED}), // just dummy action to trigger the first switchMap
+        switchMap(action => action.type === SAVING_MAP ? Observable.never() : Observable.from(action$)),
+        filter(({type} = {}) => type === LOCATION_CHANGE)
+    ));
+
+
 /**
  * Action flow to add/Removes dependencies for a widgets.
  * Trigger `mapSync` property of a widget and sets `dependenciesMap` object to map `dependency` prop onto widget props.
@@ -103,7 +107,7 @@ const getValidLocationChange = action$ =>
  * @param {object} options dependency mapping options. Must contain `mappings` object
  */
 const configureDependency = (active, dependency, options, targetDependenciesMap) =>
-    Rx.Observable.of(
+    Observable.of(
         onEditorChange("mapSync", active),
         onEditorChange('dependenciesMap',
             updateDependencyMap(active, dependency, options, targetDependenciesMap)
@@ -122,9 +126,9 @@ export const exportWidgetData = action$ =>
  * Intercepts changes to widgets to catch widgets that can share some dependencies.
  * Then re-configures the dependencies to it.
  */
-export const alignDependenciesToWidgets = (action$, { getState = () => { } } = {}) =>
+export const alignDependenciesToWidgets = (action$, store = {}) =>
     action$.ofType(MAP_CONFIG_LOADED, DASHBOARD_LOADED, INSERT)
-        .map(() => availableDependenciesSelector(getState()))
+        .map(() => availableDependenciesSelector(store.value))
         .pluck('availableDependencies')
         .distinctUntilChanged( (oldMaps = [], newMaps = []) => isEqual([...oldMaps], [...newMaps]))
     // add dependencies for all map widgets (for the moment the only ones that shares dependencies)
@@ -158,7 +162,7 @@ export const alignDependenciesToWidgets = (action$, { getState = () => { } } = {
  * Toggles the dependencies setup and widget selection for dependencies
  * (if more than one widget is available for connection)
  */
-export const toggleWidgetConnectFlow = (action$, {getState = () => {}} = {}) =>
+export const toggleWidgetConnectFlow = (action$, store = {}) =>
     action$.ofType(TOGGLE_CONNECTION).switchMap(({ active, availableDependencies = [], options}) =>
         (active && availableDependencies.length > 0)
             // activate flow
@@ -168,19 +172,19 @@ export const toggleWidgetConnectFlow = (action$, {getState = () => {}} = {}) =>
                 // also if connection is triggered for a different target (widget not in editing) we should change actions to trigger (onChange instead of onEditorChange)
                 ? configureDependency(active, availableDependencies[0], options)
                 // case of multiple map
-                : Rx.Observable.of(toggleDependencySelector(active, {
+                : Observable.of(toggleDependencySelector(active, {
                     availableDependencies
                 })
                 ).merge(
                     action$.ofType(WIDGET_SELECTED)
-                        .filter(() => isWidgetSelectionActive(getState()))
+                        .filter(() => isWidgetSelectionActive(store.value))
                         .switchMap(({ widget }) => {
-                            const ad = get(getDependencySelectorConfig(getState()), 'availableDependencies');
+                            const ad = get(getDependencySelectorConfig(store.value), 'availableDependencies');
                             let deps = ad.filter(d => (WIDGETS_REGEX.exec(d) || [])[1] === widget.id);
                             if (widget.widgetType === 'map') {
                                 deps = deps.filter(d => (WIDGETS_MAPS_REGEX.exec(d) || [])[2] === widget.selectedMapId);
                             }
-                            return configureDependency(active, deps[0], options, widget.dependeciesMap).concat(Rx.Observable.of(toggleDependencySelector(false, {})));
+                            return configureDependency(active, deps[0], options, widget.dependeciesMap).concat(Observable.of(toggleDependencySelector(false, {})));
                         }).takeUntil(
                             action$.ofType(LOCATION_CHANGE)
                                 .merge(action$.filter(({ type, key } = {}) => type === EDITOR_SETTING_CHANGE && key === DEPENDENCY_SELECTOR_KEY))
@@ -191,20 +195,20 @@ export const toggleWidgetConnectFlow = (action$, {getState = () => {}} = {}) =>
             : configureDependency(active, availableDependencies[0], options)
     );
 
-export const clearWidgetsOnLocationChange = (action$, {getState = () => {}} = {}) =>
+export const clearWidgetsOnLocationChange = (action$, store = {}) =>
     action$.ofType(MAP_CONFIG_LOADED).switchMap( () => {
-        const location = pathnameSelector(getState()).split('/');
+        const location = pathnameSelector(store.value).split('/');
         const loctionDifference = location[location.length - 1];
         return action$.let(getValidLocationChange)
             .filter( () => {
-                const newLocation = pathnameSelector(getState()).split('/');
+                const newLocation = pathnameSelector(store.value).split('/');
                 const newLocationDifference = newLocation[newLocation.length - 1];
                 return newLocationDifference !== loctionDifference;
             }).switchMap( ({payload = {}} = {}) => {
                 if (payload && payload.location && payload.location.pathname) {
-                    return Rx.Observable.of(clearWidgets());
+                    return Observable.of(clearWidgets());
                 }
-                return Rx.Observable.empty();
+                return Observable.empty();
             });
     });
 export const exportWidgetImage = action$ =>
@@ -243,9 +247,9 @@ export const exportWidgetImage = action$ =>
 export const updateLayerOnLayerPropertiesChange = (action$, store) =>
     action$.ofType(CHANGE_LAYER_PROPERTIES)
         .switchMap(({layer, newProperties}) => {
-            const state = store.getState();
+            const state = store.value;
             const flatLayer = getLayerFromId(state, layer);
-            return Rx.Observable.of(
+            return Observable.of(
                 ...(has(newProperties, "layerFilter") && flatLayer ? [updateWidgetLayer(flatLayer)] : [])
             );
         });
@@ -259,11 +263,11 @@ export const updateLayerOnLayerPropertiesChange = (action$, store) =>
 export const updateLayerOnLoadingErrorChange = (action$, store) =>
     action$.ofType(LAYER_LOAD, LAYER_ERROR)
         .groupBy(({layerId}) => layerId)
-        .map(layerStream$ => layerStream$
+        .map(layerStream$ => Observable.from(layerStream$)
             .switchMap(({layerId}) => {
-                const state = store.getState();
+                const state = store.value;
                 const flatLayer = getLayerFromId(state, layerId);
-                return Rx.Observable.of(
+                return Observable.of(
                     ...(flatLayer && flatLayer.previousLoadingError !== flatLayer.loadingError ?
                         [updateWidgetLayer(flatLayer)] :
                         [])
@@ -275,13 +279,13 @@ export const updateDependenciesMapOnMapSwitch = (action$, store) =>
     action$.ofType(UPDATE_PROPERTY)
         .filter(({key}) => includes(["maps", "selectedMapId"], key))
         .switchMap(({id: widgetId, value}) => {
-            let observable$ = Rx.Observable.empty();
+            let observable$ = Observable.empty();
             const selectedMapId = typeof value === "string" ? value : value?.mapId;
             if (selectedMapId) {
-                const widgets = getFloatingWidgets(store.getState());
+                const widgets = getFloatingWidgets(store.value);
                 const updatedWidgets = updateDependenciesMapOfMapList(widgets, widgetId, selectedMapId);
                 if (!isEqual(widgets, updatedWidgets)) {
-                    observable$ = Rx.Observable.of(replaceWidgets(updatedWidgets));
+                    observable$ = Observable.of(replaceWidgets(updatedWidgets));
                 }
             }
             return observable$;

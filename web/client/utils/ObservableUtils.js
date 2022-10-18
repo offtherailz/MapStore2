@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 import { get } from 'lodash';
 import { parseString } from 'xml2js';
@@ -24,16 +25,16 @@ export const parseXML = (xml, options = {
     tagNameProcessors: [stripPrefix],
     explicitArray: false,
     mergeAttrs: true
-} ) => Rx.Observable.bindNodeCallback((data, callback) => parseString(data, options, callback))(xml);
+} ) => Observable.bindNodeCallback((data, callback) => parseString(data, options, callback))(xml);
 /**
  * Intercept OGC Exception (200 response with exceptionReport) to throw error in the stream
  * @param  {observable} observable The observable that emits the server response
  * @return {observable}            The observable that returns the response or throws the error.
  */
-export const interceptOGCError = (observable) => observable.switchMap(response => {
+export const interceptOGCError = (observable$) => observable$.pipe(switchMap(response => {
     if (typeof response.data === "string") {
         if (response.data.indexOf("ExceptionReport") > 0) {
-            return Rx.Observable.bindNodeCallback( (data, callback) => parseString(data, {
+            return Observable.bindNodeCallback( (data, callback) => parseString(data, {
                 tagNameProcessors: [stripPrefix],
                 explicitArray: false,
                 mergeAttrs: true
@@ -44,11 +45,11 @@ export const interceptOGCError = (observable) => observable.switchMap(response =
 
         }
     }
-    return Rx.Observable.of(response);
-});
+    return Observable.of(response);
+}));
 
 export const deleteResourceById = (resId, options) => resId ?
     GeoStoreApi.deleteResource(resId, options)
         .then((res) => {return {data: res.data, resType: "success", error: null}; })
         .catch((e) => {return {error: e, resType: "error"}; }) :
-    Rx.Observable.of({resType: "success"});
+    Observable.of({resType: "success"});

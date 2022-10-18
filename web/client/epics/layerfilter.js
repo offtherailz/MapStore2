@@ -8,7 +8,7 @@
 
 
 // eslint-disable-next-line no-unused-vars
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { get, head } from 'lodash';
 import { LOCATION_CHANGE } from 'connected-react-router';
@@ -54,12 +54,12 @@ const addFilterToLayer = (layer, filter) => {
  * and on `QUERY_FORM_SEARCH` `CHANGE_LAYERPROPERTIS` adding layerFilter to selected layer
  * terminate on `LOCATION_CHANGE` `TOGGLE_CONTROL` with queryPanel enabled === false
  */
-export const handleLayerFilterPanel = (action$, {getState}) =>
+export const handleLayerFilterPanel = (action$, store) =>
     action$.ofType(OPEN_QUERY_BUILDER).switchMap(() => {
-        const layer = getSelectedLayer(getState());
+        const layer = getSelectedLayer(store.value);
         const {url, name, layerFilter} = layer || {};
         const searchUrl = layer && layer.search && layer.search.url;
-        return Rx.Observable.of(
+        return Observable.of(
             featureTypeSelected(searchUrl || url, name),
             // Load the filter from the layer if it exist
             loadFilter(layerFilter),
@@ -67,18 +67,18 @@ export const handleLayerFilterPanel = (action$, {getState}) =>
             setControlProperty('queryPanel', "enabled", true)
         )
             .merge(
-                Rx.Observable.of(toggleLayerFilter()).filter(() => !get(getState(), "query.isLayerFilter")),
+                Observable.of(toggleLayerFilter()).filter(() => !get(store.value, "query.isLayerFilter")),
                 action$.ofType(QUERY_FORM_SEARCH)
                     .switchMap( ({filterObj}) => {
-                        let newFilter = isNotEmptyFilter(filterObj) ? {...get(getState(), "queryform", {})} : undefined;
+                        let newFilter = isNotEmptyFilter(filterObj) ? {...get(store.value, "queryform", {})} : undefined;
                         if (newFilter) {
                             newFilter.filterFields = newFilter.attributePanelExpanded && newFilter.filterFields || [];
                             newFilter.spatialField = newFilter.spatialPanelExpanded && newFilter.spatialField || null;
                             newFilter.crossLayerFilter = newFilter.crossLayerExpanded && setupCrossLayerFilterDefaults(newFilter.crossLayerFilter) || null;
                         }
-                        return Rx.Observable.of(addFilterToLayer(layer.id, newFilter));
+                        return Observable.of(addFilterToLayer(layer.id, newFilter));
                     })
-            ).let(endLayerFilterEpic(action$)).concat(Rx.Observable.from([toggleLayerFilter(), reset(), changeDrawingStatus("clean", "", "queryform", [], {})]))
+            ).let(endLayerFilterEpic(action$)).concat(Observable.from([toggleLayerFilter(), reset(), changeDrawingStatus("clean", "", "queryform", [], {})]))
         ;
     });
 /**
@@ -87,13 +87,13 @@ export const handleLayerFilterPanel = (action$, {getState}) =>
  * @param {external:Observable} action$ manages `DISCARD_CURRENT_FILTER`
  * @return {external:Observable} `QUERYFORM:LOAD_FILTER` `QUERY_FORM_SEARCH` `INIT_QUERY_PANEL`
  */
-export const restoreSavedFilter = (action$, {getState}) =>
+export const restoreSavedFilter = (action$, store) =>
     action$.ofType(DISCARD_CURRENT_FILTER)
         .switchMap(() => {
-            const params = {typeName: get(getState(), "state.query.typeName")};
-            const searchUrl = get(getState(), "state.query.url");
-            const filter = get(getState(), "layerFilter.persisted");
-            return Rx.Observable.of(changeDrawingStatus('clean', '', "queryform", []),
+            const params = {typeName: get(store.value, "state.query.typeName")};
+            const searchUrl = get(store.value, "state.query.url");
+            const filter = get(store.value, "layerFilter.persisted");
+            return Observable.of(changeDrawingStatus('clean', '', "queryform", []),
                 loadFilter(filter),
                 search(searchUrl, filter, params),
                 initQueryPanel());
@@ -105,10 +105,10 @@ export const restoreSavedFilter = (action$, {getState}) =>
  * @param {external:Observable} action$ manages `APPLY_FILTER`
  * @return {external:Observable} `APPLIED_FILTER`
  */
-export const onApplyFilter = (action$, {getState}) =>
+export const onApplyFilter = (action$, store) =>
     action$.ofType(APPLY_FILTER)
         .map(() => {
-            const newFilter = {...get(getState(), "queryform", {})};
+            const newFilter = {...get(store.value, "queryform", {})};
             return storeAppliedFilter(newFilter);
 
         });

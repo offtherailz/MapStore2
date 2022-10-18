@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import {
     NEW,
@@ -34,18 +34,18 @@ const getFTSelectedArgs = (state) => {
     return [url, typeName];
 };
 
-export const openWidgetEditor = (action$, {getState = () => {}} = {}) => action$.ofType(NEW, EDIT, NEW_CHART)
-    .filter(() => widgetBuilderAvailable(getState()))
-    .switchMap(() => Rx.Observable.of(
+export const openWidgetEditor = (action$, store = {}) => action$.ofType(NEW, EDIT, NEW_CHART)
+    .filter(() => widgetBuilderAvailable(store.value))
+    .switchMap(() => Observable.of(
         setControlProperty("widgetBuilder", "enabled", true),
         setControlProperty("metadataexplorer", "enabled", false)
     ));
-export const closeWidgetEditorOnFinish = (action$, {getState = () => {}} = {}) => action$.ofType(INSERT, ADD_LAYER)
-    .filter(() => widgetBuilderAvailable(getState()))
-    .switchMap(() => Rx.Observable.of(setControlProperty("widgetBuilder", "enabled", false)));
-export const initEditorOnNew = (action$, {getState = () => {}} = {}) => action$.ofType(NEW)
-    .filter(() => widgetBuilderAvailable(getState()))
-    .switchMap((w) => Rx.Observable.of(editNewWidget({
+export const closeWidgetEditorOnFinish = (action$, store = {}) => action$.ofType(INSERT, ADD_LAYER)
+    .filter(() => widgetBuilderAvailable(store.value))
+    .switchMap(() => Observable.of(setControlProperty("widgetBuilder", "enabled", false)));
+export const initEditorOnNew = (action$, store = {}) => action$.ofType(NEW)
+    .filter(() => widgetBuilderAvailable(store.value))
+    .switchMap((w) => Observable.of(editNewWidget({
         legend: false,
         mapSync: true,
         cartesian: true,
@@ -54,15 +54,15 @@ export const initEditorOnNew = (action$, {getState = () => {}} = {}) => action$.
         // override action's type
         type: undefined
     }, {step: 0})));
-export const initEditorOnNewChart = (action$, {getState = () => {}} = {}) => action$.ofType(NEW_CHART)
-    .filter(() => widgetBuilderAvailable(getState()))
-    .switchMap((w) => Rx.Observable.of(closeFeatureGrid(), editNewWidget({
+export const initEditorOnNewChart = (action$, store = {}) => action$.ofType(NEW_CHART)
+    .filter(() => widgetBuilderAvailable(store.value))
+    .switchMap((w) => Observable.of(closeFeatureGrid(), editNewWidget({
         legend: false,
         mapSync: true,
         cartesian: true,
         yAxis: true,
         widgetType: "chart",
-        filter: wfsFilter(getState()),
+        filter: wfsFilter(store.value),
         ...w,
         // override action's type
         type: undefined
@@ -70,30 +70,30 @@ export const initEditorOnNewChart = (action$, {getState = () => {}} = {}) => act
 /**
  * Manages interaction with QueryPanel and widgetBuilder
  */
-export const handleWidgetsFilterPanel = (action$, {getState = () => {}} = {}) =>
+export const handleWidgetsFilterPanel = (action$, store = {}) =>
     action$.ofType(OPEN_FILTER_EDITOR)
-        .filter(() => widgetBuilderAvailable(getState()))
+        .filter(() => widgetBuilderAvailable(store.value))
         .switchMap(() =>
             // open and setup query form
-            Rx.Observable.of(
-                featureTypeSelected(...getFTSelectedArgs(getState())),
-                loadFilter(getEditingWidgetFilter(getState())),
+            Observable.of(
+                featureTypeSelected(...getFTSelectedArgs(store.value)),
+                loadFilter(getEditingWidgetFilter(store.value)),
                 setControlProperty("widgetBuilder", "enabled", false),
                 setControlProperty('queryPanel', "enabled", true)
 
             // wait for any filter update(search) or query form close event
             ).concat(
-                Rx.Observable.race(
+                Observable.race(
                     action$.ofType(QUERY_FORM_SEARCH).take(1),
                     action$.ofType(TOGGLE_CONTROL).filter(({control, property} = {}) => control === "queryPanel" && (!property || property === "enabled")).take(1)
                 )
                 // then close the query panel, open widget form and update the current filter for the widget in editing
                     .switchMap( action =>
                         (action.filterObj
-                            ? Rx.Observable.of(onEditorChange("filter", action.filterObj))
-                            : Rx.Observable.empty()
+                            ? Observable.of(onEditorChange("filter", action.filterObj))
+                            : Observable.empty()
                         )
-                            .merge(Rx.Observable.of(
+                            .merge(Observable.of(
                                 setControlProperty("widgetBuilder", "enabled", true)
                             ))
                     )
@@ -102,7 +102,7 @@ export const handleWidgetsFilterPanel = (action$, {getState = () => {}} = {}) =>
                 action$.ofType(LOCATION_CHANGE, EDIT)
                     .merge(action$.ofType(TOGGLE_CONTROL).filter(({control, property} = {}) => control === "widgetBuilder" && (!property === false))))
                 .concat(
-                    Rx.Observable.of(drawSupportReset(),
+                    Observable.of(drawSupportReset(),
                         setControlProperty('queryPanel', "enabled", false)
                     )
                 )

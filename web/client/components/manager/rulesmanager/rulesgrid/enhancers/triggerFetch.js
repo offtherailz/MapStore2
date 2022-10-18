@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 const sameFilter = (f1, {filters: f2}) => f1 === f2;
 const sameVersion = (f1, {version: f2}) => f1 === f2;
@@ -26,7 +26,7 @@ export default ($props) => {
                 .do(() => setLoading(false))
             // TODO: bring this conversion inside the API
                 .do((rowsCount) => onLoad({pages: {}, rowsCount}))
-                .catch((e) => Rx.Observable.of({
+                .catch((e) => Observable.of({
                     error: e
                 }).do(() => onLoadError({
                     title: "rulesmanager.errorTitle",

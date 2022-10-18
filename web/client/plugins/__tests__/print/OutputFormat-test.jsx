@@ -104,7 +104,7 @@ describe('PrintOutputFormat Plugin', () => {
         getPrintOutputFormatPlugin().then(({ Plugin, store }) => {
             try {
                 ReactDOM.render(<Plugin />, document.getElementById("container"));
-                callTransformer(store.getState(), (spec) => {
+                callTransformer(store.value, (spec) => {
                     expect(spec.outputFormat).toBe('pdf');
                     done();
                 });
@@ -124,7 +124,7 @@ describe('PrintOutputFormat Plugin', () => {
                         value: "png"
                     }
                 });
-                callTransformer(store.getState(), (spec) => {
+                callTransformer(store.value, (spec) => {
                     expect(spec.outputFormat).toBe('png');
                     done();
                 });

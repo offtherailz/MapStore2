@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import {
     START_TUTORIAL,
@@ -45,7 +45,7 @@ const findTutorialId = path => path.match(/\/(viewer)\/(\w+)\/(\d+)/) && path.re
 export const closeTutorialEpic = (action$) =>
     action$.ofType(START_TUTORIAL)
         .audit(() => action$.ofType(TOGGLE_3D))
-        .switchMap( () => Rx.Observable.of(closeTutorial()));
+        .switchMap( () => Observable.of(closeTutorial()));
 
 /**
  * Setup new steps based on the current path
@@ -58,7 +58,7 @@ export const closeTutorialEpic = (action$) =>
 export const switchTutorialEpic = (action$, store) =>
     action$.ofType(LOCATION_CHANGE, REDUCERS_LOADED)
         .filter(action => {
-            const state = store.getState();
+            const state = store.value;
             return (action.type === LOCATION_CHANGE && state.router?.location?.pathname)
                     || (action.type === REDUCERS_LOADED && action.reducers.includes('tutorial'));
         })
@@ -66,7 +66,7 @@ export const switchTutorialEpic = (action$, store) =>
             action$.ofType(MAPS_LIST_LOADED, CHANGE_MAP_VIEW, INIT_TUTORIAL)
                 .take(1)
                 .switchMap( () => {
-                    const state = store.getState();
+                    const state = store.value;
                     const location = state.router.location;
                     let id = findTutorialId(location.pathname);
                     const presetList = state.tutorial && state.tutorial.presetList || {};
@@ -78,24 +78,24 @@ export const switchTutorialEpic = (action$, store) =>
                     if (defaultName.indexOf("context") !== -1) {
                         const currentStep = creationStepSelector(state) || "general-settings";
                         const currentPreset = CONTEXT_TUTORIALS[currentStep];
-                        return Rx.Observable.of(setupTutorial(currentPreset, presetList[currentPreset], null, null, null, prevTutorialId === (currentPreset)));
+                        return Observable.of(setupTutorial(currentPreset, presetList[currentPreset], null, null, null, prevTutorialId === (currentPreset)));
                     }
                     if (id && id?.indexOf("geostory") !== -1 && !isEmpty(presetList)) {
                         // this is needed to setup correct geostory tutorial based on the current mode and page
                         if (modeSelector(state) === "edit" || id && id?.indexOf("newgeostory") !== -1) {
                             id  = "geostory";
                             presetName = `geostory_edit_tutorial`;
-                            return Rx.Observable.from([
+                            return Observable.from([
                                 setupTutorial(id, presetList[presetName], null, null, null, false)
                             ]);
                         }
                         presetName = `geostory_view_tutorial`;
-                        return Rx.Observable.of(setupTutorial(id, presetList[presetName], null, null, null, true));
+                        return Observable.of(setupTutorial(id, presetList[presetName], null, null, null, true));
                     }
-                    return !isEmpty(presetList) ? Rx.Observable.of(presetList[presetName] ?
+                    return !isEmpty(presetList) ? Observable.of(presetList[presetName] ?
                         setupTutorial(id + mobile, presetList[presetName], null, null, null, prevTutorialId === (id + mobile)) :
                         setupTutorial(defaultName + mobile, presetList['default' + mobile + '_tutorial'], null, null, null, prevTutorialId === (defaultName + mobile))
-                    ) : Rx.Observable.empty();
+                    ) : Observable.empty();
                 })
         );
 
@@ -107,7 +107,7 @@ export const switchGeostoryTutorialEpic = (action$, store) =>
     action$.ofType(CHANGE_MODE)
         .switchMap( ({mode}) => {
             const id = "geostory";
-            const state = store.getState();
+            const state = store.value;
             const presetList = state.tutorial && state.tutorial.presetList || {};
             const geostoryMode = `_${mode}`;
             const steps = !isEmpty(presetList) ? presetList[id + geostoryMode + '_tutorial'] : null;
@@ -118,11 +118,11 @@ export const switchGeostoryTutorialEpic = (action$, store) =>
                 console.error(e);
             }
             // if no steps are found then do nothing
-            return steps ? Rx.Observable.from(
+            return steps ? Observable.from(
                 [
                     setupTutorial(id, steps, null, null, null, mode === "view" || isGeostoryTutorialDisabled)
                 ]
-            ) : Rx.Observable.empty();
+            ) : Observable.empty();
         });
 
 
@@ -134,14 +134,14 @@ export const switchGeostoryTutorialEpic = (action$, store) =>
 export const changePresetEpic = (action$, store) =>
     action$.ofType(CHANGE_PRESET)
         .switchMap(({preset, presetGroup, ignoreDisabled}) => {
-            const state = store.getState();
+            const state = store.value;
             const presetList = state.tutorial && state.tutorial.presetList || {};
             const checkbox = state.tutorial && state.tutorial.checkbox;
             const tutorial = presetList[preset];
 
             return tutorial ?
-                Rx.Observable.of(setupTutorial(preset, tutorial, null, checkbox, null, false, presetGroup, ignoreDisabled)) :
-                Rx.Observable.empty();
+                Observable.of(setupTutorial(preset, tutorial, null, checkbox, null, false, presetGroup, ignoreDisabled)) :
+                Observable.empty();
         });
 
 /**
@@ -155,9 +155,9 @@ export const getActionsFromStepEpic = (action$) =>
     action$.ofType(UPDATE_TUTORIAL)
         .filter(action => action.tour && action.tour.step && action.tour.step.action && action.tour.step.action[action.tour.action])
         .switchMap( (action) => {
-            return isArray(action.tour.step.action[action.tour.action]) && Rx.Observable.of(...action.tour.step.action[action.tour.action])
-            || isObject(action.tour.step.action[action.tour.action]) && Rx.Observable.of(action.tour.step.action[action.tour.action])
-            || Rx.Observable.empty();
+            return isArray(action.tour.step.action[action.tour.action]) && Observable.of(...action.tour.step.action[action.tour.action])
+            || isObject(action.tour.step.action[action.tour.action]) && Observable.of(action.tour.step.action[action.tour.action])
+            || Observable.empty();
         });
 
 /**
@@ -168,9 +168,9 @@ export const getActionsFromStepEpic = (action$) =>
 
 export const openDetailsPanelEpic = (action$, store) =>
     action$.ofType(CLOSE_TUTORIAL)
-        .filter(() => mapSelector(store.getState())?.info?.detailsSettings?.showAtStartup )
+        .filter(() => mapSelector(store.value)?.info?.detailsSettings?.showAtStartup )
         .switchMap( () => {
-            return Rx.Observable.of(openDetailsPanel());
+            return Observable.of(openDetailsPanel());
         });
 
 

@@ -27,11 +27,11 @@ import { wrapStartStop } from '../observables/epics';
 import { toMapConfig } from '../utils/ogc/WMC';
 import {hideMapinfoMarker, purgeMapInfoResults} from "../actions/mapInfo";
 
-const errorToMessageId = (e = {}, getState = () => {}) => {
+const errorToMessageId = (e = {}, store) => {
     let message = `context.errors.template.unknownError`;
     if (e.status === 403) {
         message = `context.errors.template.pleaseLogin`;
-        if (isLoggedIn(getState())) {
+        if (isLoggedIn(store.value)) {
             message = `context.errors.template.notAccessible`;
         }
     } if (e.status === 404) {
@@ -51,7 +51,7 @@ export const openMapTemplatesPanelEpic = (action$) => action$
 export const setAllowedTemplatesEpic = (action$, store) => action$
     .ofType(SET_ALLOWED_TEMPLATES)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const templates = allTemplatesSelector(state);
 
         const makeFilter = () => ({
@@ -95,7 +95,7 @@ export const setAllowedTemplatesEpic = (action$, store) => action$
 export const mergeTemplateEpic = (action$, store) => action$
     .ofType(MERGE_TEMPLATE)
     .switchMap(({id}) => {
-        const state = store.getState();
+        const state = store.value;
         const templates = templatesSelector(state);
         const template = find(templates, t => t.id === id);
 
@@ -124,7 +124,7 @@ export const mergeTemplateEpic = (action$, store) => action$
             setTemplateLoading(id, true),
             setTemplateLoading(id, false),
             e => {
-                const messageId = errorToMessageId(e.originalError || e, store.getState);
+                const messageId = errorToMessageId(e.originalError || e, store);
                 return Observable.of(showError({
                     title: 'context.errors.template.title',
                     message: messageId,
@@ -138,7 +138,7 @@ export const mergeTemplateEpic = (action$, store) => action$
 export const replaceTemplateEpic = (action$, store) => action$
     .ofType(REPLACE_TEMPLATE)
     .switchMap(({id}) => {
-        const state = store.getState();
+        const state = store.value;
         const templates = templatesSelector(state);
         const template = find(templates, t => t.id === id);
         const {zoom, center} = mapSelector(state);
@@ -165,7 +165,7 @@ export const replaceTemplateEpic = (action$, store) => action$
                 setTemplateLoading(id, true),
                 setTemplateLoading(id, false),
                 e => {
-                    const messageId = errorToMessageId(e.originalError || e, store.getState);
+                    const messageId = errorToMessageId(e.originalError || e, store);
                     return Observable.of(showError({
                         title: 'context.errors.template.title',
                         message: messageId,
@@ -178,7 +178,7 @@ export const replaceTemplateEpic = (action$, store) => action$
 
 export const openMapTemplatesEpic = (action$, store) =>
     action$.ofType(SET_CONTROL_PROPERTY, TOGGLE_CONTROL)
-        .filter((action) => action.control === "mapTemplates" && isActiveSelector(store.getState()))
+        .filter((action) => action.control === "mapTemplates" && isActiveSelector(store.value))
         .switchMap(() => {
             return Observable.of(purgeMapInfoResults(), hideMapinfoMarker());
         });

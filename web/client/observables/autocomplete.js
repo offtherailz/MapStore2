@@ -16,7 +16,7 @@ import url from 'url';
 
 import { endsWith, head, isNil } from 'lodash';
 import assign from 'object-assign';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import {API} from '../api/searchText';
 import axios from '../libs/ajax';
@@ -41,8 +41,8 @@ export const singleAttributeFilter = ({searchText = "", queriableAttributes = []
 export const createPagedUniqueAutompleteStream = (props$) => props$
     .distinctUntilChanged( ({value, currentPage, attribute}, newProps = {}) =>
         !(newProps.value !== value || newProps.currentPage !== currentPage || newProps.attribute !== attribute))
-    .throttle(props => Rx.Observable.timer(props.delayDebounce || 0))
-    .merge(props$.debounce(props => Rx.Observable.timer(props.delayDebounce || 0))).distinctUntilChanged()
+    .throttle(props => Observable.timer(props.delayDebounce || 0))
+    .merge(props$.debounce(props => Observable.timer(props.delayDebounce || 0))).distinctUntilChanged()
     .switchMap((p) => {
         if (p.performFetch) {
             const data = getWpsPayload({
@@ -52,21 +52,21 @@ export const createPagedUniqueAutompleteStream = (props$) => props$
                 startIndex: (p.currentPage - 1) * p.maxFeatures,
                 value: p.value
             });
-            return Rx.Observable.fromPromise(
+            return Observable.fromPromise(
                 axios.post(p.url, data, {
                     timeout: 60000,
                     headers: {'Accept': 'application/json', 'Content-Type': 'application/xml'}
                 }).then(response => { return {fetchedData: response.data, busy: false}; }))
                 .catch(() => {
-                    return Rx.Observable.of({fetchedData: {values: [], size: 0}, busy: false});
+                    return Observable.of({fetchedData: {values: [], size: 0}, busy: false});
                 }).startWith({busy: true});
         }
-        return Rx.Observable.of({fetchedData: {values: [], size: 0}, busy: false});
+        return Observable.of({fetchedData: {values: [], size: 0}, busy: false});
     }).startWith({});
 
 export const createWFSFetchStream = (props$) =>
-    Rx.Observable.merge(
-        props$.distinctUntilChanged(({value} = {}, {value: nextValue} = {}) => value === nextValue ).debounce(props => Rx.Observable.timer(props.delayDebounce || 0)),
+    Observable.merge(
+        props$.distinctUntilChanged(({value} = {}, {value: nextValue} = {}) => value === nextValue ).debounce(props => Observable.timer(props.delayDebounce || 0)),
         props$.distinctUntilChanged( ({filterProps, currentPage} = {}, {filterProps: nextFilterProps, currentPage: nextCurrentPage} ) => filterProps === nextFilterProps && currentPage === nextCurrentPage)
     )
         .switchMap((p) => {
@@ -98,14 +98,14 @@ export const createWFSFetchStream = (props$) =>
                     srsName: p.filterProps && p.filterProps.srsName || "EPSG:4326",
                     ...parsed.query
                 });
-                return Rx.Observable.fromPromise((API.Utils.getService("wfs")(p.value, serviceOptions)
+                return Observable.fromPromise((API.Utils.getService("wfs")(p.value, serviceOptions)
                     .then( data => {
                         return {fetchedData: { values: data.features.map(f => f.properties), size: data.totalFeatures, features: data.features, crs: p.filterProps && p.filterProps.srsName || "EPSG:4326"}, busy: false};
                     }))).catch(() => {
-                    return Rx.Observable.of({fetchedData: {values: [], size: 0, features: []}, busy: false});
+                    return Observable.of({fetchedData: {values: [], size: 0, features: []}, busy: false});
                 }).startWith({busy: true});
             }
-            return Rx.Observable.of({fetchedData: {values: [], size: 0, features: []}, busy: false});
+            return Observable.of({fetchedData: {values: [], size: 0, features: []}, busy: false});
         }).startWith({});
 
 export default {

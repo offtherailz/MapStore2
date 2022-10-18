@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import jsonlint from 'jsonlint-mod';
 import {omit, pick, get, flatten, uniq, intersection, head, keys, values, findIndex, find, cloneDeep, isString} from 'lodash';
 import {push} from 'connected-react-router';
@@ -77,7 +77,7 @@ const findPlugin = (plugins, pluginName) =>
 export const saveContextResource = (action$, store) => action$
     .ofType(SAVE_CONTEXT)
     .exhaustMap(({destLocation}) => {
-        const state = store.getState();
+        const state = store.value;
         const mapConfig = mapSaveSelector(state);
         const plugins = pluginsSelector(state);
         const context = newContextSelector(state);
@@ -122,24 +122,24 @@ export const saveContextResource = (action$, store) => action$
         };
 
         return (resource && resource.id ? updateResource : createResource)(newResource)
-            .switchMap(rid => Rx.Observable.merge(
+            .switchMap(rid => Observable.merge(
                 // LOCATION_CHANGE triggers notifications clear, need to work around that
                 // can't wait for CLEAR_NOTIFICATIONS, because either in firefox notification action doesn't trigger
                 // or in chrome it triggers too early
                 // (on chrome there is another LOCATION_CHANGE after the first one for unknown reason, that cancels out the first)
-                (destLocation === '/context-manager' ? action$.ofType(CONTEXTS_LIST_LOADED).take(1).switchMap(() => Rx.Observable.of(
+                (destLocation === '/context-manager' ? action$.ofType(CONTEXTS_LIST_LOADED).take(1).switchMap(() => Observable.of(
                     show({
                         title: "saveDialog.saveSuccessTitle",
                         message: "saveDialog.saveSuccessMessage"
-                    }))) : Rx.Observable.empty()),
-                Rx.Observable.of(
+                    }))) : Observable.empty()),
+                Observable.of(
                     contextSaved(rid),
                     push(destLocation || `/context/${context.name}`),
                     loadExtensions(),
                     loading(false, 'contextSaving')
                 )
             ))
-            .catch(({status, data}) => Rx.Observable.of(error({
+            .catch(({status, data}) => Observable.of(error({
                 title: 'contextCreator.saveErrorNotification.titleContext',
                 message: saveContextErrorStatusToMessage(status),
                 position: "tc",
@@ -159,7 +159,7 @@ export const saveContextResource = (action$, store) => action$
 export const saveTemplateEpic = (action$) => action$
     .ofType(SAVE_TEMPLATE)
     .switchMap(({resource}) => (resource && resource.id ? updateResource : createResource)(resource)
-        .switchMap(rid => Rx.Observable.of(
+        .switchMap(rid => Observable.of(
             loadTemplate(rid),
             showDialog('uploadTemplate', false),
             show({
@@ -173,7 +173,7 @@ export const saveTemplateEpic = (action$) => action$
             ({status, data}, stream$) => {
                 if (status === 404 && isString(data) && data.indexOf('Resource Category not found') > -1) {
                     return createCategory('TEMPLATE').switchMap(() => stream$.skip(1))
-                        .catch(() => Rx.Observable.of(error({
+                        .catch(() => Observable.of(error({
                             title: 'contextCreator.saveErrorNotification.titleTemplate',
                             message: 'contextCreator.saveErrorNotification.categoryError',
                             position: "tc",
@@ -183,7 +183,7 @@ export const saveTemplateEpic = (action$) => action$
                             }
                         })));
                 }
-                return Rx.Observable.of(error({
+                return Observable.of(error({
                     title: 'contextCreator.saveErrorNotification.titleTemplate',
                     message: saveContextErrorStatusToMessage(status),
                     position: "tc",
@@ -205,7 +205,7 @@ export const loadTemplateEpic = (action$) => action$
         .switchMap(resource => {
             const thumbnail = get(resource, 'attributes.thumbnail');
             const format = get(resource, 'attributes.format');
-            return Rx.Observable.of(updateTemplate({
+            return Observable.of(updateTemplate({
                 ...resource,
                 attributes: {
                     ...(thumbnail ? {thumbnail: decodeURIComponent(thumbnail)} : {}),
@@ -228,14 +228,14 @@ export const loadTemplateEpic = (action$) => action$
 export const deleteTemplateEpic = (action$, store) => action$
     .ofType(DELETE_TEMPLATE)
     .switchMap(({resource}) => deleteResource(resource).map(() => {
-        const state = store.getState();
+        const state = store.value;
         const templates = templatesSelector(state) || [];
 
         return setTemplates(templates.filter(template => template.id !== resource.id));
     }).let(wrapStartStop(
         loading(true, "loading"),
         loading(false, "loading"),
-        () => Rx.Observable.of(error({
+        () => Observable.of(error({
             title: "notification.error",
             message: "contextCreator.configureTemplates.deleteError",
             autoDismiss: 6,
@@ -250,11 +250,11 @@ export const deleteTemplateEpic = (action$, store) => action$
 export const editTemplateEpic = (action$, store) => action$
     .ofType(EDIT_TEMPLATE)
     .switchMap(({id}) => {
-        const state = store.getState();
+        const state = store.value;
         const template = find(templatesSelector(state), t => t.id === id) || {};
 
-        return (id ? Rx.Observable.defer(() => Api.getData(id)) : Rx.Observable.of(null))
-            .switchMap(data => Rx.Observable.of(
+        return (id ? Observable.defer(() => Api.getData(id)) : Observable.of(null))
+            .switchMap(data => Observable.of(
                 setEditedTemplate(id),
                 ...(id ? [setParsedTemplate('Template Data', data, template.format), setFileDropStatus('accepted')] : []),
                 showDialog('uploadTemplate', true)
@@ -262,7 +262,7 @@ export const editTemplateEpic = (action$, store) => action$
             .let(wrapStartStop(
                 loading(true, "templateDataLoading"),
                 loading(false, "templateDataLoading"),
-                ({status}) => Rx.Observable.of(error({
+                ({status}) => Observable.of(error({
                     title: "notification.error",
                     message: loadTemplateErrorStatusToMessage(status),
                     position: "tc",
@@ -278,14 +278,14 @@ export const editTemplateEpic = (action$, store) => action$
 export const resetOnShowDialog = (action$, store) => action$
     .ofType(SHOW_DIALOG)
     .flatMap(({dialogName, show: showDialogBool}) => {
-        const state = store.getState();
+        const state = store.value;
         const editedTemplateId = editedTemplateSelector(state);
         const templates = templatesSelector(state) || [];
 
         return showDialogBool ?
-            Rx.Observable.of(...(dialogName === 'uploadTemplate' && !editedTemplateId ? [setFileDropStatus(), setParsedTemplate()] : []),
+            Observable.of(...(dialogName === 'uploadTemplate' && !editedTemplateId ? [setFileDropStatus(), setParsedTemplate()] : []),
                 ...(dialogName === 'mapTemplatesConfig' ? [changeTemplatesKey(templates.map(template => template.id), 'selected', false)] : [])) :
-            Rx.Observable.empty();
+            Observable.empty();
     });
 
 /**
@@ -296,20 +296,20 @@ export const resetOnShowDialog = (action$, store) => action$
  */
 export const contextCreatorLoadContext = (action$, store) => action$
     .ofType(LOAD_CONTEXT)
-    .switchMap(({id, pluginsConfig}) => Rx.Observable.of(startResourceLoad()).concat(
-        Rx.Observable.forkJoin(
-            Rx.Observable.defer(() => getPluginsConfig(pluginsConfig)),
-            Rx.Observable.defer(() => Api.getResourcesByCategory('TEMPLATE', '*', {
+    .switchMap(({id, pluginsConfig}) => Observable.of(startResourceLoad()).concat(
+        Observable.forkJoin(
+            Observable.defer(() => getPluginsConfig(pluginsConfig)),
+            Observable.defer(() => Api.getResourcesByCategory('TEMPLATE', '*', {
                 params: {
                     start: 0,
                     limit: 10000,
                     includeAttributes: true
                 }
             })).map(response => response.totalCount === 1 ? [response.results] : values(response.results)),
-            id === 'new' ? Rx.Observable.of(null) : getResource(id)
+            id === 'new' ? Observable.of(null) : getResource(id)
         ).switchMap(([config, templates, resource]) =>
-            Rx.Observable.of(setResource(resource, config, templates))
-                .concat(Rx.Observable.of(enableMandatoryPlugins(), loadFinished(), setCreationStep('general-settings')))
+            Observable.of(setResource(resource, config, templates))
+                .concat(Observable.of(enableMandatoryPlugins(), loadFinished(), setCreationStep('general-settings')))
         ))
         .let(
             wrapStartStop(
@@ -319,14 +319,14 @@ export const contextCreatorLoadContext = (action$, store) => action$
                     let message = `context.errors.context.unknownError`;
                     if (e.status === 403) {
                         message = `context.errors.context.pleaseLogin`;
-                        if (isLoggedIn(store.getState())) {
+                        if (isLoggedIn(store.value)) {
                             message = `context.errors.context.notAccessible`;
                         }
                     } if (e.status === 404) {
                         message = `context.errors.context.notFound`;
                     }
                     // prompt login should be triggered here
-                    return Rx.Observable.of(contextLoadError({error: {...e.originalError, message}}));
+                    return Observable.of(contextLoadError({error: {...e.originalError, message}}));
                 }
             )
         )
@@ -335,27 +335,27 @@ export const contextCreatorLoadContext = (action$, store) => action$
 export const uploadPluginEpic = (action$) => action$
     .ofType(UPLOAD_PLUGIN)
     .switchMap(({files}) =>
-        Rx.Observable.defer(() => upload(files.map(f => f.file)))
-            .switchMap(result => Rx.Observable.of(pluginUploaded(result)))
+        Observable.defer(() => upload(files.map(f => f.file)))
+            .switchMap(result => Observable.of(pluginUploaded(result)))
             .let(wrapStartStop(
                 pluginUploading(true, files.map(f => f.name)),
                 pluginUploading(false, files.map(f => f.name)),
-                (e) => Rx.Observable.of(uploadPluginError(files, e))
+                (e) => Observable.of(uploadPluginError(files, e))
             ))
     );
 
 export const uninstallPluginEpic = (action$) => action$
     .ofType(UNINSTALL_PLUGIN)
     .switchMap(({plugin}) =>
-        Rx.Observable.defer(() => uninstall(plugin))
-            .switchMap(result => Rx.Observable.of(
+        Observable.defer(() => uninstall(plugin))
+            .switchMap(result => Observable.of(
                 pluginUninstalled(plugin, result),
                 showDialog('confirmRemovePlugin', false)
             ))
             .let(wrapStartStop(
                 pluginUninstalling(true, plugin),
                 pluginUninstalling(false, plugin),
-                () => Rx.Observable.of(error({
+                () => Observable.of(error({
                     title: "notification.error",
                     message: "context.errors.plugins.uninstall",
                     autoDismiss: 6,
@@ -368,10 +368,10 @@ export const invalidateContextName = (action$, store) => action$
     .ofType(CHANGE_ATTRIBUTE)
     .filter(({key}) => key === 'name')
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const isChecked = contextNameCheckedSelector(state);
 
-        return isChecked || isChecked === undefined ? Rx.Observable.of(contextNameChecked(false)) : Rx.Observable.empty();
+        return isChecked || isChecked === undefined ? Observable.of(contextNameChecked(false)) : Observable.empty();
     });
 
 export const checkIfContextExists = (action$, store) => action$
@@ -379,13 +379,13 @@ export const checkIfContextExists = (action$, store) => action$
     .filter(({key}) => key === 'name')
     .debounceTime(500)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const resource = resourceSelector(state);
 
         const contextName = resource && resource.name;
 
         return (contextName ?
-            Rx.Observable.defer(() => Api.searchListByAttributes({
+            Observable.defer(() => Api.searchListByAttributes({
                 AND: {
                     FIELD: {
                         field: ['NAME'],
@@ -395,18 +395,18 @@ export const checkIfContextExists = (action$, store) => action$
                 }
             })).switchMap(({ExtResourceList: {Resource, ResourceCount}}) =>
                 get(Resource, 'id') !== get(resource, 'id') && ResourceCount > 0 ?
-                    Rx.Observable.of(error({
+                    Observable.of(error({
                         title: 'contextCreator.contextNameErrorNotification.title',
                         message: 'contextCreator.saveErrorNotification.conflict',
                         position: "tc",
                         autoDismiss: 5
                     }), isValidContextName(false)) :
-                    Rx.Observable.of(isValidContextName(true)))
+                    Observable.of(isValidContextName(true)))
                 .let(wrapStartStop(
                     loading(true, 'contextNameCheck'),
                     loading(false, 'contextNameCheck'),
                     () => {
-                        return Rx.Observable.of(error({
+                        return Observable.of(error({
                             title: 'contextCreator.contextNameErrorNotification.title',
                             message: 'contextCreator.contextNameErrorNotification.unknownError',
                             position: "tc",
@@ -414,7 +414,7 @@ export const checkIfContextExists = (action$, store) => action$
                         }));
                     }
                 )) :
-            Rx.Observable.empty()).concat(Rx.Observable.of(contextNameChecked(true)));
+            Observable.empty()).concat(Observable.of(contextNameChecked(true)));
     });
 
 /**
@@ -425,12 +425,12 @@ export const checkIfContextExists = (action$, store) => action$
 export const enableInitialPlugins = (action$, store) => action$
     .ofType(SET_RESOURCE)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const pluginsToEnable = initialEnabledPluginsSelector(state);
 
         return pluginsToEnable && pluginsToEnable.length > 0 ?
-            Rx.Observable.of(enablePlugins(pluginsToEnable, true)) :
-            Rx.Observable.empty();
+            Observable.of(enablePlugins(pluginsToEnable, true)) :
+            Observable.empty();
     });
 
 /**
@@ -441,7 +441,7 @@ export const enableInitialPlugins = (action$, store) => action$
 export const loadMapViewerOnStepChange = (action$) => action$
     .ofType(SET_CREATION_STEP)
     .filter(({stepId}) => stepId === 'configure-map')
-    .switchMap(() => Rx.Observable.of(mapViewerLoad()));
+    .switchMap(() => Observable.of(mapViewerLoad()));
 
 /**
  * Changes tutorial on creation step changes
@@ -452,14 +452,14 @@ export const loadMapViewerOnStepChange = (action$) => action$
 export const loadTutorialOnStepChange = (action$, store) => action$
     .ofType(SET_CREATION_STEP)
     .switchMap(({stepId}) => {
-        const tutorials = tutorialsSelector(store.getState()) || {};
+        const tutorials = tutorialsSelector(store.value) || {};
 
-        return !wasTutorialShownSelector(stepId)(store.getState()) ?
-            Rx.Observable.of(
+        return !wasTutorialShownSelector(stepId)(store.value) ?
+            Observable.of(
                 changePreset(tutorials[stepId], values(tutorials)),
                 setWasTutorialShown(stepId)
             ) :
-            Rx.Observable.empty();
+            Observable.empty();
     });
 
 /**
@@ -470,8 +470,8 @@ export const loadTutorialOnStepChange = (action$, store) => action$
 export const contextCreatorShowTutorialEpic = (action$, store) => action$
     .ofType(SHOW_TUTORIAL)
     .switchMap(({stepId}) => {
-        const tutorials = tutorialsSelector(store.getState()) || {};
-        return Rx.Observable.of(
+        const tutorials = tutorialsSelector(store.value) || {};
+        return Observable.of(
             setTutorialStep(),
             changePreset(tutorials[stepId], values(tutorials), true)
         );
@@ -486,15 +486,15 @@ export const contextCreatorShowTutorialEpic = (action$, store) => action$
 export const mapViewerLoadEpic = (action$, store) => action$
     .ofType(MAP_VIEWER_LOAD)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const isMapViewerLoaded = mapViewerLoadedSelector(state);
         const mapConfig = mapConfigSelector(state);
         const {configUrl} = ConfigUtils.getConfigUrl({mapId: 'new', config: null});
 
         return isMapViewerLoaded ?
-            Rx.Observable.empty() :
-            Rx.Observable.merge(
-                Rx.Observable.of(
+            Observable.empty() :
+            Observable.merge(
+                Observable.of(
                     initMap(true),
                     loadMapConfig(configUrl, null, cloneDeep(mapConfig), undefined, {}),
                     mapViewerLoaded(true)
@@ -511,12 +511,12 @@ export const mapViewerLoadEpic = (action$, store) => action$
 export const mapViewerReload = (action$, store) => action$
     .ofType(MAP_VIEWER_RELOAD)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const curStepId = creationStepSelector(state);
 
         return curStepId !== 'configure-map' ?
-            Rx.Observable.empty() :
-            Rx.Observable.of(
+            Observable.empty() :
+            Observable.of(
                 mapViewerLoaded(false),
                 mapViewerLoad()
             );
@@ -530,10 +530,10 @@ export const mapViewerReload = (action$, store) => action$
 export const enableMandatoryPluginsEpic = (action$, store) => action$
     .ofType(ENABLE_MANDATORY_PLUGINS)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const plugins = pluginsSelector(state);
 
-        return Rx.Observable.of(enablePlugins(plugins.filter(plugin => plugin.mandatory).map(plugin => plugin.name)));
+        return Observable.of(enablePlugins(plugins.filter(plugin => plugin.mandatory).map(plugin => plugin.name)));
     });
 
 /**
@@ -549,7 +549,7 @@ export const enableMandatoryPluginsEpic = (action$, store) => action$
 export const enablePluginsEpic = (action$, store) => action$
     .ofType(ENABLE_PLUGINS)
     .switchMap(({plugins, isInitial}) => {
-        const state = store.getState();
+        const state = store.value;
         const pluginsState = pluginsSelector(state);
 
         let enabledDependentPlugins = {}; // object {[pluginName]: modified enabledDependentPlugins array}
@@ -633,7 +633,7 @@ export const enablePluginsEpic = (action$, store) => action$
         });
 
         // generate actions that update plugins
-        return Rx.Observable.of(
+        return Observable.of(
             changePluginsKey(pluginsToEnable, 'enabled', true),
 
             // isUserPlugin value should be preserved when we set up the initial state of plugins when editing a context
@@ -655,7 +655,7 @@ export const enablePluginsEpic = (action$, store) => action$
 export const disablePluginsEpic = (action$, store) => action$
     .ofType(DISABLE_PLUGINS)
     .switchMap(({plugins}) => {
-        const state = store.getState();
+        const state = store.value;
         const pluginsState = pluginsSelector(state);
         const flattenedPlugins = flattenPluginTree(pluginsState);
         const allPlugins = flattenedPlugins.map(plugin => plugin.name);
@@ -721,7 +721,7 @@ export const disablePluginsEpic = (action$, store) => action$
             });
 
             // generate actions that update plugins
-            return Rx.Observable.of(
+            return Observable.of(
                 changePluginsKey(pluginsToDisable, 'enabled', false),
                 ...keys(enabledDependentPlugins).map(pluginName =>
                     changePluginsKey([pluginName], 'enabledDependentPlugins', enabledDependentPlugins[pluginName])),
@@ -730,7 +730,7 @@ export const disablePluginsEpic = (action$, store) => action$
         }
 
         // disable everything and reenable initial mandatory plugins
-        return Rx.Observable.of(
+        return Observable.of(
             changePluginsKey(allPlugins, 'enabled', false),
             changePluginsKey(allPlugins, 'enabledDependentPlugins', []),
             changePluginsKey(allPlugins, 'forcedMandatory', false),
@@ -747,7 +747,7 @@ export const disablePluginsEpic = (action$, store) => action$
 export const resetConfigOnPluginKeyChange = (action$, store) => action$
     .ofType(CHANGE_PLUGINS_KEY)
     .switchMap(({ids, key, value}) => {
-        const state = store.getState();
+        const state = store.value;
         const editedPlugin = editedPluginSelector(state);
         const plugins = pluginsSelector(state);
 
@@ -758,11 +758,11 @@ export const resetConfigOnPluginKeyChange = (action$, store) => action$
                 .filter(plugin => !!plugin));
 
             return hasEditedPlugin ?
-                Rx.Observable.of(setCfgError(), setEditedPlugin()) :
-                Rx.Observable.empty();
+                Observable.of(setCfgError(), setEditedPlugin()) :
+                Observable.empty();
         }
 
-        return Rx.Observable.empty();
+        return Observable.empty();
     });
 
 /**
@@ -774,7 +774,7 @@ export const handleUserExtensionsPlugin = (action$, store) => action$
     .ofType(CHANGE_PLUGINS_KEY)
     .filter(({key}) => key === 'enabled' || key === 'isUserPlugin')
     .mergeMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const plugins = flattenPluginTree(pluginsSelector(state));
 
         const enabledUserPluginsCount =
@@ -786,7 +786,7 @@ export const handleUserExtensionsPlugin = (action$, store) => action$
                 disablePlugins :
                 null;
 
-        return action ? Rx.Observable.of(action(['UserExtensions'])) : Rx.Observable.empty();
+        return action ? Observable.of(action(['UserExtensions'])) : Observable.empty();
     });
 
 /**
@@ -797,11 +797,11 @@ export const handleUserExtensionsPlugin = (action$, store) => action$
 export const setValidationStatusOnEditedCfgUpdate = (action$, store) => action$
     .ofType(UPDATE_EDITED_CFG)
     .mergeMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const validationStatus = validationStatusSelector(state);
         return validationStatus ?
-            Rx.Observable.of(setValidationStatus(false)) :
-            Rx.Observable.empty();
+            Observable.of(setValidationStatus(false)) :
+            Observable.empty();
     });
 
 /**
@@ -811,7 +811,7 @@ export const setValidationStatusOnEditedCfgUpdate = (action$, store) => action$
 export const updateEditedCfgEpic = (action$) => action$
     .ofType(UPDATE_EDITED_CFG)
     .debounceTime(500)
-    .switchMap(() => Rx.Observable.of(validateEditedCfg(), savePluginCfg(), setValidationStatus(true)));
+    .switchMap(() => Observable.of(validateEditedCfg(), savePluginCfg(), setValidationStatus(true)));
 
 /**
  * Validates currently edited cfg
@@ -821,7 +821,7 @@ export const updateEditedCfgEpic = (action$) => action$
 export const validateEditedCfgEpic = (action$, store) => action$
     .ofType(VALIDATE_EDITED_CFG)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const editedCfg = editedCfgSelector(state);
 
         const getErrorLine = (e) => {
@@ -832,16 +832,16 @@ export const validateEditedCfgEpic = (action$, store) => action$
         if (editedCfg) {
             try {
                 const parsedCfg = jsonlint.parse(editedCfg);
-                return Rx.Observable.of(setParsedCfg(parsedCfg), setCfgError());
+                return Observable.of(setParsedCfg(parsedCfg), setCfgError());
             } catch (e) {
-                return Rx.Observable.of(setCfgError({
+                return Observable.of(setCfgError({
                     message: e.message,
                     lineNumber: getErrorLine(e)
                 }));
             }
         }
 
-        return Rx.Observable.empty();
+        return Observable.empty();
     });
 
 /**
@@ -852,14 +852,14 @@ export const validateEditedCfgEpic = (action$, store) => action$
 export const editPluginEpic = (action$, store) => action$
     .ofType(EDIT_PLUGIN)
     .switchMap(({pluginName}) => {
-        const state = store.getState();
+        const state = store.value;
         const editedPlugin = editedPluginSelector(state);
         const cfgError = cfgErrorSelector(state);
         const validationStatus = validationStatusSelector(state) || false;
 
         return !cfgError && validationStatus ?
-            Rx.Observable.of(setEditedPlugin(pluginName), setEditedCfg(pluginName)) :
-            cfgError ? Rx.Observable.of(error({
+            Observable.of(setEditedPlugin(pluginName), setEditedCfg(pluginName)) :
+            cfgError ? Observable.of(error({
                 title: 'contextCreator.configurePlugins.saveCfgErrorNotification.title',
                 message: 'contextCreator.configurePlugins.saveCfgErrorNotification.message',
                 position: 'tc',
@@ -867,7 +867,7 @@ export const editPluginEpic = (action$, store) => action$
                 values: {
                     pluginName: editedPlugin
                 }
-            })) : Rx.Observable.empty();
+            })) : Observable.empty();
     });
 
 /**
@@ -879,15 +879,15 @@ export const editPluginEpic = (action$, store) => action$
 export const savePluginCfgEpic = (action$, store) => action$
     .ofType(SAVE_PLUGIN_CFG)
     .switchMap(() => {
-        const state = store.getState();
+        const state = store.value;
         const pluginName = editedPluginSelector(state);
         const parsedCfg = parsedCfgSelector(state);
         const cfgError = cfgErrorSelector(state);
 
         return pluginName && parsedCfg && !cfgError ?
-            Rx.Observable.of(
+            Observable.of(
                 changePluginsKey([pluginName], 'pluginConfig.cfg', parsedCfg.cfg),
                 changePluginsKey([pluginName], 'pluginConfig.override', parsedCfg.override)
             ) :
-            Rx.Observable.empty();
+            Observable.empty();
     });

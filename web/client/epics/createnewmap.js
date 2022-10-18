@@ -44,7 +44,7 @@ export const checkContextsOnMapLoad = (action$) => action$
 export const createNewMapEpic = (action$, store) => action$
     .ofType(CREATE_NEW_MAP)
     .switchMap(({context}) => {
-        const state = store.getState();
+        const state = store.value;
         const mapType = mapTypeSelector(state);
 
         return Observable.of(

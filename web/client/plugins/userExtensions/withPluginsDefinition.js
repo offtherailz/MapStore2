@@ -1,7 +1,7 @@
 import { compose, mapPropsStream, withPropsOnChange } from "recompose";
 import { find, pick } from 'lodash';
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import loadingState from '../../components/misc/enhancers/loadingState';
 
 import getPluginsConfig from '../../observables/config/getPluginsConfig';
@@ -13,9 +13,9 @@ import getPluginsConfig from '../../observables/config/getPluginsConfig';
 export default (pluginsConfigURL) => compose(
     mapPropsStream(props$ =>
         props$.combineLatest(
-            Rx.Observable.defer(() => getPluginsConfig(pluginsConfigURL))
+            Observable.defer(() => getPluginsConfig(pluginsConfigURL))
                 .map((pluginsConfig) => ({ pluginsConfig, loading: false }))
-                .catch(e => Rx.Observable.of({loading: false, pluginsLoadError: e}))
+                .catch(e => Observable.of({loading: false, pluginsLoadError: e}))
                 .startWith({ loading: true }),
             (p1, p2) => ({ ...p1, ...p2 })
         )

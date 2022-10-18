@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { describeFeatureType } from '../../../../observables/wfs';
 import { getSearchUrl } from '../../../../utils/LayersUtils';
@@ -22,7 +22,7 @@ export default props$ =>
             && layer1.loadingError === layer2.loadingError) // this check is not too precise,it may need a refinement
         .switchMap(({ layer } = {}) => describeFeatureType({ layer })
             .map(r => ({ describeFeatureType: r.data, loading: false, error: undefined }))
-            .catch(error => Rx.Observable.of({
+            .catch(error => Observable.of({
                 loading: false,
                 error
             })));

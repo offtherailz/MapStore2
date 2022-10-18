@@ -68,7 +68,7 @@ const loadMoreStream = (initialStream$, loadMore$, loadPage, {dataProp = "items"
  *  <button onClick={() => loadFirst()}>Load first page</button>
  *  <button onClick={() => onLoadPage(1)}>Load page 1</button> // you could manage page number state
  * </div>)
- * const loadPage = () => Rx.Observable.of({items: new Array(10)}); // provides data
+ * const loadPage = () => Observable.of({items: new Array(10)}); // provides data
  * const CMP = loadMore(loadPage)(MyCmp);
  * // later in a render method
  * <CMP />

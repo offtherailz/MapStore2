@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { get, zip } from 'lodash';
 import MapUtils from '../utils/MapUtils';
@@ -49,7 +49,7 @@ const saveMap = (state, addBbox = false) => {
 };
 
 const PersistMap = {
-    mapstore2: (state) => Rx.Observable.of([JSON.stringify(saveMap(state)), 'map.json', 'application/json']),
+    mapstore2: (state) => Observable.of([JSON.stringify(saveMap(state)), 'map.json', 'application/json']),
     wmc: (state) => {
         const config = saveMap(state, true);
         const layers = get(config, 'map.layers', []).filter(layer => !!layer.url && layer.type === 'wms');
@@ -58,8 +58,8 @@ const PersistMap = {
             throw new MapExportError('mapExport.errorTitle', 'mapExport.wmcNoLayersError');
         }
 
-        return Rx.Observable.forkJoin(...layers.map(layer => getLayerCapabilities(layer).catch(() => Rx.Observable.of(null))))
-            .switchMap(capArr => Rx.Observable.of([
+        return Observable.forkJoin(...layers.map(layer => getLayerCapabilities(layer).catch(() => Observable.of(null))))
+            .switchMap(capArr => Observable.of([
                 toWMC(set('map.layers', zip(layers, capArr).map(([l, capabilities]) => ({...l, capabilities})), config), {}),
                 'context.wmc',
                 'application/xml'
@@ -67,15 +67,15 @@ const PersistMap = {
     }
 };
 
-export const exportMapContext = (action$, { getState = () => { } } = {}) =>
+export const exportMapContext = (action$, store = {}) =>
     action$
         .ofType(EXPORT_MAP)
         .switchMap(({ format }) =>
-            PersistMap[format](getState())
+            PersistMap[format](store.value)
                 .do((downloadArgs) => download(...downloadArgs))
                 .map(() => setControlProperty('export', 'enabled', false))
         )
-        .catch((e, stream$) => Rx.Observable.of(basicError({
+        .catch((e, stream$) => Observable.of(basicError({
             ...(e instanceof MapExportError ? e : getErrorMessage(e)),
             autoDismiss: 6,
             position: 'tc'

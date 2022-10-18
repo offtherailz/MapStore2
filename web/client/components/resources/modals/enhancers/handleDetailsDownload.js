@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import GeoStoreApi from '../../../../api/GeoStoreDAO';
 import MapUtils from '../../../../utils/MapUtils';
 
@@ -14,7 +14,7 @@ import { mapPropsStream } from 'recompose';
 
 const getDetails = (detailsUri) => {
     const id = MapUtils.getIdFromUri(detailsUri);
-    return Rx.Observable.defer(() => id ? GeoStoreApi.getData(id) : Promise.resolve());
+    return Observable.defer(() => id ? GeoStoreApi.getData(id) : Promise.resolve());
 };
 
 export default mapPropsStream(props$ => {
@@ -44,7 +44,7 @@ export default mapPropsStream(props$ => {
                         linkedResources
                     };
                 })
-                    .catch(e => Rx.Observable.of({ loading: false, errors: [e] }))
+                    .catch(e => Observable.of({ loading: false, errors: [e] }))
                     .startWith({ loading: true, resource: false });
             })
             .startWith({}),

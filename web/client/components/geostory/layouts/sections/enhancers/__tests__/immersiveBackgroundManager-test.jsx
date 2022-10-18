@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { createSink, setObservableConfig } from 'recompose';
+import { createSink } from 'recompose';
 import expect from 'expect';
 
 // config for recompose usage of RXJS

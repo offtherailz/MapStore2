@@ -1,6 +1,6 @@
 import { compose, withStateHandlers, defaultProps, withPropsOnChange } from 'recompose';
 import propsStreamFactory from '../../components/misc/enhancers/propsStreamFactory';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { isEmpty } from 'lodash';
 import { connect } from 'react-redux';
 import { changeDrawingStatus } from '../../actions/draw';
@@ -18,7 +18,7 @@ const dataStreamFactory = prop$ => {
             return getStylesAndAttributes(layer, workspace).do(opts => optionsLoaded(opts))
                 .catch(() => {
                     setLoading(false);
-                    return Rx.Observable.of(onError({
+                    return Observable.of(onError({
                         title: "rulesmanager.errorTitle",
                         message: "rulesmanager.errorLoading"
                     }));

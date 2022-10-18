@@ -24,7 +24,7 @@ const save = ({ store }) => ({ mediaType, source, data }) =>
         )).map(id => ({id, mediaType, data, source}));
 
 const edit = ({ store }) => ({ mediaType, source, data }) => {
-    const state = store.getState();
+    const state = store.value;
     const id = selectedIdSelector(state);
     return Observable.of(id).do(
         () => {
@@ -34,8 +34,8 @@ const edit = ({ store }) => ({ mediaType, source, data }) => {
 };
 
 const load = ({ store }) => ({ mediaType, params }) => {
-    const geoStoryResources = resourcesSelector(store.getState());
-    const separatedResourcesPerType = geoStoryResources.length ? groupBy(resourcesSelector(store.getState()), "type") : {};
+    const geoStoryResources = resourcesSelector(store.value);
+    const separatedResourcesPerType = geoStoryResources.length ? groupBy(resourcesSelector(store.value), "type") : {};
     const { page, pageSize } = params;
     const start = 0;
     const end = page * pageSize;
@@ -50,7 +50,7 @@ const load = ({ store }) => ({ mediaType, params }) => {
 };
 
 const remove = ({ store }) => ({ mediaType }) => {
-    const state = store.getState();
+    const state = store.value;
     const id = selectedIdSelector(state);
     return Observable.of(id).do(
         () => {

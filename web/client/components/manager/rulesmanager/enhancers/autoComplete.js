@@ -1,4 +1,4 @@
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import { compose, withStateHandlers, defaultProps, createEventHandler, withProps } from 'recompose';
 import propsStreamFactory from '../../../misc/enhancers/propsStreamFactory';
 import { isObject } from 'lodash';
@@ -25,9 +25,9 @@ const triggerEmptyLoadDataStream = prop$ => prop$.distinctUntilChanged((oP, nP) 
                     page: 0,
                     count
                 });
-            }).let(stop).startWith({busy: true}).catch((e) => Rx.Observable.of(e).do(() => {
+            }).let(stop).startWith({busy: true}).catch((e) => Observable.of(e).do(() => {
                 onError(loadingErrorMsg);
-            }).mapTo({busy: false})).concat(Rx.Observable.of({busy: false}));
+            }).mapTo({busy: false})).concat(Observable.of({busy: false}));
     });
 
 // Trigger first loading when value change
@@ -43,9 +43,9 @@ const triggerLoadDataStream = prop$ => prop$.distinctUntilChanged((oP, nP) => sa
                     page: 0,
                     count
                 });
-            }).let(stop).startWith({busy: true}).catch((e) => Rx.Observable.of(e).do(() => {
+            }).let(stop).startWith({busy: true}).catch((e) => Observable.of(e).do(() => {
                 onError(loadingErrorMsg);
-            }).mapTo({busy: false})).concat(Rx.Observable.of({busy: false}));
+            }).mapTo({busy: false})).concat(Observable.of({busy: false}));
     });
 
 const loadPageStream = page$ => page$
@@ -59,16 +59,16 @@ const loadPageStream = page$ => page$
                     data,
                     page: newPage
                 });
-            }).let(stop).startWith({busy: true}).catch((e) => Rx.Observable.of(e).do(() => {
+            }).let(stop).startWith({busy: true}).catch((e) => Observable.of(e).do(() => {
                 onError(loadingErrorMsg);
-            }).mapTo({busy: false})).concat(Rx.Observable.of({busy: false}));
+            }).mapTo({busy: false})).concat(Observable.of({busy: false}));
     });
 const dataStreamFactory = prop$ => {
     const {handler: nextPage, stream: next$ } = createEventHandler();
     const {handler: prevPage, stream: prev$ } = createEventHandler();
-    const nextPage$ = Rx.Observable.from(next$);
-    const prevPage$ = Rx.Observable.from(prev$);
-    const page$ = Rx.Observable
+    const nextPage$ = Observable.from(next$);
+    const prevPage$ = Observable.from(prev$);
+    const page$ = Observable
         .merge(nextPage$.mapTo(1), prevPage$.mapTo(-1))
         .withLatestFrom(prop$.map(({onError, loadData, page, parentsFilter, count,
             val, size, pagination, setData, loadingErrorMsg}) => ({
@@ -101,7 +101,7 @@ export default compose(
         stopPropagation: true,
         paginated: true,
         size: 5,
-        loadData: () => Rx.Observable.of({data: [], count: 0}),
+        loadData: () => Observable.of({data: [], count: 0}),
         parentsFilter: {},
         filter: false,
         dataStreamFactory,

@@ -235,7 +235,7 @@ const MapStore2 = {
             });
             store.subscribe(() => {
                 stateChangeListeners.forEach(({listener, selector}) => {
-                    listener.call(null, selector(store.getState()));
+                    listener.call(null, selector(store.value));
                 });
             });
         };

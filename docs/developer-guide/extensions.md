@@ -21,7 +21,7 @@ A MapStore extension is a plugin, with some additional features.
 import {connect} from "react-redux";
 
 import Extension from "../components/Extension";
-import Rx from "rxjs";
+import {Observable} from 'rxjs';
 import { changeZoomLevel } from "../../../web/client/actions/map";
 
 export default {
@@ -46,9 +46,9 @@ export default {
     epics: {
         logCounterValue: (action$, store) => action$.ofType('INCREASE_COUNTER').switchMap(() => {
             /* eslint-disable */
-            console.log('CURRENT VALUE: ' + store.getState().sampleExtension.value);
+            console.log('CURRENT VALUE: ' + store.value.sampleExtension.value);
             /* eslint-enable */
-            return Rx.Observable.empty();
+            return Observable.empty();
         })
     },
     containers: {
@@ -245,9 +245,9 @@ extensionEpics.js:
 export const toggleToolOffOnDrawToolActive = (action$, store) => shutdownToolOnAnotherToolDrawing(action$, store, 'yourToolName');
 ```
 
-with this code located in extension's epics your tool `yourToolName` will be closed whenever: 
+with this code located in extension's epics your tool `yourToolName` will be closed whenever:
 - feature editor is open
-- another plugin or extension starts drawing. 
+- another plugin or extension starts drawing.
 
 "shutdownToolOnAnotherToolDrawing" supports passing custom callback to determine whether your tool is active (to prevent garbage action dispatching if it's already off) and custom callback to list actions to be dispatched.
 

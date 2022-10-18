@@ -39,7 +39,7 @@ describe('GeoStory Plugin', () => {
 
         // expect to have dispatched update action once from useEffect(callback, [])
         expect(actions.length).toEqual(1);
-        expect(store.getState().geostory.currentStory.settings.theme.fontFamilies).toEqual(fontFamilies);
+        expect(store.value.geostory.currentStory.settings.theme.fontFamilies).toEqual(fontFamilies);
     });
     it('should store the media editor setting with onUpdateMediaEditorSetting', () => {
         const { Plugin, actions, store } = getPluginForTest(GeoStory, stateMocker({geostory}));
@@ -71,6 +71,6 @@ describe('GeoStory Plugin', () => {
         />, document.getElementById('container'));
 
         expect(actions.length).toBe(2);
-        expect(store.getState().geostory.mediaEditorSettings).toEqual(mediaEditorSettings);
+        expect(store.value.geostory.mediaEditorSettings).toEqual(mediaEditorSettings);
     });
 });

@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 import { compose, withState, mapPropsStream } from 'recompose';
 import isUndefined from 'lodash/isUndefined';
@@ -19,7 +19,7 @@ const toLayer = (r, service) => ["tms", "wfs"].includes(service?.type) // for tm
     : API[service?.type || 'wms'].getLayerFromRecord(r);
 
 // checks for tms wmts in order to addSearch() to skip addSearch
-const addSearchObservable = (selected, service) => ["tms", "wmts"].includes(service?.type) ? Rx.Observable.of(toLayer(selected, service)) : addSearch(toLayer(selected, service));
+const addSearchObservable = (selected, service) => ["tms", "wmts"].includes(service?.type) ? Observable.of(toLayer(selected, service)) : addSearch(toLayer(selected, service));
 
 /**
  * enhancer for CompactCatalog (or a container) to validate a selected record,
@@ -34,12 +34,12 @@ export default compose(
         props$.distinctUntilKeyChanged('selected').filter(({ selected } = {}) => selected)
             .switchMap(
                 ({ selected, layerValidationStream = s => s, setLayer = () => { }, dashboardSelectedService, dashboardServices, defaultSelectedService, defaultServices } = {}) =>
-                    Rx.Observable.of(toLayer(selected, dashboardServices ? dashboardServices[dashboardSelectedService] : defaultServices[defaultSelectedService]))
+                    Observable.of(toLayer(selected, dashboardServices ? dashboardServices[dashboardSelectedService] : defaultServices[defaultSelectedService]))
                         .let(layerValidationStream)
                         .switchMap(() => addSearchObservable(selected, dashboardServices ? dashboardServices[dashboardSelectedService] : defaultServices[defaultSelectedService]))
                         .do(l => setLayer({...l, visibility: !isUndefined(l.visibility) ? l.visibility : true}))
                         .mapTo({ canProceed: true })
-                        .catch((error) => Rx.Observable.of({ error, canProceed: false }))
+                        .catch((error) => Observable.of({ error, canProceed: false }))
             ).startWith({ canProceed: true })
             .combineLatest(props$, ({ canProceed, error } = {}, props) => ({
                 error,

@@ -1,5 +1,5 @@
 import {createPlugin} from "../../utils/PluginsUtils";
-import Rx from "rxjs";
+import {Observable} from 'rxjs';
 
 const Dummy2 = createPlugin('Example2',
     {
@@ -12,7 +12,7 @@ const Dummy2 = createPlugin('Example2',
         epics: {
             anotherTestEpic: (action$) => action$.ofType('FAKE_TYPE')
                 .switchMap(() => {
-                    return Rx.Observable.empty();
+                    return Observable.empty();
                 })
         }
     }

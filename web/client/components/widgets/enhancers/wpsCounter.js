@@ -9,7 +9,7 @@ import { compose, withProps } from 'recompose';
 
 import wpsAggregate from '../../../observables/wps/aggregate';
 import propsStreamFactory from '../../misc/enhancers/propsStreamFactory';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 const wpsAggregateToCounterData = ({AggregationResults = [], GroupByAttributes = [], AggregationAttribute, AggregationFunctions} = {}) =>
     AggregationResults.map( (res) => ({
         ...GroupByAttributes.reduce( (a, p, i) => ({...a, [p]: res[i]}), {}),
@@ -47,7 +47,7 @@ const dataStreamFactory = ($props) =>
                     data: wpsAggregateToCounterData(data),
                     series: [{dataKey: `${data.AggregationFunctions[0]}(${data.AggregationAttribute})`}]
                 })).do(onLoad)
-                    .catch((e) => Rx.Observable.of({
+                    .catch((e) => Observable.of({
                         loading: false,
                         error: e,
                         data: []

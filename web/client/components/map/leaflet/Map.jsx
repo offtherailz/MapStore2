@@ -21,7 +21,7 @@ import {
     ZOOM_TO_EXTENT_HOOK,
     registerHook
 } from '../../../utils/MapUtils';
-import Rx from 'rxjs';
+import {Subject} from 'rxjs';
 
 import {throttle} from 'lodash';
 import 'leaflet/dist/leaflet.css';
@@ -556,9 +556,9 @@ class LeafletMap extends React.Component {
 
             event.layer._ms2LoadingTileCount = 0;
 
-            event.layer.layerLoadingStream$ = new Rx.Subject();
-            event.layer.layerLoadStream$ = new Rx.Subject();
-            event.layer.layerErrorStream$ = new Rx.Subject();
+            event.layer.layerLoadingStream$ = new Subject();
+            event.layer.layerLoadStream$ = new Subject();
+            event.layer.layerErrorStream$ = new Subject();
             event.layer.layerErrorStream$
                 .bufferToggle(
                     event.layer.layerLoadingStream$,

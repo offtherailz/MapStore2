@@ -10,7 +10,7 @@ import { castArray, sortBy } from 'lodash';
 
 import { getLayerJSONFeature } from '../../../observables/wfs';
 import propsStreamFactory from '../../misc/enhancers/propsStreamFactory';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 import {getSearchUrl} from '../../../utils/LayersUtils';
 
 export const wfsToChartData = ({ features } = {}, { groupByAttributes }) => {
@@ -62,7 +62,7 @@ const dataStreamFactory = ($props) =>
                     xAxis: { dataKey: options.groupByAttributes}
                 }))
                     .do(onLoad)
-                    .catch((e) => Rx.Observable.of({
+                    .catch((e) => Observable.of({
                         loading: false,
                         error: e,
                         data: []

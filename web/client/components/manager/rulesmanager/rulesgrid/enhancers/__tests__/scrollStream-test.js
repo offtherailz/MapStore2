@@ -9,7 +9,7 @@
 import expect from 'expect';
 
 import scrollStream from '../scrollStream';
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 describe('rulegrid scrollStream', () => {
     it('generate pages request', (done) => {
         const moreRules = (pagesRequest) => {
@@ -21,8 +21,8 @@ describe('rulegrid scrollStream', () => {
             expect(pagesRequest.pages).toEqual({});
             done();
         };
-        const onGridScroll$ = Rx.Observable.of({ firstRowIdx: 0, lastRowIdx: 10});
-        const prop$ = Rx.Observable.of({ size: 10, moreRules, pages: {}, rowsCount: 50, vsOverScan: 5, scrollDebounce: 50, onGridScroll$});
+        const onGridScroll$ = Observable.of({ firstRowIdx: 0, lastRowIdx: 10});
+        const prop$ = Observable.of({ size: 10, moreRules, pages: {}, rowsCount: 50, vsOverScan: 5, scrollDebounce: 50, onGridScroll$});
         scrollStream(prop$).subscribe(() => {});
     });
 });

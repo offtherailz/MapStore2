@@ -10,7 +10,7 @@ import MockAdapter from "axios-mock-adapter";
 import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { createSink, setObservableConfig } from 'recompose';
+import { createSink } from 'recompose';
 
 import axios from "../../../../../libs/ajax";
 import wfsTable from '../index';

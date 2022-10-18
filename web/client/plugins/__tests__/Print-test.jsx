@@ -251,7 +251,7 @@ describe('Print Plugin', () => {
         }]}).then(({ Plugin, store }) => {
             try {
                 ReactDOM.render(<Plugin />, document.getElementById("container"));
-                expect(store.getState()?.print?.spec?.params?.custom).toNotBe(undefined);
+                expect(store.value?.print?.spec?.params?.custom).toNotBe(undefined);
                 done();
             } catch (ex) {
                 done(ex);

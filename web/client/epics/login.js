@@ -113,9 +113,9 @@ export const redirectOnLogout = action$ =>
  * @memberof epics.login
  * @return {external:Observable} emitting login success or logout events if the cookie is valid.
  */
-export const verifyOpenIdSessionCookie = (action$, {getState = () => {}}) => {
+export const verifyOpenIdSessionCookie = (action$, store) => {
     return action$.ofType(LOCATION_CHANGE).take(1).switchMap( () => {
-        if (isLoggedIn(getState())) {
+        if (isLoggedIn(store.value)) {
             return Observable.empty();
         }
         const tokensKey = getCookieValue("tokens_key");

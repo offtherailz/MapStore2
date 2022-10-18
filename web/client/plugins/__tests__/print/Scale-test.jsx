@@ -99,7 +99,7 @@ describe('PrintScale Plugin', () => {
                         checked: true
                     }
                 });
-                callTransformer(store.getState(), (spec) => {
+                callTransformer(store.value, (spec) => {
                     expect(spec.mapScale).toBe('1:1,784');
                     done();
                 });
@@ -113,7 +113,7 @@ describe('PrintScale Plugin', () => {
         getPrintScalePlugin().then(({ Plugin, store}) => {
             try {
                 ReactDOM.render(<Plugin />, document.getElementById("container"));
-                callTransformer(store.getState(), (spec) => {
+                callTransformer(store.value, (spec) => {
                     expect(spec.mapScale).toNotExist();
                     done();
                 });
@@ -154,7 +154,7 @@ describe('PrintScale Plugin', () => {
                     }
                 });
                 expect(getByXPath("//*[text()='MyScale 1784']")).toExist();
-                callTransformer(store.getState(), (spec) => {
+                callTransformer(store.value, (spec) => {
                     expect(spec.mapScale).toBe('MyPrintedScale 1784');
                     done();
                 });

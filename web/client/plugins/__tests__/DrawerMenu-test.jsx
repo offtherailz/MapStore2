@@ -75,6 +75,6 @@ describe('DrawerMenu Plugin', () => {
 
         const drag = document.getElementsByClassName('react-resizable-handle')[0];
         simulateMovementFromTo(drag, 300, 100, 400, 100);
-        expect(store.getState().controls.drawer.resizedWidth).toBe(400);
+        expect(store.value.controls.drawer.resizedWidth).toBe(400);
     });
 });

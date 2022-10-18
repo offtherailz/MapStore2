@@ -84,7 +84,7 @@ describe('PrintGraticule Plugin', () => {
         getPrintGraticulePlugin().then(({ Plugin, store }) => {
             try {
                 ReactDOM.render(<Plugin />, document.getElementById("container"));
-                callMapTransformer(store.getState(), (map) => {
+                callMapTransformer(store.value, (map) => {
                     const graticuleLayers = map.layers.filter(l => l.type === "graticule");
                     expect(graticuleLayers.length).toBe(0);
                     done();
@@ -105,7 +105,7 @@ describe('PrintGraticule Plugin', () => {
                         checked: true
                     }
                 });
-                callMapTransformer(store.getState(), (map) => {
+                callMapTransformer(store.value, (map) => {
                     const graticuleLayers = map.layers.filter(l => l.type === "graticule");
                     expect(graticuleLayers.length).toBe(1);
                     done();

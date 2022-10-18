@@ -7,7 +7,7 @@
  */
 import { compose, branch, withHandlers, mapPropsStream, createEventHandler } from 'recompose';
 
-import Rx from 'rxjs';
+import {Observable} from 'rxjs';
 
 /**
  * This enhancer forces the `DataGrid` to scroll to top when a sort or a filter event is performed.
@@ -26,7 +26,7 @@ export default branch(
             return props$.combineLatest(
                 // add an incremental `scrollToTopCounter` variable each time scrollToTop handler is called
                 scrollToTop$
-                    .throttle((time = 0) => Rx.Observable.timer(time))
+                    .throttle((time = 0) => Observable.timer(time))
                     .scan((acc) => acc + 1, 0)
                     .map(scrollToTopCounter => ({scrollToTopCounter}))
                     .startWith({}),
