@@ -462,7 +462,8 @@ export const splitMapAndLayers = (mapState) => {
                         title: group.title,
                         description: group.description,
                         tooltipOptions: group.tooltipOptions,
-                        tooltipPlacement: group.tooltipPlacement
+                        tooltipPlacement: group.tooltipPlacement,
+                        exclusiveLayer: group.exclusiveLayer
                     };
                     newGroups = LayersUtils.deepChange(newGroups, group.id, groupMetadata);
                 }
