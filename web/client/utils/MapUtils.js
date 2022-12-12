@@ -470,7 +470,8 @@ export const groupSaveFormatted = (node) => {
         description: node.description,
         tooltipOptions: node.tooltipOptions,
         tooltipPlacement: node.tooltipPlacement,
-        expanded: node.expanded
+        expanded: node.expanded,
+        exclusiveLayer: node.exclusiveLayer
     };
 };
 

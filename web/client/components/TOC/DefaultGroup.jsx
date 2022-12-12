@@ -68,6 +68,14 @@ class DefaultGroup extends React.Component {
     };
 
     renderVisibility = (error) => {
+        const node = this.props.node 
+        if ( node && node.nodes) {
+            node.nodes.forEach((subnode) => {
+                if (subnode.visibility) {
+                    node.visibility = true;
+                }
+            });
+        }
         return this.props.groupVisibilityCheckbox && !error ?
             (<VisibilityCheck
                 node={this.props.node}
