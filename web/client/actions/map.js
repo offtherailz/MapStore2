@@ -32,6 +32,7 @@ export const MAP_PLUGIN_LOAD = 'MAP:MAP_PLUGIN_LOAD';
 export const ORIENTATION = 'MAP:ORIENTATION';
 export const UPDATE_MAP_VIEW = 'MAP:UPDATE_MAP_VIEW';
 export const UPDATE_MAP_OPTIONS = 'MAP:UPDATE_MAP_OPTIONS';
+export const UPDATE_COLLECTIVE_LEGEND = 'MAP:UPDATE_EXCLUSIVE_LAYER';
 
 
 /**
@@ -49,6 +50,13 @@ export function mapPluginLoad(loading, mapType, loaded, errorMap) {
         loaded,
         error: errorMap
     };
+}
+
+export function updateCollectiveLegend(active) {
+    return {
+        type: UPDATE_COLLECTIVE_LEGEND,
+        collectiveLegend: active
+    }
 }
 
 /**
