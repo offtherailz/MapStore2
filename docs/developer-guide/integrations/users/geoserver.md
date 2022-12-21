@@ -162,7 +162,7 @@ The last step is to configure MapStore to use the authkey with the configured in
 
 Integrating the user/groups database with GeoServer you can allow some users to:
 
-- Execute some processes (via [WPS security](http://gs-stable.geo-solutions.it/geoserver/web/wicket/bookmarkable/org.geoserver.wps.web.WPSAccessRulePage?25&filter=false))
+- Execute some processes (via [WPS security](https://docs.geoserver.org/stable/en/user/services/wps/security.html))
 
 - Download data (setting up the WPS download extension to allow/deny certain users to download data)
 
@@ -208,4 +208,3 @@ The advanced Download, activated when GeoServer provides the WPS service above, 
 - [Query Layer Plugin](https://docs.geoserver.org/stable/en/user/extensions/querylayer/index.html#installing-the-querylayer-module): This plugin allows the possibility to do cross-layer filtering. Cross layer filtering is the mechanism of Filtering a layer using geometries coming from another layer. The plugin allows this filtering to be performed on the server side in an efficient way.
 
 - [DDS/BIL Plugin](https://docs.geoserver.org/stable/en/user/community/dds/index.html): this plugin add to geoserver the possibility to publish raster data in DDS/BIL format (World Wind). This particular plugin is useful if we want to use a raster data as elevation model for MapStore. This elevation model will be used in 3D mode or with the mouse coordinates plugin (displaying the elevation of a point on the map, together with the coordinates).
-

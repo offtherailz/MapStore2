@@ -12,15 +12,36 @@ import includes from 'lodash/includes';
 import isObject from 'lodash/isObject';
 import {SUPPORTED_MIME_TYPES} from "../../../utils/StyleEditorUtils";
 
-const vector3dStyleOptions = {
+const vector3dStyleOptions = ({ label = 'styleeditor.clampToGround' }) => ({
     msClampToGround: property.msClampToGround({
-        label: 'styleeditor.clampToGround'
+        label
     })
-};
+});
 
+const INITIAL_OPTION_VALUE = '__height_mode_original__';
 const billboard3dStyleOptions = {
     msBringToFront: property.msBringToFront({
-        label: 'styleeditor.msBringToFront'
+        label: "styleeditor.msBringToFront"
+    }),
+    msHeightReference: property.msHeightReference({
+        label: "styleeditor.heightReferenceFromGround"
+    }),
+    msHeight: property.multiInput({
+        label: "styleeditor.height",
+        key: "msHeight",
+        isDisabled: (value, properties) => properties?.msHeightReference === 'clamp',
+        initialOptionValue: INITIAL_OPTION_VALUE,
+        getSelectOptions: ({ attributes }) => {
+            const numberAttributes = attributes
+                .map(({ label, attribute, type }) =>
+                    type === "number" ? { label, value: attribute } : null
+                )
+                .filter((x) => !!x);
+            return [
+                ...numberAttributes,
+                { label: 'Point height', value: INITIAL_OPTION_VALUE }
+            ];
+        }
     })
 };
 
@@ -81,7 +102,8 @@ const getBlocks = ({
                 strokeWidth: 1,
                 radius: 16,
                 rotate: 0,
-                msBringToFront: false
+                msBringToFront: false,
+                msHeightReference: 'none'
             }
         },
         Icon: {
@@ -126,7 +148,8 @@ const getBlocks = ({
                 opacity: 1,
                 size: 32,
                 rotate: 0,
-                msBringToFront: false
+                msBringToFront: false,
+                msHeightReference: 'none'
             }
         },
         Line: {
@@ -172,7 +195,7 @@ const getBlocks = ({
                     label: 'styleeditor.lineJoin',
                     key: 'join'
                 }),
-                ...(enable3dStyleOptions ? vector3dStyleOptions : {})
+                ...(enable3dStyleOptions ? vector3dStyleOptions({ label: 'styleeditor.clampToGround' }) : {})
             },
             defaultProperties: {
                 kind: 'Line',
@@ -220,7 +243,7 @@ const getBlocks = ({
                     key: 'outlineWidth',
                     label: 'styleeditor.outlineWidth'
                 }),
-                ...(enable3dStyleOptions ? {...polygon3dStyleOptions, ...vector3dStyleOptions} : {})
+                ...(enable3dStyleOptions ? {...polygon3dStyleOptions, ...vector3dStyleOptions({ label: 'styleeditor.clampOutlineToGround' })} : {})
             },
             defaultProperties: {
                 kind: 'Fill',

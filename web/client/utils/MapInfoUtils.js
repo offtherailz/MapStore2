@@ -113,7 +113,13 @@ export const clickedPointToGeoJson = (clickedPoint) => {
             type: "Feature",
             geometry: {
                 type: 'Point',
-                coordinates: [parseFloat(clickedPoint.lng), parseFloat(clickedPoint.lat)]
+                coordinates: [
+                    parseFloat(clickedPoint.lng),
+                    parseFloat(clickedPoint.lat),
+                    ...(clickedPoint.height !== undefined
+                        ? [parseFloat(clickedPoint.height)]
+                        : [])
+                ]
             },
             style: [{
                 iconUrl,
@@ -128,6 +134,7 @@ export const getMarkerLayer = (name, clickedMapPoint, styleName, otherParams, ma
     return {
         type: 'vector',
         visibility: true,
+        queryable: false,
         name: name || "GetFeatureInfo",
         styleName: styleName || "marker",
         label: markerLabel,
