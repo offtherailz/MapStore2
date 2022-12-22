@@ -486,7 +486,8 @@ export function saveMapConfiguration(currentMap, currentLayers, currentGroups, c
         mapInfoControl: currentMap.mapInfoControl,
         zoom: currentMap.zoom,
         mapOptions: currentMap.mapOptions || {},
-        collectiveLegend: currentMap.collectiveLegend
+        collectiveLegend: currentMap.collectiveLegend,
+        legendPosition: currentMap.legendPosition || {},
     };
 
     const layers = currentLayers.map((layer) => {

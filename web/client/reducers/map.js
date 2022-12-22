@@ -25,7 +25,8 @@ import {
     ORIENTATION,
     UPDATE_MAP_VIEW,
     UPDATE_MAP_OPTIONS,
-    UPDATE_COLLECTIVE_LEGEND
+    UPDATE_COLLECTIVE_LEGEND,
+    UPDATE_LEGEND_POSITION
 } from '../actions/map';
 
 import assign from 'object-assign';
@@ -34,6 +35,13 @@ import CoordinatesUtils from '../utils/CoordinatesUtils';
 
 function mapConfig(state = {eventListeners: {}}, action) {
     switch (action.type) {
+    case UPDATE_LEGEND_POSITION:
+        return assign({}, state, {
+            legendPosition: {
+                xratio:action.position.xratio,
+                yratio:action.position.yratio,
+            }
+        });       
     case UPDATE_COLLECTIVE_LEGEND:
         return assign({}, state, {
             collectiveLegend: action.collectiveLegend
