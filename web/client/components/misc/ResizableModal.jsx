@@ -66,6 +66,8 @@ const fullscreen = {
 
 const ResizableModalComp = ({
     show = false,
+    handleDrag,
+    start,
     loading,
     loadingText,
     onClose = () => {},
@@ -98,6 +100,8 @@ const ResizableModalComp = ({
                 onClickOut={clickOutEnabled ? onClose : () => {}}
                 containerClassName="ms-resizable-modal"
                 draggable={draggable}
+                handleDrag={handleDrag}
+                start={start}
                 modal
                 className={classnames('modal-dialog modal-content', sizeClassName, fullscreenClassName, dialogClassName, {'ms-fit-content': fitContent})}>
                 <span role="header">
