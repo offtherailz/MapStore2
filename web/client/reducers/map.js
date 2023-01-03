@@ -37,10 +37,7 @@ function mapConfig(state = {eventListeners: {}}, action) {
     switch (action.type) {
     case UPDATE_LEGEND_POSITION:
         return assign({}, state, {
-            legendPosition: {
-                xratio:action.position.xratio,
-                yratio:action.position.yratio,
-            }
+            legendPosition: action.position
         });       
     case UPDATE_COLLECTIVE_LEGEND:
         return assign({}, state, {

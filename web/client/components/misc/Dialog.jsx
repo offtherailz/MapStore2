@@ -37,7 +37,7 @@ class Dialog extends React.Component {
         backgroundStyle: {
             background: "rgba(0,0,0,.5)"
         },
-        start: {x: 0, y: 150},
+        //start: {x: 0, y: 150},
         className: "modal-dialog modal-content",
         maskLoading: false,
         containerClassName: "",
@@ -88,7 +88,6 @@ class Dialog extends React.Component {
                 {this.renderRole('footer')}
             </div> : <span/>}
         </div>);
-        console.log(this.props.start)
         const dialog = this.props.draggable ? (<Draggable onStop={this.props.handleDrag} defaultPosition={this.props.start} bounds={this.props.bounds} handle=".draggable-header, .draggable-header *">
             {body}
         </Draggable>) : body;
