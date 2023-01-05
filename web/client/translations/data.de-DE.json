@@ -2000,6 +2000,9 @@
                 "counter": "Operation",
                 "default": "Operation"
             },
+            "visByFieldID":{
+                "line": "gib FieldID"
+            },
             "colorRamp": {
                 "line": "Farbe",
                 "pie": "Farbrampe",

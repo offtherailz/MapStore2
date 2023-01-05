@@ -217,7 +217,38 @@ export default ({
                             />
                         </Col>
                     </FormGroup> : null}
+                    <FormGroup
+                        controlId="visByFieldID"
+                        className="mapstore-block-width"
+                    >
+                        <Col componentClass={ControlLabel} sm={6}>
+                            <Message
+                                msgId={getLabelMessageId("visByFieldID", data)}
+                            />
+                        </Col>
 
+                        <Col sm={6}>
+                            <Select
+                                value={
+                                    data.options && data.options.visByFieldID
+                                }
+                                options={options}
+                                placeholder={
+                                    <Message
+                                        msgId={getLabelMessageId(
+                                            "placeHolder.line"
+                                        )}
+                                    />
+                                }
+                                onChange={(val) => {
+                                    onChange(
+                                        "options.visByFieldID",
+                                        val && val.value
+                                    );
+                                }}
+                            ></Select>
+                        </Col>
+                    </FormGroup>
                     {formOptions.showUom ?
                         <FormGroup controlId="uom">
                             <Col componentClass={ControlLabel} sm={6}>
