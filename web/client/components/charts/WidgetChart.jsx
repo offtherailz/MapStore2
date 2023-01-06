@@ -697,6 +697,10 @@ export const toPlotly = (props) => {
         customColorEnabled
     );
 
+    ///
+    //console.log("data: ", props.data);
+
+    //to get unique values of visByFieldID
     const unique = props?.data
         .map((e) => e[props?.options?.visByFieldID])
         .filter((value, index, self) => {
@@ -704,17 +708,33 @@ export const toPlotly = (props) => {
         });
 
     const erg = [];
+    //filter by unique values
     for (let i = 0; i < unique.length; i++) {
-        let t = props?.data.filter((e) => {
+        let orderByFieldID = props?.data.filter((e) => {
             if (e[props?.options?.visByFieldID] === unique[i]) {
                 return e;
             }
         });
+        //sort by xdatakey eg date
+        const ordered = orderBy(orderByFieldID, [xDataKey], ["asc"]);
+        //yKey ist the last key of ordered-object
+        const yKey = Object.keys(ordered[0]).slice(-1)[0];
 
-        erg.push(t);
+        const plotObject = {
+            hovertemplate: `${props?.yAxisOpts?.tickPrefix ?? ""}%{y:${
+                props?.yAxisOpts?.format ?? "d"
+            }}${props?.yAxisOpts?.tickSuffix ?? ""}<extra></extra>`, // uses the format if passed, otherwise shows the full number.
+            x: ordered.map((e) => e[xDataKey]),
+            y: ordered.map((e) => e[yKey]),
+            name: ordered[0][1],
+        };
+
+        erg.push(plotObject);
     }
 
     console.log(erg);
+    /////
+
     return {
         layout: {
             showlegend: legend,
@@ -804,7 +824,26 @@ export const toPlotly = (props) => {
  */
 export default function WidgetChart({ onInitialized, ...props }) {
     const { data, layout, config } = toPlotly(props);
+    console.log("layout: ", layout);
 
+    layout.colorway = [
+        "#A6CEE3",
+        "#1F78B4",
+        "#B2DF8A",
+        "#33A02C",
+        "#FB9A99",
+        "#E31A1C",
+        "#FDBF6F",
+        "#FF7F00",
+        "#CAB2D6",
+        "#6A3D9A",
+        "#FFFF99",
+        "#B15928",
+        "#148818",
+        "#EEACAB",
+        "#ACABAA",
+        "#42069",
+    ];
     return (
         <Suspense fallback={<LoadingView />}>
             <Plot
