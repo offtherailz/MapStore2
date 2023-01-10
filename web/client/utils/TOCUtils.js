@@ -26,7 +26,7 @@ export const isValidNewGroupOption = function({ label }) {
  * @param {string} currentLocale
  * @return {string} tooltip fragment
  */
-export const getTooltipFragment = (fragment = "title", node, currentLocale, separator = " - ") => {
+export const getTooltipFragment = (fragment = "description", node, currentLocale, separator = " - ") => {
     switch (fragment) {
     case "title": {
         const translation = isObject(node.title) ? node.title[currentLocale] || node.title.default : node.title;

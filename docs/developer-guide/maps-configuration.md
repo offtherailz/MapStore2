@@ -131,10 +131,10 @@ Map configuration also contains the following additional options:
 - `widgetsConfig` configuration of map widgets
 - `mapInfoConfiguration` map info configuration options
 - `dimensionData` contains map time information
-    - `currentTime` currently selected time; the beginning of a time range if offsetTime is set
-    - `offsetTime` the end of a time range
+- `currentTime` currently selected time; the beginning of a time range if offsetTime is set
+- `offsetTime` the end of a time range
 - `timelineData` timeline options
-    - `selectedLayer` selected layer id; if not present time cursor will be unlocked
+- `selectedLayer` selected layer id; if not present time cursor will be unlocked
 
 ## Layers options
 
@@ -238,12 +238,12 @@ Some other feature will break, for example the layer properties will stop workin
 {
   "type": "wms",
   "url": [
-    "https://a.maps.geo-solutions.it/geoserver/wms",
-    "https://b.maps.geo-solutions.it/geoserver/wms",
-    "https://c.maps.geo-solutions.it/geoserver/wms",
-    "https://d.maps.geo-solutions.it/geoserver/wms",
-    "https://e.maps.geo-solutions.it/geoserver/wms",
-    "https://f.maps.geo-solutions.it/geoserver/wms"
+    "https://a.maps.geosolutionsgroup.com/geoserver/wms",
+    "https://b.maps.geosolutionsgroup.com/geoserver/wms",
+    "https://c.maps.geosolutionsgroup.com/geoserver/wms",
+    "https://d.maps.geosolutionsgroup.com/geoserver/wms",
+    "https://e.maps.geosolutionsgroup.com/geoserver/wms",
+    "https://f.maps.geosolutionsgroup.com/geoserver/wms"
   ],
   "visibility": true,
   "opacity": 1,
@@ -531,11 +531,11 @@ TODO
 
 !!! note
     The use of Google maps tiles in MapStore is not enabled and maintained due to licensing reasons. If your usage conditions respect the google license, you can enable the google layers by:
-    
+
     * Adding `<script src="https://maps.google.com/maps/api/js?v=3"></script>` to all `html` files you need it.
     * Add your API-KEY to the request
     * Fix the code, if needed.
-    
+
 example:
 
 ```json
@@ -793,6 +793,7 @@ The `vector` and `wfs` layer types are rendered by the client as GeoJSON feature
 - `body` the actual style rules and symbolizers
 
 example:
+
 ```json
 {
   "type": "vector",
@@ -836,6 +837,7 @@ A `rule` object is composed by following properties:
 The `filter` expression define with features should be rendered with the symbolizers listed in the rule
 
 example:
+
 ```js
 // simple comparison condition structure
 // [operator, property key, value]
@@ -919,7 +921,6 @@ The `symbolizer` could be of following `kinds`:
   - `haloColor` halo color of the label
   - `haloWidth` halo width of the label
   - `offset` array of x and y values offset of the label
-
 
 #### Legacy Vector Style (deprecated)
 
@@ -1156,52 +1157,71 @@ In order to create a `wms` based mesh there are some requirements that need to b
   - BILTerrainProvider is used to parse `wms` based mesh. Supports three ways in parsing the metadata of the layer
     1. Layer configuration with **sufficient metadata** of the layer. This prevents a call to `getCapabilities` eventually improving performance of the parsing of the layer.
         Mandatory fields are `url`, `name`, `version`, `crs`.
+
+        ```json
+        {
+          "type": "terrain",
+          "provider": "wms",
+          "url": "http://hot-sample/geoserver/wms",
+          "name": "workspace:layername",
+          "littleEndian": false,
+          "visibility": true,
+          "version": "1.3.0",
+          "fixedHeight": null, // Map height. Max value is < 65
+          "fixedWidth": null, // Map width. Max value is < 65
+          "crs": "CRS:84" // Supports only CRS:84 | EPSG:4326 | EPSG:3857 | OSGEO:41001
+        }
+        ```
+
+    2. Layer configuration of `geoserver` layer with layer name *prefixed with workspace*, then the `getCapabilities` is requested only for that layer
+
+        ```json
+        {
+        "type": "terrain",
+        "provider": "wms",
+        "url": "https://host-sample/geoserver/wms", // 'geoserver' url
+        "name": "workspace:layername", // name of the geoserver resource with workspace prefixed
+        "littleendian": false
+        }
+        ```
+
+    3. Layer configuration of geoserver layer with layer name *not prefixed with workspace* then `getCapabilities` is requested in global scope.
+
     ```json
     {
-      "type": "terrain",
-      "provider": "wms",
-      "url": "http://hot-sample/geoserver/wms",
-      "name": "workspace:layername", 
-      "littleendian": false,
-      "visibility": true,
-      "version": "1.3.0",
-      "fixedHeight": null, // Map height. Max value is < 65
-      "fixedWidth": null, // Map width. Max value is < 65
-      "crs": "CRS:84" // Supports only CRS:84 | EPSG:4326 | EPSG:3857 | OSGEO:41001
-    }
-    ```
-    2. Layer configuration of `geoserver` layer with layer name _prefixed with workspace_, then the `getCapabilities` is requested only for that layer
-    ```json
-    {
-    "type": "terrain",
-    "provider": "wms",
-    "url": "https://host-sample/geoserver/wms", // 'geoserver' url
-    "name": "workspace:layername", // name of the geoserver resource with workspace prefixed
-    "littleendian": false
-    }
-    ```
-    3. Layer configuration of geoserver layer with layer name _not prefixed with workspace_ then `getCapabilities` is requested in global scope.
-    ```json
-    { 
       "type": "terrain",
       "provider": "wms",
       "url": "https://host-sample/geoserver/wms",
       "name": "layername",
-      "littleendian": false
+      "littleEndian": false
     }
     ```
+
 !!! note
     With `wms` as provider, the format option is not needed, as Mapstore supports only `image/bil` format and is used by default
 
-Generic layer configuration of type `terrain` and provide `wms` is as follows. 
+Generic layer configuration of type `terrain` and provide `wms` is as follows.
 The layer configuration needs to point to the geoserver resource and define the type of layer and the type of provider:
+
 ```json
-{ 
+{
   "type": "terrain",
   "provider": "wms",
   "url": "https://host-sample/geoserver/wms",
   "name": "workspace:layername", // name of the geoserver resource
-  "littleendian": false
+  "littleEndian": false, // defines whether buffer is in little or big endian
+  "visibility": true,
+  // optional properties
+  "crs": "CRS:84", // projection of the layer, support only CRS:84 | EPSG:4326 | EPSG:3857 | OSGEO:41001
+  "version": "1.3.0", // version used for the WMS request
+  "heightMapWidth": 65, // width  of a tile in pixels, default value 65
+  "heightMapHeight": 65, // height of a tile in pixels, default value 65
+  "waterMask": false,
+  "offset": 0, // offset of the tiles (in meters)
+  "highest": 12000, // highest altitude in the tiles (in meters)
+  "lowest": -500, // lowest altitude in the tiles
+  "sampleTerrainZoomLevel": 18 // zoom level used to perform sampleTerrain and get the height value given a point, used by measure components
+
 }
 ```
 
@@ -1238,12 +1258,10 @@ In order to use these layers they need to be added to the `additionalLayers` in 
 }
 ```
 
-
 ## Layer groups
 
 Inside the map configuration, near the `layers` entry, you can find also the `groups` entry. This array contains information about the groups in the TOC.
 A group entry has this shape:
-
 
 - `id`: the id of the group.
 - `expanded`: boolean that keeps the status (expanded/collapsed) of the group.
@@ -1354,21 +1372,21 @@ MapStore specific:
 - `GroupList` defines a mapstore group list. Contains `Group` elements that describe a particular layer group:
 
 ```xml
-<ms:GroupList xmlns:ms="http://geo-solutions.it/mapstore/context">
-    <ms:Group xmlns:ms="http://geo-solutions.it/mapstore/context" id="Default" title="Default" expanded="true"/>
+<ms:GroupList xmlns:ms="https://mapstore.geosolutionsgroup.com/mapstore/context">
+    <ms:Group xmlns:ms="https://mapstore.geosolutionsgroup.com/mapstore/context" id="Default" title="Default" expanded="true"/>
 </ms:GroupList>
 ```
 
 - `center` defines a center of map view
 
 ```xml
-<ms:center xmlns:ms="http://geo-solutions.it/mapstore/context" x="1.5" y="2.5" crs="EPSG:3857"/>
+<ms:center xmlns:ms="https://mapstore.geosolutionsgroup.com/mapstore/context" x="1.5" y="2.5" crs="EPSG:3857"/>
 ```
 
 - `zoom` map zoom level
 
 ```xml
-<ms:zoom xmlns:ms="http://geo-solutions.it/mapstore/context">7</ms:zoom>
+<ms:zoom xmlns:ms="https://mapstore.geosolutionsgroup.com/mapstore/context">7</ms:zoom>
 ```
 
 Supported extensions for each `Layer` element are:
@@ -1392,7 +1410,7 @@ Openlayers:
 
 Cesium:
 
-- `tileDiscardPolicy` sets a policy for discarding (missing/broken) tiles (https://cesium.com/learn/cesiumjs/ref-doc/TileDiscardPolicy.html). If it is not specified the NeverTileDiscardPolicy will be used. If "none" is specified, no policy at all will be set.
+- `tileDiscardPolicy` sets a policy for discarding (missing/broken) tiles ([https://cesium.com/learn/cesiumjs/ref-doc/TileDiscardPolicy.html](https://cesium.com/learn/cesiumjs/ref-doc/TileDiscardPolicy.html)). If it is not specified the NeverTileDiscardPolicy will be used. If "none" is specified, no policy at all will be set.
 
 MapStore specific:
 
@@ -1403,24 +1421,24 @@ Currently supports dimensions of ***multidim-extension*** type:
 - `CatalogServices` contains `Service` elements that describe services available for use in Catalog.
 
 ```xml
-<ms:DimensionList xmlns:ms="http://geo-solutions.it/mapstore/context">
-    <ms:Dimension xmlns:ms="http://geo-solutions.it/mapstore/context" xmlns:xlink="http://www.w3.org/1999/xlink" name="time" type="multidim-extension" xlink:type="simple" xlink:href="https://cloudsdi.geo-solutions.it/geoserver/gwc/service/wmts"/>
+<ms:DimensionList xmlns:ms="https://mapstore.geosolutionsgroup.com/mapstore/context">
+    <ms:Dimension xmlns:ms="https://mapstore.geosolutionsgroup.com/mapstore/context" xmlns:xlink="http://www.w3.org/1999/xlink" name="time" type="multidim-extension" xlink:type="simple" xlink:href="https://cloudsdi.geo-solutions.it/geoserver/gwc/service/wmts"/>
 </ms:DimensionList>
 <ms:CatalogServices selectedService="gs_stable_csw">
     <ms:Service serviceName="gs_stable_csw">
-        <ms:Attribute name="url" type="string">https://gs-stable.geo-solutions.it/geoserver/csw</ms:Attribute>
+        <ms:Attribute name="url" type="string">https://gs-stable.geosolutionsgroup.com/geoserver/csw</ms:Attribute>
         <ms:Attribute name="type" type="string">csw</ms:Attribute>
         <ms:Attribute name="title" type="string">GeoSolutions GeoServer CSW</ms:Attribute>
         <ms:Attribute name="autoload" type="boolean">true</ms:Attribute>
     </ms:Service>
     <ms:Service serviceName="gs_stable_wms">
-        <ms:Attribute name="url" type="string">https://gs-stable.geo-solutions.it/geoserver/wms</ms:Attribute>
+        <ms:Attribute name="url" type="string">https://gs-stable.geosolutionsgroup.com/geoserver/wms</ms:Attribute>
         <ms:Attribute name="type" type="string">wms</ms:Attribute>
         <ms:Attribute name="title" type="string">GeoSolutions GeoServer WMS</ms:Attribute>
         <ms:Attribute name="autoload" type="boolean">false</ms:Attribute>
     </ms:Service>
     <ms:Service serviceName="gs_stable_wmts">
-        <ms:Attribute name="url" type="string">https://gs-stable.geo-solutions.it/geoserver/gwc/service/wmts</ms:Attribute>
+        <ms:Attribute name="url" type="string">https://gs-stable.geosolutionsgroup.com/geoserver/gwc/service/wmts</ms:Attribute>
         <ms:Attribute name="type" type="string">wmts</ms:Attribute>
         <ms:Attribute name="title" type="string">GeoSolutions GeoServer WMTS</ms:Attribute>
         <ms:Attribute name="autoload" type="boolean">false</ms:Attribute>
@@ -1436,7 +1454,7 @@ imported back into MapStore, the values of dimensions inside extensions will ove
 Also note, that the extension elements would be read correctly only if they belong to appropriate XML namespaces:
 
 - `http://openlayers.org/context` for openlayers extensions
-- `http://geo-solutions.it/mapstore/context` for mapstore specific extensions
+- `https://mapstore.geosolutionsgroup.com/mapstore/context` for mapstore specific extensions
 
 #### Usage inside MapTemplates plugin
 

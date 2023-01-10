@@ -23,6 +23,10 @@ import tooltip from '../misc/enhancers/tooltip';
 import localizedProps from '../misc/enhancers/localizedProps';
 import { isInsideResolutionsLimits } from '../../utils/LayersUtils';
 
+import { getState } from '../../utils/StateUtils';
+import { groupSelector } from '../../../../../js/selectors/layersSelectors';
+import head from 'lodash/head';
+
 const GlyphIndicator = localizedProps('tooltip')(tooltip(Glyphicon));
 
 /**
@@ -130,6 +134,12 @@ class DefaultLayer extends React.Component {
     };
 
     renderVisibility = () => {
+        const groups = groupSelector(getState());
+        const groupOfLayer = head( groups.filter( (group) => isObject(group) && group.id === this.props.node.group));
+        let layerIsInExclusiveGroup = false;
+        if ( groupOfLayer && groupOfLayer.exclusiveLayer) {
+            layerIsInExclusiveGroup = true;
+        }
         return this.props.node.loadingError === 'Error' ?
             (<LayersTool key="loadingerror"
                 glyph="exclamation-mark text-danger"
@@ -139,6 +149,7 @@ class DefaultLayer extends React.Component {
             (<VisibilityCheck key="visibilitycheck"
                 tooltip={this.props.node.loadingError === 'Warning' ? 'toc.toggleLayerVisibilityWarning' : 'toc.toggleLayerVisibility'}
                 node={this.props.node}
+                isInExclusiveGroup = {layerIsInExclusiveGroup}
                 checkType={this.props.visibilityCheckType}
                 propertiesChangeHandler={this.props.propertiesChangeHandler} />);
     }

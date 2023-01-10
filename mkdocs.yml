@@ -77,7 +77,7 @@ nav:
       - Performing Measurments: 'user-guide/measure.md'
       - Annotations: 'user-guide/annotations.md'
       - Street View: 'user-guide/street-view.md'
-      - Side Bar: 'user-guide/side-bar.md'
+      - Navigation Toolbar: 'user-guide/navigation-toolbar.md'
       - Background Selector: 'user-guide/background.md'
       - Timeline: 'user-guide/timeline.md'
       - Footer: 'user-guide/footer.md'
@@ -106,6 +106,7 @@ nav:
   - Developer Guide:
     - Requirements: 'developer-guide/requirements.md'
     - Quick Setup and Run: 'developer-guide/index.md'
+    - Main Scripts: 'developer-guide/main-scripts.md'
     - Infrastructure: 'developer-guide/infrastructure-and-general-architecture.md'
     - Developing with MapStore:
       - Introduction: 'developer-guide/developing-with-mapstore-2-intro.md'
@@ -161,3 +162,4 @@ plugins:
   - pdf-export:
       combined: true
       combined_output_path: pdf/mapstore_documentation.pdf
+      enabled_if_env: ENABLE_PDF_EXPORT

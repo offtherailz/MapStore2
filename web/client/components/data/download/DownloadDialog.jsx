@@ -27,13 +27,16 @@ class DownloadDialog extends React.Component {
         filterObj: PropTypes.object,
         closeGlyph: PropTypes.string,
         url: PropTypes.string,
+        wpsAvailable: PropTypes.bool,
         service: PropTypes.string,
+        defaultSelectedService: PropTypes.string,
         enabled: PropTypes.bool,
         loading: PropTypes.bool,
         checkingWPSAvailability: PropTypes.bool,
         onClose: PropTypes.func,
         onExport: PropTypes.func,
         onCheckWPSAvailability: PropTypes.func,
+        setService: PropTypes.func,
         onDownloadOptionChange: PropTypes.func,
         onClearDownloadOptions: PropTypes.func,
         onFormatOptionsFetch: PropTypes.func,
@@ -53,20 +56,21 @@ class DownloadDialog extends React.Component {
         onExport: () => {},
         onClose: () => {},
         onCheckWPSAvailability: () => {},
+        setService: () => {},
         onDownloadOptionChange: () => {},
         onClearDownloadOptions: () => {},
         onFormatOptionsFetch: () => {},
         checkingWPSAvailability: false,
         layer: {},
         closeGlyph: "1-close",
+        wpsAvailable: false,
         service: 'wfs',
+        defaultSelectedService: 'wps',
         wfsFormats: [],
         formats: [
             {name: 'application/json', label: 'GeoJSON', type: 'vector', validServices: ['wps']},
             {name: 'application/arcgrid', label: 'ArcGrid', type: 'raster', validServices: ['wps']},
             {name: 'image/tiff', label: 'TIFF', type: 'raster', validServices: ['wps']},
-            {name: 'image/png', label: 'PNG', type: 'raster', validServices: ['wps']},
-            {name: 'image/jpeg', label: 'JPEG', type: 'raster', validServices: ['wps']},
             {name: 'application/wfs-collection-1.0', label: 'wfs-collection-1.0', type: 'vector', validServices: ['wps']},
             {name: 'application/wfs-collection-1.1', label: 'wfs-collection-1.1', type: 'vector', validServices: ['wps']},
             {name: 'application/zip', label: 'Shapefile', type: 'vector', validServices: ['wps']},
@@ -85,7 +89,10 @@ class DownloadDialog extends React.Component {
         if (this.props.enabled !== oldProps.enabled && this.props.enabled) {
             this.props.onClearDownloadOptions();
             if (this.props.layer.type === 'wms') {
-                this.props.onCheckWPSAvailability(this.props.url || this.props.layer.url);
+                this.props.onCheckWPSAvailability(
+                    this.props.url || this.props.layer.url,
+                    this.props.defaultSelectedService
+                );
             }
         }
     }
@@ -107,6 +114,7 @@ class DownloadDialog extends React.Component {
         const wfsFormats = validWFSFormats.length > 0 ?
             validWFSFormats.filter(f => this.props.wfsFormats.find(wfsF => wfsF.name.toLowerCase() === f.name.toLowerCase())) :
             this.props.wfsFormats;
+        const wfsAvailable = Boolean(this.props.layer.search?.url);
 
         return this.props.enabled ? (<Portal><Dialog id="mapstore-export" draggable={false} modal>
             <span role="header">
@@ -116,10 +124,14 @@ class DownloadDialog extends React.Component {
             <div role="body">
                 {this.props.checkingWPSAvailability ?
                     <Loader size={100} style={{margin: '0 auto'}}/> :
-                    this.props.service === 'wfs' && !this.props.layer.search?.url ?
+                    !this.props.wpsAvailable && !wfsAvailable ?
                         <EmptyView title={<Message msgId="layerdownload.noSupportedServiceFound"/>}/> :
                         <DownloadOptions
+                            wpsAvailable={this.props.wpsAvailable}
+                            wfsAvailable={wfsAvailable}
+                            service={this.props.service}
                             downloadOptions={this.props.downloadOptions}
+                            setService={this.props.setService}
                             onChange={this.props.onDownloadOptionChange}
                             formatOptionsFetch={this.props.service === 'wfs' ? this.props.onFormatOptionsFetch : () => {}}
                             formatsLoading={this.props.formatsLoading}

@@ -33,14 +33,27 @@ class VisibilityCheck extends React.Component {
 
     render() {
         if (this.props.checkType === "glyph") {
-            return (<LayersTool
-                tooltip={this.props.tooltip}
-                style={this.props.style}
-                className={"visibility-check" + (this.props.node.visibility ? " checked" : "")}
-                data-position={this.props.node.storeIndex}
-                glyph={this.props.node.visibility ? this.props.glyphChecked : this.props.glyphUnchecked}
-                onClick={this.changeVisibility}
-            />);
+            if ( this.props.isInExclusiveGroup ) {
+                const exclusiveLayerIconActive = "record"
+                const exclusiveLayerIconInactive = "unchecked"
+                return (<LayersTool
+                    tooltip={this.props.tooltip}
+                    style={this.props.style}
+                    className={"visibility-check" + (this.props.node.visibility ? " checked" : "")}
+                    data-position={this.props.node.storeIndex}
+                    glyph={this.props.node.visibility ? exclusiveLayerIconActive : exclusiveLayerIconInactive}
+                    onClick={this.changeVisibility}
+                />);
+            } else {
+                return (<LayersTool
+                    tooltip={this.props.tooltip}
+                    style={this.props.style}
+                    className={"visibility-check" + (this.props.node.visibility ? " checked" : "")}
+                    data-position={this.props.node.storeIndex}
+                    glyph={this.props.node.visibility ? this.props.glyphChecked : this.props.glyphUnchecked}
+                    onClick={this.changeVisibility}
+                />);
+            }
         }
         return (<input className="visibility-check" style={this.props.style}
             data-position={this.props.node.storeIndex}

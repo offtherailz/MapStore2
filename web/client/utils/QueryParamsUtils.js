@@ -7,19 +7,29 @@
  */
 
 import url from "url";
-import {get, includes, inRange, isEmpty, isNaN, isNil, isObject, toNumber} from "lodash";
+import {every, get, has, includes, inRange, isEmpty, isNaN, isNil, isObject, partial, toNumber} from "lodash";
 
 import {getBbox} from "./MapUtils";
 import {isValidExtent} from "./CoordinatesUtils";
 import {getCenter, getConfigProp} from "./ConfigUtils";
 import {updatePointWithGeometricFilter} from "./IdentifyUtils";
 import {mapProjectionSelector} from "./PrintUtils";
-import {ADD_LAYERS_FROM_CATALOGS} from "../actions/catalog";
-import {changeMapView, ZOOM_TO_EXTENT, zoomToExtent} from "../actions/map";
+import {ADD_LAYERS_FROM_CATALOGS, addLayersMapViewerUrl} from "../actions/catalog";
+import {changeMapView, orientateMap, ZOOM_TO_EXTENT, zoomToExtent} from "../actions/map";
 import {mapSelector} from "../selectors/map";
 import {featureInfoClick} from "../actions/mapInfo";
 import {warning} from "../actions/notifications";
-import {addMarker, SEARCH_LAYER_WITH_FILTER} from "../actions/search";
+import {
+    addMarker,
+    scheduleSearchLayerWithFilter,
+    searchLayerWithFilter,
+    SEARCH_LAYER_WITH_FILTER,
+    SCHEDULE_SEARCH_LAYER_WITH_FILTER
+} from "../actions/search";
+import uuid from "uuid/v1";
+import {syncActiveBackgroundLayer} from "../actions/backgroundselector";
+import {selectedServiceSelector} from "../selectors/catalog";
+import {mapTypeSelector} from "../selectors/maptype";
 
 /**
  * Retrieves parameters from hash "query string" of react router
@@ -111,7 +121,8 @@ export const getRequestParameterValue = (name, state, storage = sessionStorage) 
 export const getParametersValues = (paramActions, state) => (
     Object.keys(paramActions)
         .reduce((params, parameter) => {
-            const value = getRequestParameterValue(parameter, state, sessionStorage);
+            const lowercase = parameter.toLowerCase();
+            const value = getRequestParameterValue(parameter, state, sessionStorage) ?? getRequestParameterValue(lowercase, state, sessionStorage);
             return {
                 ...params,
                 ...(!isNil(value) ? { [parameter]: value } : {})
@@ -157,7 +168,7 @@ functions must return an array of actions or and empty array
 */
 export const paramActions = {
     bbox: (parameters) => {
-        const extent = parameters.bbox.split(',')
+        const extent = String(parameters.bbox).split(',')
             .map(val => parseFloat(val))
             .filter((val, idx) => idx % 2 === 0
                 ? val > -180.5 && val < 180.5
@@ -178,7 +189,21 @@ export const paramActions = {
     },
     center: (parameters, state) => {
         const map = mapSelector(state);
+        const mapType = mapTypeSelector(state);
         const validCenter = parameters && !isEmpty(parameters.center) && parameters.center.split(',').map(val => !isEmpty(val) && toNumber(val));
+
+        if (mapType === 'cesium') {
+            // if there is no bbox parameter and 'zoom', 'heading', 'pitch', 'roll' are presented - use orientate action
+            if (parameters?.bbox) {
+                return [];
+            }
+            const requiredKeys = ['center', 'zoom', 'heading', 'pitch', 'roll'];
+            if (every(requiredKeys, partial(has, parameters))) {
+                return [orientateMap(parameters)];
+            }
+            return [];
+        }
+
         const center = validCenter && validCenter.indexOf(false) === -1 && getCenter(validCenter);
         const zoom = toNumber(parameters.zoom);
         const bbox = getBbox(center, zoom);
@@ -196,6 +221,7 @@ export const paramActions = {
                 position: "tc"
             })
         ];
+
     },
     marker: (parameters, state) => {
         const map = mapSelector(state);
@@ -222,31 +248,101 @@ export const paramActions = {
             })
         ];
     },
-    featureinfo: (parameters, state) => {
-        const value = parameters.featureinfo;
+    featureInfo: (parameters, state) => {
+        const value = parameters.featureInfo;
         const {lat, lng, filterNameList} = value;
+        const projection = mapProjectionSelector(state);
         if (typeof lat !== 'undefined' && typeof lng !== 'undefined') {
-            const projection = mapProjectionSelector(state);
             return [featureInfoClick(updatePointWithGeometricFilter({
                 latlng: {
                     lat,
                     lng
                 }
             }, projection), false, filterNameList ?? [])];
+        } else if (typeof value === 'string') {
+            const [longitude, latitude] = value.split(',');
+            if (typeof latitude !== 'undefined' && typeof longitude !== 'undefined') {
+                return [featureInfoClick(updatePointWithGeometricFilter({
+                    latlng: {
+                        lat: latitude,
+                        lng: longitude
+                    }
+                }, projection), false, [])];
+            }
         }
         return [];
     },
-    zoom: () => {
+    mapInfo: (parameters) => {
+        const value = parameters.mapInfo;
+        const filterValue = parameters.mapInfoFilter;
+        if (typeof value === 'string') {
+            // use delayed action dispatching if we have same layer name for mapInfo parameter and addLayers parameter
+            const layers = parameters.addLayers;
+            if (typeof layers === 'string') {
+                const parsed = layers.split(',');
+                const pairs = parsed.map(el => el.split(";"));
+                if (pairs.find(el => el[0] === value)) {
+                    return [
+                        scheduleSearchLayerWithFilter({layer: value, cql_filter: filterValue ?? ''})
+                    ];
+                }
+            }
+            return [
+                searchLayerWithFilter({layer: value, cql_filter: filterValue ?? ''})
+            ];
+        }
+        return [];
     },
-    heading: () => {
+    addLayers: (parameters, state) => {
+        const layers = parameters.addLayers;
+        if (typeof layers === 'string') {
+            const parsed = layers.split(',');
+            if (parsed.length) {
+                const defaultSource = selectedServiceSelector(state);
+                const pairs = parsed.map(el => el.split(";"));
+                const layerFilters = (parameters.layerFilters ?? '').split(';') ?? [];
+                return [
+                    addLayersMapViewerUrl(
+                        pairs.map(el => el[0]),
+                        pairs.map(el => el[1] ?? defaultSource),
+                        layerFilters.map(filter => {
+                            return filter.length ? ({
+                                params: {
+                                    CQL_FILTER: filter
+                                }
+                            }) : {};
+                        })
+                    )
+                ];
+            }
+        }
+        return [];
     },
-    pitch: () => {
+    background: (parameters, state) => {
+        const background = parameters.background;
+        if (typeof background === 'string') {
+            const defaultSource = selectedServiceSelector(state);
+            const pair = background.split(";");
+            const id = uuid();
+            return [
+                addLayersMapViewerUrl(
+                    [pair[0]],
+                    [pair[1] ?? defaultSource],
+                    [{
+                        id,
+                        'group': 'background',
+                        visibility: true
+                    }]
+                ),
+                syncActiveBackgroundLayer(id)
+            ];
+        }
+        return [];
     },
-    roll: () => {
-    }, // roll is currently not supported, we return standard 0 roll
     actions: (parameters) => {
         const whiteList = (getConfigProp("initialActionsWhiteList") || []).concat([
             SEARCH_LAYER_WITH_FILTER,
+            SCHEDULE_SEARCH_LAYER_WITH_FILTER,
             ZOOM_TO_EXTENT,
             ADD_LAYERS_FROM_CATALOGS
         ]);
@@ -254,5 +350,12 @@ export const paramActions = {
             return parameters.actions.filter(a => includes(whiteList, a.type));
         }
         return [];
-    }
+    },
+    ...([
+        // supplementary parameter types with no processing callback
+        'zoom', 'heading', 'pitch', 'roll',
+        'layerFilters', 'mapInfoFilter'
+    ]
+        .reduce((prev, cur) => ({...prev, [cur]: () => {}}), {})
+    )
 };
