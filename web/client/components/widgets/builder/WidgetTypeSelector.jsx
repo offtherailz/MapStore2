@@ -56,7 +56,8 @@ export default ({widgetTypes = DEFAULT_TYPES, typeFilter = () => true, onSelect 
             key="content"
             onItemClick={item => {onSelect(item.type); }}
             items={widgetTypes &&
-        widgetTypes.filter(typeFilter).map( item =>
+//      widgetTypes.filter(typeFilter).map( item =>
+        widgetTypes.map( item =>
             ({
                 ...item,
                 preview: <FitIcon glyph={item.glyph} padding={20} />

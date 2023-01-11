@@ -39,40 +39,20 @@ export default ({
     );
 
     return (<div className={"legend-widget"}>
-        {layers.map((layer, index) => (<div key={index} className="widget-legend-toc">
-            <div className="toc-default-layer-head">
-                {!disableVisibility && <LayersTool
-                    tooltip={'toc.toggleLayerVisibility'}
-                    className={"visibility-check" + (layer.visibility ? " checked" : "")}
-                    data-position={layer.storeIndex}
-                    glyph={layer.visibility ? "eye-open" : "eye-close"}
-                    onClick={()=> updateProperty('visibility', !layer.visibility, layer.id)}
-                />}
-                <Title node={layer} currentLocale={currentLocale}/>
-                {!legendExpanded && layer.type === "wms" && <LayersTool
-                    node={layer}
-                    tooltip="toc.displayLegendAndTools"
-                    key="toollegend"
-                    className={`toc-legend-icon ${layer.expanded ? 'expanded' : ''}`}
-                    glyph="chevron-left"
-                    onClick={()=> updateProperty('expanded', !layer.expanded, layer.id)} />}
-                {!layer.expanded && renderOpacitySlider(layer)}
+        {layers.reverse().map((layer, index) => layer.visibility ? (<div key={index} className="widget-legend-toc">
+            <div>
+                <p><b>{layer.title}</b></p>
+                <p>{layer.description}</p>
             </div>
-            {(layer.expanded || legendExpanded) ? <div key="legend" className="expanded-legend-view">
-                <Grid fluid>
-                    <Row>
-                        <Col xs={12}>
-                            <WMSLegend
-                                node={{ ...layer }}
-                                currentZoomLvl={currentZoomLvl}
-                                scales={scales}
-                                language={language}
-                                {...legendProps} />
-                        </Col>
-                    </Row>
-                </Grid>
-                {renderOpacitySlider(layer)}
-            </div> : null}
-        </div>))}
+            <WMSLegend
+                node={{ ...layer }}
+                currentZoomLvl={currentZoomLvl}
+                scales={scales}
+                language={language}
+                {...legendProps} />
+            {
+            //renderOpacitySlider(layer)
+            }
+        </div>):null)}
     </div>);
 };
