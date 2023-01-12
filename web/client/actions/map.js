@@ -32,9 +32,6 @@ export const MAP_PLUGIN_LOAD = 'MAP:MAP_PLUGIN_LOAD';
 export const ORIENTATION = 'MAP:ORIENTATION';
 export const UPDATE_MAP_VIEW = 'MAP:UPDATE_MAP_VIEW';
 export const UPDATE_MAP_OPTIONS = 'MAP:UPDATE_MAP_OPTIONS';
-export const UPDATE_COLLECTIVE_LEGEND = 'MAP:UPDATE_COLLECTIVE_LEGEND';
-export const UPDATE_LEGEND_POSITION = 'MAP:UPDATE_LEGEND_POSITION';
-
 
 /**
  * Event triggered when loading a different map type plugins (code for the specific implementation)
@@ -51,20 +48,6 @@ export function mapPluginLoad(loading, mapType, loaded, errorMap) {
         loaded,
         error: errorMap
     };
-}
-
-export function updateCollectiveLegend(active) {
-    return {
-        type: UPDATE_COLLECTIVE_LEGEND,
-        collectiveLegend: active
-    }
-}
-
-export function updateLegendPosition(pos) {
-    return {
-        type: UPDATE_LEGEND_POSITION,
-        position: pos
-    }
 }
 
 /**

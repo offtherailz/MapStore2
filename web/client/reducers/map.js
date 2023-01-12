@@ -24,9 +24,7 @@ import {
     UNREGISTER_EVENT_LISTENER,
     ORIENTATION,
     UPDATE_MAP_VIEW,
-    UPDATE_MAP_OPTIONS,
-    UPDATE_COLLECTIVE_LEGEND,
-    UPDATE_LEGEND_POSITION
+    UPDATE_MAP_OPTIONS
 } from '../actions/map';
 
 import assign from 'object-assign';
@@ -35,14 +33,6 @@ import CoordinatesUtils from '../utils/CoordinatesUtils';
 
 function mapConfig(state = {eventListeners: {}}, action) {
     switch (action.type) {
-    case UPDATE_LEGEND_POSITION:
-        return assign({}, state, {
-            legendPosition: action.position
-        });       
-    case UPDATE_COLLECTIVE_LEGEND:
-        return assign({}, state, {
-            collectiveLegend: action.collectiveLegend
-        });        
     case CHANGE_MAP_VIEW:
         const {type, ...params} = action;
         params.zoom = isNaN(params.zoom) ? 1 : params.zoom;
