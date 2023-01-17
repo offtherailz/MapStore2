@@ -17,7 +17,7 @@
 // **************
 #ms-components-theme(@theme-vars) {
     .ms-wizard.map-options {
-        .legend-widget{
+        .legend-widget {
             .widget-legend-toc {
                 .toc-default-layer-head {
                     .color-var(@theme-vars[main-color]);
@@ -28,7 +28,6 @@
     }
 }
 
-
 .ms-wizard {
     position: absolute;
     width: 100%;
@@ -37,9 +36,9 @@
             .custom-color-btn {
                 margin-left: -8px;
                 margin-top: 2px;
-                &.line {
+                /*                 &.line {
                     display: none;
-                }
+                } */
             }
             .custom-color {
                 padding-left: 10px;
@@ -49,7 +48,7 @@
             text-align: left;
             font-weight: normal;
             > span:after {
-                content: ":"
+                content: ":";
             }
         }
         .bar-chart-type {
@@ -69,13 +68,13 @@
         }
     }
 }
-.ms-wizard  .msSideGrid {
+.ms-wizard .msSideGrid {
     margin: 0;
     &.compact-legend-grid {
         margin: auto;
     }
 }
-.ms-wizard > .row{
+.ms-wizard > .row {
     margin: 15px -5px;
 }
 .ms-wizard.map-options {
@@ -100,9 +99,12 @@
     }
     .legend-widget {
         .widget-legend-toc {
-            -webkit-box-shadow: 0 3px 6px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.12), 2px -2px 6px rgba(0, 0, 0, 0.06);
-            -moz-box-shadow: 0 3px 6px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.12), 2px -2px 6px rgba(0, 0, 0, 0.06);
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.12), 2px -2px 6px rgba(0, 0, 0, 0.06);
+            -webkit-box-shadow: 0 3px 6px rgba(0, 0, 0, 0.06),
+                0 4px 8px rgba(0, 0, 0, 0.12), 2px -2px 6px rgba(0, 0, 0, 0.06);
+            -moz-box-shadow: 0 3px 6px rgba(0, 0, 0, 0.06),
+                0 4px 8px rgba(0, 0, 0, 0.12), 2px -2px 6px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.06),
+                0 4px 8px rgba(0, 0, 0, 0.12), 2px -2px 6px rgba(0, 0, 0, 0.06);
             padding: 0;
             margin-top: 10px;
             .toc-default-layer-head {
@@ -125,7 +127,7 @@
         }
     }
     .react-grid-Grid {
-        .react-grid-Viewport{
+        .react-grid-Viewport {
             .react-grid-Canvas {
                 overflow-x: hidden !important;
             }
@@ -193,4 +195,3 @@
         }
     }
 }
-

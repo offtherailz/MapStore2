@@ -402,7 +402,11 @@ function getData({
         autoColorOptions,
         customColorEnabled,
     });
+    //console.log(data);
 
+    data = orderBy(data, [xDataKey], ["asc"]);
+
+    //console.log(data);
     classifications = classificationAttr
         ? data.map((d) => d[classificationAttr])
         : [];
@@ -571,6 +575,90 @@ function getData({
             };
             return barChartTrace;
 
+        case "line":
+            if (formula) {
+                y = preProcessValues(formula, y);
+            }
+            // common bar chart properties
+            let lineChartTrace = { type };
+
+            /** Bar chart is classified colored*/
+            if (
+                classificationType !== "default" &&
+                classificationColors.length
+            ) {
+                const legendLabels =
+                    classificationType === "value"
+                        ? classifications.map((item) =>
+                              getLegendLabel(
+                                  item,
+                                  colorCategories,
+                                  defaultClassLabel,
+                                  type
+                              )
+                          )
+                        : classifications.map((item) =>
+                              getRangeClassLabel(
+                                  item,
+                                  colorCategories,
+                                  defaultClassLabel,
+                                  yAxisLabel || yDataKey,
+                                  classificationAttr
+                              )
+                          );
+                const filteredLegendLabels = union(legendLabels);
+                const customLabels = filteredLegendLabels.reduce((acc, cur) => {
+                    return [
+                        ...acc,
+                        ...[
+                            cur
+                                ? cur.replace(
+                                      "${legendValue}",
+                                      yAxisLabel || yDataKey || ""
+                                  )
+                                : yAxisLabel || yDataKey,
+                        ],
+                    ];
+                }, []);
+                const [groupedColors, groupedXValues, groupedYValues] =
+                    getGroupedTraceValues(legendLabels, filteredLegendLabels, [
+                        classificationColors,
+                        x,
+                        y,
+                    ]);
+                const lineChartTraces = customLabels.map((item, index) => {
+                    const trace = {
+                        ...lineChartTrace,
+                        x: groupedXValues[index],
+                        y: groupedYValues[index],
+                        name: item,
+                        marker: { color: groupedColors[index][0] },
+                        hovertemplate: `${yAxisOpts?.tickPrefix ?? ""}%{y:${
+                            yAxisOpts?.format ?? "g"
+                        }}${yAxisOpts?.tickSuffix ?? ""}<extra>${item}</extra>`,
+                    };
+                    return trace;
+                });
+                return lineChartTraces;
+            }
+
+        /* 
+            lineChartTrace = {
+                ...lineChartTrace,
+                x: x,
+                y: y,
+                name: yAxisLabel || yDataKey,
+                hovertemplate: `${yAxisOpts?.tickPrefix ?? ""}%{y:${
+                    yAxisOpts?.format ?? "g"
+                }}${yAxisOpts?.tickSuffix ?? ""}<extra></extra>`,
+                ...(classificationColors &&
+                classificationColors.length &&
+                customColorEnabled
+                    ? { marker: { color: classificationColors } }
+                    : {}),
+            };
+            return lineChartTrace; */
+
         default:
             if (formula) {
                 y = preProcessValues(formula, y);
@@ -661,6 +749,12 @@ function getLayoutOptions({
                 barmode: barChartType,
                 ...chartsLayoutOptions,
             };
+        case "line":
+            return {
+                colorway: autoColorOptions?.classification?.map(
+                    (e) => e?.color
+                ),
+            };
         // line / bar
         default:
             return chartsLayoutOptions;
@@ -671,9 +765,8 @@ function getLayoutOptions({
  * and the Library format.
  */
 export const toPlotly = (props) => {
-    console.log("!!!!");
     console.log(props);
-    console.log("!!!!");
+
     const {
         xAxis,
         series = [],
@@ -723,16 +816,17 @@ export const toPlotly = (props) => {
         const plotObject = {
             hovertemplate: `${props?.yAxisOpts?.tickPrefix ?? ""}%{y:${
                 props?.yAxisOpts?.format ?? "d"
-            }}${props?.yAxisOpts?.tickSuffix ?? ""}<extra></extra>`, // uses the format if passed, otherwise shows the full number.
+            }}${props?.yAxisOpts?.tickSuffix ?? ""}               
+            `, // uses the format if passed, otherwise shows the full number.
             x: ordered.map((e) => e[xDataKey]),
             y: ordered.map((e) => e[yKey]),
-            name: ordered[0][1],
+            name: ordered[0][props?.options?.visByFieldID],
         };
 
         erg.push(plotObject);
     }
 
-    console.log(erg);
+    //console.log(erg);
     /////
 
     return {
@@ -825,8 +919,8 @@ export const toPlotly = (props) => {
 export default function WidgetChart({ onInitialized, ...props }) {
     const { data, layout, config } = toPlotly(props);
     console.log("layout: ", layout);
-
-    layout.colorway = [
+    console.log("data: ", data);
+    /*   layout.colorway = [
         "#A6CEE3",
         "#1F78B4",
         "#B2DF8A",
@@ -843,7 +937,7 @@ export default function WidgetChart({ onInitialized, ...props }) {
         "#EEACAB",
         "#ACABAA",
         "#42069",
-    ];
+    ]; */
     return (
         <Suspense fallback={<LoadingView />}>
             <Plot

@@ -72,7 +72,8 @@ const COLORS = [
         options: { base: 300, range: 4 },
     },
     {
-        showWhen: (chartType) => chartType === "bar" || chartType === "pie",
+        showWhen: (chartType) =>
+            chartType === "bar" || chartType === "pie" || chartType === "line",
         name: "global.colors.custom",
         schema: "sequencial",
         options: DEFAULT_CUSTOM_COLOR_OPTIONS,
@@ -119,7 +120,7 @@ const getColorRangeItems = (
     return COLORS.filter((c) => (c.showWhen ? c.showWhen(type) : c));
 };
 const getLabelMessageId = (field, data = {}) =>
-    `widgets.${field}.${data.type || data.widgetType || "default"}`;
+    `widgets.${field}.${data.type || data.widgetType}`;
 
 const placeHolder = <Message msgId={getLabelMessageId("placeHolder")} />;
 
@@ -216,7 +217,7 @@ export default ({
     };
 
     /** line charts do not support custom colors ATM and blue is preselected */
-    useEffect(() => {
+    /*     useEffect(() => {
         if (
             data.type === "line" &&
             (!data?.autoColorOptions?.name || customColor)
@@ -227,9 +228,9 @@ export default ({
                 range: 20,
             });
         }
-    }, [data.type]);
+    }, [data.type]); */
 
-    console.log(data);
+    //console.log(data);
     //console.log(props);
     return (
         <Row>
@@ -334,38 +335,6 @@ export default ({
                             </Col>
                         </FormGroup>
                     ) : null}
-                    <FormGroup
-                        controlId="visByFieldID"
-                        className="mapstore-block-width"
-                    >
-                        <Col componentClass={ControlLabel} sm={6}>
-                            <Message
-                                msgId={getLabelMessageId("visByFieldID", data)}
-                            />
-                        </Col>
-
-                        <Col sm={6}>
-                            <Select
-                                value={
-                                    data.options && data.options.visByFieldID
-                                }
-                                options={options}
-                                placeholder={
-                                    <Message
-                                        msgId={getLabelMessageId(
-                                            "placeHolder.line"
-                                        )}
-                                    />
-                                }
-                                onChange={(val) => {
-                                    onChange(
-                                        "options.visByFieldID",
-                                        val && val.value
-                                    );
-                                }}
-                            ></Select>
-                        </Col>
-                    </FormGroup>
                     {formOptions.showUom ? (
                         <FormGroup controlId="uom">
                             <Col componentClass={ControlLabel} sm={6}>
