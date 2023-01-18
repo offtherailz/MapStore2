@@ -749,12 +749,12 @@ function getLayoutOptions({
                 barmode: barChartType,
                 ...chartsLayoutOptions,
             };
-        case "line":
+        /*         case "line":
             return {
                 colorway: autoColorOptions?.classification?.map(
                     (e) => e?.color
                 ),
-            };
+            }; */
         // line / bar
         default:
             return chartsLayoutOptions;
