@@ -34,6 +34,8 @@ const ITEMS = [{
     type: "pie"
 }, {
     type: "line"
+},{
+    type: "sunburst"
 }].map( ({type}) => ({
     type,
     title: <Message msgId={`widgets.chartType.${type}.title`} />,

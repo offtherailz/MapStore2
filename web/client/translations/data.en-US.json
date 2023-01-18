@@ -1919,6 +1919,11 @@
                     "description": "Create a line chart to add to the map",
                     "caption": "line"
                 },
+                "sunburst": {
+                    "title": "Sunburst",
+                    "description": "Sunny burner",
+                    "caption": "sunburst"
+                },
                 "gauge": {
                     "title": "Gauge Chart",
                     "description": "Create a gauge chart to add to the map",

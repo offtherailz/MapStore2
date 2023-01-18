@@ -5,6 +5,7 @@ import LoadingView from '../misc/LoadingView';
 
 import { sameToneRangeColors } from '../../utils/ColorUtils';
 import { parseExpression } from '../../utils/ExpressionUtils';
+import { CityGML_TexturedSurface_1_0 } from 'ogc-schemas';
 
 /*
  * Copyright 2020, GeoSolutions Sas.
@@ -326,7 +327,19 @@ function getData({
             labels: x,
             ...(customColorEnabled ? { marker: {colors: x.reduce((acc) => ([...acc, autoColorOptions?.defaultCustomColor || '#0888A1']), [])} } : {})
         };
+    case 'sunburst':
+        let sunburstChartTrace = {
+            type: "sunburst",        
+            labels: ["Eve", "Cain", "Seth", "Enos", "Noam", "Abel", "Awan", "Enoch", "Azura"],
+            parents: ["", "Eve", "Eve", "Seth", "Seth", "Eve", "Eve", "Awan", "Eve" ],
+            outsidetextfont: {size: 20, color: "#377eb8"}, 
+            leaf: {opacity: 0.4},
+            marker: {line: {width: 2}},
+          };
 
+        return {
+            ...sunburstChartTrace,
+        };
     case 'bar':
         if (formula) {
             y = preProcessValues(formula, y);
@@ -393,6 +406,13 @@ function getMargins({ type, isModeBarVisible}) {
             r: 2,
             pad: 4
         };
+    case 'sunburst':
+        return {
+            l: 0, 
+            r: 0, 
+            b: 0, 
+            t: 0
+        }
     default:
         return {
             l: 5, // if yAxis is false, reduce left margin
@@ -440,7 +460,7 @@ function getLayoutOptions({ series = [], cartesian, type, yAxis, xAxisAngle, xAx
             barmode: barChartType,
             ...chartsLayoutOptions
         };
-    // line / bar
+    // line / bar / sunburst
     default:
         return chartsLayoutOptions;
     }

@@ -1956,6 +1956,11 @@
                     "description": "Erstellen Sie ein Liniendiagramm, um es der Karte hinzuzufügen",
                     "caption": "line"
                 },
+                "sunburst": {
+                    "title": "Sunburst",
+                    "description": "Sunny burner",
+                    "caption": "sunburst"
+                },
                 "gauge": {
                     "title": "Messuhr",
                     "description": "Erstellen Sie ein Messdiagramm, um es der Karte hinzuzufügen.",
@@ -1982,7 +1987,8 @@
                 "bar": "X-Attribut",
                 "gauge": "Gruppiere nach",
                 "counter": "Gruppiere nach",
-                "default": "Gruppiere nach"
+                "default": "Gruppiere nach",
+                "sunburst": "Gruppiere nach"
             },
             "aggregationAttribute": {
                 "line": "Y-Attribut",
@@ -1990,6 +1996,7 @@
                 "bar": "Y-Attribut",
                 "gauge": "Benutzen",
                 "counter": "Benutzen",
+                "sunburst": "go",
                 "default": "Benutzen"
             },
             "aggregateFunction": {
@@ -1998,6 +2005,7 @@
                 "bar": "Operation",
                 "gauge": "Operation",
                 "counter": "Operation",
+                "sunburst": "go",
                 "default": "Operation"
             },
             "colorRamp": {
@@ -2006,6 +2014,7 @@
                 "bar": "Farbe",
                 "gauge": "Farbe",
                 "counter": "Farbe",
+                "sunburst": "go",
                 "default": "Farbe"
             },
             "uom": {
@@ -2014,6 +2023,7 @@
                 "bar": "Maßeinheit",
                 "gauge": "Maßeinheit",
                 "counter": "Maßeinheit",
+                "sunburst": "go",
                 "default": "Maßeinheit"
             },
             "mapSync": "Live-Filter nach Ansichtsfenster",
@@ -2021,6 +2031,7 @@
                 "line": "Legende anzeigen",
                 "pie": "Legende anzeigen",
                 "bar": "Legende anzeigen",
+                "sunburst": "go",
                 "gauge": "Legende anzeigen"
             },
             "advanced": {
