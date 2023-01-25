@@ -17,6 +17,7 @@ import {
     Glyphicon,
     OverlayTrigger,
     Tooltip,
+    //Button
 } from "react-bootstrap";
 import Message from "../../../../I18N/Message";
 import Select from "react-select";
@@ -31,6 +32,11 @@ import ColorClassModal from "../chart/ColorClassModal";
 import { defaultColorGenerator } from "../../../../charts/WidgetChart";
 import classNames from "classnames";
 import uuid from "uuid";
+import wpsAutopop from "../../../enhancers/wpsAutopop";
+import { onEditorChange } from "../../../../../actions/widgets";
+
+//colorclassmodal um den wpscall zu erweitern
+const PopColorClassModal = wpsAutopop(ColorClassModal);
 
 const DEFAULT_CUSTOM_COLOR_OPTIONS = {
     base: 190,
@@ -116,7 +122,7 @@ const getColorRangeItems = (
 ) => {
     COLORS.filter((item) => item.custom)[0].ramp = !classificationAttribute
         ? defaultCustomColor
-        : [...classification.map((item) => item.color), defaultCustomColor];
+        : [...classification?.map((item) => item.color), defaultCustomColor];
     return COLORS.filter((c) => (c.showWhen ? c.showWhen(type) : c));
 };
 const getLabelMessageId = (field, data = {}) =>
@@ -126,7 +132,7 @@ const placeHolder = <Message msgId={getLabelMessageId("placeHolder")} />;
 
 /** Backup to class value (unique) if label (title) is not provided */
 const formatAutoColorOptions = (classification, attributeType) =>
-    classification.map((classItem) => ({
+    classification?.map((classItem) => ({
         id: classItem.id || uuid.v1(),
         ...{ title: classItem.title ?? classItem.unique },
         color: classItem.color,
@@ -158,6 +164,7 @@ export default ({
     aggregationOptions = [],
     sampleChart,
     layer,
+    autopop,
 }) => {
     const [showModal, setShowModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -472,7 +479,24 @@ export default ({
                         </FormGroup>
                     ) : null}
 
-                    <ColorClassModal
+                    <PopColorClassModal
+                        onAutopop={(val) => {
+                            onChange("autopop", val);
+                        }}
+                        onLuck={(newClassification, attributeType) => {
+                            if (attributeType === "number") {
+                                onChange(
+                                    "autoColorOptions.rangeClassification",
+                                    newClassification
+                                );
+                            } else {
+                                console.log("OOOOOOOOOOOOO");
+                                onChange("classification", newClassification);
+                            }
+                        }}
+                        data={data}
+                        checked={data?.autopop}
+                        //autopop={data?.autopop}
                         modalClassName="chart-color-class-modal"
                         show={showModal}
                         onClose={() => {
