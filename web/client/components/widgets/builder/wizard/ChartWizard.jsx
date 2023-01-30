@@ -51,12 +51,22 @@ const sampleProps = {
 
 
 export const isChartOptionsValid = (options = {}, { hasAggregateProcess }) => {
-    return (
-        options.aggregationAttribute
-    && options.groupByAttributes
-    && (!hasAggregateProcess // if aggregate process is not present, the aggregateFunction is not necessary. if present, is mandatory
-|| hasAggregateProcess && options.aggregateFunction)
-|| options.classificationAttribute);
+    if ( options.aggregateFunction ) {
+        return (
+            options.aggregationAttribute
+            && options.groupByAttributes
+            && (!hasAggregateProcess // if aggregate process is not present, the aggregateFunction is not necessary. if present, is mandatory
+            || hasAggregateProcess && options.aggregateFunction)
+            || options.classificationAttribute
+        );
+    } else {
+        return (
+            options.aggregationAttribute
+            && options.groupByAttributes
+            && options.idAttribute
+        );
+    }
+
 };
 
 const Wizard = wizardHandlers(WizardContainer);

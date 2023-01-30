@@ -5,7 +5,6 @@ import LoadingView from '../misc/LoadingView';
 
 import { sameToneRangeColors } from '../../utils/ColorUtils';
 import { parseExpression } from '../../utils/ExpressionUtils';
-import { CityGML_TexturedSurface_1_0 } from 'ogc-schemas';
 
 /*
  * Copyright 2020, GeoSolutions Sas.
@@ -328,8 +327,9 @@ function getData({
             ...(customColorEnabled ? { marker: {colors: x.reduce((acc) => ([...acc, autoColorOptions?.defaultCustomColor || '#0888A1']), [])} } : {})
         };
     case 'sunburst':
+        //const sunBurstLayer = data.map(d => d["ecoregion"]);
         let sunburstChartTrace = {
-            type: "sunburst",        
+            type,        
             labels: ["Eve", "Cain", "Seth", "Enos", "Noam", "Abel", "Awan", "Enoch", "Azura"],
             parents: ["", "Eve", "Eve", "Seth", "Seth", "Eve", "Eve", "Awan", "Eve" ],
             outsidetextfont: {size: 20, color: "#377eb8"}, 

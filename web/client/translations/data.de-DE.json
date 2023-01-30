@@ -1988,7 +1988,7 @@
                 "gauge": "Gruppiere nach",
                 "counter": "Gruppiere nach",
                 "default": "Gruppiere nach",
-                "sunburst": "Gruppiere nach"
+                "sunburst": "Hauptelement"
             },
             "aggregationAttribute": {
                 "line": "Y-Attribut",
@@ -1996,8 +1996,11 @@
                 "bar": "Y-Attribut",
                 "gauge": "Benutzen",
                 "counter": "Benutzen",
-                "sunburst": "go",
+                "sunburst": "Ebene",
                 "default": "Benutzen"
+            },
+            "idAttribute": {
+                "sunburst": "ID"
             },
             "aggregateFunction": {
                 "line": "Operation",

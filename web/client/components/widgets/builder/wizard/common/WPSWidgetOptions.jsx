@@ -171,6 +171,7 @@ export default ({
                 </div>
             </Col>
             <Col xs={12}>
+                {data.type !== 'sunburst' ? (
                 <Form className="chart-options-form" horizontal>
                     {formOptions.showGroupBy ? (
                         <FormGroup controlId="groupByAttributes" className="mapstore-block-width">
@@ -345,12 +346,60 @@ export default ({
                                 />
                             </Col>
                         </FormGroup> : null}
-                    {formOptions.advancedOptions && data.widgetType === "chart" && (data.type === "bar" || data.type === "line")
+                    {formOptions.advancedOptions && data.widgetType === "chart" && (data.type === "bar" || data.type === "line" || data.type === "sunburst")
                         ? <ChartAdvancedOptions data={data} classificationAttribute={classificationAttribute} onChange={onChange} />
                         : null}
 
+                </Form>) :
+                <Form className="chart-options-form" horizontal>
+                    {formOptions.showGroupBy ? (
+                        <FormGroup controlId="groupByAttributes" className="mapstore-block-width">
+                            <Col componentClass={ControlLabel} sm={6}>
+                                <Message msgId={getLabelMessageId("groupByAttributes", data)} />
+                            </Col>
+                            <Col sm={6}>
+                                <Select
+                                    value={data.options && data.options.groupByAttributes}
+                                    options={options}
+                                    placeholder={placeHolder}
+                                    onChange={(val) => {
+                                        onChange("options.groupByAttributes", val && val.value);
+                                    }}
+                                />
+                            </Col>
+                        </FormGroup>) : null}
+                    <FormGroup controlId="aggregationAttribute" className="mapstore-block-width">
+                        <Col componentClass={ControlLabel} sm={6}>
+                            <Message msgId={getLabelMessageId("aggregationAttribute", data)} />
+                        </Col>
+                        <Col sm={6}>
+                            <Select
+                                value={data.options && data.options.aggregationAttribute}
+                                options={options}
+                                placeholder={placeHolder}
+                                onChange={(val) => {
+                                    onChange("options.aggregationAttribute", val && val.value);
+                                }}
+                            />
+                        </Col>
+                    </FormGroup>
+                    <FormGroup controlId="idAttribute" className="mapstore-block-width">
+                        <Col componentClass={ControlLabel} sm={6}>
+                            <Message msgId={getLabelMessageId("idAttribute", data)} />
+                        </Col>
+                        <Col sm={6}>
+                            <Select
+                                value={data.options && data.options.idAttribute}
+                                options={options}
+                                placeholder={placeHolder}
+                                onChange={(val) => {
+                                    onChange("options.idAttribute", val && val.value);
+                                }}
+                            />
+                        </Col>
+                    </FormGroup>
                 </Form>
-
+                }
             </Col>
         </Row>
     );
