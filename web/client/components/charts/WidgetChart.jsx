@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Children, Suspense } from 'react';
 import {every, includes, isNumber, isString, union, orderBy, flatten} from 'lodash';
 
 import LoadingView from '../misc/LoadingView';
@@ -266,7 +266,8 @@ function getData({
     yAxisLabel,
     autoColorOptions,
     customColorEnabled,
-    classificationType
+    classificationType,
+    options
 }) {
     let classifications;
     let classificationColors;
@@ -327,14 +328,63 @@ function getData({
             ...(customColorEnabled ? { marker: {colors: x.reduce((acc) => ([...acc, autoColorOptions?.defaultCustomColor || '#0888A1']), [])} } : {})
         };
     case 'sunburst':
-        //const sunBurstLayer = data.map(d => d["ecoregion"]);
+        /*const parents = ["", ""].concat(data.map(d => d[xDataKey]));
+        const children = ["Nordseegarnele", "Seezung"].concat(data.map(d=> d[yDataKey]));
+        const id = ["Nordseegarnele", "Seezung"].concat(data.map(d=>d[options?.idAttribute]))*/
+        let combinations = data.filter( ( e, i ) => {
+            return data.findIndex( ( x ) => {
+                return x.art == e.art && x.meeresatla == e.meeresatla;
+            }) == i;
+        });
+        for ( let i=0; i<combinations.length; i++ ) {
+            const occurences = data.filter( d => d.art === combinations[i].art && d.meeresatla === combinations[i].meeresatla);
+            combinations[i].occurences = occurences.length;
+
+        }
+        const art = combinations.map( d => d.art);
+        const region  = combinations.map( d => d.meeresatla);
+        const occurences = combinations.map( d => d.occurences);
+
+        let parents = ["", "Art", combinations[0].art];
+        let children = ["Art", combinations[0].art, combinations[0].meeresatla];
+        let ids = ["Art", combinations[0].art, combinations[0].art + " - " + combinations[0].meeresatla ];
+        for ( let i=1; i<combinations.length; i++ ) {
+            if ( combinations[i].art === combinations[i-1].art ) {
+                parents.push(combinations[i].art)
+            } else {
+                parents.push("Art");
+                parents.push(combinations[i].art);
+            }
+        }
+        for ( let i=1; i<combinations.length; i++ ) {
+            if ( combinations[i].art === combinations[i-1].art ) {
+                children.push(combinations[i].meeresatla)
+            } else {
+                children.push(combinations[i].art);
+                children.push(combinations[i].meeresatla);
+            }  
+        }
+        for ( let i=1; i<combinations.length; i++ ) {
+            if ( combinations[i].art === combinations[i-1].art ) {
+                ids.push(combinations[i].art + " - " + combinations[i].meeresatla)
+            } else {
+                ids.push(combinations[i].art);
+                ids.push(combinations[i].art + " - " + combinations[i].meeresatla);
+            }  
+        }
+        for ( let i=0; i<parents.length; i++ ) {
+            console.log(parents[i], "|", children[i], "|", ids[i]);
+        }
+        
         let sunburstChartTrace = {
             type,        
-            labels: ["Eve", "Cain", "Seth", "Enos", "Noam", "Abel", "Awan", "Enoch", "Azura"],
-            parents: ["", "Eve", "Eve", "Seth", "Seth", "Eve", "Eve", "Awan", "Eve" ],
-            outsidetextfont: {size: 20, color: "#377eb8"}, 
-            leaf: {opacity: 0.4},
+            labels: children,
+            parents: parents,
+            ids: ids,
+            outsidetextfont: {size: 40, color: "#377eb8"}, 
+            leaf: {opacity: 1.0},
             marker: {line: {width: 2}},
+            branchvalues: 'total',
           };
 
         return {
