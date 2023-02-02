@@ -57,14 +57,7 @@ const ColorClassModal = ({
     checked,
     autopop,
     loading,
-    data,
-    onLuck,
 }) => {
-    console.log("MRPOPP: ", autopop);
-    console.log("ccmodal :", values);
-    console.log("LOADING?: ", loading);
-    console.log("FATA: ", data);
-
     //stateaenderungen
     const [selectMenuOpen, setSelectMenuOpen] = useState(false);
     //aendern von autopopClassification
@@ -72,6 +65,7 @@ const ColorClassModal = ({
         useState(classification);
     // alreadyLoaded soll mehrmaliges laden verhindern
     const [alreadyLoaded, setalreadyLoaded] = useState(false);
+    const [x, xxx] = useState(1);
 
     //function um aus den vom wps kommenden values das autopopObject zu erstellen
     function autopoper(values) {
@@ -85,39 +79,16 @@ const ColorClassModal = ({
                 unique: e,
             };
         });
-        console.log("class: ", autoClass);
         return autoClass;
     }
 
-    console.log(
-        "alleda? :",
-        values,
-        checked,
-        classificationAttributeType,
-        classification
-    );
-
     //effect um autopop in state zu setzen bei click auf button
     useEffect(() => {
-        console.log("wobinich");
-        if (
-            values &&
-            checked &&
-            classificationAttributeType &&
-            !alreadyLoaded
-        ) {
-            console.log("XXXXXXXX");
-            setautopopClassification((autopopClassification) => {
-                return autopoper(values);
-            });
-
+        if (values && classificationAttributeType && !alreadyLoaded) {
+            setautopopClassification(autopoper(values));
             setalreadyLoaded((alreadyLoaded) => true);
-
-            onLuck(autopopClassification, classificationAttributeType);
-        } else {
-            console.log("huhuhuhu");
         }
-    }, [checked, loading]);
+    }, [loading, autopop]);
 
     return (
         <Portal>
@@ -207,13 +178,17 @@ const ColorClassModal = ({
                         <FormGroup>
                             <Col xs={6}>alles vollballern?</Col>
                             <Col xs={6}>
-                                <SwitchButton
-                                    checked={checked}
-                                    //onChange={(val) => onAutopop("legend", val)}
-                                    onClick={onAutopop}
-                                />
-                                {/*                                     <Glyphicon glyph="heart" />
-                                </Button> */}
+                                <Button
+                                    onClick={() =>
+                                        onAutopop(
+                                            autopopClassification,
+                                            classificationAttributeType,
+                                            autopop
+                                        )
+                                    }
+                                >
+                                    <Glyphicon glyph="ok" />
+                                </Button>
                             </Col>
                         </FormGroup>
                     </Form>
@@ -222,7 +197,7 @@ const ColorClassModal = ({
                 classificationAttributeType === "string" ? (
                     <TextAttributeClassForm
                         onUpdateClasses={onUpdateClasses}
-                        classification={autopopClassification}
+                        classification={classification}
                         defaultClassLabel={defaultClassLabel}
                         onChangeDefaultClassLabel={onChangeDefaultClassLabel}
                         layer={layer}

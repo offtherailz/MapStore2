@@ -480,23 +480,25 @@ export default ({
                     ) : null}
 
                     <PopColorClassModal
-                        onAutopop={(val) => {
-                            onChange("autopop", val);
-                        }}
-                        onLuck={(newClassification, attributeType) => {
+                        onAutopop={(
+                            newClassification,
+                            attributeType,
+                            autopop
+                        ) => {
+                            onChange("autopop", !autopop);
                             if (attributeType === "number") {
                                 onChange(
                                     "autoColorOptions.rangeClassification",
                                     newClassification
                                 );
                             } else {
-                                console.log("OOOOOOOOOOOOO");
-                                onChange("classification", newClassification);
+                                onChange(
+                                    "autoColorOptions.classification",
+                                    newClassification
+                                );
                             }
                         }}
-                        data={data}
-                        checked={data?.autopop}
-                        //autopop={data?.autopop}
+                        autopop={data?.autopop}
                         modalClassName="chart-color-class-modal"
                         show={showModal}
                         onClose={() => {
