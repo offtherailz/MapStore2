@@ -237,8 +237,6 @@ export default ({
         }
     }, [data.type]); */
 
-    //console.log(data);
-    //console.log(props);
     return (
         <Row>
             <StepHeader

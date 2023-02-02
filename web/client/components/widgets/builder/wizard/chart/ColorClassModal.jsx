@@ -65,7 +65,6 @@ const ColorClassModal = ({
         useState(classification);
     // alreadyLoaded soll mehrmaliges laden verhindern
     const [alreadyLoaded, setalreadyLoaded] = useState(false);
-    const [x, xxx] = useState(1);
 
     //function um aus den vom wps kommenden values das autopopObject zu erstellen
     function autopoper(values) {
