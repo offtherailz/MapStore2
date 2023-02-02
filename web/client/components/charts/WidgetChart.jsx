@@ -213,6 +213,45 @@ const preProcessValues = (formula, values) => (
         }
     }));
 
+const getCombinations = ( data, xVal, yVal ) => {
+
+    let combinations = data.filter( ( e, i ) => {
+        return data.findIndex( ( x ) => {
+            return x[xVal] == e[xVal] && x[yVal] == e[yVal];
+        }) == i;
+    });
+
+    for ( let i=0; i<combinations.length; i++ ) {
+        //console.log("run")
+        const occurences = data.filter( d => d[xVal] === combinations[i][xVal] && d[yVal] === combinations[i][yVal]);
+        combinations[i].occurences = occurences.length;
+
+        combinations[i][xVal] === "" ? combinations[i][xVal] = "No Value" : null;
+        combinations[i][yVal] === "" ? combinations[i][yVal] = "No Value" : null; 
+    }
+
+    return combinations;
+}
+
+const getSum = ( combinations ) => {
+    return combinations.map(d => d.occurences).reduce((a,b)=>{
+        return a+b;
+    });
+}
+
+const getIds = ( combinations, xVal, yVal ) => {
+    let ids = [xVal, combinations[0][xVal], combinations[0][xVal] + " - " + combinations[0][yVal]];
+    for ( let i=1; i<combinations.length; i++ ) {
+        if ( combinations[i][xVal] === combinations[i-1][xVal] ) {
+            ids.push( combinations[i][xVal] + " - " + combinations[i][yVal] )
+        } else {
+            ids.push( combinations[i][xVal] );
+            ids.push( combinations[i][xVal] + " - " + combinations[i][yVal] );
+        }  
+    }
+    return ids;
+}
+
 const reorderDataByClassification = (data, {classificationAttr, classificationType, autoColorOptions, customColorEnabled}) => {
     const classifications = data.map(d => d[classificationAttr]);
     const colorCategories = getClassification(classificationType, classifications, autoColorOptions, customColorEnabled).colorCategories;
@@ -266,8 +305,7 @@ function getData({
     yAxisLabel,
     autoColorOptions,
     customColorEnabled,
-    classificationType,
-    options
+    classificationType
 }) {
     let classifications;
     let classificationColors;
@@ -290,9 +328,18 @@ function getData({
 
     classificationColors = getClassification(classificationType, classifications, autoColorOptions, customColorEnabled).classificationColors;
     colorCategories = getClassification(classificationType, classifications, autoColorOptions, customColorEnabled).colorCategories;
+    
+    let combinations = null;
+    if ( localStorage.getItem( "xDataKey" ) !== xDataKey && localStorage.getItem( "yDataKey" ) !== yDataKey && JSON.parse( localStorage.getItem("combinations") )[0].name === 'A' ) {
+        combinations = getCombinations( data, xDataKey, yDataKey );
+        localStorage.setItem( "combinations", JSON.stringify(combinations) );
+        localStorage.setItem( "xDataKey", xDataKey );
+        localStorage.setItem( "yDataKey", yDataKey );
+    } else {
+        combinations = JSON.parse( localStorage.getItem("combinations") );
+    }
 
     switch (type) {
-
     case 'pie':
         let pieChartTrace = {
             name: yAxisLabel || yDataKey,
@@ -328,59 +375,53 @@ function getData({
             ...(customColorEnabled ? { marker: {colors: x.reduce((acc) => ([...acc, autoColorOptions?.defaultCustomColor || '#0888A1']), [])} } : {})
         };
     case 'sunburst':
-        /*const parents = ["", ""].concat(data.map(d => d[xDataKey]));
-        const children = ["Nordseegarnele", "Seezung"].concat(data.map(d=> d[yDataKey]));
-        const id = ["Nordseegarnele", "Seezung"].concat(data.map(d=>d[options?.idAttribute]))*/
-        let combinations = data.filter( ( e, i ) => {
-            return data.findIndex( ( x ) => {
-                return x.art == e.art && x.meeresatla == e.meeresatla;
-            }) == i;
-        });
-        for ( let i=0; i<combinations.length; i++ ) {
-            const occurences = data.filter( d => d.art === combinations[i].art && d.meeresatla === combinations[i].meeresatla);
-            combinations[i].occurences = occurences.length;
+        let parents = ["", xDataKey, combinations[0][xDataKey]];
+        let children = [xDataKey, combinations[0][xDataKey], combinations[0][yDataKey]];
+        let ids = getIds( combinations, xDataKey, yDataKey );
 
-        }
-        const art = combinations.map( d => d.art);
-        const region  = combinations.map( d => d.meeresatla);
-        const occurences = combinations.map( d => d.occurences);
-
-        let parents = ["", "Art", combinations[0].art];
-        let children = ["Art", combinations[0].art, combinations[0].meeresatla];
-        let ids = ["Art", combinations[0].art, combinations[0].art + " - " + combinations[0].meeresatla ];
         for ( let i=1; i<combinations.length; i++ ) {
-            if ( combinations[i].art === combinations[i-1].art ) {
-                parents.push(combinations[i].art)
+            if ( combinations[i][xDataKey] === combinations[i-1][xDataKey] ) {
+                parents.push( combinations[i][xDataKey] )
+                children.push( combinations[i][yDataKey] )
             } else {
-                parents.push("Art");
-                parents.push(combinations[i].art);
+                parents.push( [xDataKey] );
+                parents.push( combinations[i][xDataKey] );
+                children.push( combinations[i][xDataKey] );
+                children.push( combinations[i][yDataKey] );
             }
         }
-        for ( let i=1; i<combinations.length; i++ ) {
-            if ( combinations[i].art === combinations[i-1].art ) {
-                children.push(combinations[i].meeresatla)
-            } else {
-                children.push(combinations[i].art);
-                children.push(combinations[i].meeresatla);
-            }  
-        }
-        for ( let i=1; i<combinations.length; i++ ) {
-            if ( combinations[i].art === combinations[i-1].art ) {
-                ids.push(combinations[i].art + " - " + combinations[i].meeresatla)
-            } else {
-                ids.push(combinations[i].art);
-                ids.push(combinations[i].art + " - " + combinations[i].meeresatla);
-            }  
-        }
-        for ( let i=0; i<parents.length; i++ ) {
-            console.log(parents[i], "|", children[i], "|", ids[i]);
-        }
+
+        let values = [getSum( combinations )];
+        let sumValOfXdata = combinations[0].occurences;
+        let listOfValuesOfSameXdata = [];
         
+        for ( let i=0; i<combinations.length; i++ ) {
+            if ( i !== 0 ) {
+                if ( combinations[i][xDataKey] === combinations[i-1][xDataKey] ) {
+                    listOfValuesOfSameXdata.push( combinations[i].occurences )
+                    sumValOfXdata += combinations[i].occurences;
+                } else {
+                    values.push( sumValOfXdata )
+                    values = values.concat( listOfValuesOfSameXdata );
+                    listOfValuesOfSameXdata = [];
+                    listOfValuesOfSameXdata.push( combinations[i].occurences );
+                    sumValOfXdata = combinations[i].occurences;                
+                }
+                if ( i === combinations.length-1 ) {
+                    values.push( sumValOfXdata )
+                    values = values.concat( listOfValuesOfSameXdata );
+                }
+            } else {
+                listOfValuesOfSameXdata.push( combinations[i].occurences );
+            }
+        }
+
         let sunburstChartTrace = {
             type,        
             labels: children,
             parents: parents,
             ids: ids,
+            values:values,
             outsidetextfont: {size: 40, color: "#377eb8"}, 
             leaf: {opacity: 1.0},
             marker: {line: {width: 2}},
