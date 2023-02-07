@@ -17,11 +17,13 @@ import {
 } from './common';
 import { executeProcessXML, executeProcess } from './execute';
 
-export const aggregateXML = ({featureType, aggregationAttribute, classificationAttribute = [], groupByAttributes = [], aggregateFunction, viewParams, filter = ""}) => {
+export const aggregateXML = ({featureType, aggregationAttribute, classificationAttribute = [], groupByAttributes = [], aggregateFunction, viewParams, filter = "", figureType, groupByAttributes2}) => {
     const getFeature =
         `<wfs:GetFeature ${viewParams ? `viewParams="${viewParams}"` : ""} outputFormat="GML2" service="WFS" version="1.0.0">` +
         `<wfs:Query typeName="${featureType}">${filter}</wfs:Query></wfs:GetFeature>`;
-
+    if ( figureType === 'sunburst' ) {
+        groupByAttributes = [groupByAttributes, groupByAttributes2];
+    }
     return executeProcessXML(
         'gs:Aggregate',
         [

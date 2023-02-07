@@ -152,6 +152,7 @@ export default ({
 
     /** line charts do not support custom colors ATM and blue is preselected */
     useEffect(() => {
+        onChange("options.figureType", data.type)
         if (data.type === 'line' && (!data?.autoColorOptions?.name || customColor)) {
             onChange("autoColorOptions", {
                 name: 'global.colors.blue',
@@ -171,7 +172,6 @@ export default ({
                 </div>
             </Col>
             <Col xs={12}>
-                {data.type !== 'sunburst' ? (
                 <Form className="chart-options-form" horizontal>
                     {formOptions.showGroupBy ? (
                         <FormGroup controlId="groupByAttributes" className="mapstore-block-width">
@@ -188,7 +188,25 @@ export default ({
                                     }}
                                 />
                             </Col>
-                        </FormGroup>) : null}
+                        </FormGroup>
+                        ) : null}
+                    {data.type === 'sunburst' ? (
+                        <FormGroup controlId="groupByAttributes" className="mapstore-block-width">
+                            <Col componentClass={ControlLabel} sm={6}>
+                                Außen
+                            </Col>
+                            <Col sm={6}>
+                                <Select
+                                    value={data.options && data.options.groupByAttributes2}
+                                    options={options}
+                                    placeholder={placeHolder}
+                                    onChange={(val) => {
+                                        onChange("options.groupByAttributes2", val && val.value);
+                                    }}
+                                />
+                            </Col>
+                        </FormGroup>
+                        ) : null}
                     <FormGroup controlId="aggregationAttribute" className="mapstore-block-width">
                         <Col componentClass={ControlLabel} sm={6}>
                             <Message msgId={getLabelMessageId("aggregationAttribute", data)} />
@@ -214,7 +232,9 @@ export default ({
                                 value={data.options && data.options.aggregateFunction}
                                 options={aggregationOptions}
                                 placeholder={placeHolder}
-                                onChange={(val) => { onChange("options.aggregateFunction", val && val.value); }}
+                                onChange={(val) => { 
+                                    onChange("options.aggregateFunction", val && val.value); 
+                                }}
                             />
                         </Col>
                     </FormGroup> : null}
@@ -334,7 +354,7 @@ export default ({
                             setShowConfirmModal(false);
                             setShowModal(false);
                         })}
-                    {formOptions.showLegend ?
+                    {formOptions.showLegend && data.type !== 'sunburst' ?
                         <FormGroup controlId="displayLegend">
                             <Col componentClass={ControlLabel} sm={6}>
                                 <Message msgId={getLabelMessageId("displayLegend", data)} />
@@ -346,60 +366,11 @@ export default ({
                                 />
                             </Col>
                         </FormGroup> : null}
-                    {formOptions.advancedOptions && data.widgetType === "chart" && (data.type === "bar" || data.type === "line" || data.type === "sunburst")
+                    {formOptions.advancedOptions && data.widgetType === "chart" && (data.type === "bar" || data.type === "line")
                         ? <ChartAdvancedOptions data={data} classificationAttribute={classificationAttribute} onChange={onChange} />
                         : null}
 
-                </Form>) :
-                <Form className="chart-options-form" horizontal>
-                    {formOptions.showGroupBy ? (
-                        <FormGroup controlId="groupByAttributes" className="mapstore-block-width">
-                            <Col componentClass={ControlLabel} sm={6}>
-                                <Message msgId={getLabelMessageId("groupByAttributes", data)} />
-                            </Col>
-                            <Col sm={6}>
-                                <Select
-                                    value={data.options && data.options.groupByAttributes}
-                                    options={options}
-                                    placeholder={placeHolder}
-                                    onChange={(val) => {
-                                        onChange("options.groupByAttributes", val && val.value);
-                                    }}
-                                />
-                            </Col>
-                        </FormGroup>) : null}
-                    <FormGroup controlId="aggregationAttribute" className="mapstore-block-width">
-                        <Col componentClass={ControlLabel} sm={6}>
-                            <Message msgId={getLabelMessageId("aggregationAttribute", data)} />
-                        </Col>
-                        <Col sm={6}>
-                            <Select
-                                value={data.options && data.options.aggregationAttribute}
-                                options={options}
-                                placeholder={placeHolder}
-                                onChange={(val) => {
-                                    onChange("options.aggregationAttribute", val && val.value);
-                                }}
-                            />
-                        </Col>
-                    </FormGroup>
-                    <FormGroup controlId="idAttribute" className="mapstore-block-width">
-                        <Col componentClass={ControlLabel} sm={6}>
-                            <Message msgId={getLabelMessageId("idAttribute", data)} />
-                        </Col>
-                        <Col sm={6}>
-                            <Select
-                                value={data.options && data.options.idAttribute}
-                                options={options}
-                                placeholder={placeHolder}
-                                onChange={(val) => {
-                                    onChange("options.idAttribute", val && val.value);
-                                }}
-                            />
-                        </Col>
-                    </FormGroup>
                 </Form>
-                }
             </Col>
         </Row>
     );

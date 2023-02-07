@@ -1,4 +1,4 @@
-import React, { Children, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import {every, includes, isNumber, isString, union, orderBy, flatten} from 'lodash';
 
 import LoadingView from '../misc/LoadingView';
@@ -213,28 +213,8 @@ const preProcessValues = (formula, values) => (
         }
     }));
 
-const getCombinations = ( data, xVal, yVal ) => {
-
-    let combinations = data.filter( ( e, i ) => {
-        return data.findIndex( ( x ) => {
-            return x[xVal] == e[xVal] && x[yVal] == e[yVal];
-        }) == i;
-    });
-
-    for ( let i=0; i<combinations.length; i++ ) {
-        //console.log("run")
-        const occurences = data.filter( d => d[xVal] === combinations[i][xVal] && d[yVal] === combinations[i][yVal]);
-        combinations[i].occurences = occurences.length;
-
-        combinations[i][xVal] === "" ? combinations[i][xVal] = "No Value" : null;
-        combinations[i][yVal] === "" ? combinations[i][yVal] = "No Value" : null; 
-    }
-
-    return combinations;
-}
-
-const getSum = ( combinations ) => {
-    return combinations.map(d => d.occurences).reduce((a,b)=>{
+const getSum = ( data, yVal ) => {
+    return data.map( d => d[yVal] ).reduce( ( a,b ) => {
         return a+b;
     });
 }
@@ -250,6 +230,18 @@ const getIds = ( combinations, xVal, yVal ) => {
         }  
     }
     return ids;
+}
+
+const sortData = ( data, xVal ) => {
+    return data.sort(function (a, b) {
+        if (a[xVal] < b[xVal]) {
+          return -1;
+        }
+        if (a[xVal] > b[xVal]) {
+          return 1;
+        }
+        return 0;
+      });
 }
 
 const reorderDataByClassification = (data, {classificationAttr, classificationType, autoColorOptions, customColorEnabled}) => {
@@ -305,7 +297,8 @@ function getData({
     yAxisLabel,
     autoColorOptions,
     customColorEnabled,
-    classificationType
+    classificationType,
+    options
 }) {
     let classifications;
     let classificationColors;
@@ -321,7 +314,6 @@ function getData({
         autoColorOptions,
         customColorEnabled
     });
-
     classifications = classificationAttr ? data.map(d => d[classificationAttr]) : [];
     const x = data.map(d => d[xDataKey]);
     let y = data.map(d => d[yDataKey]);
@@ -329,16 +321,6 @@ function getData({
     classificationColors = getClassification(classificationType, classifications, autoColorOptions, customColorEnabled).classificationColors;
     colorCategories = getClassification(classificationType, classifications, autoColorOptions, customColorEnabled).colorCategories;
     
-    let combinations = null;
-    if ( localStorage.getItem( "xDataKey" ) !== xDataKey && localStorage.getItem( "yDataKey" ) !== yDataKey && JSON.parse( localStorage.getItem("combinations") )[0].name === 'A' ) {
-        combinations = getCombinations( data, xDataKey, yDataKey );
-        localStorage.setItem( "combinations", JSON.stringify(combinations) );
-        localStorage.setItem( "xDataKey", xDataKey );
-        localStorage.setItem( "yDataKey", yDataKey );
-    } else {
-        combinations = JSON.parse( localStorage.getItem("combinations") );
-    }
-
     switch (type) {
     case 'pie':
         let pieChartTrace = {
@@ -375,44 +357,46 @@ function getData({
             ...(customColorEnabled ? { marker: {colors: x.reduce((acc) => ([...acc, autoColorOptions?.defaultCustomColor || '#0888A1']), [])} } : {})
         };
     case 'sunburst':
-        let parents = ["", xDataKey, combinations[0][xDataKey]];
-        let children = [xDataKey, combinations[0][xDataKey], combinations[0][yDataKey]];
-        let ids = getIds( combinations, xDataKey, yDataKey );
+        let sunburstData = sortData( data, xDataKey );
+        const zDataKey = options && options.groupByAttributes2;
+        let parents = ["", xDataKey, sunburstData[0][xDataKey]];
+        let children = [xDataKey, sunburstData[0][xDataKey], sunburstData[0][zDataKey]];
+        let ids = getIds( sunburstData, xDataKey, zDataKey );
 
-        for ( let i=1; i<combinations.length; i++ ) {
-            if ( combinations[i][xDataKey] === combinations[i-1][xDataKey] ) {
-                parents.push( combinations[i][xDataKey] )
-                children.push( combinations[i][yDataKey] )
+        for ( let i=1; i<sunburstData.length; i++ ) {
+            if ( sunburstData[i][xDataKey] === sunburstData[i-1][xDataKey] ) {
+                parents.push( sunburstData[i][xDataKey] )
+                children.push( sunburstData[i][zDataKey] )
             } else {
-                parents.push( [xDataKey] );
-                parents.push( combinations[i][xDataKey] );
-                children.push( combinations[i][xDataKey] );
-                children.push( combinations[i][yDataKey] );
+                parents.push( xDataKey );
+                parents.push( sunburstData[i][xDataKey] );
+                children.push( sunburstData[i][xDataKey] );
+                children.push( sunburstData[i][zDataKey] );
             }
         }
 
-        let values = [getSum( combinations )];
-        let sumValOfXdata = combinations[0].occurences;
+        let values = [getSum( sunburstData, yDataKey )];
+        let sumValOfXdata = sunburstData[0][yDataKey];
         let listOfValuesOfSameXdata = [];
         
-        for ( let i=0; i<combinations.length; i++ ) {
+        for ( let i=0; i<sunburstData.length; i++ ) {
             if ( i !== 0 ) {
-                if ( combinations[i][xDataKey] === combinations[i-1][xDataKey] ) {
-                    listOfValuesOfSameXdata.push( combinations[i].occurences )
-                    sumValOfXdata += combinations[i].occurences;
+                if ( sunburstData[i][xDataKey] === sunburstData[i-1][xDataKey] ) {
+                    listOfValuesOfSameXdata.push( sunburstData[i][yDataKey] )
+                    sumValOfXdata += sunburstData[i][yDataKey];
                 } else {
                     values.push( sumValOfXdata )
                     values = values.concat( listOfValuesOfSameXdata );
                     listOfValuesOfSameXdata = [];
-                    listOfValuesOfSameXdata.push( combinations[i].occurences );
-                    sumValOfXdata = combinations[i].occurences;                
+                    listOfValuesOfSameXdata.push( sunburstData[i][yDataKey] );
+                    sumValOfXdata = sunburstData[i][yDataKey];                
                 }
-                if ( i === combinations.length-1 ) {
+                if ( i === sunburstData.length-1 ) {
                     values.push( sumValOfXdata )
                     values = values.concat( listOfValuesOfSameXdata );
                 }
             } else {
-                listOfValuesOfSameXdata.push( combinations[i].occurences );
+                listOfValuesOfSameXdata.push( sunburstData[i][yDataKey] );
             }
         }
 

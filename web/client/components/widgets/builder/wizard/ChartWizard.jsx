@@ -50,8 +50,9 @@ const sampleProps = {
 };
 
 
-export const isChartOptionsValid = (options = {}, { hasAggregateProcess }) => {
-    if ( options.aggregateFunction ) {
+export const isChartOptionsValid = (options = {}, { hasAggregateProcess }, figureType) => {
+    //Differentiation here is necessary, because Sunburst requires a second groupByAttributes element whereas the others don't.
+    if ( figureType !== 'sunburst' ) {
         return (
             options.aggregationAttribute
             && options.groupByAttributes
@@ -63,7 +64,10 @@ export const isChartOptionsValid = (options = {}, { hasAggregateProcess }) => {
         return (
             options.aggregationAttribute
             && options.groupByAttributes
-            && options.idAttribute
+            && options.groupByAttributes2
+            && (!hasAggregateProcess 
+            || hasAggregateProcess && options.aggregateFunction)
+            || options.classificationAttribute
         );
     }
 
@@ -71,7 +75,7 @@ export const isChartOptionsValid = (options = {}, { hasAggregateProcess }) => {
 
 const Wizard = wizardHandlers(WizardContainer);
 
-const renderPreview = ({ data = {}, layer, dependencies = {}, setValid = () => { }, hasAggregateProcess }) => isChartOptionsValid(data.options, { hasAggregateProcess })
+const renderPreview = ({ data = {}, layer, dependencies = {}, setValid = () => { }, hasAggregateProcess }) => isChartOptionsValid(data.options, { hasAggregateProcess }, data.type)
     ? (<PreviewChart
         key="preview-chart"
         onLoad={() => setValid(true)}
@@ -113,7 +117,7 @@ const renderPreview = ({ data = {}, layer, dependencies = {}, setValid = () => {
 const enhanceWizard = compose(lifecycle({
     UNSAFE_componentWillReceiveProps: ({ data = {}, valid, setValid = () => { }, hasAggregateProcess } = {}) => {
 
-        if (valid && !isChartOptionsValid(data.options, { hasAggregateProcess })) {
+        if (valid && !isChartOptionsValid(data.options, { hasAggregateProcess }, data.type)) { //adding data.type needed in aggregate.js
             setValid(false);
         }
     }
@@ -129,7 +133,7 @@ const ChartWizard = ({ onChange = () => { }, onFinish = () => { }, setPage = () 
         n === 0
             ? data.chartType
             : n === 1
-                ? isChartOptionsValid(data.options, { hasAggregateProcess })
+                ? isChartOptionsValid(data.options, { hasAggregateProcess }, data.type)
                 : true
     } hideButtons>
     <ChartType
@@ -153,7 +157,7 @@ const ChartWizard = ({ onChange = () => { }, onFinish = () => { }, setPage = () 
             data,
             layer: data.layer || layer,
             dependencies,
-            setValid: v => setValid(v && isChartOptionsValid(data.options, {hasAggregateProcess})) })
+            setValid: v => setValid(v && isChartOptionsValid(data.options, {hasAggregateProcess}, data.type)) })
         }
     />
     <WidgetOptions
@@ -166,7 +170,7 @@ const ChartWizard = ({ onChange = () => { }, onFinish = () => { }, setPage = () 
             data,
             layer: data.layer || layer,
             dependencies,
-            setValid: v => setValid(v && isChartOptionsValid(data.options, {hasAggregateProcess})) })
+            setValid: v => setValid(v && isChartOptionsValid(data.options, {hasAggregateProcess}, data.type)) })
         }
     />
 </Wizard>);

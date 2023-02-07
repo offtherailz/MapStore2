@@ -1988,7 +1988,7 @@
                 "gauge": "Gruppiere nach",
                 "counter": "Gruppiere nach",
                 "default": "Gruppiere nach",
-                "sunburst": "Hauptelement"
+                "sunburst": "Innen"
             },
             "aggregationAttribute": {
                 "line": "Y-Attribut",
@@ -1996,7 +1996,7 @@
                 "bar": "Y-Attribut",
                 "gauge": "Benutzen",
                 "counter": "Benutzen",
-                "sunburst": "Ebene",
+                "sunburst": "Benutzen",
                 "default": "Benutzen"
             },
             "idAttribute": {
@@ -2008,7 +2008,7 @@
                 "bar": "Operation",
                 "gauge": "Operation",
                 "counter": "Operation",
-                "sunburst": "go",
+                "sunburst": "Operation",
                 "default": "Operation"
             },
             "colorRamp": {
@@ -2017,7 +2017,7 @@
                 "bar": "Farbe",
                 "gauge": "Farbe",
                 "counter": "Farbe",
-                "sunburst": "go",
+                "sunburst": "Farbe",
                 "default": "Farbe"
             },
             "uom": {
@@ -2026,7 +2026,6 @@
                 "bar": "Maßeinheit",
                 "gauge": "Maßeinheit",
                 "counter": "Maßeinheit",
-                "sunburst": "go",
                 "default": "Maßeinheit"
             },
             "mapSync": "Live-Filter nach Ansichtsfenster",
@@ -2034,7 +2033,6 @@
                 "line": "Legende anzeigen",
                 "pie": "Legende anzeigen",
                 "bar": "Legende anzeigen",
-                "sunburst": "go",
                 "gauge": "Legende anzeigen"
             },
             "advanced": {
