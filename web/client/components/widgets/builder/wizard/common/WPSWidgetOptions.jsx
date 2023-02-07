@@ -152,7 +152,13 @@ export default ({
 
     /** line charts do not support custom colors ATM and blue is preselected */
     useEffect(() => {
-        onChange("options.figureType", data.type)
+        //This is needed to force users to re-calculate the figure by selecting an operation function 
+        //since the data used to generate the sunburst diagram is not compatble with the other diagrams and vice versa.
+        //Example to reproduce error: Create sunburst diagram, go back and create bar chart. Figure will use the sunburst data which is wrong. 
+        //Recalculation needed.
+        //This is probably not an ideal solution 
+        onChange("options.aggregateFunction", "");
+        onChange("options.figureType", data.type);
         if (data.type === 'line' && (!data?.autoColorOptions?.name || customColor)) {
             onChange("autoColorOptions", {
                 name: 'global.colors.blue',
