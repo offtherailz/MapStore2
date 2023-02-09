@@ -1,70 +1,109 @@
 /*
-  * Copyright 2017, GeoSolutions Sas.
-  * All rights reserved.
-  *
-  * This source code is licensed under the BSD-style license found in the
-  * LICENSE file in the root directory of this source tree.
-  */
-import React, {useEffect, useState} from 'react';
-import { head, get} from 'lodash';
-import { Row, Col, Form, FormGroup, FormControl, ControlLabel, Glyphicon, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import Message from '../../../../I18N/Message';
-import Select from 'react-select';
-import ColorRamp from '../../../../styleeditor/ColorRamp';
-import { generateRandomHexColor } from '../../../../../utils/ColorUtils';
-import Button from '../../../../misc/Button';
-import ConfirmModal from '../../../../../components/resources/modals/ConfirmModal';
-import StepHeader from '../../../../misc/wizard/StepHeader';
-import SwitchButton from '../../../../misc/switch/SwitchButton';
-import ChartAdvancedOptions from './ChartAdvancedOptions';
-import ColorClassModal from '../chart/ColorClassModal';
-import { defaultColorGenerator } from '../../../../charts/WidgetChart';
-import classNames from 'classnames';
-import uuid from 'uuid';
+ * Copyright 2017, GeoSolutions Sas.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+import React, { useEffect, useState } from "react";
+import { head, get } from "lodash";
+import {
+    Row,
+    Col,
+    Form,
+    FormGroup,
+    FormControl,
+    ControlLabel,
+    Glyphicon,
+    OverlayTrigger,
+    Tooltip,
+    //Button
+} from "react-bootstrap";
+import Message from "../../../../I18N/Message";
+import Select from "react-select";
+import ColorRamp from "../../../../styleeditor/ColorRamp";
+import { generateRandomHexColor } from "../../../../../utils/ColorUtils";
+import Button from "../../../../misc/Button";
+import ConfirmModal from "../../../../../components/resources/modals/ConfirmModal";
+import StepHeader from "../../../../misc/wizard/StepHeader";
+import SwitchButton from "../../../../misc/switch/SwitchButton";
+import ChartAdvancedOptions from "./ChartAdvancedOptions";
+import ColorClassModal from "../chart/ColorClassModal";
+import { defaultColorGenerator } from "../../../../charts/WidgetChart";
+import classNames from "classnames";
+import uuid from "uuid";
+
+//const PopColorClassModal = wpsAutopop(ColorClassModal);
 
 const DEFAULT_CUSTOM_COLOR_OPTIONS = {
     base: 190,
     range: 0,
     s: 0.95,
-    v: 0.63
+    v: 0.63,
 };
 
-const COLORS = [{
-    showWhen: (chartType) => chartType === 'pie',
-    name: 'global.colors.random',
-    schema: 'qualitative',
-    options: {base: 190, range: 360, options: {}}
-}, {
-    name: 'global.colors.blue',
-    schema: 'sequencial',
-    options: {base: 190, range: 20}
-}, {
-    name: 'global.colors.red',
-    schema: 'sequencial',
-    options: {base: 10, range: 4}
-}, {
-    name: 'global.colors.green',
-    schema: 'sequencial',
-    options: {base: 120, range: 4}
-}, {
-    name: 'global.colors.brown',
-    schema: 'sequencial',
-    options: {base: 30, range: 4}
-}, {
-    name: 'global.colors.purple',
-    schema: 'sequencial',
-    options: {base: 300, range: 4}
-}, {
-    showWhen: (chartType) => chartType === 'bar' || chartType === 'pie',
-    name: 'global.colors.custom',
-    schema: 'sequencial',
-    options: DEFAULT_CUSTOM_COLOR_OPTIONS,
-    ramp: "#fff",
-    custom: true
-}];
+const COLORS = [
+    {
+        showWhen: (chartType) => chartType === "pie",
+        name: "global.colors.random",
+        schema: "qualitative",
+        options: { base: 190, range: 360, options: {} },
+    },
+    {
+        name: "global.colors.blue",
+        schema: "sequencial",
+        options: { base: 190, range: 20 },
+    },
+    {
+        name: "global.colors.red",
+        schema: "sequencial",
+        options: { base: 10, range: 4 },
+    },
+    {
+        name: "global.colors.green",
+        schema: "sequencial",
+        options: { base: 120, range: 4 },
+    },
+    {
+        name: "global.colors.brown",
+        schema: "sequencial",
+        options: { base: 30, range: 4 },
+    },
+    {
+        name: "global.colors.purple",
+        schema: "sequencial",
+        options: { base: 300, range: 4 },
+    },
+    {
+        showWhen: (chartType) =>
+            chartType === "bar" || chartType === "pie" || chartType === "line",
+        name: "global.colors.custom",
+        schema: "sequencial",
+        options: DEFAULT_CUSTOM_COLOR_OPTIONS,
+        ramp: "#fff",
+        custom: true,
+    },
+];
 
-const CLASSIFIED_COLORS = [{id: uuid.v1(), title: '', color: generateRandomHexColor(), type: 'Polygon', unique: ''}];
-const CLASSIFIED_RANGE_COLORS = [{id: uuid.v1(), title: '', color: generateRandomHexColor(), type: 'Polygon', min: 0, max: 0}];
+const CLASSIFIED_COLORS = [
+    {
+        id: uuid.v1(),
+        title: "",
+        color: generateRandomHexColor(),
+        type: "Polygon",
+        unique: "",
+    },
+];
+const CLASSIFIED_RANGE_COLORS = [
+    {
+        id: uuid.v1(),
+        title: "",
+        color: generateRandomHexColor(),
+        type: "Polygon",
+        min: 0,
+        max: 0,
+    },
+];
 
 const getConfirmModal = (show, onClose, onConfirm) => (
     <ConfirmModal show={show} onClose={onClose} onConfirm={onConfirm}>
@@ -72,39 +111,44 @@ const getConfirmModal = (show, onClose, onConfirm) => (
     </ConfirmModal>
 );
 
-const getColorRangeItems = (type, classification, classificationAttribute, defaultCustomColor) => {
-    COLORS.filter(item => item.custom)[0].ramp = !classificationAttribute ? defaultCustomColor : [...classification.map(item => item.color), defaultCustomColor];
-    return COLORS.filter(c => c.showWhen ? c.showWhen(type) : c);
+const getColorRangeItems = (
+    type,
+    classification,
+    classificationAttribute,
+    defaultCustomColor
+) => {
+    COLORS.filter((item) => item.custom)[0].ramp = !classificationAttribute
+        ? defaultCustomColor
+        : [...classification?.map((item) => item.color), defaultCustomColor];
+    return COLORS.filter((c) => (c.showWhen ? c.showWhen(type) : c));
 };
-const getLabelMessageId = (field, data = {}) => `widgets.${field}.${data.type || data.widgetType || "default"}`;
+const getLabelMessageId = (field, data = {}) =>
+    `widgets.${field}.${data.type || data.widgetType}`;
 
 const placeHolder = <Message msgId={getLabelMessageId("placeHolder")} />;
 
 /** Backup to class value (unique) if label (title) is not provided */
-const formatAutoColorOptions = (classification, attributeType) => (
-    classification.map( classItem => (
-        {
-            id: classItem.id || uuid.v1(),
-            ...( {title: classItem.title ?? classItem.unique }),
-            color: classItem.color,
-            // if attribute is a string set value and label
-            ...(attributeType === 'string' && {
-                value: classItem.unique,
-                unique: classItem.unique
-            }),
-            // if attribute is a number set min/max in range
-            ...(attributeType === 'number' && {
-                max: classItem.max ?? 0,
-                min: classItem.min ?? 0
-            })
-        }
-    ))
-);
+const formatAutoColorOptions = (classification, attributeType) =>
+    classification?.map((classItem) => ({
+        id: classItem.id || uuid.v1(),
+        ...{ title: classItem.title ?? classItem.unique },
+        color: classItem.color,
+        // if attribute is a string set value and label
+        ...(attributeType === "string" && {
+            value: classItem.unique,
+            unique: classItem.unique,
+        }),
+        // if attribute is a number set min/max in range
+        ...(attributeType === "number" && {
+            max: classItem.max ?? 0,
+            min: classItem.min ?? 0,
+        }),
+    }));
 
 export default ({
     hasAggregateProcess,
     data = { options: {}, autoColorOptions: {} },
-    onChange = () => { },
+    onChange = () => {},
     options = [],
     typedOptions = [],
     formOptions = {
@@ -112,32 +156,58 @@ export default ({
         showUom: false,
         showColorRampSelector: true,
         showLegend: true,
-        advancedOptions: true
+        advancedOptions: true,
     },
     aggregationOptions = [],
     sampleChart,
-    layer }) => {
-
+    layer,
+    autopop,
+}) => {
     const [showModal, setShowModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const customColor = data.autoColorOptions?.name === 'global.colors.custom';
+    const customColor = data.autoColorOptions?.name === "global.colors.custom";
     const { classificationAttribute = undefined } = data?.options || {};
     const { classificationAttributeType = undefined } = data?.options || {};
     const { classification = CLASSIFIED_COLORS } = data?.autoColorOptions || {};
-    const { rangeClassification = CLASSIFIED_RANGE_COLORS } = data?.autoColorOptions || {};
+    const { rangeClassification = CLASSIFIED_RANGE_COLORS } =
+        data?.autoColorOptions || {};
     /** we keep the two classification types separated in state but color ramp only gets the selected type one */
-    const currentClassificationType = classificationAttributeType === 'number' ? rangeClassification : classification;
-    const { defaultClassLabel = '' } = data?.autoColorOptions || {};
-    const defaultCustomColor = data?.autoColorOptions?.defaultCustomColor || defaultColorGenerator(1, DEFAULT_CUSTOM_COLOR_OPTIONS)[0] || '#0888A1';
+    const currentClassificationType =
+        classificationAttributeType === "number"
+            ? rangeClassification
+            : classification;
+    const { defaultClassLabel = "" } = data?.autoColorOptions || {};
+    const defaultCustomColor =
+        data?.autoColorOptions?.defaultCustomColor ||
+        defaultColorGenerator(1, DEFAULT_CUSTOM_COLOR_OPTIONS)[0] ||
+        "#0888A1";
     const discardEmptyClasses = (classifications) => {
-        return [classifications.filter(item => !item.unique && !item.value), classifications.filter(item => item.unique && item.value)];
+        return [
+            classifications.filter((item) => !item.unique && !item.value),
+            classifications.filter((item) => item.unique && item.value),
+        ];
     };
     const discardEmptyRangeClasses = (classifications) => {
-        return [classifications.filter(item => !item.title.trim()), classifications.filter(item => item.title)];
+        return [
+            //classifications.filter((item) => !item.title.trim()),
+            classifications.filter((item) => item.title),
+        ];
     };
-    const resetEmptyClasses = (emptyClasses, nonEmptyClasses, classifications, classType, currentClassType) => {
-        const stateSlice = classType === 'number' ? 'autoColorOptions.rangeClassification' : 'autoColorOptions.classification';
-        const resetClass = classType === 'number' ? CLASSIFIED_RANGE_COLORS : CLASSIFIED_COLORS;
+    const resetEmptyClasses = (
+        emptyClasses,
+        nonEmptyClasses,
+        classifications,
+        classType,
+        currentClassType
+    ) => {
+        const stateSlice =
+            classType === "number"
+                ? "autoColorOptions.rangeClassification"
+                : "autoColorOptions.classification";
+        const resetClass =
+            classType === "number"
+                ? CLASSIFIED_RANGE_COLORS
+                : CLASSIFIED_COLORS;
         if (emptyClasses.length === classifications.length) {
             onChange(stateSlice, resetClass);
             if (currentClassType === classType) {
@@ -151,113 +221,183 @@ export default ({
     };
 
     /** line charts do not support custom colors ATM and blue is preselected */
+
     useEffect(() => {
-        //This is needed to force users to re-calculate the figure by selecting an operation function 
+        //This is needed to force users to re-calculate the figure by selecting an operation function
         //since the data used to generate the sunburst diagram is not compatble with the other diagrams and vice versa.
-        //Example to reproduce error: Create sunburst diagram, go back and create bar chart. Figure will use the sunburst data which is wrong. 
+        //Example to reproduce error: Create sunburst diagram, go back and create bar chart. Figure will use the sunburst data which is wrong.
         //Recalculation needed.
-        //This is probably not an ideal solution 
+        //This is probably not an ideal solution
         onChange("options.aggregateFunction", "");
         onChange("options.figureType", data.type);
-        if (data.type === 'line' && (!data?.autoColorOptions?.name || customColor)) {
-            onChange("autoColorOptions", {
-                name: 'global.colors.blue',
-                base: 190,
-                range: 20
-            });
-        }
     }, [data.type]);
 
     return (
         <Row>
-            <StepHeader title={<Message msgId={`widgets.chartOptionsTitle`} />} />
+            <StepHeader
+                title={<Message msgId={`widgets.chartOptionsTitle`} />}
+            />
             {/* this sticky style helps to keep showing chart when scrolling*/}
-            <Col xs={12} style={{ position: "sticky", top: 0, zIndex: 1}}>
-                <div style={{marginBottom: "30px"}}>
-                    {sampleChart}
-                </div>
+            <Col xs={12} style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                <div style={{ marginBottom: "30px" }}>{sampleChart}</div>
             </Col>
             <Col xs={12}>
                 <Form className="chart-options-form" horizontal>
                     {formOptions.showGroupBy ? (
-                        <FormGroup controlId="groupByAttributes" className="mapstore-block-width">
+                        <FormGroup
+                            controlId="groupByAttributes"
+                            className="mapstore-block-width"
+                        >
                             <Col componentClass={ControlLabel} sm={6}>
-                                <Message msgId={getLabelMessageId("groupByAttributes", data)} />
+                                <Message
+                                    msgId={getLabelMessageId(
+                                        "groupByAttributes",
+                                        data
+                                    )}
+                                />
                             </Col>
                             <Col sm={6}>
                                 <Select
-                                    value={data.options && data.options.groupByAttributes}
+                                    value={
+                                        data.options &&
+                                        data.options.groupByAttributes
+                                    }
                                     options={options}
                                     placeholder={placeHolder}
                                     onChange={(val) => {
-                                        onChange("options.groupByAttributes", val && val.value);
+                                        onChange(
+                                            "options.groupByAttributes",
+                                            val && val.value
+                                        );
                                     }}
                                 />
                             </Col>
                         </FormGroup>
-                        ) : null}
-                    {data.type === 'sunburst' ? (
-                        <FormGroup controlId="groupByAttributes" className="mapstore-block-width">
+                    ) : null}
+                    {data.type === "sunburst" ? (
+                        <FormGroup
+                            controlId="groupByAttributes"
+                            className="mapstore-block-width"
+                        >
                             <Col componentClass={ControlLabel} sm={6}>
                                 Außen
                             </Col>
                             <Col sm={6}>
                                 <Select
-                                    value={data.options && data.options.groupByAttributes2}
+                                    value={
+                                        data.options &&
+                                        data.options.groupByAttributes2
+                                    }
                                     options={options}
                                     placeholder={placeHolder}
                                     onChange={(val) => {
-                                        onChange("options.groupByAttributes2", val && val.value);
+                                        onChange(
+                                            "options.groupByAttributes2",
+                                            val && val.value
+                                        );
                                     }}
                                 />
                             </Col>
                         </FormGroup>
-                        ) : null}
-                    <FormGroup controlId="aggregationAttribute" className="mapstore-block-width">
+                    ) : null}
+
+                    <FormGroup
+                        controlId="aggregationAttribute"
+                        className="mapstore-block-width"
+                    >
                         <Col componentClass={ControlLabel} sm={6}>
-                            <Message msgId={getLabelMessageId("aggregationAttribute", data)} />
+                            <Message
+                                msgId={getLabelMessageId(
+                                    "aggregationAttribute",
+                                    data
+                                )}
+                            />
                         </Col>
                         <Col sm={6}>
                             <Select
-                                value={data.options && data.options.aggregationAttribute}
+                                value={
+                                    data.options &&
+                                    data.options.aggregationAttribute
+                                }
                                 options={options}
                                 placeholder={placeHolder}
                                 onChange={(val) => {
-                                    onChange("options.aggregationAttribute", val && val.value);
+                                    onChange(
+                                        "options.aggregationAttribute",
+                                        val && val.value
+                                    );
                                 }}
                             />
                         </Col>
                     </FormGroup>
 
-                    {hasAggregateProcess ? <FormGroup controlId="aggregateFunction" className="mapstore-block-width">
-                        <Col componentClass={ControlLabel} sm={6}>
-                            <Message msgId={getLabelMessageId("aggregateFunction", data)} />
-                        </Col>
-                        <Col sm={6}>
-                            <Select
-                                value={data.options && data.options.aggregateFunction}
-                                options={aggregationOptions}
-                                placeholder={placeHolder}
-                                onChange={(val) => { 
-                                    onChange("options.aggregateFunction", val && val.value); 
-                                }}
-                            />
-                        </Col>
-                    </FormGroup> : null}
-
-                    {formOptions.showUom ?
-                        <FormGroup controlId="uom">
+                    {hasAggregateProcess ? (
+                        <FormGroup
+                            controlId="aggregateFunction"
+                            className="mapstore-block-width"
+                        >
                             <Col componentClass={ControlLabel} sm={6}>
-                                <Message msgId={getLabelMessageId("uom", data)} />
+                                <Message
+                                    msgId={getLabelMessageId(
+                                        "aggregateFunction",
+                                        data
+                                    )}
+                                />
                             </Col>
                             <Col sm={6}>
-                                <FormControl value={get(data, `options.seriesOptions[0].uom`)} type="text" onChange={e => onChange("options.seriesOptions.[0].uom", e.target.value)} />
+                                <Select
+                                    value={
+                                        data.options &&
+                                        data.options.aggregateFunction
+                                    }
+                                    options={aggregationOptions}
+                                    placeholder={placeHolder}
+                                    onChange={(val) => {
+                                        onChange(
+                                            "options.aggregateFunction",
+                                            val && val.value
+                                        );
+                                    }}
+                                />
                             </Col>
-                        </FormGroup> : null}
-                    {formOptions.showColorRampSelector ?
-                        <FormGroup controlId="colorRamp" className="mapstore-block-width">
-                            <Col componentClass={ControlLabel} sm={customColor ? 5 : 6}>
-                                <Message msgId={getLabelMessageId("colorRamp", data)} />
+                        </FormGroup>
+                    ) : null}
+                    {formOptions.showUom ? (
+                        <FormGroup controlId="uom">
+                            <Col componentClass={ControlLabel} sm={6}>
+                                <Message
+                                    msgId={getLabelMessageId("uom", data)}
+                                />
+                            </Col>
+                            <Col sm={6}>
+                                <FormControl
+                                    value={get(
+                                        data,
+                                        `options.seriesOptions[0].uom`
+                                    )}
+                                    type="text"
+                                    onChange={(e) =>
+                                        onChange(
+                                            "options.seriesOptions.[0].uom",
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </Col>
+                        </FormGroup>
+                    ) : null}
+                    {formOptions.showColorRampSelector ? (
+                        <FormGroup
+                            controlId="colorRamp"
+                            className="mapstore-block-width"
+                        >
+                            <Col
+                                componentClass={ControlLabel}
+                                sm={customColor ? 5 : 6}
+                            >
+                                <Message
+                                    msgId={getLabelMessageId("colorRamp", data)}
+                                />
                             </Col>
                             <Col sm={customColor ? 7 : 6}>
                                 <FormGroup>
@@ -266,75 +406,228 @@ export default ({
                                             <OverlayTrigger
                                                 key="customColors"
                                                 placement="top"
-                                                overlay={<Tooltip id="wizard-tooltip-customColors"><Message msgId="widgets.builder.wizard.classAttributes.editCustomColors" /></Tooltip>}>
-                                                <Button bsSize="sm" className={`custom-color-btn btn btn-default ${data.type}`} onClick={() => setShowModal(true)}>
+                                                overlay={
+                                                    <Tooltip id="wizard-tooltip-customColors">
+                                                        <Message msgId="widgets.builder.wizard.classAttributes.editCustomColors" />
+                                                    </Tooltip>
+                                                }
+                                            >
+                                                <Button
+                                                    bsSize="sm"
+                                                    className={`custom-color-btn btn btn-default ${data.type}`}
+                                                    onClick={() =>
+                                                        setShowModal(true)
+                                                    }
+                                                >
                                                     <Glyphicon glyph="pencil" />
                                                 </Button>
                                             </OverlayTrigger>
                                         </Col>
                                     )}
-                                    <Col xs={customColor ? 10 : 12} className={classNames({ 'custom-color': customColor })}>
+                                    <Col
+                                        xs={customColor ? 10 : 12}
+                                        className={classNames({
+                                            "custom-color": customColor,
+                                        })}
+                                    >
                                         <ColorRamp
-                                            items={getColorRangeItems(data.type, currentClassificationType, classificationAttribute, defaultCustomColor)}
-                                            value={head(getColorRangeItems(data.type, currentClassificationType, classificationAttribute, defaultCustomColor).filter(c => data.autoColorOptions && c.name === data.autoColorOptions.name ))}
-                                            samples={data.type === "pie" ? 5 : 1}
-                                            onChange={v => {
+                                            items={getColorRangeItems(
+                                                data.type,
+                                                currentClassificationType,
+                                                classificationAttribute,
+                                                defaultCustomColor
+                                            )}
+                                            value={head(
+                                                getColorRangeItems(
+                                                    data.type,
+                                                    currentClassificationType,
+                                                    classificationAttribute,
+                                                    defaultCustomColor
+                                                ).filter(
+                                                    (c) =>
+                                                        data.autoColorOptions &&
+                                                        c.name ===
+                                                            data
+                                                                .autoColorOptions
+                                                                .name
+                                                )
+                                            )}
+                                            samples={
+                                                data.type === "pie" ? 5 : 1
+                                            }
+                                            onChange={(v) => {
                                                 onChange("autoColorOptions", {
                                                     ...v.options,
                                                     name: v.name,
-                                                    ...(classification ? { classification: formatAutoColorOptions(classification, 'string') } : {} ),
-                                                    ...(rangeClassification ? { rangeClassification: formatAutoColorOptions(rangeClassification, 'number') } : {} ),
-                                                    defaultCustomColor: defaultCustomColor ?? '#0888A1'
+                                                    ...(classification
+                                                        ? {
+                                                              classification:
+                                                                  formatAutoColorOptions(
+                                                                      classification,
+                                                                      "string"
+                                                                  ),
+                                                          }
+                                                        : {}),
+                                                    ...(rangeClassification
+                                                        ? {
+                                                              rangeClassification:
+                                                                  formatAutoColorOptions(
+                                                                      rangeClassification,
+                                                                      "number"
+                                                                  ),
+                                                          }
+                                                        : {}),
+                                                    defaultCustomColor:
+                                                        defaultCustomColor ??
+                                                        "#0888A1",
                                                 });
                                                 if (!v.custom) {
-                                                    onChange("options.classificationAttribute", undefined);
-                                                    onChange("options.classificationAttributeType", undefined);
+                                                    onChange(
+                                                        "options.classificationAttribute",
+                                                        undefined
+                                                    );
+                                                    onChange(
+                                                        "options.classificationAttributeType",
+                                                        undefined
+                                                    );
                                                 }
-                                            }}/>
+                                            }}
+                                        />
                                     </Col>
                                 </FormGroup>
                             </Col>
-                        </FormGroup> : null}
+                        </FormGroup>
+                    ) : null}
 
                     <ColorClassModal
+                        onAutopop={(
+                            newClassification,
+                            classificationAttributeType,
+                            autopop
+                        ) => {
+                            onChange("autopop", !autopop);
+                            if (classificationAttributeType === "number") {
+                                onChange(
+                                    "autoColorOptions.rangeClassification",
+                                    newClassification
+                                );
+                                onChange("autoColorOptions.classification", []);
+                            } else {
+                                onChange(
+                                    "autoColorOptions.classification",
+                                    newClassification
+                                );
+                                onChange(
+                                    "autoColorOptions.rangeClassification",
+                                    []
+                                );
+                            }
+                        }}
+                        autopop={data?.autopop}
+                        rangeIntervals={[
+                            { label: "2", value: "2" },
+                            { label: "3", value: "3" },
+                            { label: "4", value: "4" },
+                            { label: "5", value: "5" },
+                            { label: "6", value: "6" },
+                            { label: "7", value: "7" },
+                        ]}
+                        rangeMethods={[
+                            { label: "jenks", value: "jenks" },
+                            { label: "quantile", value: "quantile" },
+                            {
+                                label: "equalInterval",
+                                value: "equalInterval",
+                            },
+                        ]}
                         modalClassName="chart-color-class-modal"
                         show={showModal}
+                        onChange={onChange}
                         onClose={() => {
-                            const unfinishedClasses = classification.filter(item => !item.unique || !item.value);
-                            const unfinishedRangeClasses = rangeClassification.filter(item => !item.title);
+                            const unfinishedClasses = classification.filter(
+                                (item) => !item.unique || !item.value
+                            );
+                            const unfinishedRangeClasses =
+                                rangeClassification.filter(
+                                    (item) => !item.title
+                                );
                             /** only shows confirm modal if current classification type is empty */
-                            if (((unfinishedClasses.length > 0 && classificationAttributeType === 'string') ||
-                                (unfinishedRangeClasses.length > 0 && classificationAttributeType === 'number')) && classificationAttribute) {
+                            if (
+                                ((unfinishedClasses.length > 0 &&
+                                    classificationAttributeType === "string") ||
+                                    (unfinishedRangeClasses.length > 0 &&
+                                        classificationAttributeType ===
+                                            "number")) &&
+                                classificationAttribute
+                            ) {
                                 setShowConfirmModal(true);
                             } else {
                                 setShowModal(false);
                             }
                         }}
-                        onSaveClassification={() => {
+                        onSaveClassification={(meth, inter) => {
                             setShowModal(false);
-                            onChange("autoColorOptions.defaultCustomColor", defaultCustomColor);
-                            onChange("options.classificationAttribute", classificationAttribute);
-                            onChange("options.classificationAttributeType", classificationAttributeType);
+                            onChange(
+                                "autoColorOptions.defaultCustomColor",
+                                defaultCustomColor
+                            );
+                            onChange(
+                                "options.classificationAttribute",
+                                classificationAttribute
+                            );
+                            onChange(
+                                "options.classificationAttributeType",
+                                classificationAttributeType
+                            );
+                            /*                             onChange("rangeMethod", meth);
+                            onChange("rangeInterval", inter); */
                             if (classificationAttribute) {
                                 onChange("autoColorOptions", {
                                     ...data.autoColorOptions,
-                                    defaultClassLabel: (defaultClassLabel || ''),
-                                    classification: (classification ? formatAutoColorOptions(classification, 'string') : []),
-                                    rangeClassification: (rangeClassification ? formatAutoColorOptions(rangeClassification, 'number') : [])
+                                    defaultClassLabel: defaultClassLabel || "",
+                                    classification: classification
+                                        ? formatAutoColorOptions(
+                                              classification,
+                                              "string"
+                                          )
+                                        : [],
+                                    rangeClassification: rangeClassification
+                                        ? formatAutoColorOptions(
+                                              rangeClassification,
+                                              "number"
+                                          )
+                                        : [],
                                 });
                             }
                         }}
                         onChangeClassAttribute={(value, type) => {
                             onChange("options.classificationAttribute", value);
-                            onChange("options.classificationAttributeType", type);
+                            onChange(
+                                "options.classificationAttributeType",
+                                type
+                            );
                         }}
                         classificationAttribute={classificationAttribute}
-                        classificationAttributeType={classificationAttributeType}
+                        classificationAttributeType={
+                            classificationAttributeType
+                        }
                         onUpdateClasses={(newClassification, attributeType) => {
-                            if (attributeType === 'number') {
-                                onChange("autoColorOptions.rangeClassification", formatAutoColorOptions(newClassification, attributeType) || []);
+                            if (attributeType === "number") {
+                                onChange(
+                                    "autoColorOptions.rangeClassification",
+                                    formatAutoColorOptions(
+                                        newClassification,
+                                        attributeType
+                                    ) || []
+                                );
                             } else {
-                                onChange("autoColorOptions.classification", formatAutoColorOptions(newClassification, attributeType) || []);
+                                onChange(
+                                    "autoColorOptions.classification",
+                                    formatAutoColorOptions(
+                                        newClassification,
+                                        attributeType
+                                    ) || []
+                                );
                             }
                         }}
                         options={typedOptions}
@@ -342,40 +635,80 @@ export default ({
                         classification={classification}
                         rangeClassification={rangeClassification}
                         defaultCustomColor={defaultCustomColor}
-                        onChangeColor={(color) => onChange("autoColorOptions.defaultCustomColor", color)}
+                        onChangeColor={(color) =>
+                            onChange(
+                                "autoColorOptions.defaultCustomColor",
+                                color
+                            )
+                        }
                         defaultClassLabel={defaultClassLabel}
-                        onChangeDefaultClassLabel={(value) => onChange("autoColorOptions.defaultClassLabel", value)}
+                        onChangeDefaultClassLabel={(value) =>
+                            onChange(
+                                "autoColorOptions.defaultClassLabel",
+                                value
+                            )
+                        }
                         layer={layer}
                         chartType={data.type}
                     />
                     {getConfirmModal(
                         showConfirmModal,
-                        () => {setShowConfirmModal(false);},
                         () => {
-                            const [emptyClasses, nonEmptyClasses] = discardEmptyClasses(classification);
-                            const [emptyRangeClasses, nonEmptyRangeClasses] = discardEmptyRangeClasses(rangeClassification);
+                            setShowConfirmModal(false);
+                        },
+                        () => {
+                            const [emptyClasses, nonEmptyClasses] =
+                                discardEmptyClasses(classification);
+                            const [emptyRangeClasses, nonEmptyRangeClasses] =
+                                discardEmptyRangeClasses(rangeClassification);
                             /** in case only one unfinished row is left, reset the class attribute selection */
-                            resetEmptyClasses(emptyClasses, nonEmptyClasses, classification, 'string', classificationAttributeType);
-                            resetEmptyClasses(emptyRangeClasses, nonEmptyRangeClasses, rangeClassification, 'number', classificationAttributeType);
+                            resetEmptyClasses(
+                                emptyClasses,
+                                nonEmptyClasses,
+                                classification,
+                                "string",
+                                classificationAttributeType
+                            );
+                            resetEmptyClasses(
+                                emptyRangeClasses,
+                                nonEmptyRangeClasses,
+                                rangeClassification,
+                                "number",
+                                classificationAttributeType
+                            );
                             setShowConfirmModal(false);
                             setShowModal(false);
-                        })}
-                    {formOptions.showLegend && data.type !== 'sunburst' ?
+                        }
+                    )}
+                    {formOptions.showLegend && data.type !== "sunburst" ? (
                         <FormGroup controlId="displayLegend">
                             <Col componentClass={ControlLabel} sm={6}>
-                                <Message msgId={getLabelMessageId("displayLegend", data)} />
+                                <Message
+                                    msgId={getLabelMessageId(
+                                        "displayLegend",
+                                        data
+                                    )}
+                                />
                             </Col>
                             <Col sm={6}>
                                 <SwitchButton
                                     checked={data.legend}
-                                    onChange={(val) => { onChange("legend", val); }}
+                                    onChange={(val) => {
+                                        onChange("legend", val);
+                                    }}
                                 />
                             </Col>
-                        </FormGroup> : null}
-                    {formOptions.advancedOptions && data.widgetType === "chart" && (data.type === "bar" || data.type === "line")
-                        ? <ChartAdvancedOptions data={data} classificationAttribute={classificationAttribute} onChange={onChange} />
-                        : null}
-
+                        </FormGroup>
+                    ) : null}
+                    {formOptions.advancedOptions &&
+                    data.widgetType === "chart" &&
+                    (data.type === "bar" || data.type === "line") ? (
+                        <ChartAdvancedOptions
+                            data={data}
+                            classificationAttribute={classificationAttribute}
+                            onChange={onChange}
+                        />
+                    ) : null}
                 </Form>
             </Col>
         </Row>

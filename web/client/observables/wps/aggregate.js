@@ -6,38 +6,74 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { castArray } from 'lodash';
+import { castArray } from "lodash";
 import {
     processParameter,
     processData,
     literalData,
     processReference,
     responseForm,
-    rawDataOutput
-} from './common';
-import { executeProcessXML, executeProcess } from './execute';
+    rawDataOutput,
+} from "./common";
+import { executeProcessXML, executeProcess } from "./execute";
 
-export const aggregateXML = ({featureType, aggregationAttribute, classificationAttribute = [], groupByAttributes = [], aggregateFunction, viewParams, filter = "", figureType, groupByAttributes2}) => {
+export const aggregateXML = ({
+    featureType,
+    aggregationAttribute,
+    classificationAttribute = [],
+    groupByAttributes = [],
+    aggregateFunction,
+    viewParams,
+    filter = "",
+    figureType,
+    groupByAttributes2,
+}) => {
     const getFeature =
-        `<wfs:GetFeature ${viewParams ? `viewParams="${viewParams}"` : ""} outputFormat="GML2" service="WFS" version="1.0.0">` +
+        `<wfs:GetFeature ${
+            viewParams ? `viewParams="${viewParams}"` : ""
+        } outputFormat="GML2" service="WFS" version="1.0.0">` +
         `<wfs:Query typeName="${featureType}">${filter}</wfs:Query></wfs:GetFeature>`;
-    if ( figureType === 'sunburst' ) {
+    if (figureType === "sunburst") {
         groupByAttributes = [groupByAttributes, groupByAttributes2];
     }
     return executeProcessXML(
-        'gs:Aggregate',
+        "gs:Aggregate",
         [
-            processParameter('features', processReference('text/xml', 'http://geoserver/wfs', 'POST', getFeature)),
-            processParameter('aggregationAttribute', processData(literalData(aggregationAttribute))),
-            ...castArray(aggregateFunction).map(fun => processParameter('function', processData(literalData(fun)))),
-            processParameter('singlePass', processData(literalData('false'))),
-            ...castArray(groupByAttributes).map(attribute => processParameter('groupByAttributes', processData(literalData(attribute)))),
-            ...castArray(classificationAttribute).map(attribute => processParameter('groupByAttributes', processData(literalData(attribute))))
+            processParameter(
+                "features",
+                processReference(
+                    "text/xml",
+                    "http://geoserver/wfs",
+                    "POST",
+                    getFeature
+                )
+            ),
+            processParameter(
+                "aggregationAttribute",
+                processData(literalData(aggregationAttribute))
+            ),
+            ...castArray(aggregateFunction).map((fun) =>
+                processParameter("function", processData(literalData(fun)))
+            ),
+            processParameter("singlePass", processData(literalData("false"))),
+            ...castArray(groupByAttributes).map((attribute) =>
+                processParameter(
+                    "groupByAttributes",
+                    processData(literalData(attribute))
+                )
+            ),
+            ...castArray(classificationAttribute).map((attribute) =>
+                processParameter(
+                    "groupByAttributes",
+                    processData(literalData(attribute))
+                )
+            ),
         ],
-        responseForm(rawDataOutput('result', 'application/json'))
+        responseForm(rawDataOutput("result", "application/json"))
     );
 };
 
-const aggregate = (url, options, requestOptions = {}) => executeProcess(url, aggregateXML(options), {}, requestOptions);
+const aggregate = (url, options, requestOptions = {}) =>
+    executeProcess(url, aggregateXML(options), {}, requestOptions);
 
 export default aggregate;
