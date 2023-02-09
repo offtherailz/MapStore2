@@ -919,7 +919,7 @@ export const toPlotly = (props) => {
 export default function WidgetChart({ onInitialized, ...props }) {
     const { data, layout, config } = toPlotly(props);
     console.log("layout: ", layout);
-    console.log("data: ", data);
+    //console.log("data: ", data);
     /*   layout.colorway = [
         "#A6CEE3",
         "#1F78B4",

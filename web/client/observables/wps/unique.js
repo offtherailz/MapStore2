@@ -16,7 +16,6 @@ export const uniqueXML = ({
     viewParams,
     filter = "",
 }) => {
-    console.log(classificationAttribute);
     const getFeature =
         `<wfs:GetFeature ${
             viewParams ? `viewParams="${viewParams}"` : ""

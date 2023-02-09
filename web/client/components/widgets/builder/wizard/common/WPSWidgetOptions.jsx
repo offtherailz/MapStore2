@@ -32,11 +32,8 @@ import ColorClassModal from "../chart/ColorClassModal";
 import { defaultColorGenerator } from "../../../../charts/WidgetChart";
 import classNames from "classnames";
 import uuid from "uuid";
-import wpsAutopop from "../../../enhancers/wpsAutopop";
-import { onEditorChange } from "../../../../../actions/widgets";
 
-//colorclassmodal um den wpscall zu erweitern
-const PopColorClassModal = wpsAutopop(ColorClassModal);
+//const PopColorClassModal = wpsAutopop(ColorClassModal);
 
 const DEFAULT_CUSTOM_COLOR_OPTIONS = {
     base: 190,
@@ -192,7 +189,7 @@ export default ({
     };
     const discardEmptyRangeClasses = (classifications) => {
         return [
-            classifications.filter((item) => !item.title.trim()),
+            //classifications.filter((item) => !item.title.trim()),
             classifications.filter((item) => item.title),
         ];
     };
@@ -477,28 +474,50 @@ export default ({
                         </FormGroup>
                     ) : null}
 
-                    <PopColorClassModal
+                    <ColorClassModal
                         onAutopop={(
                             newClassification,
-                            attributeType,
+                            classificationAttributeType,
                             autopop
                         ) => {
                             onChange("autopop", !autopop);
-                            if (attributeType === "number") {
+                            if (classificationAttributeType === "number") {
                                 onChange(
                                     "autoColorOptions.rangeClassification",
                                     newClassification
                                 );
+                                onChange("autoColorOptions.classification", []);
                             } else {
                                 onChange(
                                     "autoColorOptions.classification",
                                     newClassification
                                 );
+                                onChange(
+                                    "autoColorOptions.rangeClassification",
+                                    []
+                                );
                             }
                         }}
                         autopop={data?.autopop}
+                        rangeIntervals={[
+                            { label: "2", value: "2" },
+                            { label: "3", value: "3" },
+                            { label: "4", value: "4" },
+                            { label: "5", value: "5" },
+                            { label: "6", value: "6" },
+                            { label: "7", value: "7" },
+                        ]}
+                        rangeMethods={[
+                            { label: "jenks", value: "jenks" },
+                            { label: "quantile", value: "quantile" },
+                            {
+                                label: "equalInterval",
+                                value: "equalInterval",
+                            },
+                        ]}
                         modalClassName="chart-color-class-modal"
                         show={showModal}
+                        onChange={onChange}
                         onClose={() => {
                             const unfinishedClasses = classification.filter(
                                 (item) => !item.unique || !item.value
@@ -521,7 +540,7 @@ export default ({
                                 setShowModal(false);
                             }
                         }}
-                        onSaveClassification={() => {
+                        onSaveClassification={(meth, inter) => {
                             setShowModal(false);
                             onChange(
                                 "autoColorOptions.defaultCustomColor",
@@ -535,6 +554,8 @@ export default ({
                                 "options.classificationAttributeType",
                                 classificationAttributeType
                             );
+                            /*                             onChange("rangeMethod", meth);
+                            onChange("rangeInterval", inter); */
                             if (classificationAttribute) {
                                 onChange("autoColorOptions", {
                                     ...data.autoColorOptions,

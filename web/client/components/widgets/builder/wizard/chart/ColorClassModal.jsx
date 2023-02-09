@@ -28,10 +28,10 @@ import TextAttributeClassForm from "./TextAttributeClassForm";
 import RangeAttributeClassForm from "./RangeAttributeClassForm";
 
 import uuid from "uuid";
-import { onEditorChange } from "../../../../../actions/widgets";
+
 import { generateRandomHexColor } from "../../../../../utils/ColorUtils";
-import SwitchButton from "../../../../misc/switch/SwitchButton";
-import wpsAutopop from "../../../enhancers/wpsAutopop";
+import axios from "axios";
+import Loader from "@mapstore/framework/components/misc/Loader";
 
 const ColorClassModal = ({
     modalClassName,
@@ -52,19 +52,28 @@ const ColorClassModal = ({
     onChangeDefaultClassLabel,
     layer,
     chartType,
-    values,
+
     onAutopop,
-    checked,
+
     autopop,
-    loading,
+
+    rangeIntervals,
+    rangeMethods,
+    onChange,
 }) => {
     //stateaenderungen
     const [selectMenuOpen, setSelectMenuOpen] = useState(false);
     //aendern von autopopClassification
     const [autopopClassification, setautopopClassification] =
         useState(classification);
-    // alreadyLoaded soll mehrmaliges laden verhindern
-    const [alreadyLoaded, setalreadyLoaded] = useState(false);
+    // get rangeclassies
+
+    const [rangeInterval, setrangeInterval] = useState(null);
+    const [rangeMethod, setrangeMethod] = useState(null);
+
+    //
+    const [loadingSLD, setloadingSLD] = useState(false);
+    const [errorOnLoading, seterrorOnLoading] = useState(null);
 
     //function um aus den vom wps kommenden values das autopopObject zu erstellen
     function autopoper(values) {
@@ -81,13 +90,97 @@ const ColorClassModal = ({
         return autoClass;
     }
 
-    //effect um autopop in state zu setzen bei click auf button
     useEffect(() => {
-        if (values && classificationAttributeType && !alreadyLoaded) {
-            setautopopClassification(autopoper(values));
-            setalreadyLoaded((alreadyLoaded) => true);
-        }
-    }, [loading, autopop]);
+        const getrangeClassIntervals = async () => {
+            if (classificationAttributeType === "string") {
+                const url =
+                    "http://localhost/geoserver/rest/sldservice/" +
+                    layer.title +
+                    "/classify.json?attribute=" +
+                    classificationAttribute +
+                    "&method=uniqueInterval";
+
+                setloadingSLD(true);
+                const uCL = axios
+                    .get(url)
+                    .then((res) => res.data)
+                    .then((data) => {
+                        if (Array.isArray(data.Rules.Rule)) {
+                            const labels = data.Rules.Rule.map((e) => e.Title);
+                            setautopopClassification(autopoper(labels));
+                            setloadingSLD(false);
+                        } else {
+                            const label = [data.Rules.Rule.Title];
+                            setautopopClassification(autopoper(label));
+                            setloadingSLD(false);
+                        }
+                    })
+                    .catch(function (error) {
+                        seterrorOnLoading(error.data);
+                        setloadingSLD(false);
+                    });
+            }
+            if (classificationAttributeType === "number") {
+                const url =
+                    "http://localhost/geoserver/rest/sldservice/" +
+                    layer.title +
+                    "/classify.json?attribute=" +
+                    classificationAttribute +
+                    "&intervals=" +
+                    rangeInterval +
+                    "&method=" +
+                    rangeMethod;
+
+                if (rangeInterval != null && rangeMethod != null) {
+                    setloadingSLD(true);
+                    const rCI = axios
+                        .get(url)
+                        .then((res) => res.data)
+                        .then((raw) => {
+                            const data = raw.Rules.Rule.filter((e) => {
+                                if (typeof e.Title === "string") {
+                                    return e;
+                                }
+                            });
+                            const keys = data
+                                .map((e) => e.Filter.And)
+                                .map((f) => Object.keys(f));
+                            const split = data.map((e) => e.Filter.And);
+                            const min_max = split.map((e, i) => {
+                                return {
+                                    min: e[keys[i][0]].Literal,
+                                    max: e[keys[i][1]].Literal,
+                                };
+                            });
+                            const newClasses = min_max.map((e) => {
+                                return {
+                                    color: generateRandomHexColor(),
+                                    id: uuid.v1(),
+                                    min: e.min,
+                                    max: e.max,
+                                };
+                            });
+                            newClasses.slice(-1)[0].max += 0.01;
+
+                            setautopopClassification(newClasses);
+                            setloadingSLD(false);
+                        })
+                        .catch(function (error) {
+                            seterrorOnLoading(error.data);
+                            setloadingSLD(false);
+                        });
+                }
+            }
+        };
+
+        getrangeClassIntervals();
+    }, [
+        autopop,
+        classificationAttribute,
+        classificationAttributeType,
+        rangeInterval,
+        rangeMethod,
+    ]);
 
     return (
         <Portal>
@@ -116,7 +209,8 @@ const ColorClassModal = ({
                         className: "btn-save",
                         text: <Message msgId="save" />,
                         bsSize: "sm",
-                        onClick: () => onSaveClassification(),
+                        onClick: () =>
+                            onSaveClassification(rangeMethod, rangeInterval),
                     },
                 ]}
             >
@@ -172,25 +266,124 @@ const ColorClassModal = ({
                         </FormGroup>
                     </Form>
                 </Row>
+                {classificationAttribute &&
+                classificationAttributeType === "number" ? (
+                    <Row xs={12}>
+                        <Form>
+                            <FormGroup>
+                                <Col xs={3}>
+                                    <b>Intervalle</b>
+                                </Col>
+                                <Col xs={3}>
+                                    <Select
+                                        value={rangeInterval}
+                                        options={rangeIntervals}
+                                        onChange={(val) => {
+                                            setrangeInterval(val.value);
+                                            onChange(
+                                                "rangeInterval",
+                                                val.value
+                                            );
+                                        }}
+                                        onClose={() =>
+                                            setSelectMenuOpen(!selectMenuOpen)
+                                        }
+                                    />
+                                </Col>
+                                <Col xs={3}>
+                                    <b>Methode</b>
+                                </Col>
+                                <Col xs={3}>
+                                    <Select
+                                        value={rangeMethod}
+                                        options={rangeMethods}
+                                        onChange={(val) => {
+                                            setrangeMethod(val.value);
+                                            onChange("rangeMethod", val.value);
+                                        }}
+                                        onClose={() =>
+                                            setSelectMenuOpen(!selectMenuOpen)
+                                        }
+                                    />
+                                </Col>
+                            </FormGroup>
+                        </Form>
+                    </Row>
+                ) : null}
                 <Row xs={12}>
-                    <Form>
-                        <FormGroup>
-                            <Col xs={6}>alles vollballern?</Col>
-                            <Col xs={6}>
-                                <Button
-                                    onClick={() =>
-                                        onAutopop(
-                                            autopopClassification,
-                                            classificationAttributeType,
-                                            autopop
-                                        )
-                                    }
+                    {!loadingSLD && errorOnLoading === null ? (
+                        <Form>
+                            <FormGroup>
+                                <Col xs={6}>
+                                    <b>automatisch Ausfüllen</b>
+                                </Col>
+                                <Col xs={6}>
+                                    <Button
+                                        onClick={() =>
+                                            onAutopop(
+                                                autopopClassification,
+                                                classificationAttributeType,
+                                                autopop
+                                            )
+                                        }
+                                    >
+                                        <Glyphicon glyph="ok" />
+                                    </Button>
+                                    <Button
+                                        onClick={() =>
+                                            onAutopop(
+                                                classificationAttributeType ===
+                                                    "number"
+                                                    ? ColorClassModal
+                                                          .defaultProps
+                                                          .rangeClassification
+                                                    : ColorClassModal
+                                                          .defaultProps
+                                                          .classification,
+
+                                                classificationAttributeType,
+                                                autopop
+                                            )
+                                        }
+                                    >
+                                        <Glyphicon glyph="remove" />
+                                    </Button>
+                                </Col>
+                            </FormGroup>
+                        </Form>
+                    ) : errorOnLoading != null ? (
+                        <div>
+                            {!loadingSLD ? (
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}
                                 >
-                                    <Glyphicon glyph="ok" />
-                                </Button>
+                                    <Button
+                                        onClick={() => {
+                                            seterrorOnLoading(null);
+                                        }}
+                                    >
+                                        <p>ERROR!</p>
+                                        <Glyphicon glyph="edit" />
+                                        <p>
+                                            Klassifizierungsattribut löschen und
+                                            anderes auswählen!
+                                        </p>
+                                    </Button>
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : loadingSLD ? (
+                        <div>
+                            <Col xs={6}></Col>
+                            <Col xs={6}>
+                                <Loader size={50} />
                             </Col>
-                        </FormGroup>
-                    </Form>
+                        </div>
+                    ) : null}
                 </Row>
                 {classificationAttribute &&
                 classificationAttributeType === "string" ? (
