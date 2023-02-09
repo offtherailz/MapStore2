@@ -402,11 +402,9 @@ function getData({
         autoColorOptions,
         customColorEnabled,
     });
-    //console.log(data);
 
     data = orderBy(data, [xDataKey], ["asc"]);
 
-    //console.log(data);
     classifications = classificationAttr
         ? data.map((d) => d[classificationAttr])
         : [];
@@ -642,23 +640,6 @@ function getData({
                 return lineChartTraces;
             }
 
-        /* 
-            lineChartTrace = {
-                ...lineChartTrace,
-                x: x,
-                y: y,
-                name: yAxisLabel || yDataKey,
-                hovertemplate: `${yAxisOpts?.tickPrefix ?? ""}%{y:${
-                    yAxisOpts?.format ?? "g"
-                }}${yAxisOpts?.tickSuffix ?? ""}<extra></extra>`,
-                ...(classificationColors &&
-                classificationColors.length &&
-                customColorEnabled
-                    ? { marker: { color: classificationColors } }
-                    : {}),
-            };
-            return lineChartTrace; */
-
         default:
             if (formula) {
                 y = preProcessValues(formula, y);
@@ -749,13 +730,7 @@ function getLayoutOptions({
                 barmode: barChartType,
                 ...chartsLayoutOptions,
             };
-        /*         case "line":
-            return {
-                colorway: autoColorOptions?.classification?.map(
-                    (e) => e?.color
-                ),
-            }; */
-        // line / bar
+
         default:
             return chartsLayoutOptions;
     }
@@ -765,8 +740,6 @@ function getLayoutOptions({
  * and the Library format.
  */
 export const toPlotly = (props) => {
-    console.log(props);
-
     const {
         xAxis,
         series = [],
@@ -789,45 +762,6 @@ export const toPlotly = (props) => {
         autoColorOptions,
         customColorEnabled
     );
-
-    ///
-    //console.log("data: ", props.data);
-
-    //to get unique values of visByFieldID
-    const unique = props?.data
-        .map((e) => e[props?.options?.visByFieldID])
-        .filter((value, index, self) => {
-            return self.indexOf(value) === index;
-        });
-
-    const erg = [];
-    //filter by unique values
-    for (let i = 0; i < unique.length; i++) {
-        let orderByFieldID = props?.data.filter((e) => {
-            if (e[props?.options?.visByFieldID] === unique[i]) {
-                return e;
-            }
-        });
-        //sort by xdatakey eg date
-        const ordered = orderBy(orderByFieldID, [xDataKey], ["asc"]);
-        //yKey ist the last key of ordered-object
-        const yKey = Object.keys(ordered[0]).slice(-1)[0];
-
-        const plotObject = {
-            hovertemplate: `${props?.yAxisOpts?.tickPrefix ?? ""}%{y:${
-                props?.yAxisOpts?.format ?? "d"
-            }}${props?.yAxisOpts?.tickSuffix ?? ""}               
-            `, // uses the format if passed, otherwise shows the full number.
-            x: ordered.map((e) => e[xDataKey]),
-            y: ordered.map((e) => e[yKey]),
-            name: ordered[0][props?.options?.visByFieldID],
-        };
-
-        erg.push(plotObject);
-    }
-
-    //console.log(erg);
-    /////
 
     return {
         layout: {
@@ -918,26 +852,7 @@ export const toPlotly = (props) => {
  */
 export default function WidgetChart({ onInitialized, ...props }) {
     const { data, layout, config } = toPlotly(props);
-    console.log("layout: ", layout);
-    //console.log("data: ", data);
-    /*   layout.colorway = [
-        "#A6CEE3",
-        "#1F78B4",
-        "#B2DF8A",
-        "#33A02C",
-        "#FB9A99",
-        "#E31A1C",
-        "#FDBF6F",
-        "#FF7F00",
-        "#CAB2D6",
-        "#6A3D9A",
-        "#FFFF99",
-        "#B15928",
-        "#148818",
-        "#EEACAB",
-        "#ACABAA",
-        "#42069",
-    ]; */
+
     return (
         <Suspense fallback={<LoadingView />}>
             <Plot

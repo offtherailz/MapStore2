@@ -315,7 +315,7 @@ const ColorClassModal = ({
                         <Form>
                             <FormGroup>
                                 <Col xs={6}>
-                                    <b>automatisch Ausfüllen</b>
+                                    <b>automatisches Ausfüllen</b>
                                 </Col>
                                 <Col xs={6}>
                                     <Button
