@@ -28,6 +28,9 @@ import TextAttributeClassForm from "./TextAttributeClassForm";
 import RangeAttributeClassForm from "./RangeAttributeClassForm";
 
 import uuid from "uuid";
+import url from "url";
+
+import { endsWith } from "lodash";
 
 import { generateRandomHexColor } from "../../../../../utils/ColorUtils";
 import axios from "axios";
@@ -90,11 +93,32 @@ const ColorClassModal = ({
         return autoClass;
     }
 
+    const getGeoServerSLDserviceURL = (urlToParse) => {
+        const parsed = url.parse(urlToParse, true);
+        let newPathname = parsed.pathname;
+        if (
+            endsWith(parsed.pathname, "wfs") ||
+            endsWith(parsed.pathname, "wms") ||
+            endsWith(parsed.pathname, "ows")
+        ) {
+            newPathname = parsed.pathname.replace(
+                /(wms|ows|wfs|wps)$/,
+                "rest/sldservice/"
+            );
+        }
+        return url.format({
+            ...parsed,
+            search: null,
+            pathname: newPathname,
+        });
+    };
+
     useEffect(() => {
+        const gssldURL = getGeoServerSLDserviceURL(layer.url);
         const getrangeClassIntervals = async () => {
             if (classificationAttributeType === "string") {
                 const url =
-                    "http://localhost/geoserver/rest/sldservice/" +
+                    gssldURL +
                     layer.title +
                     "/classify.json?attribute=" +
                     classificationAttribute +
@@ -122,7 +146,7 @@ const ColorClassModal = ({
             }
             if (classificationAttributeType === "number") {
                 const url =
-                    "http://localhost/geoserver/rest/sldservice/" +
+                    gssldURL +
                     layer.title +
                     "/classify.json?attribute=" +
                     classificationAttribute +
