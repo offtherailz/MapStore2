@@ -1446,7 +1446,7 @@
       "error": "Beim Laden der Daten ist ein Fehler aufgetreten",
       "pageInfo": "Resultat {start}-{end} von {total}",
       "resultInfo": "{total, plural, =0 {Keine Gegenstände} =1 {{total} von {total} stimmt überein} other {{start}-{end} von {total}}}",
-      "pageInfoInfinite": "{total, plural, =undefined {} =0 {Keine Ergebnisse} =1 {{total} von {total} stimmt überein} other {Geladen {loaded} von {total} übereinstimmend}",
+      "pageInfoInfinite": "{ total, plural, =undefined {} =0 {Keine Ergebnisse} =1 {{total} von {total} stimmt überein} other {Geladen {loaded} von {total} übereinstimmend}}",
       "noRecordsMatched": "Kein passender Eintrag",
       "wmsGetCapLink": "WMS",
       "wfsGetCapLink": "WFS",
