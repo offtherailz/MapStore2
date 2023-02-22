@@ -47,6 +47,11 @@
         <id>geosolutions</id>
         <url>ftp://maven.geo-solutions.it/</url>
     </repository>
+    <snapshotRepository>
+        <id>geosolutions</id>
+        <url>ftp://maven.geo-solutions.it/</url>
+        <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
   </distributionManagement>
 
   <profiles>

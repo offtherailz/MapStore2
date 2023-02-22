@@ -76,14 +76,14 @@
     <dependency>
       <groupId>it.geosolutions.geostore</groupId>
       <artifactId>geostore-webapp</artifactId>
-      <version>2.0-SNAPSHOT</version>
+      <version>2.1-SNAPSHOT</version>
       <type>war</type>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>proxy</groupId>
       <artifactId>http_proxy</artifactId>
-      <version>1.4-SNAPSHOT</version>
+      <version>1.5-SNAPSHOT</version>
       <type>war</type>
       <scope>runtime</scope>
     </dependency>
@@ -167,6 +167,11 @@
         <id>geosolutions</id>
         <url>ftp://maven.geo-solutions.it/</url>
     </repository>
+    <snapshotRepository>
+        <id>geosolutions</id>
+        <url>ftp://maven.geo-solutions.it/</url>
+        <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
   </distributionManagement>
 
     <repositories>
