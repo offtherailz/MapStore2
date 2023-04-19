@@ -33,7 +33,6 @@ const ConfirmButton = localizedProps("tooltip")(withTooltip(withConfirm(Button))
  * @name Fields
  */
 const Fields = ({fields = [], onLoadFields = () => {}, onChange = () => {}, onClear = () => {}, loading = true, error }) => {
-    const [showImport, setShowImport] = React.useState(false);
     return (<BorderLayout
         className="layer-fields"
         header={<div key="row-header" className="layer-fields-header">
@@ -44,21 +43,6 @@ const Fields = ({fields = [], onLoadFields = () => {}, onChange = () => {}, onCl
                         disabled: loading,
                         tooltipId: 'layerProperties.fields.refresh',
                         onClick: onLoadFields
-                    }, {
-                        disabled: loading,
-                        tooltipId: 'layerProperties.fields.import',
-                        onClick: () => setShowImport(true)
-                    }, {
-                        disabled: loading,
-                        tooltipId: 'layerProperties.fields.export',
-                        onClick: () => {
-                            const blob = new Blob([JSON.stringify(fields, null, 2)], {type: "application/json"});
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.download = 'fields.json';
-                            a.href = url;
-                            a.click();
-                        }
                     }, {
                         disabled: loading,
                         tooltipId: 'layerProperties.fields.clearCustomization',
