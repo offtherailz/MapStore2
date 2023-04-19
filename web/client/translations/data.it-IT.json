@@ -172,7 +172,24 @@
                     "message": "Impossibile recuperare il formato"
                 }
             },
-            "forceProxy": "Forza proxy"
+            "forceProxy": "Forza proxy",
+            "fields": {
+              "refresh": "Ricarica campi dalla sorgente dati",
+              "reset": "Cancella modifiche",
+              "title": "Campi",
+              "tooltip": "Campi",
+              "name": "Nome",
+              "alias": "Alias",
+              "type": "Tipo",
+              "clearCustomization": "Ripristina impostazioni predefinite",
+              "clearCustomizationConfirm": "Sei sicuro di rimuovere tutte le personalizzazioni?",
+              "error": "Non è stato possibile recuperare le informazioni sui campi dalla sorgente dati"
+            }
+        },
+        "localizedInput": {
+          "localize": "Configura traduzioni...",
+          "title": "Configura traduzioni",
+          "default": "Predefinito"
         },
         "longitude": "Lon",
         "latitude": "Lat",
