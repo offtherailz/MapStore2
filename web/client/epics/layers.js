@@ -9,7 +9,6 @@
 import Rx from 'rxjs';
 
 import Api from '../api/WMS';
-
 import {
     REFRESH_LAYERS,
     UPDATE_LAYERS_DIMENSION,
@@ -145,6 +144,7 @@ export const updateSettingsParamsEpic = (action$, store) =>
                     Rx.Observable.empty()) :
                 Rx.Observable.empty());
         });
+
 
 export default {
     refresh,
