@@ -58,7 +58,7 @@ jobs:
           BRANCH_NAME="${RELEASE_BRANCH}"
           echo "creating branch is $BRANCH_NAME"
           git checkout -b "$BRANCH_NAME"
-           Find all pom.xml files and update-dependencies on them
+          # Find all pom.xml files and update-dependencies on them
           echo "Updating versions on release branch"
           POM_FILES=$(git ls-files . | grep 'pom\.xml$');
           for POM_FILE in $POM_FILES; do
