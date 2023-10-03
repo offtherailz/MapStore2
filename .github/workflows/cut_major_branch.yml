@@ -60,7 +60,9 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           # Find all pom.xml files and update-dependencies on them
           echo "Updating versions on release branch"
-          POM_FILES=$(git ls-files . | grep 'pom\.xml$' | grep -v 'project/standard/templates/backend/pom\.xml$'); # note: exclues one file not involved that is not valid pom.xml, because it is a template
+          # Find all pom.xml files and update-dependencies on them
+          echo "Updating versions on release branch"
+          POM_FILES=$(git ls-files . | grep 'pom\.xml$' | grep -v 'project/standard/templates/backend/pom\.xml$'| grep -v 'project/standard/templates/pom\.xml$');# note: exclues one file not involved that is not valid pom.xml, because it is a template
           for POM_FILE in $POM_FILES; do
               mvn versions:use-dep-version -f $POM_FILE -Dincludes=$MAPFISH_GROUP -DdepVersion=$MAPFISH_VERSION -DforceVersion=true -DgenerateBackupPoms=false -DautoVersionSubmodules=true -Pprinting
               mvn versions:use-dep-version -f $POM_FILE -Dincludes=$GEOSTORE_GROUP -DdepVersion=$GEOSTORE_VERSION -DforceVersion=true -DgenerateBackupPoms=false -DautoVersionSubmodules=true -Pprinting
