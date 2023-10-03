@@ -76,11 +76,9 @@ jobs:
           git checkout "$MAIN_BRANCH"
           OLD_JAVA_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "Incrementing java packages versions"
-          mvn -B release:update-versions -DautoVersionSubmodules=true
+          mvn -B release:update-versions -DautoVersionSubmodules=true -Pprinting,binary,printingbundle
           NEXT_JAVA_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "Java packages versions updated from $OLD_JAVA_VERSION to $NEXT_JAVA_VERSION"
-          # Alternative
-          # mvn versions:set -DnewVersion=<SNAPSHOT_VERSION> -DprocessAllModules -DgenerateBackupPoms=false
           ### increase dependency of project to new version
           echo "Updating project dependency to new version"
           mvn versions:use-dep-version -f project/standard/templates/web/pom.xml -Dincludes=it.geosolutions.mapstore -DdepVersion=$NEXT_JAVA_VERSION -DforceVersion=true -DgenerateBackupPoms=false
@@ -91,6 +89,7 @@ jobs:
           echo "Creating a temp PR on branch: ${pr_branch_name}"
           git checkout -b "${pr_branch_name}"
           find . -name 'pom.xml' | xargs git add
+          git add package.json
           git commit -m "Bump versions on master for release-branch"
           git push origin "${pr_branch_name}"
           pr_url=$(gh pr create -B "${MAIN_BRANCH}" -H "${pr_branch_name}" --title "[github-action] Bump version to ${NEXT}" --body "This automatic pull request bumps version of ${MAIN_BRANCH} branch for java to ${NEXT_JAVA_VERSION} and for package.json")
