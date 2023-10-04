@@ -74,7 +74,8 @@ jobs:
         # Update project dependency
         echo "updating project pom.xml dependency from mapstore packages to version: $JAVA_MODULES_NEW_VERSION"
         mvn versions:use-dep-version -f project/standard/templates/web/pom.xml -Dincludes=it.geosolutions.mapstore -DdepVersion=$JAVA_MODULES_NEW_VERSION -DforceVersion=true -DgenerateBackupPoms=false
-
+        # Update changelog
+        update_changelog $LAST_MS_VERSION $NEW_MS_VERSION
         echo "Initializing git"
         # Optional
         git config user.name github-actions
@@ -82,9 +83,24 @@ jobs:
 
         # Commit changes
         find . -name 'pom.xml' | xargs git add
+        git add CHAGELOG.md
         git commit -m "Version Release ${{ inputs.version }}"
         git tag v${{ inputs.version }} # create tag
         git push origin ${{ github.ref_name }} --tags
+
+        # Update master branch with CHANGELOG.md
+        git checkout master
+        git pull origin master
+        pr_branch_name="update-changelog-${{ github.run_id}}"
+        echo "Creating a temp PR on branch for changelog: ${NEW_MS_VERSION}"
+        git checkout -b "${pr_branch_name}"
+        # Update changelog
+        update_changelog $LAST_MS_VERSION $NEW_MS_VERSION
+        git add CHAGELOG.md
+        git commit -m "Update Changelog for version ${{ inputs.version }}"
+        git push origin "${pr_branch_name}"
+        echo "Sending pull request"
+        pr_url=$(gh pr create -B "${MAIN_BRANCH}" -H "${pr_branch_name}" --title "[github-action] Update changelog for release ${NEW_MS_VERSION}" --body "This automatic pull request update `CHANGELOG.md` on ${MAIN_BRANCH} branch")
 
   ################
   # Build
