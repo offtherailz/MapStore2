@@ -237,6 +237,7 @@ jobs:
             LAST_MS_VERSION: ${{ github.event.inputs.previous-ms-version }}
             NEW_MS_VERSION: ${{ github.event.inputs.version }}
             JAVA_MODULES_NEW_VERSION: ${{ github.event.inputs.java-modules-version }}
+            GH_TOKEN: ${{ github.token }}
         run: |
           ## Generate changelog
           function update_changelog () {
@@ -269,4 +270,10 @@ jobs:
           git commit -m "Update Changelog for version ${{ inputs.version }}"
           git push origin "${pr_branch_name}"
           echo "Sending pull request"
-          pr_url=$(gh pr create -B "${MAIN_BRANCH}" -H "${pr_branch_name}" --title "[github-action] Update changelog for release ${NEW_MS_VERSION}" --body "This automatic pull request update `CHANGELOG.md` on ${MAIN_BRANCH} branch")
+          pr_url=$(gh pr create -B "${MAIN_BRANCH}" -H "${pr_branch_name}" --title "[github-action] Update changelog for release ${NEW_MS_VERSION}" --body "This automatic pull request update CHANGELOG.md on ${MAIN_BRANCH} branch")
+
+
+
+
+
+
