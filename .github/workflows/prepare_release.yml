@@ -83,7 +83,7 @@ jobs:
 
         # Commit changes
         find . -name 'pom.xml' | xargs git add
-        git add CHAGELOG.md
+        git add CHANGELOG.md
         git commit -m "Version Release ${{ inputs.version }}"
         git tag v${{ inputs.version }} # create tag
         git push origin ${{ github.ref_name }} --tags
@@ -96,7 +96,7 @@ jobs:
         git checkout -b "${pr_branch_name}"
         # Update changelog
         update_changelog $LAST_MS_VERSION $NEW_MS_VERSION
-        git add CHAGELOG.md
+        git add CHANGELOG.md
         git commit -m "Update Changelog for version ${{ inputs.version }}"
         git push origin "${pr_branch_name}"
         echo "Sending pull request"
