@@ -1,5 +1,12 @@
 # Change Log
 
+## [2024.01.00](https://github.com/geosolutions-it/MapStore2/tree/v2024.01.00) (2023-10-5)
+
+- **[Full Changelog](https://github.com/geosolutions-it/MapStore2/compare/v2023.02.02...v2024.01.00)**
+- **[Implemented enhancements](https://github.com/geosolutions-it/MapStore2/issues?q=is%3Aissue+milestone%3A%222024.01.00%22+is%3Aclosed+label%3Aenhancement)**
+- **[Fixed bugs](https://github.com/geosolutions-it/MapStore2/issues?q=is%3Aissue+milestone%3A%222024.01.00%22+is%3Aclosed+label%3Abug)**
+- **[Closed issues](https://github.com/geosolutions-it/MapStore2/issues?q=is%3Aissue+milestone%3A%222024.01.00%22+is%3Aclosed)**
+
 ## [2023.03.00](https://github.com/geosolutions-it/MapStore2/tree/v2023.03.00) (2023-10-5)
 
 - **[Full Changelog](https://github.com/geosolutions-it/MapStore2/compare/v2023.02.02...v2023.03.00)**
