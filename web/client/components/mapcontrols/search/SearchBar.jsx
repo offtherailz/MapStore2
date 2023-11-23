@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import React from 'react';
-import {FormGroup, Glyphicon, MenuItem} from 'react-bootstrap';
+import React, {useState} from 'react';
+import {FormGroup, Glyphicon, MenuItem } from 'react-bootstrap';
 import {isEmpty, isUndefined} from 'lodash';
 
 import Message from '../../I18N/Message';
@@ -20,6 +20,20 @@ import SearchBarToolbar from '../../search/SearchBarToolbar';
 import { defaultSearchWrapper } from '../../search/SearchBarUtils';
 import BookmarkSelect, {BookmarkOptions} from "../searchbookmarkconfig/BookmarkSelect";
 import CoordinatesSearch, {CoordinateOptions} from "../searchcoordinates/CoordinatesSearch";
+import tooltip from '../../misc/enhancers/tooltip';
+
+const SearchServicesSelectorMenu = ({services = [], selected, onSelect = () => {}}) => {
+    return (<>
+        <MenuItem  divider/>
+        <MenuItem  header>Search services</MenuItem>
+        <MenuItem eventKey={-1} active={selected === -1} onClick={() => onSelect(-1)}><span style={{marginLeft: 20}}>All</span></MenuItem>
+        {services.map((service, index) => {
+            return (<MenuItem onSelect={onSelect} onClick={() => onSelect(index)} key={index} eventKey={index} active={selected === index}><span style={{marginLeft: 20}}>{service.name || service.type}</span></MenuItem>);
+        })}
+        <MenuItem divider/>
+    </>);
+};
+const TGlyphicon = tooltip(Glyphicon);
 
 export default ({
     activeSearchTool: activeTool = 'addressSearch',
@@ -61,8 +75,13 @@ export default ({
     items = [],
     ...props
 }) => {
-
-    const search = defaultSearchWrapper({searchText, selectedItems, searchOptions, maxResults, onSearch, onSearchReset});
+    const [expendedServices, setExpandedServices] = useState(false);
+    const [selected, setSelected] = useState();
+    const selectedServices = selected >= 0 ? searchOptions?.services?.filter((_, index) => selected === index) : searchOptions?.services ?? [];
+    const search = defaultSearchWrapper({searchText, selectedItems, searchOptions: {
+        ...searchOptions,
+        services: selectedServices
+    }, maxResults, onSearch, onSearchReset});
 
     const clearSearch = () => {
         onSearchReset();
@@ -78,14 +97,45 @@ export default ({
     let searchMenuOptions = [];
     if (showAddressSearchOption) {
         searchMenuOptions.push(
-            <MenuItem active={activeTool === "addressSearch"} onClick={()=>{
-                onClearCoordinatesSearch({owner: "search"});
-                onClearBookmarkSearch("selected");
-                onChangeActiveSearchTool("addressSearch");
-            }}
-            >
-                <Glyphicon glyph={searchIcon}/> <Message msgId="search.addressSearch"/>
-            </MenuItem>);
+            <>
+                <MenuItem active={activeTool === "addressSearch"}
+                    onClick={()=>{
+                        onClearCoordinatesSearch({owner: "search"});
+                        onClearBookmarkSearch("selected");
+                        onChangeActiveSearchTool("addressSearch");
+                    }}
+                >
+                    <Glyphicon glyph={searchIcon}/>
+                    <Message msgId="search.addressSearch"/>
+                    <TGlyphicon
+                        tooltip="Select search services"
+                        style={{
+                            right: 0,
+                            marginRight: 0,
+                            marginLeft: 20,
+                            top: -2
+                        }}
+
+                        glyph={expendedServices ? "chevron-down" : "chevron-left"}
+                        onClick={
+                            (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedServices(!expendedServices);
+                            }
+                        }/>
+                </MenuItem>
+                {expendedServices && <SearchServicesSelectorMenu
+                    selected={selected}
+                    onSelect={(e) => {
+                        setSelected(e === -1 ? undefined : e);
+                        onChangeActiveSearchTool("addressSearch");
+                        return;
+                    }}
+                    services={searchOptions.services}
+                />}
+            </>
+        );
     }
     if (showCoordinatesSearchOption) {
         searchMenuOptions.push(
