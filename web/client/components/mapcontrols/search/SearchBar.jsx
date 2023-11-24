@@ -6,9 +6,9 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {FormGroup, Glyphicon, MenuItem } from 'react-bootstrap';
-import {isEmpty, isUndefined} from 'lodash';
+import {isEmpty, isUndefined, isEqual} from 'lodash';
 
 import Message from '../../I18N/Message';
 import SearchBarMenu from './SearchBarMenu';
@@ -22,13 +22,12 @@ import BookmarkSelect, {BookmarkOptions} from "../searchbookmarkconfig/BookmarkS
 import CoordinatesSearch, {CoordinateOptions} from "../searchcoordinates/CoordinatesSearch";
 import tooltip from '../../misc/enhancers/tooltip';
 
-const SearchServicesSelectorMenu = ({services = [], selected, onSelect = () => {}}) => {
+const SearchServicesSelectorMenu = ({services = [], selectedService, onServiceSelect = () => {}}) => {
     return (<>
         <MenuItem  divider/>
-        <MenuItem  header>Search services</MenuItem>
-        <MenuItem eventKey={-1} active={selected === -1} onClick={() => onSelect(-1)}><span style={{marginLeft: 20}}>All</span></MenuItem>
+        <MenuItem eventKey={-1} active={selectedService === -1} onClick={() => onServiceSelect(-1)}><span style={{marginLeft: 20}}>All</span></MenuItem>
         {services.map((service, index) => {
-            return (<MenuItem onSelect={onSelect} onClick={() => onSelect(index)} key={index} eventKey={index} active={selected === index}><span style={{marginLeft: 20}}>{service.name || service.type}</span></MenuItem>);
+            return (<MenuItem onClick={() => onServiceSelect(index)} key={index} eventKey={index} active={selectedService === index}><span style={{marginLeft: 20}}>{service.name || service.type}</span></MenuItem>);
         })}
         <MenuItem divider/>
     </>);
@@ -76,8 +75,14 @@ export default ({
     ...props
 }) => {
     const [expendedServices, setExpandedServices] = useState(false);
-    const [selected, setSelected] = useState();
-    const selectedServices = selected >= 0 ? searchOptions?.services?.filter((_, index) => selected === index) : searchOptions?.services ?? [];
+    const [selectedService, setServiceSelected] = useState(-1);
+    // when services change, reset selected service
+    useEffect(() => {
+        if (!isEqual(searchOptions?.services, searchOptions?.services)) {
+            setServiceSelected(-1);
+        }
+    }, [searchOptions?.services]);
+    const selectedServices = selectedService >= 0 ? searchOptions?.services?.filter((_, index) => selectedService === index) : searchOptions?.services ?? [];
     const search = defaultSearchWrapper({searchText, selectedItems, searchOptions: {
         ...searchOptions,
         services: selectedServices
@@ -107,6 +112,7 @@ export default ({
                 >
                     <Glyphicon glyph={searchIcon}/>
                     <Message msgId="search.addressSearch"/>
+                    {  searchOptions?.services.length > 1 &&
                     <TGlyphicon
                         tooltip="Select search services"
                         style={{
@@ -124,11 +130,12 @@ export default ({
                                 setExpandedServices(!expendedServices);
                             }
                         }/>
+                    }
                 </MenuItem>
                 {expendedServices && <SearchServicesSelectorMenu
-                    selected={selected}
-                    onSelect={(e) => {
-                        setSelected(e === -1 ? undefined : e);
+                    selectedService={selectedService}
+                    onServiceSelect={(e) => {
+                        setServiceSelected(e === -1 ? undefined : e);
                         onChangeActiveSearchTool("addressSearch");
                         return;
                     }}
