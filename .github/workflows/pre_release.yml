@@ -34,6 +34,7 @@ jobs:
       if: ${{ github.ref == 'master' }}
       uses: actions/github-script@v3
       with:
+        token: ${{ secrets.PAT }}
         script: |
             core.setFailed('This workflow can not run on master branch')
     - uses: actions/checkout@v3
@@ -48,6 +49,7 @@ jobs:
           LAST_MS_VERSION: ${{ github.event.inputs.previous-ms-version }}
           NEW_MS_VERSION: ${{ github.event.inputs.version }}
           JAVA_MODULES_NEW_VERSION: ${{ github.event.inputs.java-modules-version }}
+      
       run: |
 
         ## Generate changelog
