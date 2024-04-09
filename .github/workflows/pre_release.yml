@@ -31,7 +31,7 @@ jobs:
     # Protect master branch
     ################
     - name: Check branch
-      if: ${{ github.repository != 'geosolutions-it/MapStore2' || github.ref == 'master' }}
+      if: ${{ github.ref == 'master' }}
       uses: actions/github-script@v3
       with:
         script: |
