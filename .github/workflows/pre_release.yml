@@ -49,8 +49,7 @@ jobs:
           LAST_MS_VERSION: ${{ github.event.inputs.previous-ms-version }}
           NEW_MS_VERSION: ${{ github.event.inputs.version }}
           JAVA_MODULES_NEW_VERSION: ${{ github.event.inputs.java-modules-version }}
-      with:
-        github_token: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
       run: |
 
         ## Generate changelog
