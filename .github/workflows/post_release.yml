@@ -44,8 +44,8 @@ jobs:
         find . -name 'pom.xml' | xargs git add
         git add package.json
         git commit -m "Restore java packages to $SNAPSHOT_VERSION and update package.json"
-        git push origin ${{ github.ref_name }}
-        echo "Snapshots version restored"
+        # git push origin ${{ github.ref_name }}
+        # echo "Snapshots version restored"
     - name: "Push to protected branch"
       uses: CasperWA/push-protected@v2
       with:
