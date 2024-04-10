@@ -44,12 +44,12 @@ jobs:
         java-version: '11.x'
         distribution: 'adopt'
         cache: maven
+        token: ${{secrets.PAT}}
     - name: 'Fix versions, commit and push new tag'
       env:
           LAST_MS_VERSION: ${{ github.event.inputs.previous-ms-version }}
           NEW_MS_VERSION: ${{ github.event.inputs.version }}
           JAVA_MODULES_NEW_VERSION: ${{ github.event.inputs.java-modules-version }}
-          GITHUB_TOKEN: ${{ secrets.PAT }}
       run: |
 
         ## Generate changelog
