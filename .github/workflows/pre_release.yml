@@ -93,12 +93,13 @@ jobs:
         git commit -m "Version Release ${NEW_MS_VERSION}"
         git tag v${NEW_MS_VERSION} # create tag
         # git push origin ${{ github.ref_name }} --tags # push tags
-        name: Push to protected branch
-        uses: CasperWA/push-protected@v2
-        with:
-          token: ${{ secrets.PAT }} # This requires a special token to be able to trigger checks on new branch creation
-          ref: ${{ github.ref }}
-          tags: true
+    - name: "Push to protected branch"
+      uses: CasperWA/push-protected@v2
+      with:
+        token: ${{ secrets.PAT }} # This requires a special token to be able to trigger checks on new branch creation
+        ref: ${{ github.ref }}
+        tags: true
+        unprotect_reviews: true
   update-main-changelog:
     runs-on: ubuntu-latest
     needs: fix-version
