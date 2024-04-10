@@ -34,7 +34,7 @@ jobs:
       if: ${{ github.ref == 'master' }}
       uses: actions/github-script@v3
       with:
-        token: ${{ secrets.PAT }}
+        github_token: ${{ secrets.PAT }}
         script: |
             core.setFailed('This workflow can not run on master branch')
     - uses: actions/checkout@v3
