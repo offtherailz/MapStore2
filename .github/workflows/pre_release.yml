@@ -96,7 +96,9 @@ jobs:
     - name: "Push to protected branch"
       uses: CasperWA/push-protected@v2
       with:
-        token: ${{ secrets.PAT }} # This requires a special token to be able to trigger checks on new branch creation
+        # This requires a special token to be able to trigger checks on new branch creation
+        # admin permissions are required to temporarily disable branch protection for reviews
+        token: ${{ secrets.PUSH_PROTECTED }}
         ref: ${{ github.ref }}
         tags: true
         unprotect_reviews: true
