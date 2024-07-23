@@ -9,7 +9,7 @@ import Proj4js from 'proj4';
 import PropTypes from 'prop-types';
 import url from 'url';
 import axios from 'axios';
-import { castArray, isArray, isObject, endsWith, isNil, get } from 'lodash';
+import { castArray, isArray, isObject, endsWith, isNil, get, merge } from 'lodash';
 import assign from 'object-assign';
 import { Promise } from 'es6-promise';
 import isMobile from 'ismobilejs';
@@ -486,7 +486,43 @@ export const removeConfigProp = function(prop) {
 export const getMiscSetting = (name, defaultVal) => {
     return get(getConfigProp('miscSettings') ?? {}, name, defaultVal);
 };
-
+/**
+ * TODO: move me in utils
+ * Applies the override to the configuration.
+ * The override is applied to the configuration using a deep merge.
+ * Like for browser cache removal, this functionality allows to override the configuration with a partial configuration.
+ * The original configuration shape has this form:
+ * ```
+ * {
+ *    map: {
+ *       projection: "EPSG:3857",
+ *      center: {
+ *         x: 0,
+ *        y: 0
+ *   },
+ *   zoom: 5
+ * }
+ *
+ * @param {object} config the configuration to override
+ * @param {object} override the data to use for override
+ * @returns {object}
+ */
+export const applyOverrides = (config, override) => {
+    if (override?.mode === 'partials') {
+        // TODO: implement partials override
+        return merge({}, config, override, {
+            map: {
+                center: {
+                    ...override.map.center,
+                    y: 0,
+                    x: 0
+                },
+                zoom: 1
+            }
+        });
+    }
+    return merge({}, config, override);
+};
 const ConfigUtils = {
     PropTypes: {
         center: centerPropType,

@@ -16,17 +16,76 @@ import {Glyphicon} from "react-bootstrap";
 import {toggleControl} from "../actions/controls";
 import { removeUserSession, enableAutoSave} from "../actions/usersession";
 import ConfirmModal from "../components/resources/modals/ConfirmModal";
+import Tree from './session/Tree';
 
+const data = [{
+    id: 0,
+    label: 'Everything',
+    children: [
+        {
+            id: 1,
+            label: 'Map',
+            children: [{
+                id: 5,
+                label: 'Position and projection'
+            },
+            {
+                id: 2,
+                label: 'Layers',
+                children: [
+                    {
+                        id: 3,
+                        label: 'Annotations layer'
+                    },
+                    {
+                        id: 4,
+                        label: 'Layer 2'
+                    }
+                ]
+            }
+
+            ]
+        },
+        {
+            id: 5,
+            label: 'Search',
+            children: [
+                {
+                    id: 3,
+                    label: 'Services'
+                },
+                {
+                    id: 4,
+                    label: 'Bookmarks'
+                }
+            ]
+        },
+
+        {
+            id: 6,
+            label: 'Catalog Services'
+        },
+        {
+            id: 7,
+            label: 'Widgets'
+        },
+        {
+            id: 100,
+            label: 'Other'
+        }
+    ]
+}];
 const ResetUserSession = connect((state) => ({
     enabled: state?.controls?.resetUserSession?.enabled ?? false
 }), {
     setAutoSave: enableAutoSave,
     onClose: toggleControl.bind(null, 'resetUserSession', null),
-    onConfirm: removeUserSession
+    onConfirm: (checks) => removeUserSession(checks)
 })(({ enabled = false, onClose, onConfirm, setAutoSave = () => {}}) => {
+    const checks = [];
     const confirm = () => {
         onClose();
-        onConfirm();
+        onConfirm(checks);
     };
     useEffect(() => {
         setAutoSave(true);
@@ -35,9 +94,16 @@ const ResetUserSession = connect((state) => ({
             setAutoSave(false);
         };
     }, []);
+    // TODO: implement changes management
     return (<ConfirmModal onClose={onClose}
-        onConfirm={confirm} show={enabled} buttonSize="large">
-        <Message msgId="userSession.confirmRemove"/></ConfirmModal>);
+        onConfirm={() => confirm(checks)} show={enabled} buttonSize="large">
+
+        <div>
+            <Message msgId="userSession.confirmRemove"/>
+            Select what you want to reset:
+            <Tree data={data} />
+        </div>
+    </ConfirmModal>);
 });
 
 const hasSession = (state) => state?.usersession?.session;

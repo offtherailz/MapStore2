@@ -13,7 +13,7 @@ import { SAVE_USER_SESSION, LOAD_USER_SESSION, REMOVE_USER_SESSION, USER_SESSION
     userSessionSaved, userSessionLoaded, loading, saveUserSession, userSessionRemoved,
     userSessionStartSaving, userSessionStopSaving
 } from "../actions/usersession";
-import { closeFeatureGrid } from '../actions/featuregrid';
+import { closeFeatureGrid, saveSuccess } from '../actions/featuregrid';
 import { resetSearch } from '../actions/search';
 import { LOCATION_CHANGE } from "connected-react-router";
 import UserSession from "../api/usersession";
@@ -134,11 +134,13 @@ export const loadUserSessionEpicCreator = (nameSelector = userSessionNameSelecto
  * closeFeatureGrid and resetSearch actions are included in the stream
  */
 export const removeUserSessionEpicCreator = (idSelector = userSessionIdSelector) => (action$, store) =>
-    action$.ofType(REMOVE_USER_SESSION).switchMap(() => {
+    action$.ofType(REMOVE_USER_SESSION).switchMap((checks) => {
         const state = store.getState();
         const sessionId = idSelector(state);
-
-        return removeSession(sessionId).switchMap(() => Rx.Observable.of(userSessionRemoved(), closeFeatureGrid(), resetSearch(), success({
+        const newSession = checks ? { mode: 'partials', ...userSessionToSaveSelector(state) } : undefined;
+        // TODO: if checks, save the session with
+        // proper data instead of removing and trigger the workflow of removed session.
+        return removeSession(sessionId).switchMap(() => Rx.Observable.of(userSessionRemoved(newSession), closeFeatureGrid(), resetSearch(), success({
             title: "success",
             message: "userSession.successRemoved"
         }))).let(wrapStartStop(
@@ -160,10 +162,11 @@ export const removeUserSessionEpicCreator = (idSelector = userSessionIdSelector)
  * @param {object} store
  */
 export const reloadOriginalConfigEpic = (action$, { getState = () => { } } = {}) =>
-    action$.ofType(USER_SESSION_REMOVED).switchMap(() => {
+    action$.ofType(USER_SESSION_REMOVED).switchMap(({newSession}) => {
         const mapConfig = originalConfigSelector(getState());
         const mapId = getState()?.mapInitialConfig?.mapId;
-        return Rx.Observable.of(loadMapConfig(null, mapId, mapConfig, undefined, {}), userSessionStartSaving());
+        // TODO: if new session trigger immediately the save with partials applied.
+        return Rx.Observable.of(loadMapConfig(null, mapId, mapConfig, undefined, newSession || {}), userSessionStartSaving());
     });
 
 export const stopSaveSessionEpic = (action$) =>

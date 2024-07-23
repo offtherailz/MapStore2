@@ -48,10 +48,12 @@ import {
 import { getSupportedFormat } from '../api/WMS';
 import { wrapStartStop } from '../observables/epics';
 import { error } from '../actions/notifications';
+import { applyOverrides } from '../utils/ConfigUtils';
+
 
 const prepareMapConfiguration = (data, override, state) => {
     const queryParamsMap = getRequestParameterValue('map', state);
-    let mapConfig = merge({}, data, override);
+    let mapConfig = applyOverrides(data, override);
     mapConfig = {
         ...mapConfig,
         ...(queryParamsMap ?? {}),
@@ -104,7 +106,7 @@ const mapFlowWithOverride = (configName, mapId, config, mapInfo, state, override
     const isNumberId = !isNaN(parseFloat(mapId));
     return (
         config ?
-            Observable.of({data: merge({}, config, overrideConfig), staticConfig: true}).delay(100) :
+            Observable.of({data: applyOverrides(config, overrideConfig), staticConfig: true}).delay(100) :
             Observable.defer(() => axios.get(configName)))
         .switchMap(response => {
             // added !config in order to avoid showing login modal when a new.json mapConfig is used in a public context
@@ -161,9 +163,11 @@ export const loadMapConfigAndConfigureMap = (action$, store) =>
             const userName = userSelector(store.getState())?.name;
             return Observable.of(loadUserSession(buildSessionName(null, mapId, userName))).merge(
                 action$.ofType(USER_SESSION_LOADED).switchMap(({session}) => {
+                    // TODO: centralize and manage this.
                     const sessionData = {
                         ...(session?.map && {map: session.map}),
                         ...(session?.featureGrid && {featureGrid: session.featureGrid})
+                        // TODO: add parts of the state to save
                     };
                     return Observable.merge(
                         mapFlowWithOverride(configName, mapId, config, mapInfo, store.getState(), sessionData),

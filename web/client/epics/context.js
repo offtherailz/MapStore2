@@ -17,7 +17,7 @@ import { LOAD_CONTEXT, LOAD_FINISHED, loadContext, loading, setContext, setResou
 import { clearMapTemplates } from '../actions/maptemplates';
 import { loadMapConfig, MAP_CONFIG_LOADED, MAP_CONFIG_LOAD_ERROR, mapInfoLoaded } from '../actions/config';
 import { LOGIN_SUCCESS, LOGOUT } from '../actions/security';
-import { loadUserSession, USER_SESSION_LOADED, userSessionStartSaving, setUserSession, saveMapConfig } from '../actions/usersession';
+import { loadUserSession, USER_SESSION_LOADED, USER_SESSION_REMOVED, userSessionStartSaving, setUserSession, saveMapConfig } from '../actions/usersession';
 
 import { wrapStartStop } from '../observables/epics';
 import ConfigUtils from '../utils/ConfigUtils';
@@ -117,8 +117,10 @@ const createSessionFlow = (mapId, contextName, resourceCategory, action$, getSta
     ).flatMap(([id, data]) => {
         const userName = userSelector(getState())?.name;
         return Observable.of(loadUserSession(buildSessionName(id, mapId, userName))).merge(
-            action$.ofType(USER_SESSION_LOADED).take(1).switchMap(({session}) => {
+            action$.ofType(USER_SESSION_LOADED, USER_SESSION_REMOVED).take(1).switchMap(({session}) => {
+                // TODO: centralize and manage this.
                 const sessionData = {
+                    mode: session?.mode,
                     ...(session?.map && {map: session.map}),
                     ...(session?.featureGrid && {featureGrid: session.featureGrid})
                 };
