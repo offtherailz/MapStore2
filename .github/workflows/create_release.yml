@@ -21,7 +21,7 @@ jobs:
       # Protect master branch
       ################
       - name: Check branch
-        if: ${{ github.repository != 'geosolutions-it/MapStore2' || github.ref == 'master' }}
+        if: ${{ github.ref == 'master' }}
         uses: actions/github-script@v3
         with:
           script: |
@@ -64,19 +64,19 @@ jobs:
         id: "build"
         run: "./build.sh ${{ github.event.inputs.version }} binary,printingbundle"
       - name: "Upload war"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: war
+          name: release-war
           path: product/target/mapstore.war
       - name: "Upload binary"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: binary
+          name: release-binary
           path: "binary/target/mapstore2-${{ github.event.inputs.version }}-bin.zip"
       - name: "Upload printing"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: printing
+          name: release-printing
           path: "java/printing/target/mapstore-printing.zip"
   release:
     runs-on: ubuntu-latest
@@ -86,6 +86,8 @@ jobs:
         uses: actions/download-artifact@v4.1.7
         with:
           path: artifacts/
+          pattern: realease-*
+          merge-multiple: true
       - name: Display structure of downloaded files
         run: ls -R
         working-directory: artifacts
