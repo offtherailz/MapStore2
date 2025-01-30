@@ -129,7 +129,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: artifacts/war/mapstore.war
+          asset_path: mapstore.war
           asset_name: mapstore.war
           asset_content_type: application/zip
       - name: Upload Release binary
@@ -139,7 +139,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: "artifacts/binary/mapstore2-${{github.event.inputs.version}}-bin.zip"
+          asset_path: "mapstore2-${{github.event.inputs.version}}-bin.zip"
           asset_name: "mapstore2-${{github.event.inputs.version}}-bin.zip"
           asset_content_type: application/zip
       - name: Upload Release printing
@@ -149,6 +149,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: artifacts/printing/mapstore-printing.zip
+          asset_path: mapstore-printing.zip
           asset_name: mapstore-printing.zip
           asset_content_type: application/zip
