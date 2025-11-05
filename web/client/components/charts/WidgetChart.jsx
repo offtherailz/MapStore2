@@ -446,6 +446,8 @@ function getLayoutOptions({
     }, {});
 
     const xAxises = (xAxisOpts).reduce((acc, options, idx) => {
+        const tickvals = options?.tickvals?.split?.(',');
+        const ticktext = options?.ticktext?.split?.(',');
         return {
             ...acc,
             [`xaxis${idx === 0 ? '' : idx + 1}`]: {
@@ -453,6 +455,8 @@ function getLayoutOptions({
                 // TODO: enable only when "category" with time dimension
                 // dtick: xAxisAngle ? 0.25 : undefined,
                 automargin: true,
+                tickvals: tickvals?.length > 0 ? tickvals : undefined,
+                ticktext: ticktext?.length > 0 ? ticktext : undefined,
                 type: options?.type,
                 tickangle: options.angle ?? 'auto',
                 showticklabels: !options.hide,
