@@ -68,14 +68,13 @@ module.exports = ({ prod = true, name, exposes, sharedLibrariesEager = true, ali
                 ]
             },
             {
-                test: /\.jsx?$/,
-                exclude: /(ol\.js)$|(Cesium\.js)$/,
-                use: [{
-                    loader: "babel-loader",
-                    options: {
-                        configFile: path.join(__dirname, 'babel.config.js')
-                    }
-                }]
+                test: /\.[jt]sx?$/,        // .js, .jsx, .ts, .tsx
+                loader: 'esbuild-loader',
+                exclude: /node_modules/,
+                options: {
+                loader: 'jsx',            // o 'ts' se TypeScript
+                target: 'es2021'          // versione JS target
+                }
             }, {
                 test: /\.(png|jpg|gif|svg)$/,
                 use: [{

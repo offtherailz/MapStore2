@@ -77,15 +77,13 @@ module.exports = ({browsers = [ 'ChromeHeadless' ], files, path, testFile, singl
         module: {
             rules: [
                 {
-                    test: /\.jsx?$/,
+                    test: /\.[jt]sx?$/,        // .js, .jsx, .ts, .tsx
+                    loader: 'esbuild-loader',
                     exclude: /node_modules/,
-                    use: [{
-                        loader: 'babel-loader',
-                        options: {
-                            configFile: nodePath.join(__dirname, 'babel.config.js')
-                        }
-                    }],
-                    include: path
+                    options: {
+                    loader: 'jsx',            // o 'ts' se TypeScript
+                    target: 'es2021'          // versione JS target
+                    }
                 },
                 {
                     test: /\.css$/,

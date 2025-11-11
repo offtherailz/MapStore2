@@ -282,23 +282,14 @@ module.exports = (...args) => mapArgumentsToObject(args, ({
                 }] // inline base64 URLs for <=8k images, direct URLs for the rest
             },
             {
-                test: /\.jsx?$/,
-                exclude: /(ol\.js)$|(Cesium\.js)$/,
-                use: [{
-                    loader: "babel-loader",
-                    options: {
-                        configFile: path.join(__dirname, 'babel.config.js')
-                    }
-                }],
-                include: [
-                    paths.code,
-                    paths.framework,
-                    path.join(paths.base, "node_modules", "query-string"),
-                    path.join(paths.base, "node_modules", "strict-uri-encode"),
-                    path.join(paths.base, "node_modules", "react-draft-wysiwyg"), // added for issue #4602
-                    path.join(paths.base, "node_modules", "split-on-first")
-                ]
-            }
+                test: /\.[jt]sx?$/,        // .js, .jsx, .ts, .tsx
+                loader: 'esbuild-loader',
+                exclude: /node_modules/,
+                options: {
+                loader: 'jsx',            // o 'ts' se TypeScript
+                target: 'es2021'          // versione JS target
+                }
+            },
         ].concat(prod ? [{
             test: /\.html$/,
             loader: 'html-loader'
