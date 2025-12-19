@@ -67,11 +67,12 @@ jobs:
       - name: Unit Tests
         run: npm test -- --reporters mocha,coverage,coveralls
 
-      - name: Coveralls
-        if: matrix.node-version == '20.x'
+      - name: Send coverage to Coveralls (parallel)
         uses: coverallsapp/github-action@master
         with:
            github-token: ${{ secrets.GITHUB_TOKEN }}
+           parallel: true
+           flag-name: run-${{ join(matrix.*, '-') }}
 
   test-back-end:
     runs-on: ubuntu-latest
