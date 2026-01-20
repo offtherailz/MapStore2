@@ -77,6 +77,7 @@ const FilterDataTab = ({
             openFilterEditor();
         }, 0);
     }, [onEditorChange, openFilterEditor]);
+    // handle
 
     // Generic handlers using the factory function
     const handleValueAttributeChange = createChangeHandler('data.valueAttribute');
@@ -103,6 +104,9 @@ const FilterDataTab = ({
             )}
 
             <LayerSelectorField
+                onFilterLayer={() => {
+                    openFilterEditor();
+                }}
                 layer={filterDataState.selectedLayerObject}
                 layerIsRequired={filterDataState.layerIsRequired}
                 onOpenLayerSelector={onOpenLayerSelector}

@@ -27,6 +27,7 @@ const getLayerTitle = (layer) => {
 const LayerSelectorField = ({
     layer,
     layerIsRequired = false,
+    onFilterLayer = () => {},
     onOpenLayerSelector,
     dashBoardEditing = false
 }) => {
@@ -41,24 +42,33 @@ const LayerSelectorField = ({
             validationState={validationState}
         >
             <ControlLabel>Layer</ControlLabel>
-            <InputGroup>
+            <InputGroup style={{ zIndex: 0 }}>
                 <LocalizedFormControl
-                    type="text"
-                    value={layerTitle}
                     placeholder="widgets.filterWidget.selectDataSourcePlaceHolder"
-                    readOnly
+                    value={layerTitle}
                     onClick={() => !isDisabled && onOpenLayerSelector()}
                     style={{ cursor: isDisabled ? 'not-allowed' : 'pointer' }}
-                    disabled={isDisabled}
-                />
-                <InputGroup.Button>
+                    readOnly
+                    disabled={isDisabled} />
+                {!isDisabled && <InputGroup.Button>
                     <Button
-                        onClick={onOpenLayerSelector}
+                        bsStyle="primary"
                         disabled={isDisabled}
+                        onClick={() => !isDisabled && onOpenLayerSelector()}
+                        tooltipId={'widgets.builder.selectLayer'}
                     >
-                        <Glyphicon glyph="folder-open" />
+                        <Glyphicon glyph={layer ? "cog" : "folder-open"} />
                     </Button>
-                </InputGroup.Button>
+                </InputGroup.Button>}
+                {layer && <InputGroup.Button>
+                    <Button
+                        bsStyle={layer?.filter ? 'success' : 'primary'}
+                        onClick={() =>  !isDisabled && onFilterLayer(layer)}
+                        tooltipId={'widgets.builder.filterLayer'}
+                    >
+                        <Glyphicon glyph="filter" />
+                    </Button>
+                </InputGroup.Button>}
             </InputGroup>
         </FormGroup>
     );
