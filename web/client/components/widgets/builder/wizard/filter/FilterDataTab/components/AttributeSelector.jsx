@@ -42,7 +42,7 @@ const AttributeSelector = ({
 
     return (
         <FormGroup className="form-group-flex"
-            validationState={error || !selectedOption ? 'error' : null}>
+            validationState={error ? 'error' : !selectedOption ? 'warning' : null}>
             {label && <ControlLabel>{label}</ControlLabel>}
             <InputGroup>
                 <Select
