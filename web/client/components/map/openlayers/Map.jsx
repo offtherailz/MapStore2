@@ -413,6 +413,7 @@ class OpenlayersMap extends React.Component {
         default: return null; // types not supported
         }
     };
+    /*
      *
      * @param {zoom} map
      * @param {x, y, longitude, latitude} position
