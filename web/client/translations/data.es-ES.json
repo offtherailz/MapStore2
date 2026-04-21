@@ -305,6 +305,7 @@
     "mousePositionCoordinates": "Indicador de coordenadas",
     "mouseCoordinates": "Coordenadas:",
     "mousePositionCRS": "CRS:",
+    "mousePositionHeight": "Height:",
     "mousePositionElevation": "Elev.:",
     "mousePositionNoElevation": "N/P",
     "elevationLoading": "Cargando...",
@@ -315,6 +316,17 @@
     "showCrsSelector": "Seleccionar proyección",
     "crsSelectorFilterPlaceholder": "Proyección de filtro",
     "crsSelectorSelectedCRS": "Seleccionado:",
+    "crsSelector": {
+      "availableProjections": "Proyecciones disponibles",
+      "searchProjection": "Buscar proyección...",
+      "label": "Etiqueta",
+      "authorityId": "ID de autoridad",
+      "selectedProjection": "La proyección seleccionada se utilizará en el mapa",
+      "quickSwitch": "La proyección seleccionada se añadirá a la lista de cambio rápido",
+      "help": "Marque la casilla para agregar una proyección al cambio rápido. Haga clic en una fila para establecerla como proyección predeterminada.",
+      "save": "Guardar",
+      "close": "Cerrar"
+    },
     "menu": "Menú",
     "options": "Opciones",
     "settings": "Ajustes",
@@ -549,7 +561,8 @@
           "dateTimeOption": "Fecha-Hora UTC específica",
           "dateTimePlaceholder": "Seleccione la fecha y hora"
         },
-        "collisionDetection": "Activar detección de colisiones"
+        "collisionDetection": "Activar detección de colisiones",
+        "imageryLayersOverlay": "Habilitar la superposición de capas de imágenes"
       },
       "thumbnailError": {
         "error403": "Error al modificar la miniatura",
@@ -1509,6 +1522,11 @@
         "height": "altura"
       }
     },
+    "dynamiclegend": {
+      "title": "Leyenda",
+      "tooltip": "Mostrar la leyenda del mapa",
+      "emptyLegend": "Ninguna leyenda para mostrar"
+    },
     "permalink": {
       "title": "Permalink",
       "shareLinkTitle": "Enlace permanente generado",
@@ -1539,6 +1557,43 @@
           "categoryErrorAdmin": "Error al crear el enlace \"{categoryName}\" de la categoría faltante",
           "categoryErrorNonAdmin": "Falta el enlace \"{categoryName}\" de la categoría, comuníquese con el administrador para crear la categoría"
         }
+      }
+    },
+    "layersSelection": {
+      "title": "Seleccionar",
+      "tooltip": "Mostrar la herramienta de selección",
+      "description": "Mostrar la herramienta de selección",
+      "hasReachMaxCount": "Número máximo de elementos alcanzado",
+      "selection": "Selección",
+      "allLayers": "Todas las capas",
+      "featuresCount": "Número de entidades",
+      "button": {
+        "select": "Modo de selección",
+        "chooseGeometry": "Elegir",
+        "selectByPoint": "Punto",
+        "selectByLine": "Línea",
+        "selectByCircle": "Círculo",
+        "selectByRectangle": "Rectángulo",
+        "selectByPolygon": "Polígono",
+        "clear": "Borrar",
+        "zoomTo": "Hacer zoom en",
+        "statistics": "Estadísticas",
+        "createLayer": "Crear capa",
+        "filterData": "Filtrar datos",
+        "export": "Exportar",
+        "exportToCsv": "Exportar a CSV",
+        "exportToJson": "Exportar a JSON",
+        "exportToGeoJson": "Exportar a GeoJSON"
+      },
+      "statistics": {
+        "title": "Estadísticas",
+        "field": "Campo",
+        "count": "Número de valores",
+        "sum": "Suma de los valores",
+        "min": "Mínimo",
+        "max": "Máximo",
+        "avg": "Promedio",
+        "std": "Desviación estándar"
       }
     },
     "snapshot": {
@@ -1664,7 +1719,8 @@
         "3dtiles": "p.ej. https://mydomain.com/tileset.json",
         "cog": "p.ej. https://mydomain.com/cog.tif",
         "model": "p.ej. https://mydomain.com/filename.ifc",
-        "arcgis": "p.ej. https://mydomain.com/arcgis/rest/services"
+        "arcgis": "p.ej. https://mydomain.com/arcgis/rest/services",
+        "flatgeobuf": "e.g. https://mydomain.com/filename.fgb"
       },
       "type": "Tipo",
       "serviceTitle": "Título",
@@ -2029,7 +2085,8 @@
         "title": "Error en la exportación",
         "invalidOutputFormat": "Formato de exportación no disponible",
         "downloadEstimatorTitle": "Error de DownloadEstimator",
-        "downloadEstimatorFailed": "La solicitud de DownloadEstimator falló, lo que significa que el archivo exportado excede los límites del servidor configurado. Intente cambiar las opciones de descarga o agregue un filtro a su capa y vuelva a intentarlo."
+        "downloadEstimatorFailed": "La solicitud de DownloadEstimator falló, lo que significa que el archivo exportado excede los límites del servidor configurado. Intente cambiar las opciones de descarga o agregue un filtro a su capa y vuelva a intentarlo.",
+        "fetchFormatsFailed": "Error al obtener los formatos disponibles para la capa. Inténtalo de nuevo más tarde."
       },
       "exportResultsMessages": {
         "newExport": "El archivo estará disponible aquí cuando se complete la exportación",
@@ -2085,6 +2142,10 @@
         "counter": {
           "title": "Contador",
           "caption": "agregar un contador"
+        },
+        "filter": {
+          "title": "Selector de filtro",
+          "caption": "agregar selectores de filtro dinámicos"
         }
       },
       "selectWidgetType": "Seleccione el tipo de widget",
@@ -2129,12 +2190,14 @@
           "backToMapSelection": "Volver a la selección del mapa",
           "backToPreview": "Volver a vista previa",
           "backToChartOptions": "Volver a las opciones de gráfico",
+          "backToFilterOptions": "Volver a las opciones de filtro",
           "selectALayer": "Seleccionar una capa",
           "selectLayers": "Seleccione una o más capas",
           "selectAMap": "Seleccione uno o más mapas",
           "configureChartOptions": "Configurar opciones de gráfico",
           "configureWidgetOptions": "Configurar las opciones del widget",
           "errorChart": "Uno o más gráficos no son válidos",
+          "errorFilter": "Uno o más filtros no son válidos",
           "backToTableOptions": "Volver a las opciones de tabla",
           "configureTableOptions": "Configurar opciones de tabla",
           "attributeEditorColumns": {
@@ -2399,7 +2462,104 @@
           "log": "Log",
           "date": "Fecha"
         },
-        "showCurrentTime": "Mostrar la hora actual en el eje"
+        "showCurrentTime": "Mostrar la hora actual en el eje",
+        "type": "Tipo"
+      },
+      "filterWidget": {
+        "dataTabLabel": "Datos",
+        "dataSource": "Fuente de datos",
+        "features": "Características",
+        "userDefined": "Definido por el usuario",
+        "maps": "Mapas",
+        "map": "Mapa",
+        "valuesFrom": "Valores de",
+        "uniqueAttributes": "Valores únicos",
+        "attributes": "Atributos",
+        "matchAllFilter": "Coincidir con todos los filtros (Y)",
+        "matchAnyFilter": "Coincidir con cualquier filtro (O)",
+        "valueAttribute": "Atributo de valor",
+        "sortByAttribute": "Ordenar por atributo",
+        "maxFeatures": "Máximo de características",
+        "filterComposition": "Composición del filtro",
+        "type": "Tipo",
+        "filterList": "Lista de filtros",
+        "styleList": "Lista de estilos",
+        "typeTooltip": "<div><strong>Lista de filtros:</strong> El usuario puede definir un filtro personalizado</div><div><strong>Lista de estilos:</strong> El usuario puede seleccionar un estilo ya definido. Solo habilitado para capas WMS</div>",
+        "selectLayerStyle": "Seleccionar estilo de capa",
+        "filterStylesPlaceholder": "Filtrar estilos...",
+        "selectStylePlaceholder": "Seleccionar un estilo...",
+        "filter": "Filtro",
+        "style": "Estilo",
+        "actions": "Acciones",
+        "layoutTabLabel": "Diseño",
+        "title": "Título",
+        "label": "Etiqueta",
+        "icon": "Icono",
+        "fontSize": "Tamaño de fuente",
+        "fontWeight": "Peso de fuente",
+        "fontStyle": "Estilo de fuente",
+        "color": "Color",
+        "items": "Elementos",
+        "variant": "Variante",
+        "selectionMode": "Modo de selección",
+        "multiple": "Múltiple",
+        "single": "Único",
+        "direction": "Dirección",
+        "directionHorizontal": "Horizontal",
+        "directionVertical": "Vertical",
+        "maxHeight": "Altura máxima",
+        "interactionsTabLabel": "Interacciones",
+        "onSelectionChange": "Al cambiar la selección",
+        "applyFilter": "Aplicar filtro",
+        "selectAll": "Seleccionar todo",
+        "clear": "Limpiar",
+        "showSelectAllClear": "Mostrar 'Seleccionar todo' y 'Limpiar'",
+
+        "defaultFilter": "Filtro predeterminado",
+        "defaultFilterInfo": "Define un filtro para aplicar cuando no hay nada seleccionado. Sugerencia: si desea no mostrar nada cuando no hay nada seleccionado, cree un filtro que no devuelva ninguna característica",
+        "noSelectionMode": "Modo sin selección",
+        "noSelectionModeTooltip": "<div><strong>Sin filtro:</strong> Cuando no hay nada seleccionado, no se aplicará ningún filtro a la capa con esta herramienta.</div><div><strong>Excluir:</strong> Cuando no hay nada seleccionado, se aplicará un filtro que excluye todos los datos.</div><div><strong>Personalizado:</strong> Cuando no hay nada seleccionado, se aplicará un filtro definido por el usuario. Use el botón de filtro para definirlo.</div>",
+        "noFilter": "Sin filtro",
+        "exclude": "Excluir",
+        "custom": "Personalizado",
+        "customFilterRequiredWarning": "Cuando el modo sin selección es 'Personalizado', debe definir el filtro personalizado. Haga clic en el icono de filtro para definir el filtro.",
+        "forceSelection": "Forzar selección",
+        "forceSelectionTooltip": "Si está habilitado, debe seleccionarse un elemento del filtro",
+        "forceSelectionEnabledTooltip": "Cuando la selección forzada está habilitada, debe seleccionarse al menos un elemento",
+        "showNoTargetsInfoLabel": "Mensaje de ausencia de objetivo",
+        "showNoTargetsInfoDescription": "Cuando no hay ningún objetivo conectado al filtro, o las capas/widgets conectados no son visibles, aparece un mensaje para notificar al usuario que el filtro no tendrá efecto.",
+        "noInteractionsInfo": "No hay ningún objetivo conectado. Utilice el panel de conexiones para conectar el filtro a capas o widgets.",
+        "noTargetsInfo": "No hay ninguna capa/widget de objetivo visible para esta herramienta. Habilite al menos una capa/widget de objetivo para que el filtro funcione.",
+        "connectedLayerFilterDisabledInfo": "Una o más capas conectadas tienen el filtro deshabilitado. Habilite el filtro de capa para aplicar el filtro de este widget.",
+        "clickToSeeInfo": "Haga clic para ver la información",
+        "styleChangedByWidgetInfo": "Una o más capas conectadas usan un estilo distinto al seleccionado aquí. Haga clic en el botón de abajo para aplicar el estilo seleccionado a todas las capas conectadas.",
+        "styleChangedByWidgetBanner": "El estilo se ha cambiado en la configuración de la capa para esta capa. Haga clic para aplicar el estilo a todas las capas conectadas desde este widget.",
+        "applyStyleFromWidgetButton": "Aplicar estilo a todas las capas conectadas desde este widget",
+        "labelAttribute": "Atributo de etiqueta",
+        "maxHeightPlaceholder": "Ingrese altura máxima..",
+        "selectDataSourcePlaceHolder": "Seleccione fuente de datos ...",
+        "selectAttribute": "Seleccionar Atributo",
+        "valueFromUniqueAttributeDescription": "Recupera todas las entidades con un valor único para el atributo seleccionado.",
+        "valueFromAttributeDescription": "Recupera todas las entidades existentes incluyendo los posibles valores duplicados para el atributo seleccionado.",
+        "missingParametersMessage": "Por favor seleccione los campos requeridos para generar la lista de filtros",
+        "fetchError": "Error al obtener los datos",
+        "noSelectableItems": "No hay elementos de filtro seleccionables.",
+        "filters": "Filtros",
+        "styles": "Estilos",
+        "targetAutomaticallyNotConnectableTooltip": "El destino no es conectable automáticamente, por favor configúrelo para conectarlo",
+        "forcePlugLabel": "Aplicar independientemente de la fuente de datos",
+        "filterForcePlugInfo": "Marque para confirmar que el filtro puede aplicarse a esta fuente de datos, incluso si es diferente de la original",
+        "styleForcePlugInfo": "Marque para confirmar que el estilo puede aplicarse a esta capa, incluso si es diferente de la original. Esto significa que esta capa debe tener una lista de estilos con los mismos nombres que los configurados para esta herramienta",
+        "addUserDefinedFilterTooltip": "Haga clic para agregar filtro",
+        "addUserDefinedStyleTooltip": "Haga clic para agregar estilo",
+        "addUserDefinedFilterValueTooltip": "Haga clic para definir filtro",
+        "addUserDefinedStyleValueTooltip": "Haga clic para definir estilo",
+        "delete": "Eliminar",
+        "filterTitlePlaceholder": "Título del filtro...",
+        "editFilterTitleTooltip": "Haga clic para editar el título del filtro",
+        "addNewFilterTooltip": "Haga clic para agregar nuevo filtro",
+        "applyStyle": "Aplicar estilo",
+        "targetAlreadyConnectedToStyleTooltip": "El objetivo ya está conectado a un estilo. No se puede conectar a múltiples estilos al mismo tiempo"
       },
       "tray": {
         "title": "Widgets",
@@ -2438,7 +2598,8 @@
         },
         "resourceAlreadyExists": "Ya existe un recurso con este nombre",
         "forbidden": "Ocurrió un error inesperado (403 Prohibido). Por favor contacte al administrador",
-        "forbidden405": "Ocurrió un error inesperado (405 Prohibido). Por favor contacte al administrador"
+        "forbidden405": "Ocurrió un error inesperado (405 Prohibido). Por favor contacte al administrador",
+        "multipleDashboardError": "Este panel contiene varias vistas, lo cual no es compatible. Por favor, selecciona una sola vista para continuar."
       },
       "editor": {
         "save": "Guardar el panel de control",
@@ -2456,7 +2617,12 @@
         "removeConfirmTitle": "¿Estás seguro?",
         "removeConfirmContent": "¿Deseas eliminar esta vista del panel?",
         "name": "Nombre",
-        "color": "Color"
+        "color": "Color",
+        "linkExistingDashboard": "Link existing dashboard",
+        "selectDashboard": "Select dashboard",
+        "cannotAddExistingDashboard": "No puedes añadir un diseño existente a la vista porque ya tiene diseños.",
+        "save": "Guardar",
+        "cancel": "Cancelar"
       }
     },
     "dashboardEmbedded": {
@@ -2599,7 +2765,6 @@
       "setDefaultStyleSuccessMessage": "El estilo predeterminado se ha aplicado con éxito",
       "setDefaultStyleErrorTitle": "Error en el estilo predeterminado del set",
       "setDefaultStyleErrorMessage": "No es posible aplicar el estilo seleccionado por defecto.",
-
       "enterLegendLabelPlaceholder": "Introducir etiqueta de leyenda",
       "addMarkSymbolizer": "Agregar símbolo de marca",
       "addMarkRule": "Agregar regla de marca",
@@ -2809,6 +2974,8 @@
       "msExtrudedHeight": "Altura extruida",
       "msExtrusionColor": "Color de extrusión",
       "msExtrusionType": "Tipo de extrusión",
+      "msExtrusionOutlineColor": "Color de contorno de extrusión",
+      "msExtrusionOutlineWidth": "Ancho de contorno de extrusión",
       "wall": "Muro",
       "enableBanding": "Estilo de banda",
       "selectChannel": "Selecciona una banda",
@@ -3062,6 +3229,8 @@
       "addWebPageContent": "Agregar contenido de página web",
       "emptyTitle": "Esta historia esta vacia",
       "delete": "Eliminar geostory",
+      "duplicateSection": "Duplicar sección",
+      "copyOfPrefix": "Copia de",
       "emptyDescription": "Comience a crear una increíble geografía agregando nuevo contenido",
       "closeFullscreenMap": "Cerrar mapa a pantalla completa",
       "showFullscreenMap": "Ver mapa en pantalla completa",
@@ -3201,6 +3370,10 @@
         "toc": "Capas",
         "pan": "interacción pan",
         "zoom": "Acercar/alejar interacciones",
+        "center": "Centro",
+        "scale": "Escala",
+        "applyToOtherMaps": "Aplicar a otros mapas",
+        "appliedSuccessfully": "Aplicado correctamente a otros mapas",
         "topLeft": "Arriba a la izquierda",
         "topRight": "Parte superior derecha",
         "bottomLeft": "Abajo a la izquierda",
@@ -3504,6 +3677,12 @@
         "description": "Muestra las coordenadas del puntero con el cursor del mouse.",
         "title": "Posición del mouse"
       },
+      "CameraPosition": {
+        "description": "Muestra la posición de la cámara en coordenadas geográficas (longitud, latitud, altitud) o en coordenadas proyectadas (X, Y, Z)",
+        "title": "Posición de la cámara",
+        "ellipsoidal": "Ellipsoidal",
+        "msl": "MSL"
+      },
       "Print": {
         "description": "Permite imprimir el mapa actual con leyenda",
         "title": "Herramienta de impresión"
@@ -3532,9 +3711,17 @@
         "description": "Permite compartir el mapa de varias maneras (enlace, código QR, incrustar, redes sociales ...)",
         "title": "Compartir herramienta"
       },
+      "DynamicLegend": {
+        "title": "Leyenda",
+        "description": "Mostrar la leyenda del mapa"
+      },
       "Permalink": {
         "description": "Permite crear un enlace permanente del recurso actual a la vista",
         "title": "Enlace permanente"
+      },
+      "LayersSelection": {
+        "title": "Seleccionar",
+        "description": "Mostrar la herramienta de selección"
       },
       "StreetView": {
         "title": "Street View",
@@ -4509,12 +4696,10 @@
       "deleteResourceDescription": "Este recurso y todos los recursos vinculados se eliminarán eliminado",
       "deleteResourceConfirm": "Eliminar",
       "deleteResourceCancel": "Conservarlo",
-
       "copyResourceTitle": "Crear una copia del recurso actual",
       "copyResourceDescription": "Ingrese un nombre válido para el nuevo recurso. El nombre debe ser único.",
       "copyResourceCancel": "Volver a editar",
       "copyResourceConfirm": "Crear",
-
       "createNewResourceTitle": "Crear un nuevo recurso",
       "createNewResourceDescription": "Ingrese un nombre válido para el nuevo recurso. El nombre debe ser único.",
       "createNewResourceCancel": "Volver a la edición",

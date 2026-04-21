@@ -1,5 +1,12 @@
-export default {
-    "desktop": [
+/**
+ * Get plugin name from either string or object format
+ */
+const getPluginName = (plugin) => {
+    return typeof plugin === "string" ? plugin : plugin?.name;
+};
+
+export default (overridePluginsConfig = []) => {
+    const basePlugins = [
         {
             "name": "Map",
             "cfg": {
@@ -96,12 +103,9 @@ export default {
         }, {
             "name": "CRSSelector",
             "cfg": {
-                "additionalCRS": {
-
-                },
-                "filterAllowedCRS": [
-                    "EPSG:4326",
-                    "EPSG:3857"
+                "availableProjections": [
+                    { "value": "EPSG:4326", "label": "EPSG:4326" },
+                    { "value": "EPSG:3857", "label": "EPSG:3857" }
                 ],
                 "allowedRoles": [
                     "ADMIN"
@@ -170,5 +174,13 @@ export default {
             }
         },
         "FeedbackMask"
-    ]
+    ];
+
+    const allPlugins = [...basePlugins, ...overridePluginsConfig];
+    const uniquePlugins = [
+        ...new Map(allPlugins.map(plugin => [getPluginName(plugin), plugin])).values()
+    ];
+    return {
+        "desktop": uniquePlugins
+    };
 };
