@@ -24,6 +24,8 @@ jobs:
       - name: Get issues
         id: get-issues
         uses: mondeja/pr-linked-issues-action@v2
+      - name: Debug linked issues output
+        run: echo "Linked issues: ${{ steps.get-issues.outputs.issues }}"
       - name: Create backport pull requests
         id: create_backport_pr
         uses: korthout/backport-action@v4
