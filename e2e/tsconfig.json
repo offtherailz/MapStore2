@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "esModuleInterop": true,
+        "strict": true,
+        "types": ["node"],
+        "outDir": "../.tsbuild-e2e",
+        "noEmit": true
+    },
+    "include": ["./**/*.ts"]
+}

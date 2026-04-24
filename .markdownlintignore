@@ -4,3 +4,4 @@ product
 web/client/dist
 **/target
 venv
+e2e/reports

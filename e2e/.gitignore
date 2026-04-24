@@ -1,0 +1,7 @@
+# Playwright test artifacts
+reports/
+test-results/
+playwright-report/
+
+# Local env (contains credentials)
+.env
