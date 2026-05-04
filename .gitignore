@@ -28,3 +28,15 @@ site
 .DS_Store
 venv
 __pycache__
+
+# Playwright E2E test artifacts
+reports/
+test-results/
+playwright-report/
+
+# E2E local env files (contain credentials)
+.env
+.env.local
+.env.dev
+.env.qa
+.env.customer*
