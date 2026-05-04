@@ -55,3 +55,14 @@ mapstore**.war
 # datadir runtime files
 datadir/
 datadir/*
+
+# Playwright E2E test artifacts
+reports/
+test-results/
+playwright-report/
+
+# E2E local env files (contain credentials)
+.env.local
+.env.dev
+.env.qa
+.env.customer*
