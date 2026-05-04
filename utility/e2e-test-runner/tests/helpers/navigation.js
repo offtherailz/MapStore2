@@ -1,4 +1,4 @@
-const { config } = require('../config');
+import { config } from '../config.js';
 
 function normalizeBase(baseURL) {
     const base = new URL(baseURL);
@@ -38,4 +38,4 @@ async function openAppTarget(page, target) {
     await page.goto(resolveAppUrl(target));
 }
 
-module.exports = { resolveAppUrl, openAppTarget };
+export { resolveAppUrl, openAppTarget };

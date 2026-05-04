@@ -70,4 +70,4 @@ function getResource(name) {
     return environment.resources[name] ?? '';
 }
 
-module.exports = { environment, config, hasCapability, getServiceUrl, getResource };
+export { environment, config, hasCapability, getServiceUrl, getResource };

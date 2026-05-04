@@ -2,9 +2,11 @@
 
 /* eslint-disable no-console */
 
-const path = require('node:path');
-const { runCli } = require('../src/cli');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { runCli } from '../src/cli.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(__dirname, '..');
 
 const exitCode = runCli(process.argv.slice(2), {

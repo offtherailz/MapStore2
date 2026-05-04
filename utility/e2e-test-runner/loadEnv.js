@@ -1,7 +1,10 @@
 /* eslint-disable no-console */
 
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function parseEnvFile(contents) {
     return contents.split(/\r?\n/).reduce((variables, rawLine) => {
@@ -53,4 +56,4 @@ function loadE2EEnv() {
     return { envName, envFile };
 }
 
-module.exports = { loadE2EEnv };
+export { loadE2EEnv };

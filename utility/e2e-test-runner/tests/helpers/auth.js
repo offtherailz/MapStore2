@@ -1,6 +1,6 @@
-const { expect } = require('@playwright/test');
-const { config } = require('../config');
-const { openAppTarget } = require('./navigation');
+import { expect } from '@playwright/test';
+import { config } from '../config.js';
+import { openAppTarget } from './navigation.js';
 
 /**
  * Logs in to MapStore2 with the given credentials.
@@ -33,4 +33,4 @@ async function logout(page) {
     await expect(page.locator('#mapstore-login-menu')).toBeVisible();
 }
 
-module.exports = { login, logout };
+export { login, logout };
