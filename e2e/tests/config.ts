@@ -2,8 +2,79 @@
  * MapStore2 test credentials and base URL.
  * All values can be overridden using environment variables.
  */
-export const config = {
-    baseURL: process.env.BASE_URL ?? 'http://localhost:8081/',
-    adminUser: process.env.MS_USER ?? 'admin',
-    adminPassword: process.env.MS_PASSWORD ?? 'admin',
+function parseBoolean(value?: string): boolean {
+    return /^(1|true|yes|on)$/i.test(value ?? '');
+}
+
+function parseList(value?: string): string[] {
+    return (value ?? '')
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+}
+
+function parseJsonRecord(value?: string): Record<string, string> {
+    if (!value) {
+        return {};
+    }
+
+    try {
+        const parsed = JSON.parse(value);
+        return typeof parsed === 'object' && parsed ? parsed : {};
+    } catch {
+        return {};
+    }
+}
+
+const namedCapabilities: Record<string, boolean> = {
+    geoserverMapStoreUsers: parseBoolean(process.env.GEOSERVER_MAPSTORE_USERS),
+    ldap: parseBoolean(process.env.LDAP_ENABLED),
+    oidc: parseBoolean(process.env.OIDC_ENABLED)
 };
+
+const listedCapabilities = parseList(process.env.E2E_CAPABILITIES).reduce<Record<string, boolean>>(
+    (capabilities, capability) => ({
+        ...capabilities,
+        [capability]: true
+    }),
+    {}
+);
+
+export const environment = {
+    name: process.env.E2E_ENV ?? 'local',
+    baseURL: process.env.BASE_URL ?? 'http://localhost:8081/',
+    admin: {
+        username: process.env.MS_USER ?? 'admin',
+        password: process.env.MS_PASSWORD ?? 'admin'
+    },
+    user: {
+        username: process.env.MS_USER_STANDARD ?? '',
+        password: process.env.MS_PASSWORD_STANDARD ?? ''
+    },
+    capabilities: {
+        ...listedCapabilities,
+        ...namedCapabilities
+    },
+    services: parseJsonRecord(process.env.E2E_SERVICES_JSON),
+    resources: parseJsonRecord(process.env.E2E_RESOURCES_JSON)
+};
+
+export const config = {
+    baseURL: environment.baseURL,
+    adminUser: environment.admin.username,
+    adminPassword: environment.admin.password,
+    userName: environment.user.username,
+    userPassword: environment.user.password
+};
+
+export function hasCapability(name: string): boolean {
+    return Boolean(environment.capabilities[name]);
+}
+
+export function getServiceUrl(name: string): string | undefined {
+    return environment.services[name];
+}
+
+export function getResource(name: string): string | undefined {
+    return environment.resources[name];
+}

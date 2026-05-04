@@ -42,13 +42,15 @@ npx playwright install chromium
 ```text
 e2e/
 ├── playwright.config.ts      # Main Playwright configuration
-├── .env                      # Local credentials and base URL (git-ignored)
-├── .env.example              # Template for .env
+├── .env                      # Fallback local credentials and base URL (git-ignored)
+├── .env.example              # Template for environment profiles
+├── loadEnv.ts                # Loads the selected environment profile
 ├── .gitignore
 └── tests/
-    ├── config.ts             # Reads env variables (baseURL, credentials)
+   ├── config.ts             # Reads env variables, capabilities, and services
     ├── helpers/
-    │   └── auth.ts           # login() and logout() helpers
+   │   ├── auth.ts           # login() and logout() helpers
+   │   └── navigation.ts     # Opens app URLs respecting custom base paths
     ├── auth.spec.ts          # Example: authentication tests
     └── maps.spec.ts          # Example: maps section tests
 ```
@@ -59,21 +61,61 @@ All test files must end in `.spec.ts`.
 
 ## 3. Environment setup
 
-1. Copy the template to create your local configuration:
+1. Copy the template to create your local or customer-specific configuration:
 
    ```bash
    cp e2e/.env.example e2e/.env
    ```
 
-2. Open `e2e/.env` and set the values for **your** MapStore2 instance:
+2. Open `e2e/.env` and set the values for your target environment:
 
    ```dotenv
-   BASE_URL=http://localhost:8081/   # URL of the running app
-   MS_USER=admin                         # Admin username
-   MS_PASSWORD=admin                     # Admin password
+   BASE_URL=http://localhost:8081/   # local dev
+   MS_USER=admin                     # Admin username
+   MS_PASSWORD=admin                 # Admin password
    ```
 
+   Common `BASE_URL` examples:
+
+   ```dotenv
+   BASE_URL=http://localhost:8081/
+   BASE_URL=https://qa-mapstore.example/mapstore/
+   BASE_URL=https://customer.example/sit/mapstore/
+   ```
+
+   If your tests are trying to open `http://localhost/mapstore/#/`, it means your current `e2e/.env` is pointing there. For local development the expected value is usually `http://localhost:8081/`, not `http://localhost/mapstore`.
+
    > **Note:** `e2e/.env` is git-ignored; never commit credentials.
+
+### Environment profiles
+
+An E2E environment can be local, shared QA/DEV, or a customer deployment. The minimum contract is:
+
+- `BASE_URL`: full application URL, including any base path
+- `MS_USER` and `MS_PASSWORD`: admin account for setup and privileged checks
+
+Optional parts of the contract are:
+
+- feature flags such as `GEOSERVER_MAPSTORE_USERS`, `LDAP_ENABLED`, `OIDC_ENABLED`
+- extra capabilities listed in `E2E_CAPABILITIES`
+- third-party endpoints in `E2E_SERVICES_JSON`
+- environment-specific maps, contexts, and other data in `E2E_RESOURCES_JSON`
+
+Examples:
+
+```bash
+cp e2e/.env.example e2e/.env.local
+cp e2e/.env.example e2e/.env.qa
+cp e2e/.env.example e2e/.env.customer-acme
+```
+
+Then select the profile at runtime:
+
+```bash
+E2E_ENV=local npm run e2e
+E2E_ENV=qa npm run e2e:headed
+E2E_ENV_FILE=e2e/.env.customer-acme npm run e2e
+```
 
 ---
 
@@ -86,19 +128,204 @@ All commands are run from the **repository root**.
 | `npm run e2e` | Run all tests headlessly (default, for CI) |
 | `npm run e2e:headed` | Run all tests with a visible browser window |
 | `npm run e2e:ui` | Open the Playwright interactive UI (recommended for debugging) |
+| `npm run e2e -- --suites <name>` | Run one or more named suites from `e2e/suites.json` |
+| `npm run e2e:suites` | List configured suites and defaults |
+| `npm run e2e:raw` | Run Playwright directly, bypassing suite selection |
 | `npm run e2e:report` | Open the HTML report from the last run |
+
+You can pass additional Playwright arguments through the existing npm scripts with `--`.
 
 ### Running a specific test file
 
 ```bash
-npx playwright test e2e/tests/auth.spec.ts --config=e2e/playwright.config.ts
+npm run e2e -- e2e/tests/auth.spec.ts
 ```
 
 ### Running a specific test by name
 
 ```bash
-npx playwright test --config=e2e/playwright.config.ts -g "admin can log in"
+npm run e2e -- -g "admin can log in"
 ```
+
+### Running a specific line in a test file
+
+```bash
+npm run e2e -- e2e/tests/auth.spec.ts:10
+```
+
+### Running only one browser
+
+```bash
+npm run e2e -- --project=chromium
+```
+
+### Running only part of the migration
+
+Run one spec against one environment:
+
+```bash
+E2E_ENV=qa npm run e2e -- e2e/tests/project_export_auth.spec.ts
+```
+
+Run the current project export specs only:
+
+```bash
+E2E_ENV=local npx playwright test e2e/tests/project_export_*.spec.ts --config=e2e/playwright.config.ts
+```
+
+Run a subset by title:
+
+```bash
+E2E_ENV_FILE=e2e/.env.customer-acme npm run e2e -- -g "Homepage"
+```
+
+Run tests from one file and one scenario title together:
+
+```bash
+E2E_ENV=local npm run e2e -- e2e/tests/auth.spec.ts -g "admin can log in"
+```
+
+### Running independent named subsets
+
+Use the default `npm run e2e` command and pass subsets only when needed.
+
+Without `--suites`, it runs the preconfigured default/active suites.
+
+List available suites:
+
+```bash
+npm run e2e:suites
+```
+
+Run a suite:
+
+```bash
+npm run e2e -- --suites auth
+```
+
+Run multiple suites:
+
+```bash
+npm run e2e -- --suites auth,smoke
+```
+
+Run a suite on a specific environment and browser:
+
+```bash
+E2E_ENV=qa npm run e2e -- --suites smoke --project chromium
+```
+
+Run in UI mode:
+
+```bash
+npm run e2e:ui -- --suites auth
+```
+
+Override title matching at runtime:
+
+```bash
+npm run e2e -- --suites auth --grep "log in"
+```
+
+How this helps portability:
+
+- `e2e/suites.json` contains suite names, test files, and a plain-language description of purpose.
+- You can copy `runner.js` and `suites.json` into another project, then only adapt file paths and suite descriptions.
+- The natural-language `title` and `why` fields explain to the executor what is being validated and why.
+
+### Reusing as an `npx` package
+
+The runner is a standalone CLI package (`tools/playwright-subset-runner`) that bundles the test files and a Playwright config. Once published, no test files are needed on the consumer side.
+
+#### Running against a custom environment
+
+Pass environment variables before the `npx` command. No config file is required.
+
+```bash
+# Run the default suites against a custom instance
+BASE_URL=https://mapstore.custom.example.com/mapstore \
+  MS_USER=admin \
+  MS_PASSWORD=secret123 \
+  npx @mapstore/e2e-test-runner
+
+# Run only the auth suite in headed mode
+BASE_URL=https://mapstore.custom.example.com/mapstore \
+  MS_USER=admin \
+  MS_PASSWORD=secret123 \
+  npx @mapstore/e2e-test-runner --suites auth --headed
+
+# Enable optional capabilities (e.g. the instance has GeoServer user sync)
+BASE_URL=https://mapstore.custom.example.com/mapstore \
+  MS_USER=admin \
+  MS_PASSWORD=secret123 \
+  GEOSERVER_MAPSTORE_USERS=true \
+  npx @mapstore/e2e-test-runner --suites auth,geoserver
+```
+
+Alternatively, put the variables in a `.env` file and reference it:
+
+```bash
+# .env.custom-acme
+BASE_URL=https://mapstore.custom.example.com/mapstore
+MS_USER=admin
+MS_PASSWORD=secret123
+GEOSERVER_MAPSTORE_USERS=true
+```
+
+```bash
+E2E_ENV_FILE=.env.custom-acme npx @mapstore/e2e-test-runner --suites auth
+```
+
+#### Listing available suites
+
+```bash
+npx @mapstore/e2e-test-runner --list-suites
+```
+
+#### Dry-run (list tests without running them)
+
+```bash
+npx @mapstore/e2e-test-runner --suites auth --list
+```
+
+#### Adding custom suites on top of the bundled ones
+
+Create a `my-suites.json` file next to your custom test files:
+
+```json
+{
+  "version": 1,
+  "defaults": ["my-feature"],
+  "suites": {
+    "my-feature": {
+      "title": "My custom feature",
+      "why": "Validate a custom specific workflow not covered by standard suites.",
+      "files": ["tests/my-feature.spec.ts"],
+      "grep": "My custom feature"
+    }
+  }
+}
+```
+
+Then run with your manifest (file paths are resolved relative to `my-suites.json`):
+
+```bash
+BASE_URL=https://mapstore.custom.example.com/mapstore \
+  npx @mapstore/e2e-test-runner --suites-file ./my-suites.json --suites my-feature
+```
+
+#### Local execution (without publishing)
+
+```bash
+node tools/playwright-subset-runner/bin/e2e-test-runner.js --list-suites
+node tools/playwright-subset-runner/bin/e2e-test-runner.js --suites auth --list
+```
+
+#### Publish flow
+
+1. `cd tools/playwright-subset-runner`
+2. `npm version patch`
+3. `npm publish --access public` (or your private registry configuration)
 
 ---
 
@@ -236,7 +463,7 @@ console.log(config.adminUser);     // admin
 After a test run, artifacts are saved under `e2e/reports/`:
 
 | Artifact | Location | When created |
-|---|---|---|
+| --- | --- | --- |
 | HTML report | `e2e/reports/html/` | Always |
 | Screenshots | `e2e/reports/test-results/` | On failure |
 | Videos | `e2e/reports/test-results/` | On first retry |

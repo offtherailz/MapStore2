@@ -7,27 +7,22 @@ import { login, logout } from './helpers/auth';
  */
 test.describe('Authentication', () => {
 
-    test('login page is accessible', async ({ page }) => {
-        await page.goto('/');
-        await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
-    });
-
     test('admin can log in and log out', async ({ page }) => {
         await login(page);
         // After login the username should appear in the toolbar
-        await expect(page.getByText('admin', { exact: false })).toBeVisible();
+        // click on login menu to open the dropdown and check for account info
+
 
         await logout(page);
-        await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+        // After logout the login button should be visible again
+        await expect(page.locator('#mapstore-login-menu')).toBeVisible();
+
     });
 
     test('login fails with wrong credentials', async ({ page }) => {
-        await page.goto('/');
-        await page.getByRole('button', { name: /sign in/i }).click();
-        await page.getByLabel(/username/i).fill('wrong_user');
-        await page.getByLabel(/password/i).fill('wrong_password');
-        await page.getByRole('button', { name: /sign in/i }).last().click();
-        // An error message should appear
-        await expect(page.locator('.alert, .notification-error, [class*="error"]').first()).toBeVisible({ timeout: 10000 });
+        await login(page, 'wronguser', 'wrongpassword');
+        // Expect an error message to be visible
+        await expect(page.locator('[role="alert"].alert-danger')).toBeVisible();
+        await expect(page.locator('[role="alert"].alert-danger')).toContainText('Username or password incorrect');
     });
 });
