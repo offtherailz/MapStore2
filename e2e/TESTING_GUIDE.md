@@ -41,21 +41,21 @@ npx playwright install chromium
 
 ```text
 e2e/
-├── playwright.config.ts      # Main Playwright configuration
+├── playwright.config.js      # Main Playwright configuration
 ├── .env                      # Fallback local credentials and base URL (git-ignored)
 ├── .env.example              # Template for environment profiles
-├── loadEnv.ts                # Loads the selected environment profile
+├── loadEnv.js                # Loads the selected environment profile
 ├── .gitignore
 └── tests/
-   ├── config.ts             # Reads env variables, capabilities, and services
+    ├── config.js             # Reads env variables, capabilities, and services
     ├── helpers/
-   │   ├── auth.ts           # login() and logout() helpers
-   │   └── navigation.ts     # Opens app URLs respecting custom base paths
-    ├── auth.spec.ts          # Example: authentication tests
-    └── maps.spec.ts          # Example: maps section tests
+    │   ├── auth.js           # login() and logout() helpers
+    │   └── navigation.js     # Opens app URLs respecting custom base paths
+    ├── auth.spec.js          # Example: authentication tests
+    └── maps.spec.js          # Example: maps section tests
 ```
 
-All test files must end in `.spec.ts`.
+All test files must end in `.spec.js`.
 
 ---
 
@@ -138,7 +138,7 @@ You can pass additional Playwright arguments through the existing npm scripts wi
 ### Running a specific test file
 
 ```bash
-npm run e2e -- e2e/tests/auth.spec.ts
+npm run e2e -- e2e/tests/auth.spec.js
 ```
 
 ### Running a specific test by name
@@ -150,7 +150,7 @@ npm run e2e -- -g "admin can log in"
 ### Running a specific line in a test file
 
 ```bash
-npm run e2e -- e2e/tests/auth.spec.ts:10
+npm run e2e -- e2e/tests/auth.spec.js:10
 ```
 
 ### Running only one browser
@@ -164,13 +164,13 @@ npm run e2e -- --project=chromium
 Run one spec against one environment:
 
 ```bash
-E2E_ENV=qa npm run e2e -- e2e/tests/project_export_auth.spec.ts
+E2E_ENV=qa npm run e2e -- e2e/tests/project_export_auth.spec.js
 ```
 
 Run the current project export specs only:
 
 ```bash
-E2E_ENV=local npx playwright test e2e/tests/project_export_*.spec.ts --config=e2e/playwright.config.ts
+E2E_ENV=local npx playwright test e2e/tests/project_export_*.spec.js --config=e2e/playwright.config.js
 ```
 
 Run a subset by title:
@@ -182,7 +182,7 @@ E2E_ENV_FILE=e2e/.env.customer-acme npm run e2e -- -g "Homepage"
 Run tests from one file and one scenario title together:
 
 ```bash
-E2E_ENV=local npm run e2e -- e2e/tests/auth.spec.ts -g "admin can log in"
+E2E_ENV=local npm run e2e -- e2e/tests/auth.spec.js -g "admin can log in"
 ```
 
 ### Running independent named subsets
@@ -300,7 +300,7 @@ Create a `my-suites.json` file next to your custom test files:
     "my-feature": {
       "title": "My custom feature",
       "why": "Validate a custom specific workflow not covered by standard suites.",
-      "files": ["tests/my-feature.spec.ts"],
+      "files": ["tests/my-feature.spec.js"],
       "grep": "My custom feature"
     }
   }
@@ -350,14 +350,14 @@ Playwright's **Codegen** tool opens a browser and records your actions into a te
 3. Interact with the application (click buttons, fill forms, navigate pages).
    Each action is captured as a line of TypeScript in the Inspector.
 
-4. When done, click **Copy** in the Inspector and paste the code into a new file inside `e2e/tests/`, for example `e2e/tests/my-feature.spec.ts`.
+4. When done, click **Copy** in the Inspector and paste the code into a new file inside `e2e/tests/`, for example `e2e/tests/my-feature.spec.js`.
 
 5. Wrap the recorded code in a proper test structure (see [Section 6](#6-writing-tests-manually)).
 
 6. Run your new test to verify it passes:
 
    ```bash
-   npx playwright test e2e/tests/my-feature.spec.ts --config=e2e/playwright.config.ts --headed
+   npx playwright test e2e/tests/my-feature.spec.js --config=e2e/playwright.config.js --headed
    ```
 
 ### Tips for Codegen
@@ -372,10 +372,10 @@ Playwright's **Codegen** tool opens a browser and records your actions into a te
 
 ### Minimal test file
 
-```typescript
-// e2e/tests/my-feature.spec.ts
-import { test, expect } from '@playwright/test';
-import { login } from './helpers/auth';
+```javascript
+// e2e/tests/my-feature.spec.js
+const { test, expect } = require('@playwright/test');
+const { login } = require('./helpers/auth');
 
 test.describe('My Feature', () => {
 
@@ -403,7 +403,7 @@ Use these selectors **in order of preference** (most to least stable):
 
 ### Assertions
 
-```typescript
+```javascript
 await expect(element).toBeVisible();
 await expect(element).toBeHidden();
 await expect(element).toContainText('Expected text');
@@ -414,7 +414,7 @@ await expect(page).toHaveURL(/\/mapstore\/home/);
 
 For pages that load data asynchronously (maps, dashboards):
 
-```typescript
+```javascript
 await page.waitForLoadState('networkidle');
 // or wait for a specific request:
 await page.waitForResponse(resp => resp.url().includes('/geostore/') && resp.status() === 200);
@@ -428,8 +428,8 @@ await page.waitForResponse(resp => resp.url().includes('/geostore/') && resp.sta
 
 Navigates to the home page, opens the login dialog, fills in the credentials, and waits for the user to be authenticated.
 
-```typescript
-import { login } from './helpers/auth';
+```javascript
+const { login } = require('./helpers/auth');
 
 await login(page);                         // uses .env credentials
 await login(page, 'user1', 'password1');   // custom credentials
@@ -439,8 +439,8 @@ await login(page, 'user1', 'password1');   // custom credentials
 
 Clicks the user menu and confirms logout.
 
-```typescript
-import { logout } from './helpers/auth';
+```javascript
+const { logout } = require('./helpers/auth');
 
 await logout(page);
 ```
@@ -449,8 +449,8 @@ await logout(page);
 
 Provides the base URL and default credentials as constants:
 
-```typescript
-import { config } from './config';
+```javascript
+const { config } = require('./config');
 
 console.log(config.baseURL);       // http://localhost:8081/
 console.log(config.adminUser);     // admin
@@ -519,7 +519,7 @@ The selector may differ from the default. Use the **Playwright Inspector** to id
 npm run e2e:ui
 ```
 
-Then refine `e2e/tests/helpers/auth.ts` accordingly.
+Then refine `e2e/tests/helpers/auth.js` accordingly.
 
 ### Tests are flaky on map pages
 
@@ -532,7 +532,7 @@ await page.waitForLoadState('networkidle');
 ### How to debug a single failing test
 
 ```bash
-npx playwright test e2e/tests/auth.spec.ts --config=e2e/playwright.config.ts --headed --debug
+npx playwright test e2e/tests/auth.spec.js --config=e2e/playwright.config.js --headed --debug
 ```
 
 This opens the Playwright Inspector in step-through mode.

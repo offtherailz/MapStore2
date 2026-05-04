@@ -1,7 +1,6 @@
-import { Page } from '@playwright/test';
-import { config } from '../config';
+const { config } = require('../config');
 
-function normalizeBase(baseURL: string): URL {
+function normalizeBase(baseURL) {
     const base = new URL(baseURL);
 
     if (!base.pathname.endsWith('/')) {
@@ -11,7 +10,7 @@ function normalizeBase(baseURL: string): URL {
     return base;
 }
 
-export function resolveAppUrl(target: string, baseURL = config.baseURL): string {
+function resolveAppUrl(target, baseURL = config.baseURL) {
     const base = normalizeBase(baseURL);
 
     if (/^https?:\/\//i.test(target)) {
@@ -31,6 +30,12 @@ export function resolveAppUrl(target: string, baseURL = config.baseURL): string 
     return new URL(target, base.toString()).toString();
 }
 
-export async function openAppTarget(page: Page, target: string): Promise<void> {
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {string} target
+ */
+async function openAppTarget(page, target) {
     await page.goto(resolveAppUrl(target));
 }
+
+module.exports = { resolveAppUrl, openAppTarget };
