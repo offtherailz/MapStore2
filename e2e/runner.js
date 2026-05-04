@@ -9,7 +9,7 @@ const packageRoot = path.resolve(__dirname, '..', 'tools', 'playwright-subset-ru
 const exitCode = runCli(process.argv.slice(2), {
     workspaceRoot: path.resolve(__dirname, '..'),
     defaultSuitesPath: path.join(packageRoot, 'suites.json'),
-    defaultConfigPath: path.join(packageRoot, 'playwright.config.ts')
+    defaultConfigPath: path.join(packageRoot, 'playwright.config.js')
 });
 
 process.exit(exitCode);
