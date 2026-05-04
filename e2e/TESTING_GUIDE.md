@@ -235,7 +235,7 @@ How this helps portability:
 
 ### Reusing as an `npx` package
 
-The runner is a standalone CLI package (`tools/playwright-subset-runner`) that bundles the test files and a Playwright config. Once published, no test files are needed on the consumer side.
+The runner is a standalone CLI package (`utility/e2e-test-runner`) that bundles the test files and a Playwright config. Once published, no test files are needed on the consumer side.
 
 #### Running against a custom environment
 
@@ -317,13 +317,13 @@ BASE_URL=https://mapstore.custom.example.com/mapstore \
 #### Local execution (without publishing)
 
 ```bash
-node tools/playwright-subset-runner/bin/e2e-test-runner.js --list-suites
-node tools/playwright-subset-runner/bin/e2e-test-runner.js --suites auth --list
+node utility/e2e-test-runner/bin/e2e-test-runner.js --list-suites
+node utility/e2e-test-runner/bin/e2e-test-runner.js --suites auth --list
 ```
 
 #### Publish flow
 
-1. `cd tools/playwright-subset-runner`
+1. `cd utility/e2e-test-runner`
 2. `npm version patch`
 3. `npm publish --access public` (or your private registry configuration)
 

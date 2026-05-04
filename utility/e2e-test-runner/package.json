@@ -1,0 +1,17 @@
+{
+    "name": "@mapstore/e2e-test-runner",
+    "version": "0.1.0",
+    "description": "Run Playwright test packs from a suites manifest with optional suites selection",
+    "bin": {
+        "e2e-test-runner": "bin/e2e-test-runner.js"
+    },
+    "type": "commonjs",
+    "main": "src/cli.js",
+    "license": "BSD-2-Clause",
+    "peerDependencies": {
+        "@playwright/test": ">=1.40.0"
+    },
+    "engines": {
+        "node": ">=18"
+    }
+}
