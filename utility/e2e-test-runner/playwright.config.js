@@ -1,11 +1,14 @@
-const path = require('node:path');
-const { defineConfig, devices } = require('@playwright/test');
-const { loadE2EEnv } = require('./loadEnv');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { defineConfig, devices } from '@playwright/test';
+import { loadE2EEnv } from './loadEnv.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { envFile, envName } = loadE2EEnv();
 const baseURL = process.env.BASE_URL ?? 'http://localhost:8081/';
 
-module.exports = defineConfig({
+export default defineConfig({
     testDir: path.join(__dirname, 'tests'),
     metadata: {
         envName,
