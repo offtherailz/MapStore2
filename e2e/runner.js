@@ -2,9 +2,9 @@
 /* eslint-disable no-console */
 
 const path = require('node:path');
-const { runCli } = require('../tools/playwright-subset-runner/src/cli');
+const { runCli } = require('../utility/e2e-test-runner/src/cli');
 
-const packageRoot = path.resolve(__dirname, '..', 'tools', 'playwright-subset-runner');
+const packageRoot = path.resolve(__dirname, '..', 'utility', 'e2e-test-runner');
 
 const exitCode = runCli(process.argv.slice(2), {
     workspaceRoot: path.resolve(__dirname, '..'),
