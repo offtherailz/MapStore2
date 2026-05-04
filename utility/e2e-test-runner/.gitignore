@@ -3,7 +3,7 @@ reports/
 test-results/
 playwright-report/
 
-# Local env (contains credentials)
+# Local env files (contain credentials)
 .env
 .env.local
 .env.dev
