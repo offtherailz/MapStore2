@@ -5,3 +5,7 @@ playwright-report/
 
 # Local env (contains credentials)
 .env
+.env.local
+.env.dev
+.env.qa
+.env.customer*
