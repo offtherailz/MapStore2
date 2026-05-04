@@ -1,5 +1,6 @@
-import { Page } from '@playwright/test';
+import { expect, Page } from '@playwright/test';
 import { config } from '../config';
+import { openAppTarget } from './navigation';
 
 /**
  * Logs in to MapStore2 with the given credentials.
@@ -14,14 +15,19 @@ export async function login(
     username = config.adminUser,
     password = config.adminPassword
 ): Promise<void> {
-    await page.goto('/');
     // Open the login form
-    await page.getByRole('button', { name: /sign in/i }).click();
-    await page.getByLabel(/username/i).fill(username);
-    await page.getByLabel(/password/i).fill(password);
-    await page.getByRole('button', { name: /sign in/i }).last().click();
-    // Wait for the user menu to appear, confirming login succeeded
-    await page.getByText(username, { exact: false }).waitFor({ state: 'visible', timeout: 15000 });
+    await openAppTarget(page, '#/');
+    await page.locator('#mapstore-login-menu').click();
+    await page.getByRole('menuitem', { name: 'Login' }).click();
+    await page.getByRole('textbox', { name: 'Username' }).click();
+    await page.getByRole('textbox', { name: 'Username' }).fill(username);
+    await page.getByRole('textbox', { name: 'Username' }).press('Tab');
+    await page.getByRole('textbox', { name: 'Password' }).fill(password);
+    await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+    // await page.getByRole('menuitem', { name: ' Account Info' }).click();
+    await expect(page.locator('#mapstore-login-menu')).toBeVisible();
+    await page.locator('button.btn-success').waitFor({ state: 'visible' });
+
 }
 
 /**
@@ -29,7 +35,9 @@ export async function login(
  */
 export async function logout(page: Page): Promise<void> {
     // Click the user menu, then logout
-    await page.locator('.user-menu').click();
-    await page.getByText(/logout/i).click();
-    await page.getByRole('button', { name: /sign in/i }).waitFor({ state: 'visible' });
+    await page.locator('#mapstore-login-menu').click();
+    // Use glyphicon selector to handle localization where text may vary
+    await page.locator('[role="menuitem"] .glyphicon-log-out').click();
+    // Wait for the login button to reappear
+    await expect(page.locator('#mapstore-login-menu')).toBeVisible();
 }

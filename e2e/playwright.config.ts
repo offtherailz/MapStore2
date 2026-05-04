@@ -1,4 +1,9 @@
+import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
+import { loadE2EEnv } from './loadEnv';
+
+const { envFile, envName } = loadE2EEnv();
+const baseURL = process.env.BASE_URL ?? 'http://localhost:8081/';
 
 /**
  * MapStore2 Playwright E2E Test Configuration
@@ -9,7 +14,11 @@ import { defineConfig, devices } from '@playwright/test';
  *   MS_PASSWORD - default: admin
  */
 export default defineConfig({
-    testDir: './tests',
+    testDir: path.join(__dirname, '..', 'tools', 'playwright-subset-runner', 'tests'),
+    metadata: {
+        envName,
+        envFile: envFile ?? 'process.env'
+    },
     /* Run tests in files in parallel */
     fullyParallel: false,
     /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -26,7 +35,7 @@ export default defineConfig({
     /* Shared settings for all tests */
     use: {
         /* Base URL - override with BASE_URL env variable */
-        baseURL: process.env.BASE_URL ?? 'http://localhost:8081/',
+        baseURL,
         /* Collect traces on first retry */
         trace: 'on-first-retry',
         /* Take screenshot on failure */
