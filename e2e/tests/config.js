@@ -2,18 +2,18 @@
  * MapStore2 test credentials and base URL.
  * All values can be overridden using environment variables.
  */
-function parseBoolean(value?: string): boolean {
+function parseBoolean(value) {
     return /^(1|true|yes|on)$/i.test(value ?? '');
 }
 
-function parseList(value?: string): string[] {
+function parseList(value) {
     return (value ?? '')
         .split(',')
         .map((entry) => entry.trim())
         .filter(Boolean);
 }
 
-function parseJsonRecord(value?: string): Record<string, string> {
+function parseJsonRecord(value) {
     if (!value) {
         return {};
     }
@@ -26,13 +26,13 @@ function parseJsonRecord(value?: string): Record<string, string> {
     }
 }
 
-const namedCapabilities: Record<string, boolean> = {
+const namedCapabilities = {
     geoserverMapStoreUsers: parseBoolean(process.env.GEOSERVER_MAPSTORE_USERS),
     ldap: parseBoolean(process.env.LDAP_ENABLED),
     oidc: parseBoolean(process.env.OIDC_ENABLED)
 };
 
-const listedCapabilities = parseList(process.env.E2E_CAPABILITIES).reduce<Record<string, boolean>>(
+const listedCapabilities = parseList(process.env.E2E_CAPABILITIES).reduce(
     (capabilities, capability) => ({
         ...capabilities,
         [capability]: true
@@ -40,7 +40,7 @@ const listedCapabilities = parseList(process.env.E2E_CAPABILITIES).reduce<Record
     {}
 );
 
-export const environment = {
+const environment = {
     name: process.env.E2E_ENV ?? 'local',
     baseURL: process.env.BASE_URL ?? 'http://localhost:8081/',
     admin: {
@@ -59,7 +59,7 @@ export const environment = {
     resources: parseJsonRecord(process.env.E2E_RESOURCES_JSON)
 };
 
-export const config = {
+const config = {
     baseURL: environment.baseURL,
     adminUser: environment.admin.username,
     adminPassword: environment.admin.password,
@@ -67,14 +67,16 @@ export const config = {
     userPassword: environment.user.password
 };
 
-export function hasCapability(name: string): boolean {
+function hasCapability(name) {
     return Boolean(environment.capabilities[name]);
 }
 
-export function getServiceUrl(name: string): string | undefined {
+function getServiceUrl(name) {
     return environment.services[name];
 }
 
-export function getResource(name: string): string | undefined {
+function getResource(name) {
     return environment.resources[name];
 }
+
+module.exports = { environment, config, hasCapability, getServiceUrl, getResource };

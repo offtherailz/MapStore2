@@ -1,6 +1,6 @@
-import path from 'node:path';
-import { defineConfig, devices } from '@playwright/test';
-import { loadE2EEnv } from './loadEnv';
+const path = require('node:path');
+const { defineConfig, devices } = require('@playwright/test');
+const { loadE2EEnv } = require('./loadEnv');
 
 const { envFile, envName } = loadE2EEnv();
 const baseURL = process.env.BASE_URL ?? 'http://localhost:8081/';
@@ -9,11 +9,11 @@ const baseURL = process.env.BASE_URL ?? 'http://localhost:8081/';
  * MapStore2 Playwright E2E Test Configuration
  *
  * Base URL and credentials can be overridden via environment variables:
- *   BASE_URL   - default: http://localhost:8081/
- *   MS_USER    - default: admin
+ *   BASE_URL    - default: http://localhost:8081/
+ *   MS_USER     - default: admin
  *   MS_PASSWORD - default: admin
  */
-export default defineConfig({
+module.exports = defineConfig({
     testDir: path.join(__dirname, '..', 'tools', 'playwright-subset-runner', 'tests'),
     metadata: {
         envName,

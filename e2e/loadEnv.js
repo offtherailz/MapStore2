@@ -1,13 +1,8 @@
-import fs from 'node:fs';
-import path from 'node:path';
+const fs = require('node:fs');
+const path = require('node:path');
 
-type LoadedEnv = {
-    envName: string;
-    envFile?: string;
-};
-
-function parseEnvFile(contents: string): Record<string, string> {
-    return contents.split(/\r?\n/).reduce<Record<string, string>>((variables, rawLine) => {
+function parseEnvFile(contents) {
+    return contents.split(/\r?\n/).reduce((variables, rawLine) => {
         const line = rawLine.trim();
 
         if (!line || line.startsWith('#')) {
@@ -28,7 +23,7 @@ function parseEnvFile(contents: string): Record<string, string> {
     }, {});
 }
 
-function loadEnvFile(filePath: string): void {
+function loadEnvFile(filePath) {
     const contents = fs.readFileSync(filePath, 'utf8');
     const variables = parseEnvFile(contents);
 
@@ -39,16 +34,14 @@ function loadEnvFile(filePath: string): void {
     });
 }
 
-export function loadE2EEnv(): LoadedEnv {
+function loadE2EEnv() {
     const envName = process.env.E2E_ENV ?? 'local';
     const explicitEnvFile = process.env.E2E_ENV_FILE
         ? path.resolve(process.cwd(), process.env.E2E_ENV_FILE)
         : undefined;
     const defaultProfile = path.resolve(__dirname, `.env.${envName}`);
     const fallbackProfile = path.resolve(__dirname, '.env');
-    const candidates = [explicitEnvFile, defaultProfile, fallbackProfile].filter(
-        (candidate): candidate is string => Boolean(candidate)
-    );
+    const candidates = [explicitEnvFile, defaultProfile, fallbackProfile].filter(Boolean);
     const envFile = candidates.find((candidate) => fs.existsSync(candidate));
 
     if (envFile) {
@@ -60,3 +53,5 @@ export function loadE2EEnv(): LoadedEnv {
         envFile
     };
 }
+
+module.exports = { loadE2EEnv };
