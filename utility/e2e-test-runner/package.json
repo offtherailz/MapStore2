@@ -5,8 +5,10 @@
     "bin": {
         "e2e-test-runner": "bin/e2e-test-runner.js"
     },
-    "type": "commonjs",
-    "main": "src/cli.js",
+    "type": "module",
+    "exports": {
+        ".": "./src/cli.js"
+    },
     "license": "BSD-2-Clause",
     "peerDependencies": {
         "@playwright/test": ">=1.40.0"

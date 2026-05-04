@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 function parseArgs(argv) {
     const options = {
@@ -262,6 +262,4 @@ function runCli(argv, runtime = {}) {
     return result.status ?? 1;
 }
 
-module.exports = {
-    runCli
-};
+export { runCli };

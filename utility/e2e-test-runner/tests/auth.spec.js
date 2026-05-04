@@ -1,5 +1,5 @@
-const { test, expect } = require('@playwright/test');
-const { login, logout } = require('./helpers/auth');
+import { test, expect } from '@playwright/test';
+import { login, logout } from './helpers/auth.js';
 
 /**
  * Example E2E tests for MapStore2 authentication.
