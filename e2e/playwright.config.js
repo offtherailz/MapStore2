@@ -14,7 +14,7 @@ const baseURL = process.env.BASE_URL ?? 'http://localhost:8081/';
  *   MS_PASSWORD - default: admin
  */
 module.exports = defineConfig({
-    testDir: path.join(__dirname, '..', 'tools', 'playwright-subset-runner', 'tests'),
+    testDir: path.join(__dirname, '..', 'utility', 'e2e-test-runner', 'tests'),
     metadata: {
         envName,
         envFile: envFile ?? 'process.env'
@@ -44,7 +44,7 @@ module.exports = defineConfig({
         video: 'on-first-retry',
         /* Increase timeout for map-heavy pages */
         actionTimeout: 15000,
-        navigationTimeout: 30000,
+        navigationTimeout: 30000
     },
     /* Global timeout per test */
     timeout: 60000,
@@ -54,8 +54,8 @@ module.exports = defineConfig({
     projects: [
         {
             name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
-        },
+            use: { ...devices['Desktop Chrome'] }
+        }
         /* Uncomment to also test on Firefox and WebKit:
         {
             name: 'firefox',
@@ -66,5 +66,5 @@ module.exports = defineConfig({
             use: { ...devices['Desktop Safari'] },
         },
         */
-    ],
+    ]
 });
