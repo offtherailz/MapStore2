@@ -24,23 +24,4 @@ test.describe('Smoke', () => {
             await expect(page.getByText('Page Loading Error')).toHaveCount(0);
         });
     });
-
-    test('Order by menu is accessible with all expected sort options', async({ page }) => {
-        await test.step('Open homepage', async() => {
-            await openAppTarget(page, '#/');
-        });
-
-        await test.step('Open Order by menu and verify expected options', async() => {
-            await page.getByRole('button', { name: 'Order by' }).click();
-            await expect(page.getByRole('menuitem', { name: 'Most recent' })).toBeVisible();
-            await expect(page.getByRole('menuitem', { name: 'Less recent' })).toBeVisible();
-            await expect(page.getByRole('menuitem', { name: 'A Z' })).toBeVisible();
-            await expect(page.getByRole('menuitem', { name: 'Z A' })).toBeVisible();
-        });
-
-        await test.step('Select an option and verify page stays healthy', async() => {
-            await page.getByRole('menuitem', { name: 'Most recent' }).click();
-            await expect(page.getByText('Page Loading Error')).toHaveCount(0);
-        });
-    });
 });

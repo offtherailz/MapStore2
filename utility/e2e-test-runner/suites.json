@@ -19,6 +19,22 @@
       "files": [
         "tests/smoke.spec.js"
       ]
+    },
+    "homepage": {
+      "title": "Homepage interactions",
+      "why": "Verify sorting and resource type filters work correctly on the homepage grid.",
+      "active": true,
+      "files": [
+        "tests/homepage.spec.js"
+      ]
+    },
+    "maps": {
+      "title": "Maps CRUD",
+      "why": "Verify that an admin can create and delete a map end-to-end.",
+      "active": true,
+      "files": [
+        "tests/maps.spec.js"
+      ]
     }
   }
 }

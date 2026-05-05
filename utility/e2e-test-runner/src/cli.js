@@ -173,7 +173,13 @@ function runCli(argv, runtime = {}) {
 
     const suites = suitesConfig.suites || {};
     const requestedSuites = parseSubsetList(options.subset);
-    const selectedSuiteNames = requestedSuites.length ? requestedSuites : getDefaultSuiteNames(suitesConfig);
+    // when opening the interactive UI without an explicit suite filter, show all active suites
+    const useAllActive = !requestedSuites.length && (options.ui || options.headed);
+    const selectedSuiteNames = requestedSuites.length
+        ? requestedSuites
+        : useAllActive
+            ? Object.entries(suites).filter(([, s]) => s?.active).map(([name]) => name)
+            : getDefaultSuiteNames(suitesConfig);
 
     if (!selectedSuiteNames.length) {
         usage();
