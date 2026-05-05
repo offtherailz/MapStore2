@@ -40,19 +40,24 @@ npx playwright install chromium
 ## 2. Repository structure
 
 ```text
-e2e/
+utility/e2e-test-runner/
 ├── playwright.config.js      # Main Playwright configuration
-├── .env                      # Fallback local credentials and base URL (git-ignored)
-├── .env.example              # Template for environment profiles
+├── suites.json               # Named test suites and their file/grep mappings
 ├── loadEnv.js                # Loads the selected environment profile
+├── .env                      # Local credentials and base URL (git-ignored)
+├── .env.example              # Template for environment profiles
 ├── .gitignore
+├── bin/
+│   └── e2e-test-runner.js   # CLI entry point (used by npx)
+├── src/
+│   └── cli.js               # Suite resolution and Playwright invocation logic
 └── tests/
     ├── config.js             # Reads env variables, capabilities, and services
     ├── helpers/
     │   ├── auth.js           # login() and logout() helpers
     │   └── navigation.js     # Opens app URLs respecting custom base paths
-    ├── auth.spec.js          # Example: authentication tests
-    └── maps.spec.js          # Example: maps section tests
+    ├── auth.spec.js          # Authentication tests
+    └── smoke.spec.js         # Core smoke tests
 ```
 
 All test files must end in `.spec.js`.
@@ -64,10 +69,10 @@ All test files must end in `.spec.js`.
 1. Copy the template to create your local or customer-specific configuration:
 
    ```bash
-   cp e2e/.env.example e2e/.env
+   cp utility/e2e-test-runner/.env.example utility/e2e-test-runner/.env
    ```
 
-2. Open `e2e/.env` and set the values for your target environment:
+2. Open `utility/e2e-test-runner/.env` and set the values for your target environment:
 
    ```dotenv
    BASE_URL=http://localhost:8081/   # local dev
@@ -83,9 +88,9 @@ All test files must end in `.spec.js`.
    BASE_URL=https://customer.example/sit/mapstore/
    ```
 
-   If your tests are trying to open `http://localhost/mapstore/#/`, it means your current `e2e/.env` is pointing there. For local development the expected value is usually `http://localhost:8081/`, not `http://localhost/mapstore`.
+   If your tests are trying to open `http://localhost/mapstore/#/`, it means your current `.env` is pointing there. For local development the expected value is usually `http://localhost:8081/`, not `http://localhost/mapstore`.
 
-   > **Note:** `e2e/.env` is git-ignored; never commit credentials.
+   > **Note:** `.env` is git-ignored; never commit credentials.
 
 ### Environment profiles
 
@@ -104,9 +109,9 @@ Optional parts of the contract are:
 Examples:
 
 ```bash
-cp e2e/.env.example e2e/.env.local
-cp e2e/.env.example e2e/.env.qa
-cp e2e/.env.example e2e/.env.customer-acme
+cp utility/e2e-test-runner/.env.example utility/e2e-test-runner/.env.local
+cp utility/e2e-test-runner/.env.example utility/e2e-test-runner/.env.qa
+cp utility/e2e-test-runner/.env.example utility/e2e-test-runner/.env.customer-acme
 ```
 
 Then select the profile at runtime:
@@ -114,7 +119,7 @@ Then select the profile at runtime:
 ```bash
 E2E_ENV=local npm run e2e
 E2E_ENV=qa npm run e2e:headed
-E2E_ENV_FILE=e2e/.env.customer-acme npm run e2e
+E2E_ENV_FILE=utility/e2e-test-runner/.env.customer-acme npm run e2e
 ```
 
 ---
@@ -138,7 +143,7 @@ You can pass additional Playwright arguments through the existing npm scripts wi
 ### Running a specific test file
 
 ```bash
-npm run e2e -- e2e/tests/auth.spec.js
+npm run e2e -- utility/e2e-test-runner/tests/auth.spec.js
 ```
 
 ### Running a specific test by name
@@ -150,7 +155,7 @@ npm run e2e -- -g "admin can log in"
 ### Running a specific line in a test file
 
 ```bash
-npm run e2e -- e2e/tests/auth.spec.js:10
+npm run e2e -- utility/e2e-test-runner/tests/auth.spec.js:10
 ```
 
 ### Running only one browser
@@ -159,37 +164,15 @@ npm run e2e -- e2e/tests/auth.spec.js:10
 npm run e2e -- --project=chromium
 ```
 
-### Running only part of the migration
-
-Run one spec against one environment:
+### Filtering by title within a suite
 
 ```bash
-E2E_ENV=qa npm run e2e -- e2e/tests/project_export_auth.spec.js
+E2E_ENV_FILE=utility/e2e-test-runner/.env.customer-acme npm run e2e -- -g "Homepage"
 ```
 
-Run the current project export specs only:
+### Named suites
 
-```bash
-E2E_ENV=local npx playwright test e2e/tests/project_export_*.spec.js --config=e2e/playwright.config.js
-```
-
-Run a subset by title:
-
-```bash
-E2E_ENV_FILE=e2e/.env.customer-acme npm run e2e -- -g "Homepage"
-```
-
-Run tests from one file and one scenario title together:
-
-```bash
-E2E_ENV=local npm run e2e -- e2e/tests/auth.spec.js -g "admin can log in"
-```
-
-### Running independent named subsets
-
-Use the default `npm run e2e` command and pass subsets only when needed.
-
-Without `--suites`, it runs the preconfigured default/active suites.
+Without `--suites`, the runner executes the preconfigured default suites from `suites.json`.
 
 List available suites:
 
@@ -227,11 +210,7 @@ Override title matching at runtime:
 npm run e2e -- --suites auth --grep "log in"
 ```
 
-How this helps portability:
-
-- `e2e/suites.json` contains suite names, test files, and a plain-language description of purpose.
-- You can copy `runner.js` and `suites.json` into another project, then only adapt file paths and suite descriptions.
-- The natural-language `title` and `why` fields explain to the executor what is being validated and why.
+`suites.json` contains suite names, test files, and a plain-language description of purpose. The `title` and `why` fields document what is being validated and why.
 
 ### Reusing as an `npx` package
 
@@ -335,7 +314,7 @@ Playwright's **Codegen** tool opens a browser and records your actions into a te
 
 ### Step-by-step
 
-1. Make sure MapStore2 is running and `e2e/.env` contains the correct `BASE_URL`.
+1. Make sure MapStore2 is running and `.env` contains the correct `BASE_URL`.
 
 2. Start the recorder:
 
@@ -348,16 +327,16 @@ Playwright's **Codegen** tool opens a browser and records your actions into a te
    - **Playwright Inspector** — shows the generated code in real time.
 
 3. Interact with the application (click buttons, fill forms, navigate pages).
-   Each action is captured as a line of TypeScript in the Inspector.
+   Each action is captured as a line of JavaScript in the Inspector.
 
-4. When done, click **Copy** in the Inspector and paste the code into a new file inside `e2e/tests/`, for example `e2e/tests/my-feature.spec.js`.
+4. When done, click **Copy** in the Inspector and paste the code into a new file inside `utility/e2e-test-runner/tests/`, for example `tests/my-feature.spec.js`.
 
 5. Wrap the recorded code in a proper test structure (see [Section 6](#6-writing-tests-manually)).
 
 6. Run your new test to verify it passes:
 
    ```bash
-   npx playwright test e2e/tests/my-feature.spec.js --config=e2e/playwright.config.js --headed
+   npm run e2e -- utility/e2e-test-runner/tests/my-feature.spec.js --headed
    ```
 
 ### Tips for Codegen
@@ -372,21 +351,56 @@ Playwright's **Codegen** tool opens a browser and records your actions into a te
 
 ### Minimal test file
 
+Test files use ESM syntax (`import`/`export`).
+
 ```javascript
-// e2e/tests/my-feature.spec.js
-const { test, expect } = require('@playwright/test');
-const { login } = require('./helpers/auth');
+// utility/e2e-test-runner/tests/my-feature.spec.js
+import { test, expect } from '@playwright/test';
+import { login } from './helpers/auth.js';
 
 test.describe('My Feature', () => {
 
-    // Runs before every test in this describe block
     test.beforeEach(async ({ page }) => {
-        await login(page);          // log in as admin
+        await login(page);
     });
 
     test('feature works correctly', async ({ page }) => {
-        await page.goto('/');
-        await expect(page.getByRole('heading', { name: 'MapStore' })).toBeVisible();
+        await test.step('Navigate to the feature page', async () => {
+            await page.goto('#/my-feature');
+        });
+
+        await test.step('Verify main control is visible', async () => {
+            await expect(page.getByRole('heading', { name: 'My Feature' })).toBeVisible();
+        });
+    });
+});
+```
+
+Use `test.step()` to label each action — this makes the test readable as a manual procedure and produces structured output in the Playwright report.
+
+### Resource creation and cleanup
+
+Tests that create resources must clean up after themselves and use unique names so they can run on any instance without collisions:
+
+```javascript
+import { test, expect } from '@playwright/test';
+import { login } from './helpers/auth.js';
+
+test.describe('Maps', () => {
+    const mapName = `E2E Test Map ${Date.now()}`;
+
+    test.afterAll(async ({ browser }) => {
+        // delete the map via API or UI here
+    });
+
+    test('Create and save a new map', async ({ page }) => {
+        await test.step('Sign in as admin', async () => {
+            await login(page);
+        });
+
+        await test.step(`Create a new map named "${mapName}"`, async () => {
+            // ...
+        });
     });
 });
 ```
@@ -429,7 +443,7 @@ await page.waitForResponse(resp => resp.url().includes('/geostore/') && resp.sta
 Navigates to the home page, opens the login dialog, fills in the credentials, and waits for the user to be authenticated.
 
 ```javascript
-const { login } = require('./helpers/auth');
+import { login } from './helpers/auth.js';
 
 await login(page);                         // uses .env credentials
 await login(page, 'user1', 'password1');   // custom credentials
@@ -440,17 +454,17 @@ await login(page, 'user1', 'password1');   // custom credentials
 Clicks the user menu and confirms logout.
 
 ```javascript
-const { logout } = require('./helpers/auth');
+import { logout } from './helpers/auth.js';
 
 await logout(page);
 ```
 
 ### `config`
 
-Provides the base URL and default credentials as constants:
+Provides the base URL and default credentials:
 
 ```javascript
-const { config } = require('./config');
+import { config } from './config.js';
 
 console.log(config.baseURL);       // http://localhost:8081/
 console.log(config.adminUser);     // admin
@@ -460,14 +474,14 @@ console.log(config.adminUser);     // admin
 
 ## 8. Reports and artifacts
 
-After a test run, artifacts are saved under `e2e/reports/`:
+After a test run, artifacts are saved under `utility/e2e-test-runner/reports/`:
 
 | Artifact | Location | When created |
 | --- | --- | --- |
-| HTML report | `e2e/reports/html/` | Always |
-| Screenshots | `e2e/reports/test-results/` | On failure |
-| Videos | `e2e/reports/test-results/` | On first retry |
-| Traces | `e2e/reports/test-results/` | On first retry |
+| HTML report | `reports/html/` | Always |
+| Screenshots | `reports/test-results/` | On failure |
+| Videos | `reports/test-results/` | On first retry |
+| Traces | `reports/test-results/` | On first retry |
 
 Open the HTML report with:
 
@@ -478,7 +492,7 @@ npm run e2e:report
 To view a trace file (step-by-step replay of a failed test):
 
 ```bash
-npx playwright show-trace e2e/reports/test-results/<test-name>/trace.zip
+npx playwright show-trace utility/e2e-test-runner/reports/test-results/<test-name>/trace.zip
 ```
 
 ---
@@ -509,7 +523,7 @@ The `CI=true` variable activates stricter settings (no `test.only`, 2 retries, 1
 MapStore2 is not reachable at `BASE_URL`. Check:
 
 - The Docker stack is running: `docker compose ps`
-- The URL in `e2e/.env` is correct.
+- The URL in `.env` is correct.
 
 ### Login helper cannot find the "Sign in" button
 
@@ -519,20 +533,20 @@ The selector may differ from the default. Use the **Playwright Inspector** to id
 npm run e2e:ui
 ```
 
-Then refine `e2e/tests/helpers/auth.js` accordingly.
+Then refine `utility/e2e-test-runner/tests/helpers/auth.js` accordingly.
 
 ### Tests are flaky on map pages
 
 Map tiles load asynchronously. Add a `waitForLoadState` or a `waitForResponse` call:
 
-```typescript
+```javascript
 await page.waitForLoadState('networkidle');
 ```
 
 ### How to debug a single failing test
 
 ```bash
-npx playwright test e2e/tests/auth.spec.js --config=e2e/playwright.config.js --headed --debug
+npm run e2e -- utility/e2e-test-runner/tests/auth.spec.js --headed --debug
 ```
 
 This opens the Playwright Inspector in step-through mode.

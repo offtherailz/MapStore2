@@ -214,19 +214,6 @@ function runCli(argv, runtime = {}) {
 
     const args = ['playwright', 'test', '--config', absoluteConfigPath, ...files];
 
-    if (!options.grep) {
-        const suiteGreps = selectedSuites
-            .map(({ suite }) => suite?.grep)
-            .filter(Boolean);
-
-        if (suiteGreps.length && suiteGreps.length === selectedSuites.length) {
-            const combinedGrep = suiteGreps
-                .map((pattern) => `(${pattern})`)
-                .join('|');
-            args.push('-g', combinedGrep);
-        }
-    }
-
     if (options.grep) {
         args.push('-g', options.grep);
     }
