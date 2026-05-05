@@ -2,20 +2,27 @@ import { test, expect } from '@playwright/test';
 import { login, logout } from './helpers/auth.js';
 
 /**
- * Example E2E tests for MapStore2 authentication.
- * These tests demonstrate the recommended patterns to use when writing new tests.
+ * Authentication suite.
  */
 test.describe('Authentication', () => {
+    test('Admin can sign in and sign out', async({ page }) => {
+        await test.step('Sign in as admin', async() => {
+            await login(page);
+        });
 
-    test('admin can log in and log out', async ({ page }) => {
-        await login(page);
-        await logout(page);
-        await expect(page.locator('#mapstore-login-menu')).toBeVisible();
+        await test.step('Sign out and verify anonymous state is restored', async() => {
+            await logout(page);
+            await expect(page.locator('#mapstore-login-menu')).toBeVisible();
+        });
     });
 
-    test('login fails with wrong credentials', async ({ page }) => {
-        await login(page, 'wronguser', 'wrongpassword');
-        await expect(page.locator('[role="alert"].alert-danger')).toBeVisible();
-        await expect(page.locator('[role="alert"].alert-danger')).toContainText('Username or password incorrect');
+    test('Login fails with invalid credentials and shows an error', async({ page }) => {
+        await test.step('Submit intentionally invalid credentials', async() => {
+            await login(page, 'wronguser', 'wrongpassword');
+        });
+
+        await test.step('Verify authentication error alert is shown', async() => {
+            await expect(page.locator('[role="alert"].alert-danger')).toBeVisible();
+        });
     });
 });

@@ -10,15 +10,14 @@
       "active": true,
       "files": [
         "tests/auth.spec.js"
-      ],
-      "grep": "Authentication"
+      ]
     },
     "smoke": {
       "title": "Core smoke",
       "why": "Run a minimal health-check pack for fast validation on any environment.",
-      "active": false,
+      "active": true,
       "files": [
-        "tests/auth.spec.js"
+        "tests/smoke.spec.js"
       ]
     }
   }
