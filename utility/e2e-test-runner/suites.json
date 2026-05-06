@@ -35,6 +35,22 @@
       "files": [
         "tests/maps.spec.js"
       ]
+    },
+    "ldap": {
+      "title": "LDAP authentication",
+      "why": "Verify that a standard LDAP user can authenticate when LDAP profile is enabled.",
+      "active": true,
+      "files": [
+        "tests/ldap.spec.js"
+      ]
+    },
+    "geoserver": {
+      "title": "GeoServer catalog integration",
+      "why": "Verify that a layer can be added to a map from the catalog when GeoServer profile is enabled.",
+      "active": true,
+      "files": [
+        "tests/geoserver.spec.js"
+      ]
     }
   }
 }
