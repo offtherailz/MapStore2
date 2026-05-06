@@ -1,0 +1,18 @@
+[
+  { "op": "add", "path": "/plugins/desktop/-", "value": "MyAwesomePlugin" },
+  {
+    "op": "add",
+    "path": "/catalogServices",
+    "value": {
+      "services": {
+        "local_geoserver_wms": {
+          "url": "http://localhost:8082/geoserver/wms",
+          "type": "wms",
+          "title": "Local GeoServer WMS",
+          "autoload": true
+        }
+      },
+      "selectedService": "local_geoserver_wms"
+    }
+  }
+]

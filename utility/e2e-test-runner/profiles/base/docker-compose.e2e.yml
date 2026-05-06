@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  mapstore:
+    build:
+      args:
+        MAPSTORE_WEBAPP_SRC: "product/target/mapstore.war"
+
+  proxy:
+    ports:
+      - "8081:80"
