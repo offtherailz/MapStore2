@@ -310,9 +310,9 @@
     "e2e:headed": "node utility/e2e-test-runner/bin/e2e-test-runner.js --headed",
     "e2e:ui": "node utility/e2e-test-runner/bin/e2e-test-runner.js --ui",
     "e2e:raw": "playwright test --config=utility/e2e-test-runner/playwright.config.js",
-    "e2e:suites": "node utility/e2e-test-runner/bin/e2e-test-runner.js --list-suites",
     "e2e:report": "playwright show-report reports/html",
-    "e2e:codegen": "playwright codegen"
+    "e2e:codegen": "playwright codegen",
+    "e2e:docker": "bash utility/e2e-test-runner/e2e-docker.sh"
   },
   "author": "GeoSolutions",
   "license": "BSD-2-Clause"

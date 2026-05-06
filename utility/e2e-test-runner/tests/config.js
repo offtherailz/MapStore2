@@ -1,7 +1,3 @@
-function parseBoolean(value) {
-    return /^(1|true|yes|on)$/i.test(value ?? '');
-}
-
 function parseList(value) {
     return (value ?? '')
         .split(',')
@@ -22,14 +18,8 @@ function parseJsonRecord(value) {
     }
 }
 
-const namedCapabilities = {
-    geoserverMapStoreUsers: parseBoolean(process.env.GEOSERVER_MAPSTORE_USERS),
-    ldap: parseBoolean(process.env.LDAP_ENABLED),
-    oidc: parseBoolean(process.env.OIDC_ENABLED)
-};
-
-const listedCapabilities = parseList(process.env.E2E_CAPABILITIES).reduce(
-    (capabilities, capability) => ({ ...capabilities, [capability]: true }),
+const listedFeatures = parseList(process.env.E2E_FEATURES).reduce(
+    (features, feature) => ({ ...features, [feature]: true }),
     {}
 );
 
@@ -44,10 +34,7 @@ const environment = {
         username: process.env.MS_USER_STANDARD ?? '',
         password: process.env.MS_PASSWORD_STANDARD ?? ''
     },
-    capabilities: {
-        ...listedCapabilities,
-        ...namedCapabilities
-    },
+    features: listedFeatures,
     services: parseJsonRecord(process.env.E2E_SERVICES_JSON),
     resources: parseJsonRecord(process.env.E2E_RESOURCES_JSON)
 };
@@ -58,8 +45,8 @@ const config = {
     adminPassword: environment.admin.password
 };
 
-function hasCapability(name) {
-    return Boolean(environment.capabilities[name]);
+function hasFeature(name) {
+    return Boolean(environment.features[name]);
 }
 
 function getServiceUrl(name) {
@@ -70,4 +57,4 @@ function getResource(name) {
     return environment.resources[name] ?? '';
 }
 
-export { environment, config, hasCapability, getServiceUrl, getResource };
+export { environment, config, hasFeature, getServiceUrl, getResource };

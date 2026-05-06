@@ -1,34 +1,35 @@
 # MapStore2 — End-to-End Testing Guide (Playwright)
 
-> **Audience:** QA engineers and testers who need to write, run, or record automated browser tests for MapStore2.
+## Introduction
+
+MapStore2's E2E test framework is a centralized [Playwright](https://playwright.dev/) runner (`utility/e2e-test-runner`) for automated browser testing.
+This framework is used for validating MapStore2 functionality in various environments (local dev, QA, test deployments) and configurations (with or without GeoServer, LDAP, etc.) through reusable test suites.
+
+**Key concepts:**
+
+- **Suites** — logical groups of tests (for example `auth`, `smoke`...) selectable with `--suites`. By default all configured suites run.
+- **Profiles** — when running with Docker, profiles (`base`, `geoserver`, `ldap` ...) determine which services are started and which optional capabilities are enabled.
+- **Features** — `features=oidc,ldap,geoserverIntegration`; profile-specific tests are enabled only when the related feature is available.
+- **Authoring playbook** — for AI prompt templates and feature-first test design rules, see `docs/PROMPT_SKILL_TEST_AUTHORING.md`.
+
+**Usage modes:**
+
+- **Local** — run against any already-running MapStore2 instance (dev server, QA, customer deployment) by pointing `BASE_URL` to it.
+- **npx** — use the published `@mapstore/e2e-test-runner` package to test a specific released version without cloning the repository; suites can be selected with `--suites`.
+- **Docker** — use `npm run e2e:docker` to build the WAR, start the full stack, run all profiles sequentially, and tear everything down — identical to CI.
 
 ---
 
-## Table of Contents
+## Requirements
 
-1. [Prerequisites](#1-prerequisites)
-2. [Repository structure](#2-repository-structure)
-3. [Environment setup](#3-environment-setup)
-4. [Running the tests](#4-running-the-tests)
-5. [Recording a new test with Codegen](#5-recording-a-new-test-with-codegen)
-6. [Writing tests manually](#6-writing-tests-manually)
-7. [Page helpers and utilities](#7-page-helpers-and-utilities)
-8. [Reports and artifacts](#8-reports-and-artifacts)
-9. [CI environment variables](#9-ci-environment-variables)
-10. [Troubleshooting](#10-troubleshooting)
-
----
-
-## 1. Prerequisites
-
-| Requirement | Version |
+| Requirement | Details |
 | --- | --- |
 | Node.js | ≥ 18 |
 | npm | ≥ 9 |
-| MapStore2 running instance | reachable via HTTP |
+| **Local / npx** | A running MapStore2 instance reachable via `BASE_URL` |
+| **Docker** | Docker, Java 17, Maven (the script builds the WAR automatically) |
 
-Playwright and Chromium are already installed in the repository.
-If you need to reinstall them:
+Playwright and Chromium are pre-installed in the repository. To reinstall:
 
 ```bash
 npm install
@@ -37,16 +38,330 @@ npx playwright install chromium
 
 ---
 
-## 2. Repository structure
+## Quick Start
+
+All commands run from the **repository root**.
+
+### Local — against an existing instance
+
+```bash
+# One-time setup: copy and edit credentials
+cp utility/e2e-test-runner/.env.example .env
+# set BASE_URL, MS_USER, MS_PASSWORD in the file
+
+npm run e2e                          # headless, all default suites
+npm run e2e:headed                   # with visible browser
+npm run e2e -- --list-suites         # list available suites
+
+npm run e2e -- --suites smoke        # single suite
+npm run e2e -- --suites auth,smoke   # multiple suites
+npm run e2e:ui                       # interactive Playwright UI
+```
+
+### npx — against any instance, no clone required
+
+```bash
+BASE_URL=https://mapstore.example.com/mapstore \
+  MS_USER=admin MS_PASSWORD=secret \
+  npx @mapstore/e2e-test-runner                          # all default suites
+
+BASE_URL=https://mapstore.example.com/mapstore \
+  MS_USER=admin MS_PASSWORD=secret \
+  npx @mapstore/e2e-test-runner --suites smoke --headed  # single suite, headed
+```
+
+### Docker — full stack, all profiles
+
+```bash
+npm run e2e:docker                                                   # all profiles
+npm run e2e:docker -- --help                                         # list options and available profiles
+npm run e2e:docker -- --profiles base                                # base only
+npm run e2e:docker -- --profiles base,geoserver --skip-build         # skip WAR build
+npm run e2e:docker -- --no-fast-fail --headed --profiles geoserver   # debug mode
+```
+
+**Prerequisites for Docker:** Docker, Java 17, Maven.
+
+---
+
+## Reference
+
+### Environment configuration
+
+Create a local `.env` file from the template:
+
+```bash
+cp utility/e2e-test-runner/.env.example .env
+```
+
+Minimum required variables:
+
+```dotenv
+BASE_URL=http://localhost:8081/   # full URL including base path
+MS_USER=admin
+MS_PASSWORD=admin
+```
+
+Common `BASE_URL` values:
+
+```dotenv
+BASE_URL=http://localhost:8081/
+BASE_URL=https://qa-mapstore.example/mapstore/
+BASE_URL=https://customer.example/sit/mapstore/
+```
+
+> **Note:** `.env` is git-ignored; never commit credentials.
+
+#### Multiple environment profiles
+
+```bash
+cp utility/e2e-test-runner/.env.example .env.local
+cp utility/e2e-test-runner/.env.example .env.qa
+cp utility/e2e-test-runner/.env.example .env.customer-acme
+```
+
+Select at runtime:
+
+```bash
+E2E_ENV=local npm run e2e
+E2E_ENV=qa npm run e2e:headed
+E2E_ENV_FILE=.env.customer-acme npm run e2e
+```
+
+The same root-level `.env` files work with `npx` as well, for example:
+
+```bash
+E2E_ENV_FILE=.env.customer-acme npx @mapstore/e2e-test-runner --suites auth
+```
+
+#### Optional environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `E2E_FEATURES` | Comma-separated feature list (for example `oidc,ldap,geoserverIntegration`) |
+| `E2E_SERVICES_JSON` | JSON map of third-party service endpoints |
+| `E2E_RESOURCES_JSON` | JSON map of environment-specific resources |
+| `MS_USER_STANDARD` | Non-admin user for LDAP / mixed-auth tests |
+| `MS_PASSWORD_STANDARD` | Password for `MS_USER_STANDARD` |
+
+---
+
+### npm scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run e2e` | Run all default suites headlessly |
+| `npm run e2e:headed` | Run with a visible browser window |
+| `npm run e2e:ui` | Open the Playwright interactive UI |
+| `npm run e2e -- --suites <name>` | Run one or more named suites |
+| `npm run e2e -- --list-suites` | List all configured suites |
+| `npm run e2e:raw` | Run Playwright directly, bypassing suite selection |
+| `npm run e2e:report` | Open the HTML report from the last run |
+| `npm run e2e:codegen` | Open Playwright Codegen for recording tests |
+| `npm run e2e:docker` | Build WAR, run all Docker profiles, tear down |
+| `npm run e2e:docker -- --help` | Show Docker runner help (includes available profiles) |
+| `npm run e2e:docker -- --profiles <p>` | Run specific Docker profiles |
+| `npm run e2e:docker -- --skip-build` | Reuse existing WAR |
+| `npm run e2e:docker -- --no-fast-fail` | Wait full timeout even on startup errors |
+| `npm run e2e:docker -- --headed` | Run Docker tests with a visible browser |
+
+### Running specific tests
+
+```bash
+# By file
+npm run e2e -- utility/e2e-test-runner/tests/auth.spec.js
+
+# By test name
+npm run e2e -- -g "admin can log in"
+
+# By file + line
+npm run e2e -- utility/e2e-test-runner/tests/auth.spec.js:10
+
+# Single browser
+npm run e2e -- --project=chromium
+```
+
+---
+
+### Suites
+
+List available suites:
+
+```bash
+npm run e2e -- --list-suites
+```
+
+`suites.json` defines suite names, test file mappings, and `grep` patterns. The `title` and `why` fields document what is validated and why.
+
+Default suite mapping by Docker profile:
+
+| Docker profile | Suites |
+| --- | --- |
+| `base` | `auth`, `smoke`, `homepage`, `maps` |
+| `geoserver` | `auth`, `smoke`, `homepage`, `maps`, `geoserver` |
+| `ldap` | `auth`, `smoke`, `homepage`, `maps`, `ldap` |
+
+---
+
+### npx — full reference
+
+```bash
+# All default suites
+BASE_URL=https://mapstore.example.com/mapstore \
+  MS_USER=admin MS_PASSWORD=secret123 \
+  npx @mapstore/e2e-test-runner
+
+# Specific suites, headed
+BASE_URL=... MS_USER=... MS_PASSWORD=... \
+  npx @mapstore/e2e-test-runner --suites auth --headed
+
+# With optional capabilities
+BASE_URL=... MS_USER=... MS_PASSWORD=... \
+  E2E_FEATURES=geoserverIntegration \
+  npx @mapstore/e2e-test-runner --suites auth,geoserver
+
+# Using a .env file
+E2E_ENV_FILE=.env.customer-acme npx @mapstore/e2e-test-runner --suites auth
+
+# List available suites
+npx @mapstore/e2e-test-runner --list-suites
+
+# Dry-run (list tests without running)
+npx @mapstore/e2e-test-runner --suites auth --list
+
+# Custom suites manifest
+BASE_URL=... npx @mapstore/e2e-test-runner \
+  --suites-file ./my-suites.json --suites my-feature
+```
+
+#### Custom suites manifest format
+
+```json
+{
+  "version": 1,
+  "defaults": ["my-feature"],
+  "suites": {
+    "my-feature": {
+      "title": "My custom feature",
+      "why": "Validate a custom workflow not covered by standard suites.",
+      "files": ["tests/my-feature.spec.js"],
+      "grep": "My custom feature"
+    }
+  }
+}
+```
+
+#### Local execution without publishing
+
+```bash
+node utility/e2e-test-runner/bin/e2e-test-runner.js --list-suites
+node utility/e2e-test-runner/bin/e2e-test-runner.js --suites auth --list
+```
+
+---
+
+### Docker — full reference
+
+The `utility/e2e-test-runner/e2e-docker.sh` script handles everything: WAR build, stack startup, test run, and teardown. Compose overlays are selected automatically per profile.
+
+```bash
+# Run all profiles sequentially
+npm run e2e:docker
+
+# Single profile
+npm run e2e:docker -- --profiles base
+
+# Multiple profiles, skip build
+npm run e2e:docker -- --profiles base,geoserver --skip-build
+
+# LDAP profile with credentials
+MS_USER_STANDARD=ldapuser MS_PASSWORD_STANDARD=secret \
+  npm run e2e:docker -- --profiles ldap
+
+# Debug mode (no fast-fail, visible browser)
+npm run e2e:docker -- --no-fast-fail --headed --profiles geoserver
+```
+
+On failure the script saves Docker logs to `e2e-docker-logs-<profile>.txt` and continues with remaining profiles before exiting non-zero.
+
+#### Manual Docker steps (without the script)
+
+**Build the WAR:**
+
+```bash
+mvn -pl product -am -DskipTests package          # base or geoserver
+mvn -pl product -am -DskipTests -Pldap package   # LDAP profile
+```
+
+**Start the stack:**
+
+```bash
+# base
+docker compose -f docker-compose.yml -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml up -d --build
+
+# geoserver
+docker compose -f docker-compose.yml -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml \
+  -f utility/e2e-test-runner/profiles/geoserver/docker-compose.e2e.yml up -d --build
+
+# ldap
+docker compose -f docker-compose.yml -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml \
+  -f utility/e2e-test-runner/profiles/ldap/docker-compose.e2e.yml up -d --build
+```
+
+**Wait for services:**
+
+```bash
+until curl -fsS http://localhost:8081/mapstore/ > /dev/null; do sleep 5; done
+# GeoServer only:
+until curl -fsS http://localhost:8082/geoserver/web/ > /dev/null; do sleep 5; done
+```
+
+**Run tests:**
+
+```bash
+# base
+BASE_URL=http://localhost:8081/mapstore/ \
+  npm run e2e -- --suites auth,smoke,homepage,maps
+
+# geoserver
+BASE_URL=http://localhost:8081/mapstore/ \
+  E2E_FEATURES=geoserverIntegration \
+  E2E_SERVICES_JSON='{"geoserver":"http://localhost:8082/geoserver"}' \
+  npm run e2e -- --suites auth,smoke,homepage,maps,geoserver
+
+# ldap
+BASE_URL=http://localhost:8081/mapstore/ \
+  E2E_FEATURES=ldap \
+  MS_USER_STANDARD=<ldap-user> MS_PASSWORD_STANDARD=<ldap-password> \
+  npm run e2e -- --suites auth,smoke,homepage,maps,ldap
+```
+
+**Tear down:**
+
+```bash
+docker compose -f docker-compose.yml -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml down -v
+```
+
+---
+
+### Repository structure
 
 ```text
 utility/e2e-test-runner/
+├── e2e-docker.sh            # Docker profile runner (build, up, test, teardown)
+├── profiles/
+│   ├── base/
+│   │   └── docker-compose.e2e.yml   # Base overlay: WAR mount and port mapping
+│   ├── geoserver/
+│   │   ├── docker-compose.e2e.yml   # GeoServer integration overlay
+│   │   └── localConfig.e2e.geoserver.patch.json
+│   └── ldap/
+│       └── docker-compose.e2e.yml   # LDAP authentication overlay
 ├── playwright.config.js      # Main Playwright configuration
 ├── suites.json               # Named test suites and their file/grep mappings
 ├── loadEnv.js                # Loads the selected environment profile
 ├── .env                      # Local credentials and base URL (git-ignored)
 ├── .env.example              # Template for environment profiles
-├── .gitignore
 ├── bin/
 │   └── e2e-test-runner.js   # CLI entry point (used by npx)
 ├── src/
@@ -60,251 +375,9 @@ utility/e2e-test-runner/
     └── smoke.spec.js         # Core smoke tests
 ```
 
+The base `docker-compose.yml` at repository root is always used as the first `-f` argument.
+
 All test files must end in `.spec.js`.
-
----
-
-## 3. Environment setup
-
-1. Copy the template to create your local or customer-specific configuration:
-
-   ```bash
-   cp utility/e2e-test-runner/.env.example utility/e2e-test-runner/.env
-   ```
-
-2. Open `utility/e2e-test-runner/.env` and set the values for your target environment:
-
-   ```dotenv
-   BASE_URL=http://localhost:8081/   # local dev
-   MS_USER=admin                     # Admin username
-   MS_PASSWORD=admin                 # Admin password
-   ```
-
-   Common `BASE_URL` examples:
-
-   ```dotenv
-   BASE_URL=http://localhost:8081/
-   BASE_URL=https://qa-mapstore.example/mapstore/
-   BASE_URL=https://customer.example/sit/mapstore/
-   ```
-
-   If your tests are trying to open `http://localhost/mapstore/#/`, it means your current `.env` is pointing there. For local development the expected value is usually `http://localhost:8081/`, not `http://localhost/mapstore`.
-
-   > **Note:** `.env` is git-ignored; never commit credentials.
-
-### Environment profiles
-
-An E2E environment can be local, shared QA/DEV, or a customer deployment. The minimum contract is:
-
-- `BASE_URL`: full application URL, including any base path
-- `MS_USER` and `MS_PASSWORD`: admin account for setup and privileged checks
-
-Optional parts of the contract are:
-
-- feature flags such as `GEOSERVER_MAPSTORE_USERS`, `LDAP_ENABLED`, `OIDC_ENABLED`
-- extra capabilities listed in `E2E_CAPABILITIES`
-- third-party endpoints in `E2E_SERVICES_JSON`
-- environment-specific maps, contexts, and other data in `E2E_RESOURCES_JSON`
-
-Examples:
-
-```bash
-cp utility/e2e-test-runner/.env.example utility/e2e-test-runner/.env.local
-cp utility/e2e-test-runner/.env.example utility/e2e-test-runner/.env.qa
-cp utility/e2e-test-runner/.env.example utility/e2e-test-runner/.env.customer-acme
-```
-
-Then select the profile at runtime:
-
-```bash
-E2E_ENV=local npm run e2e
-E2E_ENV=qa npm run e2e:headed
-E2E_ENV_FILE=utility/e2e-test-runner/.env.customer-acme npm run e2e
-```
-
----
-
-## 4. Running the tests
-
-All commands are run from the **repository root**.
-
-| Command | Description |
-| --- | --- |
-| `npm run e2e` | Run all tests headlessly (default, for CI) |
-| `npm run e2e:headed` | Run all tests with a visible browser window |
-| `npm run e2e:ui` | Open the Playwright interactive UI (recommended for debugging) |
-| `npm run e2e -- --suites <name>` | Run one or more named suites from `e2e/suites.json` |
-| `npm run e2e:suites` | List configured suites and defaults |
-| `npm run e2e:raw` | Run Playwright directly, bypassing suite selection |
-| `npm run e2e:report` | Open the HTML report from the last run |
-
-You can pass additional Playwright arguments through the existing npm scripts with `--`.
-
-### Running a specific test file
-
-```bash
-npm run e2e -- utility/e2e-test-runner/tests/auth.spec.js
-```
-
-### Running a specific test by name
-
-```bash
-npm run e2e -- -g "admin can log in"
-```
-
-### Running a specific line in a test file
-
-```bash
-npm run e2e -- utility/e2e-test-runner/tests/auth.spec.js:10
-```
-
-### Running only one browser
-
-```bash
-npm run e2e -- --project=chromium
-```
-
-### Filtering by title within a suite
-
-```bash
-E2E_ENV_FILE=utility/e2e-test-runner/.env.customer-acme npm run e2e -- -g "Homepage"
-```
-
-### Named suites
-
-Without `--suites`, the runner executes the preconfigured default suites from `suites.json`.
-
-List available suites:
-
-```bash
-npm run e2e:suites
-```
-
-Run a suite:
-
-```bash
-npm run e2e -- --suites auth
-```
-
-Run multiple suites:
-
-```bash
-npm run e2e -- --suites auth,smoke
-```
-
-Run a suite on a specific environment and browser:
-
-```bash
-E2E_ENV=qa npm run e2e -- --suites smoke --project chromium
-```
-
-Run in UI mode:
-
-```bash
-npm run e2e:ui -- --suites auth
-```
-
-Override title matching at runtime:
-
-```bash
-npm run e2e -- --suites auth --grep "log in"
-```
-
-`suites.json` contains suite names, test files, and a plain-language description of purpose. The `title` and `why` fields document what is being validated and why.
-
-### Reusing as an `npx` package
-
-The runner is a standalone CLI package (`utility/e2e-test-runner`) that bundles the test files and a Playwright config. Once published, no test files are needed on the consumer side.
-
-#### Running against a custom environment
-
-Pass environment variables before the `npx` command. No config file is required.
-
-```bash
-# Run the default suites against a custom instance
-BASE_URL=https://mapstore.custom.example.com/mapstore \
-  MS_USER=admin \
-  MS_PASSWORD=secret123 \
-  npx @mapstore/e2e-test-runner
-
-# Run only the auth suite in headed mode
-BASE_URL=https://mapstore.custom.example.com/mapstore \
-  MS_USER=admin \
-  MS_PASSWORD=secret123 \
-  npx @mapstore/e2e-test-runner --suites auth --headed
-
-# Enable optional capabilities (e.g. the instance has GeoServer user sync)
-BASE_URL=https://mapstore.custom.example.com/mapstore \
-  MS_USER=admin \
-  MS_PASSWORD=secret123 \
-  GEOSERVER_MAPSTORE_USERS=true \
-  npx @mapstore/e2e-test-runner --suites auth,geoserver
-```
-
-Alternatively, put the variables in a `.env` file and reference it:
-
-```bash
-# .env.custom-acme
-BASE_URL=https://mapstore.custom.example.com/mapstore
-MS_USER=admin
-MS_PASSWORD=secret123
-GEOSERVER_MAPSTORE_USERS=true
-```
-
-```bash
-E2E_ENV_FILE=.env.custom-acme npx @mapstore/e2e-test-runner --suites auth
-```
-
-#### Listing available suites
-
-```bash
-npx @mapstore/e2e-test-runner --list-suites
-```
-
-#### Dry-run (list tests without running them)
-
-```bash
-npx @mapstore/e2e-test-runner --suites auth --list
-```
-
-#### Adding custom suites on top of the bundled ones
-
-Create a `my-suites.json` file next to your custom test files:
-
-```json
-{
-  "version": 1,
-  "defaults": ["my-feature"],
-  "suites": {
-    "my-feature": {
-      "title": "My custom feature",
-      "why": "Validate a custom specific workflow not covered by standard suites.",
-      "files": ["tests/my-feature.spec.js"],
-      "grep": "My custom feature"
-    }
-  }
-}
-```
-
-Then run with your manifest (file paths are resolved relative to `my-suites.json`):
-
-```bash
-BASE_URL=https://mapstore.custom.example.com/mapstore \
-  npx @mapstore/e2e-test-runner --suites-file ./my-suites.json --suites my-feature
-```
-
-#### Local execution (without publishing)
-
-```bash
-node utility/e2e-test-runner/bin/e2e-test-runner.js --list-suites
-node utility/e2e-test-runner/bin/e2e-test-runner.js --suites auth --list
-```
-
-#### Publish flow
-
-1. `cd utility/e2e-test-runner`
-2. `npm version patch`
-3. `npm publish --access public` (or your private registry configuration)
 
 ---
 
@@ -339,81 +412,57 @@ Playwright's **Codegen** tool opens a browser and records your actions into a te
    npm run e2e -- utility/e2e-test-runner/tests/my-feature.spec.js --headed
    ```
 
-### Tips for Codegen
-
-- Use `page.getByRole()` and `page.getByLabel()` selectors when possible — they are more stable than CSS selectors.
-- Add short `await page.waitForLoadState('networkidle')` calls after navigating to map-heavy pages.
-- If a selector is fragile, refine it manually after recording.
-
----
-
 ## 6. Writing tests manually
 
-### Minimal test file
+### npx — running against any instance
 
-Test files use ESM syntax (`import`/`export`).
+`npx @mapstore/e2e-test-runner` accepts exactly the same environment variables described in
+[Environment configuration](#environment-configuration): use inline exports, a `.env` file
+(via `E2E_ENV_FILE`), or an environment profile (via `E2E_ENV`).
 
-```javascript
-// utility/e2e-test-runner/tests/my-feature.spec.js
-import { test, expect } from '@playwright/test';
-import { login } from './helpers/auth.js';
+```bash
+# All default suites against a remote instance
+BASE_URL=https://mapstore.example.com/mapstore \
+  MS_USER=admin MS_PASSWORD=secret \
+  npx @mapstore/e2e-test-runner
 
-test.describe('My Feature', () => {
-
-    test.beforeEach(async ({ page }) => {
-        await login(page);
-    });
-
-    test('feature works correctly', async ({ page }) => {
-        await test.step('Navigate to the feature page', async () => {
-            await page.goto('#/my-feature');
-        });
-
-        await test.step('Verify main control is visible', async () => {
-            await expect(page.getByRole('heading', { name: 'My Feature' })).toBeVisible();
-        });
-    });
-});
+# Specific suite, headed, using a named environment profile
+E2E_ENV_FILE=.env.customer-acme \
+  npx @mapstore/e2e-test-runner --suites smoke --headed
 ```
 
-Use `test.step()` to label each action — this makes the test readable as a manual procedure and produces structured output in the Playwright report.
+#### Extending with custom suites
 
-### Resource creation and cleanup
+Pass `--suites-file` to add project-specific suites on top of the bundled ones:
 
-Tests that create resources must clean up after themselves and use unique names so they can run on any instance without collisions:
-
-```javascript
-import { test, expect } from '@playwright/test';
-import { login } from './helpers/auth.js';
-
-test.describe('Maps', () => {
-    const mapName = `E2E Test Map ${Date.now()}`;
-
-    test.afterAll(async ({ browser }) => {
-        // delete the map via API or UI here
-    });
-
-    test('Create and save a new map', async ({ page }) => {
-        await test.step('Sign in as admin', async () => {
-            await login(page);
-        });
-
-        await test.step(`Create a new map named "${mapName}"`, async () => {
-            // ...
-        });
-    });
-});
+```bash
+BASE_URL=... npx @mapstore/e2e-test-runner \
+  --suites-file ./my-suites.json --suites my-feature
 ```
 
-### Recommended locator priority
+The custom manifest follows the same format as `suites.json`:
 
-Use these selectors **in order of preference** (most to least stable):
+```json
+{
+  "version": 1,
+  "defaults": ["my-feature"],
+  "suites": {
+    "my-feature": {
+      "title": "My custom feature",
+      "why": "Validate a custom workflow not covered by standard suites.",
+      "files": ["tests/my-feature.spec.js"],
+      "grep": "My custom feature"
+    }
+  }
+}
+```
 
-1. `page.getByRole('button', { name: 'Save' })` — semantic role
-2. `page.getByLabel('Username')` — form label
-3. `page.getByText('Sign in')` — visible text
-4. `page.getByTestId('my-data-testid')` — `data-testid` attribute
-5. `page.locator('.my-css-class')` — CSS selector (last resort)
+#### Local execution without publishing
+
+```bash
+node utility/e2e-test-runner/bin/e2e-test-runner.js --list-suites
+node utility/e2e-test-runner/bin/e2e-test-runner.js --suites auth --list
+```
 
 ### Assertions
 
@@ -514,9 +563,173 @@ When running in a CI pipeline (GitHub Actions, Jenkins, etc.), pass the variable
 
 The `CI=true` variable activates stricter settings (no `test.only`, 2 retries, 1 worker).
 
+### GitHub Actions with Docker profiles
+
+This repository includes a workflow that starts MapStore in Docker (with PostgreSQL) and runs Playwright suites by profile:
+
+- Workflow: `.github/workflows/e2e-docker.yml`
+- Base compose: `docker-compose.yml`
+- CI override (WAR + port): `utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml`
+- Optional GeoServer profile: `utility/e2e-test-runner/profiles/geoserver/docker-compose.e2e.yml`
+- Optional LDAP profile: `utility/e2e-test-runner/profiles/ldap/docker-compose.e2e.yml`
+
+The workflow runs automatically every night at midnight UTC (all three profiles). It can also be triggered
+on demand from GitHub Actions > **E2E Docker Profiles** with these inputs:
+
+- `profiles`: comma-separated profile list (`base`, `geoserver`, `ldap`)
+- `suites_base`: suites for the base profile
+- `suites_geoserver`: suites for the geoserver profile
+- `suites_ldap`: suites for the ldap profile
+- `ldap_user` / `ldap_password`: credentials used by the LDAP login suite (`MS_USER_STANDARD`, `MS_PASSWORD_STANDARD`)
+
+Suggested suite mapping pattern:
+
+- `base`: `auth,smoke,homepage,maps`
+- `geoserver`: `auth,smoke,homepage,maps,geoserver`
+- `ldap`: `auth,smoke,homepage,maps,ldap`
+
+Important for LDAP profile: MapStore is built with Maven profile `ldap` in CI, not only with the LDAP container enabled.
+
+For profile-specific tests, gate the suite or test using features (`hasFeature('geoserverIntegration')`, `hasFeature('ldap')`) to avoid false failures when a profile is not enabled.
+
 ---
 
-## 10. Troubleshooting
+## 10. Running tests locally with Docker
+
+The repository includes `utility/e2e-test-runner/e2e-docker.sh`, a script that builds the WAR, starts each Docker profile,
+waits for the services, runs the tests, and tears everything down — identical to what GitHub Actions does.
+
+### Quick start
+
+```bash
+# Run all profiles (base → geoserver → ldap)
+npm run e2e:docker
+
+# Run a single profile
+npm run e2e:docker -- --profiles base
+
+# Run two profiles, skip the Maven build (WAR already built)
+npm run e2e:docker -- --profiles base,geoserver --skip-build
+
+# Run the LDAP profile with credentials
+MS_USER_STANDARD=ldapuser MS_PASSWORD_STANDARD=secret \
+  npm run e2e:docker -- --profiles ldap
+```
+
+**Prerequisites:** Docker, Java 17, Maven.
+
+The script resolves the correct compose file combination, Maven flag (`-Pldap` only for the LDAP profile),
+and environment variables for each profile automatically. On failure it saves Docker logs to
+`e2e-docker-logs-<profile>.txt` and continues with the remaining profiles before returning a non-zero exit code.
+
+---
+
+### Manual step-by-step (without the script)
+
+### Step 1 — build the WAR
+
+```bash
+# base or geoserver profile
+mvn -pl product -am -DskipTests package
+
+# LDAP profile (enables Spring Security LDAP configuration)
+mvn -pl product -am -DskipTests -Pldap package
+```
+
+The WAR will be at `product/target/mapstore.war`.
+
+### Step 2 — start the stack
+
+Pick the compose files for the profile you want to test:
+
+**Base (PostgreSQL + MapStore only):**
+
+```bash
+docker compose \
+  -f docker-compose.yml \
+  -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml \
+  up -d --build
+```
+
+**GeoServer integration:**
+
+```bash
+docker compose \
+  -f docker-compose.yml \
+  -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml \
+  -f utility/e2e-test-runner/profiles/geoserver/docker-compose.e2e.yml \
+  up -d --build
+```
+
+**LDAP authentication:**
+
+```bash
+docker compose \
+  -f docker-compose.yml \
+  -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml \
+  -f utility/e2e-test-runner/profiles/ldap/docker-compose.e2e.yml \
+  up -d --build
+```
+
+The proxy is exposed on port `8081`. Wait for MapStore to be ready:
+
+```bash
+# poll until the home page responds
+until curl -fsS http://localhost:8081/mapstore/ > /dev/null; do sleep 5; done
+```
+
+For the GeoServer profile also wait for GeoServer on port `8082`:
+
+```bash
+until curl -fsS http://localhost:8082/geoserver/web/ > /dev/null; do sleep 5; done
+```
+
+### Step 3 — run the tests
+
+Set the required environment variables and run the suites you need:
+
+**Base profile:**
+
+```bash
+BASE_URL=http://localhost:8081/mapstore/ \
+  npm run e2e -- --suites auth,smoke,homepage,maps
+```
+
+**GeoServer profile:**
+
+```bash
+BASE_URL=http://localhost:8081/mapstore/ \
+  E2E_FEATURES=geoserverIntegration \
+  E2E_SERVICES_JSON='{"geoserver":"http://localhost:8082/geoserver"}' \
+  npm run e2e -- --suites auth,smoke,homepage,maps,geoserver
+```
+
+**LDAP profile:**
+
+```bash
+BASE_URL=http://localhost:8081/mapstore/ \
+  E2E_FEATURES=ldap \
+  MS_USER_STANDARD=<ldap-user> \
+  MS_PASSWORD_STANDARD=<ldap-password> \
+  npm run e2e -- --suites auth,smoke,homepage,maps,ldap
+```
+
+Or put the variables in a local `.env` file (see [Environment configuration](#environment-configuration)) and omit the inline exports.
+
+### Step 4 — stop and clean up
+
+```bash
+docker compose \
+  -f docker-compose.yml \
+  -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml \
+  down -v
+```
+
+Add the same `-f` flags you used to start the stack if you added extra overlays.
+
+---
+
+## 11. Troubleshooting
 
 ### Tests fail with "net::ERR_CONNECTION_REFUSED"
 
