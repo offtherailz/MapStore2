@@ -1,0 +1,119 @@
+name: E2E Docker Profiles
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # nightly at midnight UTC
+  workflow_dispatch:
+    inputs:
+      profiles:
+        description: "Comma-separated profiles to run (base,geoserver,ldap)"
+        required: false
+        default: ""
+      ldap_user:
+        description: "LDAP standard username used by ldap suite"
+        required: false
+        default: ""
+      ldap_password:
+        description: "LDAP standard password used by ldap suite"
+        required: false
+        default: ""
+
+jobs:
+  detect-profiles:
+    runs-on: ubuntu-latest
+    outputs:
+      profiles_json: ${{ steps.detect.outputs.profiles_json }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect profiles to run
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.profiles }}" ]]; then
+            PROFILES="${{ github.event.inputs.profiles }}"
+          else
+            PROFILES="$(bash utility/e2e-test-runner/e2e-docker.sh --list-profiles | paste -sd, -)"
+          fi
+
+          PROFILES="$(echo "$PROFILES" | tr -d ' ')"
+          PROFILES_JSON="$(printf '%s\n' "$PROFILES" | tr ',' '\n' | sed '/^$/d' | jq -R -s -c 'split("\n")[:-1]')"
+
+          echo "Resolved profiles: $PROFILES"
+          echo "profiles_json=$PROFILES_JSON" >> "$GITHUB_OUTPUT"
+
+  e2e-profile:
+    needs: detect-profiles
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJson(needs.detect-profiles.outputs.profiles_json) }}
+    env:
+      CI: true
+      # Always available for manual runs; empty on schedule unless set elsewhere.
+      MS_USER_STANDARD: ${{ github.event.inputs.ldap_user }}
+      MS_PASSWORD_STANDARD: ${{ github.event.inputs.ldap_password }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Docker E2E profile
+        id: run-profile
+        run: |
+          set -euo pipefail
+          echo "Running profile: ${{ matrix.profile }}"
+          npm run e2e:docker -- --profiles "${{ matrix.profile }}"
+
+      - name: Publish job summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "# E2E Profile: ${{ matrix.profile }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Test report: [Playwright HTML Report](../artifacts)" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f reports/test-results/.last-run.json ]]; then
+            STATUS=$(jq -r '.status' reports/test-results/.last-run.json)
+            echo "Status: **${STATUS}**" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if ls e2e-docker-logs-*.txt 1>/dev/null 2>&1; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Debug logs attached to artifacts." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload reports and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-${{ matrix.profile }}
+          path: |
+            reports/html
+            reports/test-results
+            e2e-docker-logs-*.txt
+          if-no-files-found: ignore
+
+

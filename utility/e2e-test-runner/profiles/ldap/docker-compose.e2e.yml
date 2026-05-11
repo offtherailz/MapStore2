@@ -1,6 +1,10 @@
 version: "3.8"
 
 services:
+  mapstore:
+    volumes:
+      - ./utility/e2e-test-runner/profiles/ldap/ldap.properties:/usr/local/tomcat/datadir/ldap.properties:rw
+
   ldap:
     image: osixia/openldap:1.5.0
     container_name: ldap
