@@ -7,6 +7,7 @@
 #
 # Options:
 #   --profiles  <list>      Comma-separated profiles to run. Default: base,geoserver,ldap
+#   --list-profiles         Print available profiles and exit
 #   --skip-build            Skip the Maven WAR build (reuse product/target/mapstore.war)
 #   --no-fast-fail          Disable fast-fail on startup errors; wait full timeout
 #   --headed                Run tests in headed (browser visible) mode
@@ -33,11 +34,13 @@ PROFILES="base,geoserver,ldap"
 SKIP_BUILD=false
 FAST_FAIL=true
 HEADED_MODE=false
+LIST_PROFILES=false
 
 # ── argument parsing ──────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
     case $1 in
         --profiles)       PROFILES="$2"; shift 2 ;;
+        --list-profiles)  LIST_PROFILES=true; shift ;;
         --skip-build)     SKIP_BUILD=true; shift ;;
         --no-fast-fail)   FAST_FAIL=false; shift ;;
         --headed)         HEADED_MODE=true; shift ;;
@@ -61,6 +64,7 @@ done
 #     WAIT_GS — whether to also wait for GeoServer on port 8082
 
 declare -A PROFILE_MAVEN PROFILE_COMPOSE PROFILE_SUITES PROFILE_ENV PROFILE_WAIT_GS
+AVAILABLE_PROFILES=(base geoserver ldap)
 
 PROFILE_MAVEN[base]=""
 PROFILE_COMPOSE[base]="docker-compose.yml utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml"
@@ -80,11 +84,24 @@ PROFILE_SUITES[ldap]="auth,smoke,homepage,maps,ldap"
 PROFILE_ENV[ldap]="E2E_FEATURES=ldap"
 PROFILE_WAIT_GS[ldap]=false
 
+if [[ "$LIST_PROFILES" == "true" ]]; then
+    printf '%s\n' "${AVAILABLE_PROFILES[@]}"
+    exit 0
+fi
+
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 log()  { echo ""; echo "▶ $*"; }
 pass() { echo "✔ $*"; }
 fail() { echo "✖ $*" >&2; }
+
+save_profile_logs() {
+    local cargs="$1" profile="$2"
+    local log_file="e2e-docker-logs-${profile}.txt"
+    # shellcheck disable=SC2086
+    docker compose $cargs logs --no-color > "$log_file" 2>&1 || true
+    echo "  Logs saved to $log_file"
+}
 
 compose_args() {
     local files=($1)
@@ -216,6 +233,7 @@ trap cleanup EXIT INT TERM
 IFS=',' read -ra PROFILE_LIST <<< "$PROFILES"
 FAILED=()
 LAST_MAVEN_BUILD="__unset__"
+FRONTEND_BUILT=false
 FIRST_PROFILE=true
 MAPSTORE_TIMEOUT=300
 
@@ -231,6 +249,8 @@ for raw_profile in "${PROFILE_LIST[@]}"; do
     echo "════════════════════════════════════════════════════════════"
     echo "  Profile: $profile"
     echo "════════════════════════════════════════════════════════════"
+
+    profile_started_at=$(date +%s)
 
     # Calculate timeout: first profile gets extra 120s for Docker image build/push
     MAPSTORE_TIMEOUT=300
@@ -248,6 +268,12 @@ for raw_profile in "${PROFILE_LIST[@]}"; do
 
     # ── build WAR ────────────────────────────────────────────────────────────
     if [[ "$SKIP_BUILD" == false ]] && [[ "$MAVEN" != "$LAST_MAVEN_BUILD" ]]; then
+        if [[ "$FRONTEND_BUILT" == false ]]; then
+            log "Building front-end bundle …"
+            npm run fe:build
+            FRONTEND_BUILT=true
+        fi
+
         log "Building WAR (Maven profile: printing${MAVEN:+,$MAVEN}) …"
         if [[ -n "$MAVEN" ]]; then
             mvn --batch-mode -pl product -am -Pprinting,"${MAVEN}" -DskipTests package
@@ -264,22 +290,24 @@ for raw_profile in "${PROFILE_LIST[@]}"; do
 
     # ── wait for services ─────────────────────────────────────────────────────
     wait_mapstore "http://localhost:8081/mapstore/" "$MAPSTORE_TIMEOUT" || {
-        # shellcheck disable=SC2086
-        docker compose $CARGS logs --no-color
+        log "Collecting Docker logs …"
+        save_profile_logs "$CARGS" "$profile"
         CURRENT_CARGS=""
         # shellcheck disable=SC2086
         docker compose $CARGS down -v --timeout 30 || true
+        fail "Profile '$profile' failed during MapStore startup"
         FAILED+=("$profile")
         continue
     }
 
     if [[ "$WAIT_GS" == true ]]; then
         wait_geoserver "http://localhost:8082/geoserver/web/" 60 || {
-            # shellcheck disable=SC2086
-            docker compose $CARGS logs --no-color
+            log "Collecting Docker logs …"
+            save_profile_logs "$CARGS" "$profile"
             CURRENT_CARGS=""
             # shellcheck disable=SC2086
             docker compose $CARGS down -v --timeout 30 || true
+            fail "Profile '$profile' failed during GeoServer startup"
             FAILED+=("$profile")
             continue
         }
@@ -307,9 +335,7 @@ for raw_profile in "${PROFILE_LIST[@]}"; do
         FAILED+=("$profile")
         fail "Profile '$profile' failed (exit $PROFILE_EXIT)"
         log "Collecting Docker logs …"
-        # shellcheck disable=SC2086
-        docker compose $CARGS logs --no-color > "e2e-docker-logs-${profile}.txt" 2>&1 || true
-        echo "  Logs saved to e2e-docker-logs-${profile}.txt"
+        save_profile_logs "$CARGS" "$profile"
     else
         pass "Profile '$profile' passed"
     fi
@@ -321,7 +347,7 @@ for raw_profile in "${PROFILE_LIST[@]}"; do
     docker compose $CARGS down -v --timeout 30 || true
 done
 
-# ── final summary ─────────────────────────────────────────────────────────────
+# ── final status ──────────────────────────────────────────────────────────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [[ ${#FAILED[@]} -eq 0 ]]; then

@@ -10,7 +10,7 @@ This framework is used for validating MapStore2 functionality in various environ
 - **Suites** — logical groups of tests (for example `auth`, `smoke`...) selectable with `--suites`. By default all configured suites run.
 - **Profiles** — when running with Docker, profiles (`base`, `geoserver`, `ldap` ...) determine which services are started and which optional capabilities are enabled.
 - **Features** — `features=oidc,ldap,geoserverIntegration`; profile-specific tests are enabled only when the related feature is available.
-- **Authoring playbook** — for AI prompt templates and feature-first test design rules, see `docs/PROMPT_SKILL_TEST_AUTHORING.md`.
+- **Authoring playbook** — for AI prompt templates and feature-first test design rules, see `test-authoring-playbook.md`.
 
 **Usage modes:**
 
@@ -573,14 +573,13 @@ This repository includes a workflow that starts MapStore in Docker (with Postgre
 - Optional GeoServer profile: `utility/e2e-test-runner/profiles/geoserver/docker-compose.e2e.yml`
 - Optional LDAP profile: `utility/e2e-test-runner/profiles/ldap/docker-compose.e2e.yml`
 
-The workflow runs automatically every night at midnight UTC (all three profiles). It can also be triggered
+The workflow runs automatically every night at midnight UTC (all profiles discovered by the Docker runner). It can also be triggered
 on demand from GitHub Actions > **E2E Docker Profiles** with these inputs:
 
-- `profiles`: comma-separated profile list (`base`, `geoserver`, `ldap`)
-- `suites_base`: suites for the base profile
-- `suites_geoserver`: suites for the geoserver profile
-- `suites_ldap`: suites for the ldap profile
+- `profiles`: optional comma-separated profile list (`base`, `geoserver`, `ldap`); if omitted, the workflow discovers profiles from `utility/e2e-test-runner/e2e-docker.sh --list-profiles`
 - `ldap_user` / `ldap_password`: credentials used by the LDAP login suite (`MS_USER_STANDARD`, `MS_PASSWORD_STANDARD`)
+
+The workflow runs one job per profile in parallel, and each profile runs the full suite set configured by the Docker runner for that profile.
 
 Suggested suite mapping pattern:
 
@@ -591,6 +590,17 @@ Suggested suite mapping pattern:
 Important for LDAP profile: MapStore is built with Maven profile `ldap` in CI, not only with the LDAP container enabled.
 
 For profile-specific tests, gate the suite or test using features (`hasFeature('geoserverIntegration')`, `hasFeature('ldap')`) to avoid false failures when a profile is not enabled.
+
+Each profile job publishes a job summary showing the test status and uploads:
+
+- **Playwright HTML report** (`reports/html/`) — interactive test results with screenshots and videos
+- **Playwright test results** (`reports/test-results/`) — structured data and debug artifacts
+- **Docker logs** (`e2e-docker-logs-<profile>.txt`) — container logs from the run
+
+Click the Playwright HTML report link in the job summary to view detailed test results for each profile, including:
+- Pass/fail status and error messages
+- Screenshots and videos (on failure)
+- Traces for step-by-step replay (on first retry)
 
 ---
 
@@ -611,6 +621,9 @@ npm run e2e:docker -- --profiles base
 # Run two profiles, skip the Maven build (WAR already built)
 npm run e2e:docker -- --profiles base,geoserver --skip-build
 
+# Print available profiles (used by CI profile discovery)
+npm run e2e:docker -- --list-profiles
+
 # Run the LDAP profile with credentials
 MS_USER_STANDARD=ldapuser MS_PASSWORD_STANDARD=secret \
   npm run e2e:docker -- --profiles ldap
@@ -620,7 +633,12 @@ MS_USER_STANDARD=ldapuser MS_PASSWORD_STANDARD=secret \
 
 The script resolves the correct compose file combination, Maven flag (`-Pldap` only for the LDAP profile),
 and environment variables for each profile automatically. On failure it saves Docker logs to
-`e2e-docker-logs-<profile>.txt` and continues with the remaining profiles before returning a non-zero exit code.
+`e2e-docker-logs-<profile>.txt` and writes markdown reports under `reports/e2e-docker/`:
+
+- `reports/e2e-docker/summary.md` — overall run summary
+- `reports/e2e-docker/profiles/<profile>.md` — per-profile outcome
+
+This makes it easier to understand whether a failure happened during startup, GeoServer readiness, or Playwright test execution.
 
 ---
 
