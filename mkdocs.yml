@@ -142,6 +142,9 @@ nav:
       - Folders Structure: 'developer-guide/project-structure.md'
       - Developing and Debugging: 'developer-guide/developing.md'
       - Building and Deploying: 'developer-guide/building-and-deploying.md'
+      - Testing:
+        - End-to-End Testing Guide: 'developer-guide/e2e/testing-guide.md'
+        - E2E Authoring Playbook: 'developer-guide/e2e/test-authoring-playbook.md'
       - Front End Technologies: 'developer-guide/reactjs-and-redux-introduction.md'
       - Plugins architecture: 'developer-guide/plugins-architecture.md'
       - Internationalization: 'developer-guide/internationalization.md'
