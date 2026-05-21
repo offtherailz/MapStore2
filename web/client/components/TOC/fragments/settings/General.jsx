@@ -9,8 +9,9 @@
 import { find, includes, isObject, uniqBy } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { Checkbox, Col, ControlLabel, FormControl, FormGroup, Grid } from 'react-bootstrap';
+import { Checkbox, Col, ControlLabel, FormControl, FormGroup, Grid, Panel } from 'react-bootstrap';
 import LocalizedInput from '../../../misc/LocalizedInput';
+import ViewParamsSection from '../../../../plugins/tocitemssettings/tabs/ViewParamsSection';
 
 import Select from 'react-select';
 import Spinner from 'react-spinkit';
@@ -175,7 +176,16 @@ class General extends React.Component {
                             <Message msgId="layerProperties.disableFeaturesEditing"/>
                         </Checkbox>
                     </FormGroup>}
-
+                    {(this.props.element?.type === 'wms' || this.props.element?.type === 'wfs') && (
+                        <Panel collapsible defaultExpanded={false}
+                            header={getMessageById(this.context.messages, 'layerProperties.viewParams.title')}>
+                            <ViewParamsSection
+                                embedded
+                                element={this.props.element}
+                                onChange={this.props.onChange}
+                            />
+                        </Panel>
+                    )}
                 </form>
             </Grid>
         );

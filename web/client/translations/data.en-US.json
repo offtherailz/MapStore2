@@ -272,6 +272,21 @@
         "incompatibleWFSFilterWarning": "Legend filters are incompatible with the active layer filter. Click reset to clear legend filters",
         "resetLegendFilter": "Reset",
         "noLegendData": "No legend items to show"
+      },
+      "viewParams": {
+        "title": "View Parameters",
+        "tooltip": "View Parameters",
+        "toggle": "Configure view parameters",
+        "close": "Close view parameters",
+        "key": "Key",
+        "label": "Label",
+        "keyPlaceholder": "Parameter key",
+        "labelPlaceholder": "Parameter label (optional)",
+        "addTooltip": "Add view parameter",
+        "removeTooltip": "Remove view parameter",
+        "empty": "No view parameters configured",
+        "value": "Value",
+        "valuePlaceholder": "Current value"
       }
     },
     "localizedInput": {
@@ -2519,18 +2534,15 @@
         "time": "Time",
         "timeline": "Timeline",
         "elevation": "Elevation",
-
         "valuesFrom": "Values From",
         "uniqueAttributes": "Unique values",
         "attributes": "Attributes",
         "matchAllFilter": "Match All Filter(AND)",
         "matchAnyFilter": "Match Any Filter(OR)",
-
         "valueAttribute": "Value Attribute",
         "labelAttribute": "Label Attribute",
         "sortByAttribute": "Sort By Attribute",
         "maxFeatures": "Max Features",
-
         "filterComposition": "Filter Composition",
         "type": "Type",
         "filterList": "Filter list",
@@ -2542,7 +2554,6 @@
         "filter": "Filter",
         "style": "Style",
         "actions": "Actions",
-
         "layoutTabLabel": "Layout",
         "title": "Title",
         "label": "Label",
@@ -2551,28 +2562,21 @@
         "fontWeight": "Font Weight",
         "fontStyle": "Font Style",
         "color": "Color",
-
         "items": "Items",
         "variant": "Variant",
-
         "selectionMode": "Selection Mode",
         "multiple": "Multiple",
         "single": "Single",
-
         "direction": "Direction",
         "directionHorizontal": "Horizontal",
         "directionVertical": "Vertical",
-
         "maxHeight": "Max Height",
         "maxHeightPlaceholder": "Enter Max height..",
-
         "interactionsTabLabel": "Interactions",
         "onSelectionChange": "On Selection Change",
-
         "applyFilter": "Apply Filter",
         "applyDimension": "Apply Dimension",
         "noConnectableNodesAvailable": "No connectable nodes available",
-
         "selectAll": "Select All",
         "clear": "Clear",
         "showSelectAllClear": "Show Select All / Clear",
@@ -2603,7 +2607,6 @@
         "applyStyleFromWidgetButton": "Apply style to all connected layers from this widget",
         "dimensionChangedByWidgetInfo": "One or more connected nodes use a different dimension value than the one selected here. Click the button below to apply the selected value to all connected nodes.",
         "applyDimensionFromWidgetButton": "Apply value from this filter to all connected nodes",
-
         "defaultFilter": "Default Filter",
         "defaultFilterInfo": "Define a filter to apply when nothing is selected. Suggestion: if you want to show nothing when nothing is selected, create a filter that always returns no features",
         "noSelectionMode": "No selection mode",
@@ -2627,7 +2630,6 @@
         "noSelectableItems": "No selectable filter items.",
         "filters": "Filters",
         "styles": "Styles",
-
         "targetAutomaticallyNotConnectableTooltip": "The target is not automatically connectable, please configure it to connect it",
         "forcePlugLabel": "Apply regardless of data source",
         "twoWaySynchronizationLabel": "2 way synchronization",

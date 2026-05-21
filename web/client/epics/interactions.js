@@ -14,12 +14,15 @@ import {
     extractLayerIdFromNodePath,
     isChartAxisDimensionTarget,
     isLayerDimensionTarget,
+    isLayerViewParamsTarget,
+    isWidgetViewParamsTarget,
+    extractViewParamKeyFromNodePath,
     isMapLayerPath,
     isMapTimeTarget,
     TARGET_TYPES
 } from '../utils/InteractionUtils';
 import { updateWidgetProperty, INSERT, UPDATE, DELETE } from '../actions/widgets';
-import { getLayerFromId, layersSelector } from '../selectors/layers';
+import { getLayerFromId, getLayerFromName, layersSelector } from '../selectors/layers';
 import { changeLayerProperties, changeLayerParams, REMOVE_NODE } from '../actions/layers';
 import { setCurrentTime } from '../actions/dimension';
 import { defaultLayerFilter } from '../utils/FilterUtils';
@@ -368,6 +371,99 @@ function updateChartAxisWithDimension(interaction, widgetId, widgets) {
     return path
         ? updateWidgetProperty(widgetId, path, interaction.appliedData)
         : null;
+}
+
+// ============================================================================
+// ViewParams Helpers
+// ============================================================================
+
+/**
+ * Parses a GeoServer viewparams string ("k1:v1;k2:v2") into an object.
+ */
+function parseViewParams(str = '') {
+    if (!str) return {};
+    return str.split(';').reduce((acc, pair) => {
+        const colonIdx = pair.indexOf(':');
+        if (colonIdx < 0) return acc;
+        const key = pair.slice(0, colonIdx).trim();
+        const value = pair.slice(colonIdx + 1).trim();
+        if (key) acc[key] = value;
+        return acc;
+    }, {});
+}
+
+/**
+ * Serializes a viewparams object back to a GeoServer viewparams string.
+ */
+function serializeViewParams(obj = {}) {
+    return Object.entries(obj)
+        .filter(([, v]) => v !== null && v !== undefined && v !== '')
+        .map(([k, v]) => `${k}:${v}`)
+        .join(';');
+}
+
+/**
+ * Gets the selected value(s) from a filter widget for a specific filter ID.
+ * Multiple values are joined with "\," (GeoServer viewparams escape for multi-value).
+ * If interaction.configuration.valueExpression is set, it is applied per-value
+ * by replacing {value} with the raw value (e.g. "'{value}'" → "'Milano'").
+ */
+function getSelectedViewParamValue(filterWidget, filterId, interaction) {
+    const selected = filterWidget?.selections?.[filterId] || [];
+    if (selected.length === 0) return null;
+    const expression = interaction?.configuration?.valueExpression;
+    return selected
+        .map(s => s?.value ?? s)
+        .map(v => expression ? expression.replace(/\{value\}/g, v) : v)
+        .join('\\,');
+}
+
+/**
+ * Applies an applyViewParams interaction to a map layer by merging the specific
+ * viewparam key into the layer's existing params.viewparams string.
+ * Handles both direct map layer targets and chart trace targets (resolved via layer name).
+ */
+function applyInteractionEffectForApplyViewParams(interaction, state, targetContainer = 'floating') {
+    if (!interaction?.target?.nodePath) return null;
+
+    const nodePath = interaction.target.nodePath;
+    const viewParamKey = extractViewParamKeyFromNodePath(nodePath);
+    if (!viewParamKey) return null;
+
+    let layer = null;
+    if (isLayerViewParamsTarget(nodePath) && isMapLayerPath(nodePath)) {
+        const layerId = extractLayerIdFromNodePath(nodePath);
+        if (!layerId) return null;
+        layer = getLayerFromId(state, layerId);
+    } else if (isWidgetViewParamsTarget(nodePath)) {
+        // For chart traces, layer name is stored in interaction.target.layer metadata
+        const layerName = interaction.target?.layer?.name;
+        if (layerName) {
+            layer = getLayerFromName(state, layerName);
+        } else {
+            // For table/counter widgets, look up widget.layer.name from state
+            const widgetId = extractWidgetIdFromNodePath(nodePath);
+            if (!widgetId) return null;
+            const widgets = get(state, `widgets.containers[${targetContainer}].widgets`) || [];
+            const widget = widgets.find(w => w.id === widgetId);
+            const widgetLayerName = widget?.layer?.name;
+            if (!widgetLayerName) return null;
+            layer = getLayerFromName(state, widgetLayerName);
+        }
+    }
+
+    if (!layer) return null;
+
+    const current = parseViewParams(layer.params?.viewparams || layer.params?.viewParams || '');
+    const value = interaction.appliedData;
+    if (value !== null && value !== undefined && value !== '') {
+        current[viewParamKey] = String(value);
+    } else {
+        delete current[viewParamKey];
+    }
+
+    const newViewParams = serializeViewParams(current);
+    return changeLayerParams(layer.id, { viewparams: newViewParams || undefined });
 }
 
 function applyInteractionEffectForApplyDimension(interaction, state, targetContainer = 'floating', options = {}) {
@@ -998,6 +1094,17 @@ export const applyFilterWidgetInteractionsEpic = (action$, store) => {
                     const currentState = store.getState();
                     const filter = filters.find(f => f.id === filterId);
 
+
+                    if (interaction.targetType === TARGET_TYPES.APPLY_VIEW_PARAMS) {
+                        const updatedInteraction = {
+                            ...interaction,
+                            appliedData: getSelectedViewParamValue(filterWidget, filterId, interaction)
+                        };
+                        const action = applyInteractionEffectForApplyViewParams(updatedInteraction, currentState, target);
+                        return action
+                            ? Rx.Observable.of(action)
+                            : Rx.Observable.empty();
+                    }
 
                     if (interaction.targetType === TARGET_TYPES.APPLY_STYLE) {
                         const selectedStyle = selections[filterId][0];

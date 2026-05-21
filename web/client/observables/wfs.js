@@ -240,7 +240,14 @@ export const getJSONFeatureWA = (searchUrl, filterObj, { sortOptions = {}, ...op
  * retro compatibility the filter object can contain pagination info, typeName and so on.
  * @param {object} options the options (pagination, totalFeatures and so on ...)
  */
-export const getLayerJSONFeature = ({ search = {}, url, name, security } = {}, filter, {sortOptions, propertyName: pn, ...options} = {}) =>
+export const getLayerJSONFeature = ({ search = {}, url, name, security, params } = {}, filter, {sortOptions, propertyName: pn, ...options} = {}) => {
+    // Merge viewparams from layer.params into request options so SQL view parameters
+    // are forwarded as the viewParams XML attribute in the WFS GetFeature body.
+    const layerViewParams = params?.viewparams || params?.viewParams;
+    const effectiveOptions = layerViewParams && !options.viewParams
+        ? { ...options, viewParams: layerViewParams }
+        : options;
+    return (
     // TODO: Apply sort workaround for no primary keys
     getJSONFeature(search.url || url,
         filter && typeof filter === 'object' ? {
@@ -253,8 +260,8 @@ export const getLayerJSONFeature = ({ search = {}, url, name, security } = {}, f
                     ...(pn ? [propertyName(pn)] : []),
                     ...(filter ? castArray(filter) : [])
                 ]),
-            options), // options contains startIndex, maxFeatures and it can be passed as it is
-        {security, ...options})
+            effectiveOptions),
+        {security, ...effectiveOptions})
         // retry using 1st propertyNames property, if present, to workaround primary-key issues
         .catch(error => {
             if (error.name === "OGCError" && error.code === 'NoApplicableCode' && !sortOptions && pn && pn[0]) {
@@ -269,11 +276,13 @@ export const getLayerJSONFeature = ({ search = {}, url, name, security } = {}, f
                                 ...(pn ? [propertyName(pn)] : []),
                                 ...(filter ? castArray(filter) : [])
                             ]),
-                        options), // options contains startIndex, maxFeatures and it can be passed as it is
-                    options);
+                        effectiveOptions),
+                    effectiveOptions);
             }
             throw error;
-        });
+        })
+    );
+};
 
 export const describeFeatureType = ({layer}) => {
     const url = toDescribeURL(layer);

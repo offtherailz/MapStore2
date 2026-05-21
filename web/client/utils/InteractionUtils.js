@@ -1,7 +1,8 @@
 export const DATATYPES = {
     LAYER_FILTER: 'LAYER_FILTER',
     LAYER_STYLE: 'LAYER_STYLE',
-    LAYER_DIMENSION: 'LAYER_DIMENSION'
+    LAYER_DIMENSION: 'LAYER_DIMENSION',
+    LAYER_VIEW_PARAMS: 'LAYER_VIEW_PARAMS'
 };
 
 export const EVENTS = {
@@ -11,21 +12,24 @@ export const EVENTS = {
 export const TARGET_TYPES = {
     APPLY_FILTER: 'applyFilter',
     APPLY_STYLE: 'applyStyle',
-    APPLY_DIMENSION: 'applyDimension'
+    APPLY_DIMENSION: 'applyDimension',
+    APPLY_VIEW_PARAMS: 'applyViewParams'
 };
 
 // Human-readable labels for target types
 export const TARGET_TYPE_LABELS = {
     [TARGET_TYPES.APPLY_FILTER]: 'Apply filter',
     [TARGET_TYPES.APPLY_STYLE]: 'Apply style',
-    [TARGET_TYPES.APPLY_DIMENSION]: 'Apply dimension'
+    [TARGET_TYPES.APPLY_DIMENSION]: 'Apply dimension',
+    [TARGET_TYPES.APPLY_VIEW_PARAMS]: 'Apply view params'
 };
 
 // Glyph icons for target types
 export const TARGET_TYPE_GLYPHS = {
     [TARGET_TYPES.APPLY_FILTER]: 'filter',
     [TARGET_TYPES.APPLY_STYLE]: 'style',
-    [TARGET_TYPES.APPLY_DIMENSION]: 'record'
+    [TARGET_TYPES.APPLY_DIMENSION]: 'record',
+    [TARGET_TYPES.APPLY_VIEW_PARAMS]: 'cog'
 };
 
 /**
@@ -33,13 +37,14 @@ export const TARGET_TYPE_GLYPHS = {
  * Values are arrays to support multiple targets per event.
  */
 export const EVENT_TARGET_MAP = {
-    [EVENTS.FILTER_CHANGE]: [TARGET_TYPES.APPLY_FILTER, TARGET_TYPES.APPLY_STYLE, TARGET_TYPES.APPLY_DIMENSION]
+    [EVENTS.FILTER_CHANGE]: [TARGET_TYPES.APPLY_FILTER, TARGET_TYPES.APPLY_STYLE, TARGET_TYPES.APPLY_DIMENSION, TARGET_TYPES.APPLY_VIEW_PARAMS]
 };
 
 export const TARGET_EVENT_DATA_TYPES = {
     [TARGET_TYPES.APPLY_FILTER]: DATATYPES.LAYER_FILTER,
     [TARGET_TYPES.APPLY_STYLE]: DATATYPES.LAYER_STYLE,
-    [TARGET_TYPES.APPLY_DIMENSION]: DATATYPES.LAYER_DIMENSION
+    [TARGET_TYPES.APPLY_DIMENSION]: DATATYPES.LAYER_DIMENSION,
+    [TARGET_TYPES.APPLY_VIEW_PARAMS]: DATATYPES.LAYER_VIEW_PARAMS
 };
 
 // Events available by widget type
@@ -325,6 +330,44 @@ function createLayerDimensionCollection(layerNode, dimensionNodes) {
     } : null;
 }
 
+function createViewParamTargetMetadata(layer, viewParamKey) {
+    return {
+        targetType: TARGET_TYPES.APPLY_VIEW_PARAMS,
+        expectedDataType: DATATYPES.LAYER_VIEW_PARAMS,
+        constraints: {},
+        layer: { name: layer?.name },
+        viewParamKey
+    };
+}
+
+function createViewParamLeafNode(layer, vp) {
+    return {
+        type: 'element',
+        id: `params.viewparams.${vp.key}`,
+        title: vp.label || vp.key,
+        icon: 'cog',
+        nodePathMode: 'dot',
+        interactionMetadata: {
+            targets: [createViewParamTargetMetadata(layer, vp.key)]
+        }
+    };
+}
+
+function createLayerViewParamNodes(layer) {
+    return (layer?.viewParamsConfig || []).map(vp => createViewParamLeafNode(layer, vp));
+}
+
+function createLayerViewParamCollection(layerNode, vpNodes) {
+    return vpNodes.length > 0 ? {
+        type: 'collection',
+        title: layerNode.title,
+        icon: '1-layer',
+        id: layerNode.id,
+        preserveWhenSingleChild: true,
+        children: vpNodes
+    } : null;
+}
+
 /**
  * Generates collection nodes for each map config, where each collection contains layer nodes.
  * Each map config contains a layers array property.
@@ -352,7 +395,9 @@ function createLayerTreeNode(layer) {
     const layerNode = generateLayerMetadataTree(layer);
     const dimensionNodes = createLayerDimensionNodes(layer);
     const dimensionCollection = createLayerDimensionCollection(layerNode, dimensionNodes);
-    return [layerNode, dimensionCollection].filter(Boolean);
+    const vpNodes = createLayerViewParamNodes(layer);
+    const vpCollection = createLayerViewParamCollection(layerNode, vpNodes);
+    return [layerNode, dimensionCollection, vpCollection].filter(Boolean);
 }
 
 function createLayerNodesForLayers(layers = [], options = {}) {
@@ -546,6 +591,30 @@ export function generateChartTraceTreeNode(trace, chart) {
 }
 
 /**
+ * Returns an array of tree nodes for a chart trace: the base trace nodes (element +
+ * optional axis collection from generateChartTraceTreeNode), plus a viewparam collection
+ * sibling when the trace's layer has viewParamsConfig entries.
+ * @param {object} trace the chart trace object
+ * @param {object} chart the parent chart object (needed for axis nodes)
+ * @returns {object[]} array of tree nodes
+ */
+function generateChartTraceNodes(trace, chart) {
+    const traceNodes = generateChartTraceTreeNode(trace, chart);
+    const vpNodes = createLayerViewParamNodes(trace?.layer);
+    if (vpNodes.length === 0) return traceNodes;
+    const elementNode = traceNodes[0];
+    const vpCollection = {
+        type: 'collection',
+        title: elementNode.title,
+        icon: elementNode.icon,
+        id: elementNode.id,
+        preserveWhenSingleChild: true,
+        children: vpNodes
+    };
+    return [...traceNodes, vpCollection];
+}
+
+/**
  * Generates a tree node for a chart element.
  * @param {object} chart the chart object
  * @param {string} widgetTitle the widget title to use for the chart
@@ -554,7 +623,7 @@ export function generateChartTraceTreeNode(trace, chart) {
 function generateChartElementNode(chart) {
     const tracesCollection = createBaseCollectionNode(
         "Traces",
-        (chart?.traces || []).flatMap(trace => generateChartTraceTreeNode(trace, chart)),
+        (chart?.traces || []).flatMap(trace => generateChartTraceNodes(trace, chart)),
         undefined,
         "traces"
     );
@@ -752,7 +821,23 @@ export function generateRootTree(widgets, mapLayers, options = {}) {
     const widgetsArray = widgets || [];
     const widgetNodes = widgetsArray
         .filter(widget => widget !== null && widget !== undefined)
-        .map(widget => generateWidgetTreeNode(widget, options));
+        .flatMap(widget => {
+            const node = generateWidgetTreeNode(widget, options);
+            if (widget?.widgetType === 'table' || widget?.widgetType === 'counter') {
+                const vpNodes = createLayerViewParamNodes(widget?.layer);
+                if (vpNodes.length > 0) {
+                    return [node, {
+                        type: 'collection',
+                        title: node.title,
+                        icon: node.icon,
+                        id: node.id,
+                        preserveWhenSingleChild: true,
+                        children: vpNodes
+                    }];
+                }
+            }
+            return [node];
+        });
 
     const mapLayersNodes = mapLayers?.length > 0 ? [
         createBaseCollectionNode("Layers", createLayerNodesForLayers(mapLayers, options), "1-layer", "layers")
@@ -904,13 +989,20 @@ export function getPossibleTargetsEditingWidget(widgetType, layerInvolved) {
             glyph: TARGET_TYPE_GLYPHS[TARGET_TYPES.APPLY_DIMENSION],
             expectedDataType: TARGET_EVENT_DATA_TYPES[TARGET_TYPES.APPLY_DIMENSION],
             constraints: {}
+        },
+        {
+            title: TARGET_TYPE_LABELS[TARGET_TYPES.APPLY_VIEW_PARAMS],
+            targetType: TARGET_TYPES.APPLY_VIEW_PARAMS,
+            glyph: TARGET_TYPE_GLYPHS[TARGET_TYPES.APPLY_VIEW_PARAMS],
+            expectedDataType: TARGET_EVENT_DATA_TYPES[TARGET_TYPES.APPLY_VIEW_PARAMS],
+            constraints: {}
         }
         ];
     }
     return [];
 }
 
-export const FILTER_WIDGET_OPTIONAL_TARGET_TYPES = [TARGET_TYPES.APPLY_DIMENSION];
+export const FILTER_WIDGET_OPTIONAL_TARGET_TYPES = [TARGET_TYPES.APPLY_DIMENSION, TARGET_TYPES.APPLY_VIEW_PARAMS];
 
 /**
  * Finds a node by its id in the tree and returns the node object.
@@ -1032,6 +1124,48 @@ export function getChartAxisFromCurrentTimeTargetPath(targetPath, widgets = []) 
     const chartAxisOpts = chart?.[axisOptsKey];
     const axisOpts = Array.isArray(chartAxisOpts) ? chartAxisOpts : [chartAxisOpts || { id: 0 }];
     return axisOpts.find(axis => String(axis?.id) === String(axisId)) || null;
+}
+
+/**
+ * Returns true when the interaction target points to a specific viewparam key on a layer.
+ * @param {string} nodePath the node path to check
+ * @returns {boolean}
+ */
+export function isLayerViewParamsTarget(nodePath) {
+    return isAnyLayerPath(nodePath) && /(?:^|\.)params\.viewparams\.[^.]+$/.test(nodePath);
+}
+
+/**
+ * Returns true when the interaction target points to a viewparam key on a chart trace.
+ * @param {string} nodePath the node path to check
+ * @returns {boolean}
+ */
+export function isChartTraceViewParamsTarget(nodePath) {
+    return !!nodePath
+        && /\.traces\[[^\]]+\]/.test(nodePath)
+        && /(?:^|\.)params\.viewparams\.[^.]+$/.test(nodePath);
+}
+
+/**
+ * Returns true when the interaction target points to a viewparam key on any widget
+ * (chart trace, table, counter, etc.).
+ * @param {string} nodePath the node path to check
+ * @returns {boolean}
+ */
+export function isWidgetViewParamsTarget(nodePath) {
+    return !!nodePath
+        && /^widgets\[[^\]]+\]/.test(nodePath)
+        && /(?:^|\.)params\.viewparams\.[^.]+$/.test(nodePath);
+}
+
+/**
+ * Extracts the viewparam key from a layer viewparams node path.
+ * @param {string} nodePath the node path (e.g. "map.layers[id].params.viewparams.id_azienda")
+ * @returns {string|null} the viewparam key or null
+ */
+export function extractViewParamKeyFromNodePath(nodePath) {
+    const match = nodePath && nodePath.match(/(?:^|\.)params\.viewparams\.([^.]+)$/);
+    return match ? match[1] : null;
 }
 
 /**

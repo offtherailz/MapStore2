@@ -272,6 +272,21 @@
         "resetLegendFilter": "Reset",
         "incompatibleWFSFilterWarning": "I filtri della legenda sono incompatibili con il filtro del layer attivo. Clicca su reset per cancellare i filtri della legenda",
         "noLegendData": "Nessun elemento della legenda da mostrare"
+      },
+      "viewParams": {
+        "title": "Parametri di visualizzazione",
+        "tooltip": "Parametri di visualizzazione",
+        "toggle": "Configura parametri di visualizzazione",
+        "close": "Chiudi parametri di visualizzazione",
+        "key": "Chiave",
+        "label": "Etichetta",
+        "keyPlaceholder": "Chiave parametro",
+        "labelPlaceholder": "Etichetta parametro (opzionale)",
+        "addTooltip": "Aggiungi parametro di visualizzazione",
+        "removeTooltip": "Rimuovi parametro di visualizzazione",
+        "empty": "Nessun parametro di visualizzazione configurato",
+        "value": "Valore",
+        "valuePlaceholder": "Valore corrente"
       }
     },
     "localizedInput": {
@@ -2531,7 +2546,6 @@
         "filter": "Filtro",
         "style": "Stile",
         "actions": "Azioni",
-
         "layoutTabLabel": "Layout",
         "title": "Titolo",
         "label": "Etichetta",
@@ -2540,10 +2554,8 @@
         "fontWeight": "Spessore carattere",
         "fontStyle": "Stile carattere",
         "color": "Colore",
-
         "items": "Elementi",
         "variant": "Variante",
-
         "selectionMode": "Modalità di selezione",
         "multiple": "Multipla",
         "single": "Singola",
@@ -2556,7 +2568,6 @@
         "applyFilter": "Applica filtro",
         "applyDimension": "Applica dimensione",
         "noConnectableNodesAvailable": "Nessun nodo collegabile disponibile",
-
         "selectAll": "Seleziona tutto",
         "clear": "Cancella",
         "showSelectAllClear": "Mostra 'Seleziona tutto' e 'Cancella'",
@@ -2576,7 +2587,6 @@
         "tickAngleTooltip": "Imposta l'angolo di rotazione dell'etichetta della tacca in gradi.",
         "fillTickValuesTooltip": "Compila con i valori filtro disponibili",
         "fillTickLabelsTooltip": "Compila automaticamente le etichette corrispondenti ai valori delle tacche",
-
         "defaultFilter": "Filtro predefinito",
         "defaultFilterInfo": "Definisci un filtro da applicare quando non è selezionato nulla. Suggerimento: se vuoi non mostrare nulla quando non è selezionato nulla, crea un filtro che non restituisce mai feature",
         "noSelectionMode": "Modalità senza selezione",
