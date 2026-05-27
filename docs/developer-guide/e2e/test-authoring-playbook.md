@@ -299,7 +299,6 @@ Use these sources before requesting generated code:
 External references:
 
 - Playwright docs: <https://playwright.dev/docs/intro>
-- MapStore user and developer docs (published site): <https://mapstore2-offtherailz.readthedocs.io>
 
 ## 15) Practical handoff model for non-coders
 
