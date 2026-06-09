@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 /**
  * compute the position of top and bottom value for the panel wrappers
  * @param {string} props.headerNodeSelector optional valid query selector for the header in the page, used to set the position of the panel
@@ -29,7 +29,7 @@ const useResourcePanelWrapper = ({
     const [stickyTop, setStickyTop] = useState(0);
     const [stickyBottom, setStickyBottom] = useState(0);
 
-    useEffect(() => {
+    const compute = useCallback(() => {
         if (active) {
             const header = headerNodeSelector ? document.querySelector(headerNodeSelector) : null;
             const navbar = navbarNodeSelector ? document.querySelector(navbarNodeSelector) : null;
@@ -40,7 +40,42 @@ const useResourcePanelWrapper = ({
             setStickyTop(headerHeight + navbarHeight);
             setStickyBottom(footerHeight);
         }
-    }, [width, height, active]);
+    }, [active, headerNodeSelector, navbarNodeSelector, footerNodeSelector]);
+
+    useEffect(() => {
+        compute();
+    }, [compute, width, height]);
+
+    useEffect(() => {
+        if (!active || !headerNodeSelector) return undefined;
+        const header = document.querySelector(headerNodeSelector);
+        if (!header) return undefined;
+
+        const observer = new ResizeObserver(compute);
+        observer.observe(header, { box: 'border-box' });
+
+        // Fallback for elements that initialize asynchronously (e.g. web components
+        // loaded from CDN whose shadow DOM creates the visual height after mount).
+        // ResizeObserver may not detect the change if it happens outside the CSS
+        // box model, so we poll on animation frames until the element reports a
+        // non-zero height, then compute once and stop.
+        let rafId;
+        if (header.getBoundingClientRect().height === 0) {
+            const poll = () => {
+                if (header.getBoundingClientRect().height > 0) {
+                    compute();
+                } else {
+                    rafId = requestAnimationFrame(poll);
+                }
+            };
+            rafId = requestAnimationFrame(poll);
+        }
+
+        return () => {
+            observer.disconnect();
+            cancelAnimationFrame(rafId);
+        };
+    }, [compute, headerNodeSelector, active]);
 
     return {
         stickyTop,
