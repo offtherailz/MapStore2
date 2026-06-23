@@ -17,6 +17,7 @@ import Spinner from 'react-spinkit';
 
 import Message from '../../../I18N/Message';
 import LayerNameEditField from './LayerNameEditField';
+import WFSConnectionSettings from './WFSConnectionSettings';
 import { getMessageById } from '../../../../utils/LocaleUtils';
 import {
     isValidNewGroupOption,
@@ -91,11 +92,19 @@ class General extends React.Component {
                             value={this.props.element.title}
                             onChange={this.updateTitle} />
                     </FormGroup>
+                    {this.props.element.type === 'wfs' &&
+                    <WFSConnectionSettings
+                        element={this.props.element}
+                        onChange={this.props.onChange} />}
                     {includes(this.supportedNameEditLayerTypes, this.props.element.type) &&
                     <LayerNameEditField
                         element={this.props.element}
                         enableLayerNameEditFeedback={this.props.enableLayerNameEditFeedback}
                         onUpdateEntry={this.updateEntry.bind(null)}/>}
+                    {this.props.element.type === 'wms' && this.props.element.search?.type === 'wfs' &&
+                    <WFSConnectionSettings
+                        element={this.props.element}
+                        onChange={this.props.onChange} />}
                     <FormGroup>
                         <ControlLabel><Message msgId="layerProperties.description" /></ControlLabel>
                         {this.props.element.capabilitiesLoading ? <Spinner spinnerName="circle" /> :

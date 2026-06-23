@@ -20,7 +20,9 @@ import { interceptOGCError } from '../utils/ObservableUtils';
 import requestBuilder from '../utils/ogc/WFS/RequestBuilder';
 import { getDefaultUrl } from '../utils/URLUtils';
 
-const {getFeature, query, sortBy, propertyName} = requestBuilder({ wfsVersion: "1.1.0" });
+const wfs2Builder = requestBuilder({ wfsVersion: "2.0" });
+const wfs1Builder = requestBuilder({ wfsVersion: "1.1.0" });
+const isWfs2Version = (v) => !!(v && v.indexOf("2.") === 0);
 
 export const toDescribeURL = ({ name, search = {}, url, describeFeatureTypeURL} = {}) => {
     const parsed = urlUtil.parse(getDefaultUrl(describeFeatureTypeURL || search.url || url), true);
@@ -49,7 +51,7 @@ export const toLayerCapabilitiesURL = ({name, search = {}, url} = {}) => {
             query: {
                 ...parsed.query,
                 service: "WFS",
-                version: "1.1.1",
+                version: "1.1.0",
                 request: "GetCapabilities"
             }
         });
@@ -240,18 +242,20 @@ export const getJSONFeatureWA = (searchUrl, filterObj, { sortOptions = {}, ...op
  * retro compatibility the filter object can contain pagination info, typeName and so on.
  * @param {object} options the options (pagination, totalFeatures and so on ...)
  */
-export const getLayerJSONFeature = ({ search = {}, url, name, security } = {}, filter, {sortOptions, propertyName: pn, ...options} = {}) =>
+export const getLayerJSONFeature = ({ search = {}, url, name, security, wfsVersion: layerWfsVersion } = {}, filter, {sortOptions, propertyName: pn, ...options} = {}) => {
     // TODO: Apply sort workaround for no primary keys
-    getJSONFeature(search.url || url,
+    const wfsVersion = search.wfsVersion || layerWfsVersion;
+    const {getFeature, query, sortBy, propertyName} = isWfs2Version(wfsVersion) ? wfs2Builder : wfs1Builder;
+    return getJSONFeature(search.url || url,
         filter && typeof filter === 'object' ? {
             ...filter,
             typeName: name || filter.typeName
         } : getFeature(
             query(name,
                 [
-                    ...( sortOptions ? [sortBy(sortOptions.sortBy, sortOptions.sortOrder)] : []),
                     ...(pn ? [propertyName(pn)] : []),
-                    ...(filter ? castArray(filter) : [])
+                    ...(filter ? castArray(filter) : []),
+                    ...( sortOptions ? [sortBy(sortOptions.sortBy, sortOptions.sortOrder)] : [])
                 ]),
             options), // options contains startIndex, maxFeatures and it can be passed as it is
         {security, ...options})
@@ -265,15 +269,16 @@ export const getLayerJSONFeature = ({ search = {}, url, name, security } = {}, f
                     } : getFeature(
                         query(name,
                             [
-                                sortBy(isArray(pn) ? pn[0] : pn),
                                 ...(pn ? [propertyName(pn)] : []),
-                                ...(filter ? castArray(filter) : [])
+                                ...(filter ? castArray(filter) : []),
+                                sortBy(isArray(pn) ? pn[0] : pn)
                             ]),
                         options), // options contains startIndex, maxFeatures and it can be passed as it is
                     options);
             }
             throw error;
         });
+};
 
 export const describeFeatureType = ({layer}) => {
     const url = toDescribeURL(layer);

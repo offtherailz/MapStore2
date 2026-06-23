@@ -300,4 +300,43 @@ describe('widgets dependenciesToFilter enhancer', () => {
             }} filter={inputFilterObjSpatial} />, document.getElementById("container"));
 
     });
+    it('WFS version - no wfsVersion uses ogc: namespace (WFS 1.1.0 default)', done => {
+        const Sink = dependenciesToFilter(createSink(props => {
+            expect(props.filter).toExist();
+            expect(props.filter).toInclude('<ogc:Filter>');
+            expect(props.filter).toNotInclude('<fes:Filter>');
+            done();
+        }));
+        ReactDOM.render(<Sink
+            quickFilters={{ state_abbr: { rawValue: 'CA', value: 'CA', operator: '=', type: 'string', attribute: 'state_abbr' } }}
+            options={{ propertyName: ['state_abbr'] }}
+            layer={{ name: 'topp:states', id: 'states' }}
+        />, document.getElementById('container'));
+    });
+    it('WFS version - search.wfsVersion="2.0.0" uses fes: namespace', done => {
+        const Sink = dependenciesToFilter(createSink(props => {
+            expect(props.filter).toExist();
+            expect(props.filter).toInclude('<fes:Filter>');
+            expect(props.filter).toNotInclude('<ogc:Filter>');
+            done();
+        }));
+        ReactDOM.render(<Sink
+            quickFilters={{ state_abbr: { rawValue: 'CA', value: 'CA', operator: '=', type: 'string', attribute: 'state_abbr' } }}
+            options={{ propertyName: ['state_abbr'] }}
+            layer={{ name: 'topp:states', id: 'states', search: { url: 'http://wfs', type: 'wfs', wfsVersion: '2.0.0' } }}
+        />, document.getElementById('container'));
+    });
+    it('WFS version - single filter has no And wrapper', done => {
+        const Sink = dependenciesToFilter(createSink(props => {
+            expect(props.filter).toExist();
+            expect(props.filter).toNotInclude('<ogc:And>');
+            expect(props.filter).toNotInclude('<fes:And>');
+            done();
+        }));
+        ReactDOM.render(<Sink
+            quickFilters={{ state_abbr: { rawValue: 'CA', value: 'CA', operator: '=', type: 'string', attribute: 'state_abbr' } }}
+            options={{ propertyName: ['state_abbr'] }}
+            layer={{ name: 'topp:states', id: 'states' }}
+        />, document.getElementById('container'));
+    });
 });

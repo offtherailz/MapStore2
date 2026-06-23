@@ -75,8 +75,9 @@ const recordToLayer = (record, {
     service
 }) => {
     const {
-        layerOptions
-    } = service || {};
+        search: searchLayerOptions,
+        ...restLayerOptions
+    } = service?.layerOptions ?? {};
     let security;
     if (service?.protectedId) {
         security = {sourceId: service?.protectedId, type: "basic"};
@@ -85,7 +86,8 @@ const recordToLayer = (record, {
         type: record.type || "wfs",
         search: {
             url: record.url,
-            type: "wfs"
+            type: "wfs",
+            ...searchLayerOptions
         },
         security,
         url: record.url,
@@ -97,7 +99,7 @@ const recordToLayer = (record, {
         bbox: record.boundingBox,
         links: getRecordLinks(record),
         ...record.layerOptions,
-        ...layerOptions
+        ...restLayerOptions
     };
 };
 

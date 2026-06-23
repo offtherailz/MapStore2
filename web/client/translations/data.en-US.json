@@ -274,6 +274,18 @@
         "incompatibleWFSFilterWarning": "Legend filters are incompatible with the active layer filter. Click reset to clear legend filters",
         "resetLegendFilter": "Reset",
         "noLegendData": "No legend items to show"
+      },
+      "wfsUrl": {
+        "label": "WFS URL"
+      },
+      "wfsTypeName": {
+        "label": "TypeName"
+      },
+      "wfsVersion": {
+        "label": "WFS Version"
+      },
+      "wfsLinkedService": {
+        "label": "WFS Linked Service"
       }
     },
     "localizedInput": {

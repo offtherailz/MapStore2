@@ -86,7 +86,7 @@ const getFirstAttribute = (state)=> {
 };
 
 const getDefaultSortOptions = (attribute) => {
-    return attribute ? { sortBy: attribute, sortOrder: 'A'} : {};
+    return attribute ? { sortBy: attribute, sortOrder: 'ASC'} : {};
 };
 
 /**
@@ -186,16 +186,26 @@ export const wfsQueryEpic = (action$, store) =>
             const {layerFilter, params = {}} = layer ?? {};
             const cqlFilter = params?.[find(Object.keys(params || {}), (k = "") => k.toLowerCase() === "cql_filter")];
             // use original filter if the selected layer is vector type
+            const wfsVer = layer?.search?.wfsVersion || layer?.wfsVersion;
+            const ogcVersion = wfsVer && wfsVer.indexOf("2.") === 0 ? '2.0' : '1.1.0';
             const ogcFilter = layer?.type === "vector" ?
                 action.filterObj
-                : mergeFiltersToOGC({ogcVersion: '1.1.0'}, cqlFilter, useLayerFilter ? layerFilter : null, action.filterObj);
+                : mergeFiltersToOGC({ogcVersion}, cqlFilter, useLayerFilter ? layerFilter : null, action.filterObj);
             const { url, options: queryOptions } = addTimeParameter(searchUrl, action.queryOptions || {}, store.getState());
+            const typeName = action.filterObj.featureTypeName || layer?.name;
+            const describeData = layerDescribeSelector(store.getState(), typeName);
+            const targetNamespace = describeData?.targetNamespace;
+            const wsPrefix = typeName?.includes(':') ? typeName.split(':')[0] : null;
+            const extraNamespaces = (targetNamespace && wsPrefix)
+                ? `xmlns:${wsPrefix}="${targetNamespace}"`
+                : undefined;
             const options = {
                 ...action.filterObj.pagination,
                 totalFeatures,
                 sortOptions,
                 ...queryOptions,
-                layer
+                layer,
+                ...(extraNamespaces ? { extraNamespaces } : {})
             };
 
             // TODO refactor, the layer that should be used should be the used when the feature grid is opened from the toc, see #6430

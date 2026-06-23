@@ -16,7 +16,7 @@ const getStaticAttributesWFS1 = (ver) => 'service="WFS" version="' + ver + '" ' 
     'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
     'xsi:schemaLocation="http://www.opengis.net/wfs ' +
     (ver === "1.0.0" ? `http://schemas.opengis.net/wfs/${ver}/WFS-basic.xsd"` : `http://schemas.opengis.net/wfs/${ver}/wfs.xsd"`);
-const getStaticAttributesWFS2 = (ver) => 'service="WFS" version="' + ver + '" ' +
+const getStaticAttributesWFS2 = (ver) => 'service="WFS" version="' + (ver === "2.0" ? "2.0.0" : ver) + '" ' +
     'xmlns:wfs="http://www.opengis.net/wfs/2.0" ' +
     'xmlns:fes="http://www.opengis.net/fes/2.0" ' +
     'xmlns:gml="http://www.opengis.net/gml/3.2" ' +
@@ -77,10 +77,12 @@ export default function({wfsVersion = "1.1.0", gmlVersion, filterNS, wfsNS = "wf
         resultType,
         outputFormat,
         startIndex,
-        maxFeatures
+        maxFeatures,
+        extraNamespaces
     } = {}) => {
         const getMaxFeatures = (mf) => wfsVersion.indexOf("2.") === 0 ? `count="${mf}"` : `maxFeatures="${mf}"`;
         return (wfsVersion.indexOf("1.") === 0 ? getStaticAttributesWFS1(wfsVersion) : getStaticAttributesWFS2(wfsVersion))
+            + (extraNamespaces ? ` ${extraNamespaces}` : "")
             + (resultType ? ` resultType="${resultType}"` : "")
             + (outputFormat ? ` outputFormat="${outputFormat}"` : ``)
             + ((startIndex || startIndex === 0) ? ` startIndex="${startIndex}"` : "")
@@ -102,8 +104,10 @@ export default function({wfsVersion = "1.1.0", gmlVersion, filterNS, wfsNS = "wf
         ...fb,
         getFeature: (content, opts) => `<${wfsNS}:GetFeature ${requestAttributes(opts)}>${Array.isArray(content) ? content.join("") : content}</${wfsNS}:GetFeature>`,
         propertyName,
-        sortBy: (property, order = "ASC") =>
-            `<${wfsNS}:SortBy><${wfsNS}:SortProperty>${fb.valueReference(property)}<${wfsNS}:SortOrder>${order}</${wfsNS}:SortOrder></${wfsNS}:SortProperty></${wfsNS}:SortBy>`,
+        sortBy: (property, order = "ASC") => {
+            const sortNS = wfsVersion.indexOf("2.") === 0 ? "fes" : "ogc";
+            return `<${sortNS}:SortBy><${sortNS}:SortProperty>${fb.valueReference(property)}<${sortNS}:SortOrder>${order}</${sortNS}:SortOrder></${sortNS}:SortProperty></${sortNS}:SortBy>`;
+        },
         query: (featureName, content, {srsName = "EPSG:4326"} = {}) =>
             `<${wfsNS}:Query ${wfsVersion === "2.0" ? "typeNames" : "typeName"}="${featureName}" ${srsName !== 'native' ? `srsName="${srsName}"` : ''}>`
             + `${Array.isArray(content) ? content.join("") : content}`

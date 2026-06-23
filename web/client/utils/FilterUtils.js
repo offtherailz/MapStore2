@@ -1308,11 +1308,12 @@ export const createFeatureFilter = (filterObj) => feature => {
  */
 export const mergeFiltersToOGC = (opts = {}, ...filters) =>  {
     const {
-        nsPlaceholder = 'ogc',
+        nsPlaceholder: nsPlaceholderOpt,
         ogcVersion: ogcVersionOpt = '2.0',
         addXmlnsToRoot = false,
         xmlnsToAdd = []
     } = opts;
+    const nsPlaceholder = nsPlaceholderOpt ?? (ogcVersionOpt.indexOf("2.") === 0 ? 'fes' : 'ogc');
     const fb = filterBuilder({
         filterNS: nsPlaceholder,
         wfsVersion: ogcVersionOpt,
@@ -1323,9 +1324,8 @@ export const mergeFiltersToOGC = (opts = {}, ...filters) =>  {
     const filtersToProcess = filters.filter(filter => !!filter && (isString(filter) || isFilterValid(filter) && !filter.disabled));
     if (isEmpty(filtersToProcess)) return "";
 
-    const filterString = fb.filter(fb.and(
-        ...flatten(filtersToProcess.map(filter => isString(filter) ? [toFilter(read(filter))] : toOGCFilterParts(filter, ogcVersionOpt, nsPlaceholder)))
-    ));
+    const parts = flatten(filtersToProcess.map(filter => isString(filter) ? [toFilter(read(filter))] : toOGCFilterParts(filter, ogcVersionOpt, nsPlaceholder)));
+    const filterString = fb.filter(parts.length === 1 ? parts[0] : fb.and(...parts));
 
     if (addXmlnsToRoot) {
         const filterTagEnd = filterString.indexOf('>');

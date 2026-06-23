@@ -12,7 +12,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { textSearch, getCatalogRecords } from '../WFS';
+import { textSearch, getCatalogRecords, getLayerFromRecord } from '../WFS';
 import axios from '../../../libs/ajax';
 import expect from 'expect';
 
@@ -121,6 +121,41 @@ describe('WFS (Abstraction) API', () => {
         const b = getCatalogRecords(input);
         expect(a[0].identifier).toBe(b[0].identifier);
         expect(a[1].identifier).toBe(b[1].identifier);
+    });
+    it('recordToLayer - no layerOptions → default search has url and type', () => {
+        const record = { name: 'topp:states', url: 'http://wfs', title: 'States' };
+        const layer = getLayerFromRecord(record, { service: {} }, false);
+        expect(layer.search.url).toBe('http://wfs');
+        expect(layer.search.type).toBe('wfs');
+        expect(layer.search.wfsVersion).toNotExist();
+    });
+    it('recordToLayer - layerOptions.search.wfsVersion propagated into layer.search', () => {
+        const record = { name: 'topp:states', url: 'http://wfs', title: 'States' };
+        const layer = getLayerFromRecord(record, {
+            service: { layerOptions: { search: { wfsVersion: '2.0.0' } } }
+        }, false);
+        expect(layer.search.wfsVersion).toBe('2.0.0');
+        // url must survive the merge
+        expect(layer.search.url).toBe('http://wfs');
+        expect(layer.search.type).toBe('wfs');
+    });
+    it('recordToLayer - layerOptions.search does not overwrite search.url', () => {
+        const record = { name: 'topp:states', url: 'http://wfs-endpoint', title: 'States' };
+        const layer = getLayerFromRecord(record, {
+            service: { layerOptions: { search: { wfsVersion: '2.0.0' } } }
+        }, false);
+        // url from record must not be lost
+        expect(layer.search.url).toBe('http://wfs-endpoint');
+    });
+    it('recordToLayer - layerOptions.wfsVersion (top-level) propagated to layer top-level', () => {
+        const record = { name: 'topp:states', url: 'http://wfs', title: 'States' };
+        const layer = getLayerFromRecord(record, {
+            service: { layerOptions: { wfsVersion: '2.0.0' } }
+        }, false);
+        // top-level wfsVersion on layer (fallback read path)
+        expect(layer.wfsVersion).toBe('2.0.0');
+        // search.url still present
+        expect(layer.search.url).toBe('http://wfs');
     });
     it('WFS text filter', (done) => {
         mockAxios.onGet().reply(200, PAGINATION_CAPABILITIES);

@@ -131,3 +131,57 @@ describe('Test GeoJSON/GML geometry conversion', () => {
         expect(gmlMultiPolygon).toBe(EXPECTED_RESULTS.V1_1_0.exteriorInterior);
     });
 });
+
+describe('GML 3.2 geometry conversion (gml:id required)', () => {
+    const V3_2 = "3.2";
+    const GML_ID_PATTERN = /gml:id="gml\d+"/;
+
+    it('Point GML 3.2 has gml:id attribute', () => {
+        const result = processOGCGeometry(V3_2, point);
+        expect(result).toMatch(GML_ID_PATTERN);
+        expect(result).toInclude('<gml:Point ');
+        expect(result).toInclude('<gml:pos>');
+    });
+    it('LineString GML 3.2 has gml:id attribute', () => {
+        const result = processOGCGeometry(V3_2, lineString);
+        expect(result).toMatch(GML_ID_PATTERN);
+        expect(result).toInclude('<gml:LineString ');
+    });
+    it('Polygon GML 3.2 has gml:id attribute', () => {
+        const result = processOGCGeometry(V3_2, polygon);
+        expect(result).toMatch(GML_ID_PATTERN);
+        expect(result).toInclude('<gml:Polygon ');
+    });
+    it('MultiPoint GML 3.2 has gml:id on MultiPoint element', () => {
+        const geom = { type: "MultiPoint", coordinates: [[0, 0], [1, 1]] };
+        const result = processOGCGeometry(V3_2, geom);
+        expect(result).toInclude('<gml:MultiPoint ');
+        // MultiPoint container has gml:id
+        expect(result).toMatch(/gml:MultiPoint[^>]*gml:id="gml\d+"/);
+    });
+    it('MultiLineString GML 3.2 renders as MultiCurve with gml:id', () => {
+        const result = processOGCGeometry(V3_2, multiLineString);
+        expect(result).toInclude('<gml:MultiCurve ');
+        expect(result).toInclude('<gml:curveMember>');
+        expect(result).toNotInclude('<gml:MultiLineString');
+        expect(result).toMatch(GML_ID_PATTERN);
+    });
+    it('MultiPolygon GML 3.2 renders as MultiSurface with gml:id', () => {
+        const result = processOGCGeometry(V3_2, multiPolygon);
+        expect(result).toInclude('<gml:MultiSurface ');
+        expect(result).toInclude('<gml:surfaceMembers>');
+        expect(result).toNotInclude('<gml:MultiPolygon');
+        expect(result).toMatch(GML_ID_PATTERN);
+    });
+    it('GML 3.2 geometry ids are unique within a single call sequence', () => {
+        const id1 = processOGCGeometry(V3_2, point).match(GML_ID_PATTERN)[0];
+        const id2 = processOGCGeometry(V3_2, polygon).match(GML_ID_PATTERN)[0];
+        expect(id1).toNotEqual(id2);
+    });
+    it('GML 1.1.0 geometry has no gml:id (no regression)', () => {
+        expect(processOGCGeometry(V1_1_0, point)).toNotInclude('gml:id=');
+        expect(processOGCGeometry(V1_1_0, polygon)).toNotInclude('gml:id=');
+        expect(processOGCGeometry(V1_1_0, lineString)).toNotInclude('gml:id=');
+        expect(processOGCGeometry(V1_1_0, multiPolygon)).toNotInclude('gml:id=');
+    });
+});

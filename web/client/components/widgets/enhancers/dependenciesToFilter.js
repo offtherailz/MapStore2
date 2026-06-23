@@ -40,7 +40,12 @@ const shouldMapOrKeys = ({ mapSync, geomProp, dependencies = {}, layer, quickFil
 
 const createFilterProps = ({ mapSync, geomProp, dependencies = {}, filter: filterObj, layer, quickFilters, options, interactionFilters } = {}) => {
     const viewport = dependencies.viewport;
-    const fb = filterBuilder({ gmlVersion: "3.1.1" });
+    const layerWfsVersion = layer?.search?.wfsVersion || layer?.wfsVersion;
+    const useWfs2 = !!(layerWfsVersion && layerWfsVersion.indexOf("2.") === 0);
+    const filterNS = useWfs2 ? "fes" : "ogc";
+    const ogcVersion = useWfs2 ? "2.0" : "1.1.0";
+    const gmlVersion = useWfs2 ? "3.2" : "3.1.1";
+    const fb = filterBuilder({ gmlVersion, filterNS, wfsVersion: ogcVersion });
     const toFilter = fromObject(fb);
     const {filter, property, and} = fb;
     const {layerFilter} = layer || {};
@@ -51,16 +56,16 @@ const createFilterProps = ({ mapSync, geomProp, dependencies = {}, filter: filte
 
     // Process interactionFilters once - convert to OGC filter parts
     const interactionFilterParts = (interactionFilters && Array.isArray(interactionFilters) && interactionFilters.length > 0)
-        ? convertFiltersToOGC(interactionFilters, {nsplaceholder: "ogc", versionOGC: "1.1.0"}) || []
+        ? convertFiltersToOGC(interactionFilters, {nsplaceholder: filterNS, versionOGC: ogcVersion}) || []
         : [];
 
     if (!mapSync) {
         const filterParts = [
-            ...(newFilterObj ? toOGCFilterParts(newFilterObj, "1.1.0", "ogc") : []),
+            ...(newFilterObj ? toOGCFilterParts(newFilterObj, ogcVersion, filterNS) : []),
             ...interactionFilterParts
         ];
         return {
-            filter: isEmpty(filterParts) ? undefined : filter(and(...filterParts))
+            filter: isEmpty(filterParts) ? undefined : filter(filterParts.length === 1 ? filterParts[0] : and(...filterParts))
         };
     }
     // merging filterObj with quickFilters coming from dependencies
@@ -81,22 +86,24 @@ const createFilterProps = ({ mapSync, geomProp, dependencies = {}, filter: filte
         cqlFilterRules = cqlFilter
             ? [toFilter(read(cqlFilter))]
             : [];
-        // this will contain an ogc filter based on current and other filters (cql included)
+        // this will contain an ogc/fes filter based on current and other filters (cql included)
+        const viewportParts = [
+            ...cqlFilterRules,
+            ...(layerFilter  && !layerFilter.disabled ? toOGCFilterParts(layerFilter, ogcVersion, filterNS) : []),
+            ...(newFilterObj ? toOGCFilterParts(newFilterObj, ogcVersion, filterNS) : []),
+            ...(geomProp ? [property(geomProp).intersects(geom)] : []),
+            ...interactionFilterParts
+        ];
         return {
-            filter: filter(and(
-                ...cqlFilterRules,
-                ...(layerFilter  && !layerFilter.disabled ? toOGCFilterParts(layerFilter, "1.1.0", "ogc") : []),
-                ...(newFilterObj ? toOGCFilterParts(newFilterObj, "1.1.0", "ogc") : []),
-                ...(geomProp ? [property(geomProp).intersects(geom)] : []),
-                ...interactionFilterParts
-            ))
+            filter: filter(viewportParts.length === 1 ? viewportParts[0] : and(...viewportParts))
         };
     }
-    // this will contain only an ogc filter based on current and other filters (cql excluded)
-    const ogcLayerFilterParts = layerFilter ? toOGCFilterParts(layerFilter, "1.1.0", "ogc") : [];
-    const ogcNewFilterObjParts = newFilterObj ? toOGCFilterParts(newFilterObj, "1.1.0", "ogc") : [];
-    const ogcFilter = isEmpty(ogcLayerFilterParts) && isEmpty(ogcNewFilterObjParts) && interactionFilterParts.length === 0 ? undefined
-        : filter(and(...ogcLayerFilterParts, ...ogcNewFilterObjParts, ...interactionFilterParts));
+    // this will contain only an ogc/fes filter based on current and other filters (cql excluded)
+    const ogcLayerFilterParts = layerFilter ? toOGCFilterParts(layerFilter, ogcVersion, filterNS) : [];
+    const ogcNewFilterObjParts = newFilterObj ? toOGCFilterParts(newFilterObj, ogcVersion, filterNS) : [];
+    const allParts = [...ogcLayerFilterParts, ...ogcNewFilterObjParts, ...interactionFilterParts];
+    const ogcFilter = allParts.length === 0 ? undefined
+        : filter(allParts.length === 1 ? allParts[0] : and(...allParts));
     return { filter: ogcFilter };
 };
 

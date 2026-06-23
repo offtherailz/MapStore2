@@ -1,5 +1,8 @@
 const isArray = require('lodash/isArray');
 const isGML2 = (version) => version.indexOf("2.") === 0;
+const isGML32 = (version) => version === "3.2";
+let _gmlIdCounter = 0;
+const nextGmlId = () => `gml${++_gmlIdCounter}`;
 const closePolygon = (coords) => {
     if (coords.length >= 3) {
         const first = coords[0];
@@ -11,8 +14,9 @@ const closePolygon = (coords) => {
     return coords;
 };
 const pointElement = (coordinates, srsName, version) => {
-    let gmlPoint = '<gml:Point srsDimension="2"';
     const gml2 = isGML2(version);
+    let gmlPoint = '<gml:Point srsDimension="2"';
+    if (isGML32(version)) gmlPoint += ` gml:id="${nextGmlId()}"`;
     gmlPoint += srsName ? ' srsName="' + srsName + '">' : '>';
     if (gml2) {
         gmlPoint += '<gml:coord><X>' + coordinates[0] + '</X><Y>' + coordinates[1] + '</Y></gml:coord>';
@@ -28,6 +32,7 @@ const pointElement = (coordinates, srsName, version) => {
 const polygonElement = (coordinates, srsName, version) => {
     const gml2 = isGML2(version);
     let gmlPolygon = '<gml:Polygon';
+    if (isGML32(version)) gmlPolygon += ` gml:id="${nextGmlId()}"`;
     gmlPolygon += srsName ? ' srsName="' + srsName + '">' : '>';
 
     // ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,6 +63,7 @@ const polygonElement = (coordinates, srsName, version) => {
 const lineStringElement = (coordinates, srsName, version) => {
     const gml2 = isGML2(version);
     let gml = '<gml:LineString';
+    if (isGML32(version)) gml += ` gml:id="${nextGmlId()}"`;
     gml += srsName ? ' srsName="' + srsName + '">' : '>';
 
     // ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,41 +92,32 @@ const lineStringElement = (coordinates, srsName, version) => {
 const processOGCGeometry = (version, geometry) => {
     let ogc = '';
     const srsName = geometry.projection || "EPSG:4326";
+    const gml32 = isGML32(version);
     switch (geometry.type) {
     case "Point":
-        ogc += pointElement(geometry.coordinates,
-            srsName, version);
+        ogc += pointElement(geometry.coordinates, srsName, version);
         break;
-    case "MultiPoint":
-        ogc += '<gml:MultiPoint srsName="' + (geometry.projection || "EPSG:4326") + '">';
-
-        // //////////////////////////////////////////////////////////////////////////
-        // Coordinates of a MultiPoint are an array of positions
-        // //////////////////////////////////////////////////////////////////////////
+    case "MultiPoint": {
+        const mpId = gml32 ? ` gml:id="${nextGmlId()}"` : '';
+        ogc += `<gml:MultiPoint${mpId} srsName="${srsName}">`;
         geometry.coordinates.forEach((element) => {
-            let point = element;
-            if (point) {
+            if (element) {
                 ogc += "<gml:pointMember>";
-                ogc += pointElement(point, srsName, version);
+                ogc += pointElement(element, srsName, version);
                 ogc += "</gml:pointMember>";
             }
         });
-
         ogc += '</gml:MultiPoint>';
         break;
+    }
     case "LineString":
-        ogc += lineStringElement(geometry.coordinates,
-            srsName, version);
+        ogc += lineStringElement(geometry.coordinates, srsName, version);
         break;
-    case "MultiLineString":
-        const multyLineTagName = version === "3.2" ? "MultiCurve" : "MultiLineString";
-        const lineMemberTagName = version === "3.2" ? "curveMember" : "lineStringMember";
-
-        ogc += `<gml:${multyLineTagName} srsName="${srsName}">`;
-
-        // //////////////////////////////////////////////////////////////////////////
-        // Coordinates of a MultiPolygon are an array of Polygon coordinate arrays
-        // //////////////////////////////////////////////////////////////////////////
+    case "MultiLineString": {
+        const multyLineTagName = gml32 ? "MultiCurve" : "MultiLineString";
+        const lineMemberTagName = gml32 ? "curveMember" : "lineStringMember";
+        const mlId = gml32 ? ` gml:id="${nextGmlId()}"` : '';
+        ogc += `<gml:${multyLineTagName}${mlId} srsName="${srsName}">`;
         geometry.coordinates.forEach((element) => {
             if (element) {
                 ogc += "<gml:" + lineMemberTagName + ">";
@@ -130,29 +127,25 @@ const processOGCGeometry = (version, geometry) => {
         });
         ogc += '</gml:' + multyLineTagName + '>';
         break;
+    }
     case "Polygon":
-        ogc += polygonElement(geometry.coordinates,
-            srsName, version);
+        ogc += polygonElement(geometry.coordinates, srsName, version);
         break;
-    case "MultiPolygon":
-        const multyPolygonTagName = version === "3.2" ? "MultiSurface" : "MultiPolygon";
-        const polygonMemberTagName = version === "3.2" ? "surfaceMembers" : "polygonMember";
-
-        ogc += `<gml:${multyPolygonTagName} srsName="${srsName}">`;
-
-        // //////////////////////////////////////////////////////////////////////////
-        // Coordinates of a MultiPolygon are an array of Polygon coordinate arrays
-        // //////////////////////////////////////////////////////////////////////////
+    case "MultiPolygon": {
+        const multyPolygonTagName = gml32 ? "MultiSurface" : "MultiPolygon";
+        const polygonMemberTagName = gml32 ? "surfaceMembers" : "polygonMember";
+        const mpgId = gml32 ? ` gml:id="${nextGmlId()}"` : '';
+        ogc += `<gml:${multyPolygonTagName}${mpgId} srsName="${srsName}">`;
         geometry.coordinates.forEach((element) => {
-            let polygon = element;
-            if (polygon) {
+            if (element) {
                 ogc += "<gml:" + polygonMemberTagName + ">";
-                ogc += polygonElement(polygon, srsName, version);
+                ogc += polygonElement(element, srsName, version);
                 ogc += "</gml:" + polygonMemberTagName + ">";
             }
         });
         ogc += '</gml:' + multyPolygonTagName + '>';
         break;
+    }
     default:
         break;
     }
