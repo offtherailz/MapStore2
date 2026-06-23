@@ -15,6 +15,7 @@ import TMSAdvancedEditor from './TMSAdvancedEditor';
 import Message from '../../../I18N/Message';
 import RasterAdvancedSettings from './RasterAdvancedSettings';
 import GeoNodeAdvancedSettings from './GeoNodeAdvancedSettings';
+import WFSAdvancedSettings from './WFSAdvancedSettings';
 
 
 const getPanel = (type) => {
@@ -22,8 +23,9 @@ const getPanel = (type) => {
     case "tms":
         return TMSAdvancedEditor;
     case "wmts":
-    case "wfs":
         return CommonAdvancedSettings;
+    case "wfs":
+        return WFSAdvancedSettings;
     case "wms":
     case "csw":
         return RasterAdvancedSettings;

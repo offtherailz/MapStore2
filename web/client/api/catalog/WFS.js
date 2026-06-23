@@ -18,8 +18,16 @@ import {
 } from './common';
 import { get, castArray, isEmpty } from 'lodash';
 
-const searchAndPaginate = (json = {}, startPosition, maxRecords, text) => {
+const detectWfsVersion = (json) => {
+    const raw = get(json, '["wfs:WFS_Capabilities"]["ows:ServiceIdentification"]["ows:ServiceTypeVersion"]');
+    const versions = castArray(raw || []).filter(v => ['1.0.0', '1.1.0', '2.0.0'].includes(v));
+    if (versions.includes('2.0.0')) return '2.0.0';
+    if (versions.includes('1.1.0')) return '1.1.0';
+    return undefined;
+};
 
+const searchAndPaginate = (json = {}, startPosition, maxRecords, text) => {
+    const detectedWfsVersion = detectWfsVersion(json);
     const layers = castArray(get(json, '["wfs:WFS_Capabilities"].FeatureTypeList.FeatureType', []));
 
     const filteredLayers = layers
@@ -53,7 +61,8 @@ const searchAndPaginate = (json = {}, startPosition, maxRecords, text) => {
                 boundingBox: {
                     bounds,
                     crs: "EPSG:4326"
-                }
+                },
+                detectedWfsVersion
             };
         })
         .filter(({ title = "", name = "", description } = {}) => !text
@@ -87,6 +96,10 @@ const recordToLayer = (record, {
         search: {
             url: record.url,
             type: "wfs",
+            // auto-detected version as fallback; explicit service config wins
+            ...(record.detectedWfsVersion && !searchLayerOptions?.wfsVersion
+                ? { wfsVersion: record.detectedWfsVersion }
+                : {}),
             ...searchLayerOptions
         },
         security,

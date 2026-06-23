@@ -1707,6 +1707,10 @@
       "title": "Catalog",
       "tooltip": "Add layers to the map",
       "autoload": "Search on service selection",
+      "wfsVersion": {
+        "label": "WFS Version",
+        "autoDetect": "Auto-detect (default WFS 1.1.0)"
+      },
       "fetchMetadata": {
         "label": "Download file metadata on save",
         "tooltip": "This option will fetch metadata to support the zoom to layer. It may slow down the search operation if the images are too big or too many."
