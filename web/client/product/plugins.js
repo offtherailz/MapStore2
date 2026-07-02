@@ -5,6 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
+import Auditing from '../plugins/audit';
 import Context from "../plugins/Context";
 import ContextCreator from "../plugins/ContextCreator";
 import Dashboard from "../plugins/Dashboard";
@@ -40,6 +41,7 @@ export const plugins = {
     // ### STATIC PLUGINS ### //
     ...resourcesCatalogPlugins,
 
+    AuditingPlugin: Auditing,
     ContextCreatorPlugin: ContextCreator,
     ContextPlugin: Context,
     Dashboard: Dashboard,
