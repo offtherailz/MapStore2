@@ -56,11 +56,6 @@
         depends-on="entityManager">
     </bean>
 
-    <!-- Inject into the Authentication Manager the GeoStore Auth Provider -->
-    <security:authentication-manager alias="authenticationManager">
-        <security:authentication-provider ref='geoStoreUserServiceAuthenticationProvider' />
-    </security:authentication-manager>
-
     <bean id="preauthenticatedAuthenticationProvider"
           class="it.geosolutions.geostore.services.rest.security.PreAuthenticatedAuthenticationProvider">
     </bean>
@@ -89,5 +84,9 @@
 
     <!--  security integration inclusions  -->
     <import resource="classpath*:security-integration-${security.integration:default}.xml"/>
+
+    <!--  authentication manager and optional integrations (ldap, ldap-direct)
+          selected through Spring profiles (spring.profiles.active)  -->
+    <import resource="classpath*:geostore-security-profiles.xml"/>
 
 </beans>

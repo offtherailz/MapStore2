@@ -431,6 +431,19 @@
                                     </destinationFile>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-security-profiles</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <overWrite>true</overWrite>
+                                    <sourceFile>config/db/geostore-security-profiles.xml</sourceFile>
+                                    <destinationFile>target/mapstore/WEB-INF/classes/geostore-security-profiles.xml
+                                    </destinationFile>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                 </plugins>
