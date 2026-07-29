@@ -30,7 +30,7 @@ const SearchAutoComplete = ({
     loading = false,
     placeholder,
     onSelect
-}, {messages}) => {
+}, {messages} = {}) => {
     const [inputValue, setInputValue] = useState(value);
 
     const handleChange = (newValue) => {

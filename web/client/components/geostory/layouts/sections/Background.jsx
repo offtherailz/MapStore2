@@ -70,7 +70,7 @@ class Background extends Component {
 
     render() {
         const theme = getThemeStyleFromProps(this.props);
-        const parentNode = !this.props.disableToolbarPortal && this.refs && this.div && this.div.parentNode;
+        const parentNode = !this.props.disableToolbarPortal && this.div && this.div.parentNode;
         const defaultTools = this.props.sectionType === SectionTypes.TITLE ? ['editMedia', 'cover' ] : ['editMedia' ];
         const ContentToolbar = this.props.contentToolbar || DefaultContentToolbar;
         const toolbar = (

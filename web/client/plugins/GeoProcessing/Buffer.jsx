@@ -64,7 +64,7 @@ const Buffer = ({
     onSetBufferQuadrantSegments,
     onSetBufferCapStyle,
     onToggleHighlightLayers
-}, {messages}) => {
+}, {messages} = {}) => {
     const [showBufferAdvancedSettings, setShowBufferAdvancedSettings] =
     useState(false);
     const [showWarning, onShowWarning] = useState(false);

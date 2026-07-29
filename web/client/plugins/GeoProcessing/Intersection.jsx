@@ -79,7 +79,7 @@ const Intersection = ({
     onSetIntersectionAreasEnabled,
     onToggleHighlightLayers,
     onRunProcess
-}, {messages}) => {
+}, {messages} = {}) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
     const [showWarning, onShowWarning] = useState(false);
 

@@ -283,6 +283,35 @@ if os.path.isdir(os.path.join(NM, 'react-dnd/lib')):
 else:
     missing.append('react-dnd (not installed)')
 
+
+# 8. react-notification-system keeps its containers and notifications in `this.refs`,
+#    keyed dynamically, and iterates over Object.keys(this.refs). String refs are gone
+#    in React 19, so any notification crashes the page. Note the package ships both a
+#    bundle and single files: the entry point is dist/NotificationSystem.js, so patching
+#    dist/react-notification-system.js has no effect.
+RNS_CB = ("(function (k) { return function (c) { if (!self.refs || Object.isFrozen(self.refs)) "
+          "{ self.refs = {}; } self.refs[k] = c; }; })")
+
+
+def p_rns_system(s):
+    old = "            ref:  'container-' + position, "
+    if old not in s:
+        return None
+    return s.replace(old, "            ref: %s('container-' + position), /* __SPIKE_RNS */" % RNS_CB, 1)
+
+
+def p_rns_container(s):
+    old = "          ref:  'notification-' + notification.uid, "
+    if old not in s:
+        return None
+    return s.replace(old, "          ref: %s('notification-' + notification.uid), /* __SPIKE_RNS */" % RNS_CB, 1)
+
+
+patch('react-notification-system containers', 'react-notification-system/dist/NotificationSystem.js',
+      p_rns_system, '__SPIKE_RNS')
+patch('react-notification-system items', 'react-notification-system/dist/NotificationContainer.js',
+      p_rns_container, '__SPIKE_RNS')
+
 print('applied : %s' % (', '.join(applied) if applied else '-'))
 print('already : %s' % (', '.join(skipped) if skipped else '-'))
 if missing:

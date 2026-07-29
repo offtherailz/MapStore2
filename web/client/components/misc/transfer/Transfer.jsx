@@ -41,7 +41,7 @@ const renderMoveButtons = (moveButtons) => (
     </ButtonGroup>
 );
 
-const localizeItem = (messages, { title, description, children, ...other}) => ({
+const localizeItem = (messages, { title, description, children, ...other} = {}) => ({
     ...other,
     title: title && getMessageById(messages, title),
     description: description && getMessageById(messages, description),

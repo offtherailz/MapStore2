@@ -133,7 +133,7 @@ class Timeline extends React.Component {
         };
     }
     componentDidMount() {
-        const { container } = this.refs;
+        const container = this.container;
 
         this.$el = new vis.Timeline(container, undefined, this.props.options);
 

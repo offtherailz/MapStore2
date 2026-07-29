@@ -262,7 +262,7 @@
       "dependencies": ["QueryPanel"]
     },
     {
-      "name": "Tutorial",
+      "name": "__SPIKE_DISABLED_Tutorial",
       "glyph": "book",
       "title": "plugins.Tutorial.title",
       "description": "plugins.Tutorial.description"

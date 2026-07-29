@@ -29,7 +29,7 @@ const QuickTimeSelectors = ({
     onChangeDate = () => {},
     onChangeTime = () => {},
     onMouseDown = () => {}
-}, { messages }) => {
+}, { messages } = {}) => {
     if (isEmpty(quickDateTimeSelectors)) {
         return null;
     }
