@@ -232,6 +232,57 @@ else:
     missing.append('react-widgets (not installed)')
 
 
+
+# 7. react-dnd 2.6.0 hands the drag and drop manager down through legacy context.
+#    The layer tree entries are drag sources, so on React 19 the viewer breaks as
+#    soon as the map has a single layer. Same treatment as react-intl: a real
+#    context, so `this.context.dragDropManager` keeps working unchanged.
+DND_CTX = """/*
+ * SPIKE ONLY (React 19 trial, #12506) -- NOT a proposal.
+ */
+'use strict';
+var React = require('react');
+module.exports = React.createContext(null);
+"""
+
+
+def p_dnd_provider(s):
+    s = s.replace("var CHILD_CONTEXT_TYPES = exports.CHILD_CONTEXT_TYPES = {",
+                  "var __SPIKE_DND_CTX = require('./__spikeContext');\n\nvar CHILD_CONTEXT_TYPES = exports.CHILD_CONTEXT_TYPES = {", 1)
+    old = """					return _react2.default.createElement(DecoratedComponent, _extends({}, this.props, {
+						ref: function ref(child) {
+							_this2.child = child;
+						}
+					}));"""
+    new = """					return _react2.default.createElement(__SPIKE_DND_CTX.Provider, { value: childContext }, _react2.default.createElement(DecoratedComponent, _extends({}, this.props, {
+						ref: function ref(child) {
+							_this2.child = child;
+						}
+					})));"""
+    if old not in s:
+        return None
+    return s.replace(old, new, 1)
+
+
+def p_dnd_consumer(s):
+    old = """_class.contextTypes = {
+		dragDropManager: _propTypes2.default.object.isRequired
+	}, _temp);"""
+    if old not in s:
+        return None
+    s = s.replace("'use strict';", "'use strict';\n\nvar __SPIKE_DND_CTX = require('./__spikeContext');", 1)
+    return s.replace(old, "_class.contextType = __SPIKE_DND_CTX, _temp);", 1)
+
+
+if os.path.isdir(os.path.join(NM, 'react-dnd/lib')):
+    ctx_path = os.path.join(NM, 'react-dnd/lib/__spikeContext.js')
+    if not os.path.exists(ctx_path):
+        write(ctx_path, DND_CTX)
+    patch('react-dnd provider', 'react-dnd/lib/DragDropContext.js', p_dnd_provider, '__spikeContext')
+    patch('react-dnd consumer', 'react-dnd/lib/decorateHandler.js', p_dnd_consumer, '__spikeContext')
+else:
+    missing.append('react-dnd (not installed)')
+
 print('applied : %s' % (', '.join(applied) if applied else '-'))
 print('already : %s' % (', '.join(skipped) if skipped else '-'))
 if missing:

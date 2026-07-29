@@ -333,7 +333,7 @@
         }
       },
       {
-        "name": "Tutorial",
+        "name": "__SPIKE_DISABLED_Tutorial",
         "cfg": {
           "preset": "default_mobile_tutorial"
         }
@@ -525,7 +525,7 @@
       "FilterLayer",
       "AddGroup",
       "TOCItemsSettings",
-      "Tutorial",
+      "__SPIKE_DISABLED_Tutorial",
       {
         "name": "MapFooter",
         "cfg": {
@@ -1090,7 +1090,7 @@
         }
       },
       {
-        "name": "Tutorial",
+        "name": "__SPIKE_DISABLED_Tutorial",
         "cfg": {
           "allowClicksThruHole": false,
           "containerPosition": "header",
@@ -1146,7 +1146,7 @@
         }
       },
       {
-        "name": "Tutorial",
+        "name": "__SPIKE_DISABLED_Tutorial",
         "cfg": {
           "allowClicksThruHole": false,
           "containerPosition": "header",
@@ -1225,7 +1225,7 @@
       "Redirect",
       "Login",
       "Language",
-      "Tutorial",
+      "__SPIKE_DISABLED_Tutorial",
       {
         "name": "ContextCreator",
         "cfg": {
