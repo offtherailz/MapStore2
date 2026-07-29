@@ -194,7 +194,7 @@ describe('TOCItemsSettings - VectorStyleEditor rendered items', () => {
 
         mockFeatureRequestWithGeometryType("Geometry");
 
-        act(async() => {
+        act(() => {
             ReactDOM.render(<Provider store={mockStore}><VectorStyleEditor {...PROPS}/></Provider>, document.querySelector('#container'));
         });
         asyncValidation(()=>{
@@ -219,7 +219,7 @@ describe('TOCItemsSettings - VectorStyleEditor rendered items', () => {
 
         mockFeatureRequestWithGeometryType("MultiPolygon");
 
-        act(async() => {
+        act(() => {
             ReactDOM.render(<Provider store={mockStore}><VectorStyleEditor {...PROPS}/></Provider>, document.querySelector('#container'));
         });
         asyncValidation(()=>{
@@ -243,7 +243,7 @@ describe('TOCItemsSettings - VectorStyleEditor rendered items', () => {
 
         mockFeatureRequestWithGeometryType("GeometryCollection");
 
-        act(async() => {
+        act(() => {
             ReactDOM.render(<Provider store={mockStore}><VectorStyleEditor {...PROPS}/></Provider>, document.querySelector('#container'));
         });
         asyncValidation(()=>{
@@ -267,7 +267,7 @@ describe('TOCItemsSettings - VectorStyleEditor rendered items', () => {
 
         mockFeatureRequestWithGeometryType("");
 
-        act(async() => {
+        act(() => {
             ReactDOM.render(<Provider store={mockStore}><VectorStyleEditor {...PROPS}/></Provider>, document.querySelector('#container'));
         });
         asyncValidation(()=>{
@@ -325,7 +325,7 @@ describe('TOCItemsSettings - VectorStyleEditor rendered items', () => {
             }
         };
 
-        act(async() => {
+        act(() => {
             ReactDOM.render(<Provider store={mockStore}><VectorStyleEditor {...PROPS}/></Provider>, document.querySelector('#container'));
         });
     });

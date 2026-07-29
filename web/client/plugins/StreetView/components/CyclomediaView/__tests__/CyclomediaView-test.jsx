@@ -67,14 +67,18 @@ describe('Cyclomedia CyclomediaView', () => {
                 expect(initParams.password).toBe('password');
 
                 return new Promise((resolve) => {
-                    act(() => {
-                        ReactDOM.render(<CyclomediaView location={{properties: {imageId: "TEST_ID"}}} apiKey={testAPIKey} providerSettings={mockProviderSettings}/>, document.getElementById("container"));
-                    });
-                    // iframe should not be visible until open
-                    const iframe = getIframe();
-                    expect(iframe).toExist();
-                    expect(iframe.style.display).toBe('none');
-                    resolve();
+                    // defer the re-render: init is invoked from a React effect and a
+                    // synchronous nested ReactDOM.render is re-entrant ("Should not already be working" in React 18)
+                    setTimeout(() => {
+                        act(() => {
+                            ReactDOM.render(<CyclomediaView location={{properties: {imageId: "TEST_ID"}}} apiKey={testAPIKey} providerSettings={mockProviderSettings}/>, document.getElementById("container"));
+                        });
+                        // iframe should not be visible until open
+                        const iframe = getIframe();
+                        expect(iframe).toExist();
+                        expect(iframe.style.display).toBe('none');
+                        resolve();
+                    }, 0);
                 });
             },
             open: (query, options) => {

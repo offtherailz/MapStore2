@@ -169,7 +169,7 @@ describe('User and Groups - AttributeControls', () => {
         act(() => {
             Simulate.change(getInput(), { bubbles: true });
             getInput().value = '2019-01-04';
-            getInput().dispatchEvent(new Event('blur', { bubbles: true }));
+            getInput().dispatchEvent(new Event('focusout', { bubbles: true }));
         });
         expect(handlers.onChange).toHaveBeenCalled();
         expect(handlers.onChange.calls[0].arguments[0]).toBe('2019-01-04');
@@ -206,7 +206,7 @@ describe('User and Groups - AttributeControls', () => {
                     const input = document.querySelector('#container input');
                     Simulate.change(input, { bubbles: true });
                     input.value = value;
-                    input.dispatchEvent(new Event('blur', { bubbles: true }));
+                    input.dispatchEvent(new Event('focusout', { bubbles: true }));
                 });
             }
         };
