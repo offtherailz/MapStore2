@@ -19,6 +19,7 @@ import HTML from '../../components/I18N/HTML';
 import Message from '../../components/I18N/Message';
 import FlexBox from '../../components/layout/FlexBox';
 import usePluginItems from '../../hooks/usePluginItems';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 
 function FooterMenuItem({
     className,
@@ -141,8 +142,8 @@ function Footer({
     items,
     customFooter,
     customFooterMessageId
-}, context) {
-    const { loadedPlugins } = context;
+}) {
+    const { loadedPlugins } = usePluginsContext();
     const ref = useRef();
     const configuredItems = usePluginItems({ items, loadedPlugins });
     const pluginMenuItems = configuredItems.filter(({ target }) => target === 'menu').map(item => ({ ...item, type: 'plugin' }));

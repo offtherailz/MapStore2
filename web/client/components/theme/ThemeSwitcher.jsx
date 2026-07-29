@@ -38,7 +38,7 @@ class ThemeSwitcher extends React.Component {
                 <Label><Message msgId="manager.theme_combo"/></Label>
                 <FormControl
                     value={this.props.selectedTheme && this.props.selectedTheme.id}
-                    componentClass="select" ref="mapType" onChange={(e) => this.onChangeTheme(e.target.value)}>
+                    componentClass="select" ref={(c) => { this.mapType = c; }} onChange={(e) => this.onChangeTheme(e.target.value)}>
                     {this.props.themes.map( (t) => <option key={t.id} value={t.id}>{t.label || t.id}</option>)}
                 </FormControl>
             </FormGroup>);

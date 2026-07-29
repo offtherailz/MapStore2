@@ -49,6 +49,7 @@ import backgroundEpic from "../epics/backgroundselector";
 import BackgroundSelector from "../components/background/BackgroundSelector";
 import { isCesium } from '../selectors/maptype';
 import usePluginItems from '../hooks/usePluginItems';
+import { usePluginsContext } from '../components/plugins/PluginsContext';
 
 const backgroundSelector = createSelector([
     projectionSelector,
@@ -87,8 +88,8 @@ const backgroundSelector = createSelector([
     canEdit: !!(mode !== 'mobile' && mapIsEditable !== false)
 }));
 
-const BackgroundSelectorComponent = ({ items, ...props }, context) => {
-    const { loadedPlugins } = context;
+const BackgroundSelectorComponent = ({ items, ...props }) => {
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({ items: items, loadedPlugins });
     const backgroundToolbarItems = configuredItems.filter(({ target }) => target === 'background-toolbar');
     return (<BackgroundSelector {...props} backgroundToolbarItems={backgroundToolbarItems}/>);

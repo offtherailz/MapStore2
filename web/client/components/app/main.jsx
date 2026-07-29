@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import StandardStore from '../../stores/StandardStore';
 import StandardApp from './StandardApp';
 /**
@@ -50,9 +50,8 @@ const main = (config = {}, Component) => {
 
         const App = Component ? Component : StandardApp;
 
-        ReactDOM.render(
-            <App { ...config } appStore={appStore}/>,
-            document.getElementById(targetId)
+        createRoot(document.getElementById(targetId)).render(
+            <App { ...config } appStore={appStore}/>
         );
     };
 

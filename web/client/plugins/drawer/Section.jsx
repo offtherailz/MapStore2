@@ -34,8 +34,8 @@ class Section extends React.Component {
     };
 
     getHeight = () => {
-        if (this.props.open && this.refs.sectionContent) {
-            return this.refs.sectionContent.scrollHeight + 10;
+        if (this.props.open && this.sectionContent) {
+            return this.sectionContent.scrollHeight + 10;
         }
         return "0";
     };
@@ -50,12 +50,12 @@ class Section extends React.Component {
             <div className={"section"}>
                 <div className="sectionHeader" style={{width: "100%"}} onClick={this.onHeaderClick}>
                     { !this.props.renderInModal ? <Glyphicon glyph="triangle-right" style={this.props.open ? {transform: "rotate(90deg)"} : {} } /> : null }
-                    <span className={this.headerClassName + " sectionTitle"} ref="sectionTitle" >{this.props.header}</span>
+                    <span className={this.headerClassName + " sectionTitle"} ref={(c) => { this.sectionTitle = c; }} >{this.props.header}</span>
                 </div>
                 {!this.props.renderInModal ?
-                    <div ref="sectionContent" className="sectionContent" style={style} >{this.props.children}</div>
+                    <div ref={(c) => { this.sectionContent = c; }} className="sectionContent" style={style} >{this.props.children}</div>
                     :
-                    <Modal ref="modal" show={this.props.open}
+                    <Modal ref={(c) => { this.modal = c; }} show={this.props.open}
                         onHide={this.onHeaderClick}>
                         <Modal.Header closeButton >
                             <Modal.Title>{this.props.header}</Modal.Title>

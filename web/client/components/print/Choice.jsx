@@ -37,7 +37,7 @@ class Choice extends React.Component {
         return (
             <FormGroup>
                 {this.props.label ? <ControlLabel>{this.props.label}</ControlLabel> : null}
-                <FormControl ref="input" value={this.props.selected} componentClass="select" onChange={this.onChange}>
+                <FormControl ref={(c) => { this.input = c; }} value={this.props.selected} componentClass="select" onChange={this.onChange}>
                     {options}
                 </FormControl>
             </FormGroup>

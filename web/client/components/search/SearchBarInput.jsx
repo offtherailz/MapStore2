@@ -31,7 +31,7 @@ const SearchBarInput = ({
     onSearchTextChange = () => {},
     onCancelSelectedItem = () => {},
     onPurgeResults = () => {}
-}, context) => {
+}, context = {}) => {
     const inputRef = React.useRef();
     const prevSelectedItemsLengthRef = React.useRef();
     const [onBlurTimeout, setOnBlurTimeout] = React.useState();

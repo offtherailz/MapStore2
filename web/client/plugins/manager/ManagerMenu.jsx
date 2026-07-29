@@ -15,6 +15,7 @@ import { isPageConfigured } from '../../selectors/plugins';
 import tooltip from '../../components/misc/enhancers/tooltip';
 import { DropdownButton, Glyphicon, MenuItem } from 'react-bootstrap';
 import Message from '../../components/I18N/Message';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 const TDropdownButton = tooltip(DropdownButton);
 
 const IMPORTER_ID = 'importer';
@@ -55,9 +56,9 @@ function ManagerMenu({
     title,
     onItemSelected,
     items
-}, context) {
+}) {
 
-    const { loadedPlugins } = context;
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({ items, loadedPlugins });
 
     if (role !== 'ADMIN') {

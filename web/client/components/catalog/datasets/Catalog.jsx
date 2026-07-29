@@ -145,7 +145,7 @@ const Catalog = ({
     clearSelection,
     filterFormFields,
     API = defaultAPI
-}, context) => {
+}, context = {}) => {
     const { messages } = context;
     const currentSearchOptions = getCurrentSearchOptions({ searchOptions, selectedService, services });
     const [showFilters, setShowFilters] = useState(false);

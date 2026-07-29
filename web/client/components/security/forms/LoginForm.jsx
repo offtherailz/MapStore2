@@ -96,10 +96,10 @@ class LoginForm extends React.Component {
 
     render() {
         return (
-            <form ref="loginForm">
+            <form ref={(c) => { this.loginForm = c; }}>
                 <FormGroup>
                     <ControlLabel>{this.props.userNameText}</ControlLabel>
-                    <FormControl ref="username"
+                    <FormControl ref={(c) => { this.username = c; }}
                         key="username"
                         type="text"
                         value={this.state.username}
@@ -108,7 +108,7 @@ class LoginForm extends React.Component {
                 </FormGroup>
                 <FormGroup>
                     <ControlLabel>{this.props.passwordText}</ControlLabel>
-                    <FormControl ref="password"
+                    <FormControl ref={(c) => { this.password = c; }}
                         key="password"
                         type="password"
                         value={this.state.password}

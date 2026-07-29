@@ -48,7 +48,7 @@ const defaultAlternatives = [{
     regex: /landscape/
 }];
 
-function renderLayoutsAlternatives(alternatives, context) {
+function renderLayoutsAlternatives(alternatives, context = {}) {
     return alternatives.map((alternative) =>
         (<alternative.component key={"printoption_" + alternative.name}
             label={getMessageById(context.messages, "print.alternatives." + alternative.name)}
@@ -57,7 +57,7 @@ function renderLayoutsAlternatives(alternatives, context) {
     );
 }
 
-export const Layout = ({layouts, spec, onChangeParameter, alternatives}, context) => {
+export const Layout = ({layouts, spec, onChangeParameter, alternatives}, context = {}) => {
     return (
         <>
             <Sheet key="sheetsize"

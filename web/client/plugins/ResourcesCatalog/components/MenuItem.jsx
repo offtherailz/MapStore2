@@ -151,7 +151,7 @@ const MenuItem = ({
                             </>
                         )}
                 </Dropdown.Toggle>
-                {containerNode
+                {false && containerNode
                     ? createPortal(<Dropdown.Menu>
                         <DropdownMenuItems items={items} target={defaultTarget} />
                     </Dropdown.Menu>, containerNode.parentNode)

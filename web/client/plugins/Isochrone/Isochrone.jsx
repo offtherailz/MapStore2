@@ -45,6 +45,7 @@ import {
 import isochrone from "./reducers/isochrone";
 import IsochroneContainer from "./containers/Isochrone";
 import { mergeOptionsById, removeAdditionalLayer } from "../../actions/additionallayers";
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 
 /**
  * Isochrone plugin that provides route planning functionality
@@ -136,9 +137,9 @@ import { mergeOptionsById, removeAdditionalLayer } from "../../actions/additiona
 const Isochrone = ({
     items,
     ...props
-}, context) => {
+}) => {
 
-    const { loadedPlugins } = context;
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({ items, loadedPlugins });
 
     return (

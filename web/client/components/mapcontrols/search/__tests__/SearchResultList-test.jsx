@@ -248,6 +248,6 @@ describe("test the SearchResultList", () => {
 
         const searchResultEl = TestUtils.findRenderedComponentWithType(tb, SearchResult);
         expect(searchResultEl).toExist();
-        expect(searchResultEl._reactInternalFiber.key).toBe('ID');
+        expect((searchResultEl._reactInternals || searchResultEl._reactInternalFiber).key).toBe('ID');
     });
 });

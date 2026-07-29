@@ -66,7 +66,7 @@ describe('editableText enhancer', () => {
                 const isFocus = document.activeElement && document.activeElement.contentEditable && document.activeElement.className.indexOf("DraftEditor") >= 0;
                 if (document.querySelector('.ms-text-editor-wrapper') && isFocus) {
                     clearInterval(check);
-                    document.activeElement.dispatchEvent(new Event('blur'));
+                    document.activeElement.dispatchEvent(new Event('focusout', { bubbles: true }));
                 }
             }, 20);
         }));
@@ -90,7 +90,7 @@ describe('editableText enhancer', () => {
                 const isFocus = document.activeElement && document.activeElement.contentEditable && document.activeElement.className.indexOf("DraftEditor") >= 0;
                 if (document.querySelector('.ms-text-editor-wrapper') && isFocus) {
                     clearInterval(check);
-                    document.activeElement.dispatchEvent(new Event('blur'));
+                    document.activeElement.dispatchEvent(new Event('focusout', { bubbles: true }));
                 }
             }, 20);
         }));

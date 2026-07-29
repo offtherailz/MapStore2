@@ -31,7 +31,7 @@ import Text from '../../../components/layout/Text';
 
 const SelectSync = localizedProps('placeholder')(ReactSelect);
 
-function Label({item} = {}, { messages }) {
+function Label({item} = {}, { messages } = {}) {
     return (
         <FlexBox gap="sm">
             <FlexBox.Fill>
@@ -102,7 +102,7 @@ function FilterItem({
     timeDebounce,
     field,
     root
-}, { messages }) {
+}, { messages } = {}) {
 
     // remove global search parameters
     // to avoid conflict with filed search

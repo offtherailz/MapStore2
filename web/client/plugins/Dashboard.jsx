@@ -59,6 +59,7 @@ import { createPlugin } from '../utils/PluginsUtils';
 import { canTableWidgetBeDependency } from '../utils/WidgetsUtils';
 import usePluginItems from '../hooks/usePluginItems';
 import { userSelector } from '../selectors/security';
+import { usePluginsContext } from '../components/plugins/PluginsContext';
 
 const WidgetsView = compose(
     connect(
@@ -247,8 +248,8 @@ class DashboardPlugin extends React.Component {
     }
 }
 
-const DashboardComponentWrapper = (props, context) => {
-    const { loadedPlugins } = context;
+const DashboardComponentWrapper = (props) => {
+    const { loadedPlugins } = usePluginsContext();
     const items = usePluginItems({ items: props.items, loadedPlugins })
         .filter(({ target }) => target === 'menu');
 

@@ -19,6 +19,7 @@ import Spinner from '../../components/layout/Spinner';
 import PropTypes from 'prop-types';
 import MenuNavLink from './components/MenuNavLink';
 import src from '../../product/assets/img/logo.png';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 
 const ButtonWithTooltip = tooltip(Button);
 
@@ -150,8 +151,8 @@ function BrandNavbar({
     rightMenuItems,
     items,
     logo
-}, context) {
-    const { loadedPlugins } = context;
+}) {
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({ items, loadedPlugins });
     const pluginLeftMenuItems = configuredItems.filter(({ target }) => target === 'left-menu').map(item => ({ ...item, type: 'plugin' }));
     const pluginRightMenuItems = configuredItems.filter(({ target }) => target === 'right-menu').map(item => ({ ...item, type: 'plugin' }));

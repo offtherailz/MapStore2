@@ -40,7 +40,7 @@ class MapType extends React.Component {
             <div id="mapstore-maptype">
                 <Label><Message msgId="manager.mapTypes_combo"/></Label>
                 <FormGroup bsSize="small">
-                    <FormControl value={this.props.mapType} componentClass="select" ref="mapType" onChange={this.props.onChangeMapType}>
+                    <FormControl value={this.props.mapType} componentClass="select" ref={(c) => { this.mapType = c; }} onChange={this.props.onChangeMapType}>
                         {this.props.mapTypes.map(type => <option value={type.key} key={type.key}>{type.label}</option>)}
                     </FormControl>
                 </FormGroup>

@@ -103,7 +103,7 @@ export const Projection = ({
     projections,
     availableProjections,
     enabled = true
-}, context) => {
+}, context = {}) => {
     useEffect(() => {
         if (enabled) {
             addValidator("projection", "map-preview", validator(allowPreview));

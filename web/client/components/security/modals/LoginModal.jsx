@@ -82,7 +82,7 @@ class LoginModal extends React.Component {
             return (<LoginForm
                 loading={this.props.loading}
                 role="body"
-                ref="loginForm"
+                ref={(c) => { this.loginForm = c; }}
                 showSubmitButton={false}
                 user={this.props.user}
                 loginError={this.props.loginError}
@@ -112,10 +112,10 @@ class LoginModal extends React.Component {
             <FlexBox.Fill />
             {this.props.includeCloseButton ? <Button
                 key="closeButton"
-                ref="closeButton"
+                ref={(c) => { this.closeButton = c; }}
                 onClick={this.handleOnHide}><Message msgId="close"/></Button> : <span/>}
             <Button
-                ref="submit"
+                ref={(c) => { this.submit = c; }}
                 value={getMessageById(this.context.messages, "user.signIn")}
                 variant="success"
                 onClick={this.loginSubmit}
@@ -156,7 +156,7 @@ class LoginModal extends React.Component {
     }
 
     loginSubmit = () => {
-        this.refs.loginForm.submit();
+        this.loginForm.submit();
     };
 }
 

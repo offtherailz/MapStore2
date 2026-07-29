@@ -80,7 +80,7 @@ class General extends React.Component {
 
         return (
             <Grid fluid style={{ paddingTop: 15, paddingBottom: 15 }}>
-                <form ref="settings">
+                <form ref={(c) => { this.settings = c; }}>
                     <FormGroup>
                         <ControlLabel>
                             <Message msgId="layerProperties.title" />

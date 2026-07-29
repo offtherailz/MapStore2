@@ -22,7 +22,7 @@ class CellRenderer extends React.Component {
     }
     constructor(props) {
         super(props);
-        this.setScrollLeft = (scrollBy) => this.refs.cell.setScrollLeft(scrollBy);
+        this.setScrollLeft = (scrollBy) => this.cell.setScrollLeft(scrollBy);
     }
     render() {
         const value = this.props.rowData.get(this.props.column.key);
@@ -40,7 +40,7 @@ class CellRenderer extends React.Component {
         return (
             <Cell
                 {...this.props}
-                ref="cell"
+                ref={(c) => { this.cell = c; }}
                 className={className}
                 cellControls={<>
                     {this.props.cellControls}

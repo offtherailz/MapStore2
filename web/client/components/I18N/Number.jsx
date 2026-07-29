@@ -10,15 +10,14 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { isNil } from 'lodash';
 import { FormattedNumber } from 'react-intl';
+import { __MS_INTL_CTX } from 'react-intl';
 class NumberFormat extends React.Component {
     static propTypes = {
         value: PropTypes.oneOfType([PropTypes.object, PropTypes.number]),
         numberParams: PropTypes.object
     };
 
-    static contextTypes = {
-        intl: PropTypes.object
-    };
+    static contextType = __MS_INTL_CTX;
 
     render() {
         return this.context.intl ? <FormattedNumber value={this.props.value} {...this.props.numberParams} /> : <span>{!isNil(this.props.value) && !isNaN(this.props.value) && this.props.value.toString && this.props.value.toString() || ''}</span>;

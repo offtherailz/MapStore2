@@ -85,7 +85,7 @@ const LayersSelection = ({
     zoomToExtent,
     addLayer,
     changeLayerProperties
-}, context) => {
+}, context = {}) => {
 
     const filterLayers = layers.filter(filterLayerForSelect);
 

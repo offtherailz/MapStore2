@@ -65,11 +65,11 @@ class NotificationContainer extends React.Component {
 
     render() {
         const {notifications, onRemove, ...rest} = this.props;
-        return (<Portal><NotificationSystem ref="notify" { ...rest } /></Portal>);
+        return (<Portal><NotificationSystem ref={(c) => { this.notify = c; }} { ...rest } /></Portal>);
     }
 
     system = () => {
-        return this.refs.notify;
+        return this.notify;
     };
 
     updateNotifications = (notifications) => {

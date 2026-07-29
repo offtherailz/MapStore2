@@ -87,10 +87,10 @@ class PasswordReset extends React.Component {
     };
 
     render() {
-        return (<form ref="loginForm" onSubmit={this.handleSubmit}>
+        return (<form ref={(c) => { this.loginForm = c; }} onSubmit={this.handleSubmit}>
             <FormGroup validationState={this.getPwStyle()}>
                 <ControlLabel>{this.props.newPasswordText}</ControlLabel>
-                <FormControl ref="password"
+                <FormControl ref={(c) => { this.password = c; }}
                     key="password"
                     type="password"
                     hasFeedback
@@ -99,7 +99,7 @@ class PasswordReset extends React.Component {
             </FormGroup>
             <FormGroup validationState={this.isValid(this.state.password, this.state.passwordcheck) && this.getPwStyle() ? "success" : "error"}>
                 <ControlLabel>{this.props.passwordCheckText}</ControlLabel>
-                <FormControl ref="passwordcheck"
+                <FormControl ref={(c) => { this.passwordcheck = c; }}
                     key="passwordcheck"
                     hasFeedback
                     type="password"

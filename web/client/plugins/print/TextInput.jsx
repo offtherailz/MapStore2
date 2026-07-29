@@ -17,7 +17,7 @@ function getType(type) {
     return {componentClass: type};
 }
 
-export const TextInput = ({spec, property, label, placeholder, actions, onChangeParameter, path = "params.", type = "text", additionalProperty = true, disabled}, context) => {
+export const TextInput = ({spec, property, label, placeholder, actions, onChangeParameter, path = "params.", type = "text", additionalProperty = true, disabled}, context = {}) => {
     const fullProperty = path + property;
     useEffect(() => {
         if (additionalProperty) actions.addParameter(property, get(spec, fullProperty) ?? "");

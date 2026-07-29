@@ -10,6 +10,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import { IntlProvider } from 'react-intl';
+import { __setCurrentMessages } from '../../utils/LocaleUtils';
 
 class Localized extends React.Component {
     static propTypes = {
@@ -34,11 +35,18 @@ class Localized extends React.Component {
         };
     }
 
+    UNSAFE_componentWillMount() {
+        __setCurrentMessages(this.props.messages);
+    }
+
     componentDidMount() {
         this.updateDocumentLangAttribute();
     }
 
     componentDidUpdate(prevProps) {
+        if (this.props.messages !== prevProps.messages) {
+            __setCurrentMessages(this.props.messages);
+        }
         if (this.props.locale !== prevProps.locale) {
             this.updateDocumentLangAttribute();
         }

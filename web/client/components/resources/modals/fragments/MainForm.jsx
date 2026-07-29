@@ -65,7 +65,7 @@ class MainForm extends React.Component {
                     })} />
             </Col>
             <Col xs={12} className="main-form-item">
-                <Metadata role="body" ref="mapMetadataForm"
+                <Metadata role="body" ref={(c) => { this.mapMetadataForm = c; }}
                     onChange={onUpdate}
                     resource={resource}
                     nameFieldText={<Message msgId="saveDialog.name" />}

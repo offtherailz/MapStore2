@@ -8,11 +8,7 @@ const moduleFederationPlugin = require('./moduleFederation.js').plugin;
 const config = require('./buildConfig')(
     {
         bundles: {
-            [process.env.bundle || "mapstore2"]: path.join(__dirname, "..", "web", "client", "product", process.env.entrypoint || process.env.bundle || "app"),
-            "embedded": path.join(__dirname, "..", "web", "client", "product", "embedded"),
-            "ms2-api": path.join(__dirname, "..", "web", "client", "product", "api"),
-            "dashboard-embedded": path.join(__dirname, "..", "web", "client", "product", "dashboardEmbedded"),
-            "geostory-embedded": path.join(__dirname, "..", "web", "client", "product", "geostoryEmbedded")
+            [process.env.bundle || "mapstore2"]: path.join(__dirname, "..", "web", "client", "product", process.env.entrypoint || process.env.bundle || "app")
         },
         themeEntries,
         paths: {

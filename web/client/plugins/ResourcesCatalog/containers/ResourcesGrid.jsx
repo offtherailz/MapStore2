@@ -92,7 +92,7 @@ function ResourcesGrid({
     openInNewTab,
     resourcesFoundMsgId,
     availableResourceTypes
-}, context) {
+}, context = {}) {
 
     const { query } = url.parse(location.search, true);
     const _page = queryPage ? query.page : pageProp;

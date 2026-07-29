@@ -4,7 +4,7 @@ import { getMessageById } from '../../utils/LocaleUtils';
 
 import Choice from "../../components/print/Choice";
 
-export const Resolution = ({items, spec, onChangeParameter}, context) => {
+export const Resolution = ({items, spec, onChangeParameter}, context = {}) => {
     return (
         <>
             <Choice

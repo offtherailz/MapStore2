@@ -57,7 +57,7 @@ function BackgroundSelector({
     alwaysVisible,
     canEdit,
     backgroundToolbarItems = []
-}, context) {
+}, context = {}) {
     const { messages = {} } = context || {};
 
     const [open, setOpen] = useState(false);

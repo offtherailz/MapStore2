@@ -8,6 +8,7 @@
 import PropTypes from 'prop-types';
 
 import React from 'react';
+import { __MS_INTL_CTX } from 'react-intl';
 import './css/formControlIntl.css';
 import NumericInput from '../../libs/numeric-input/NumericInput';
 /**
@@ -34,9 +35,7 @@ class IntlNumberFormControl extends React.Component {
         onKeyUp: PropTypes.func,
         inputClassName: PropTypes.string
     }
-    static contextTypes = {
-        intl: PropTypes.object
-    };
+    static contextType = __MS_INTL_CTX;
     constructor(props) {
         super(props);
         this.state = {

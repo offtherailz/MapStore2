@@ -162,7 +162,7 @@ class SnapshotPanel extends React.Component {
         return [
             <div style={{display: snapshotReady && !isGoogleLayer ? "block" : "none" }} key="snapshotPreviewContainer">
                 { !isGoogleLayer ? <SnapshotSupport.Preview
-                    ref="snapshotPreview"
+                    ref={(c) => { this.snapshotPreview = c; }}
                     timeout={this.props.timeout}
                     config={this.props.map}
                     layers={this.props.layers.filter((l) => {return l.visibility; })}
@@ -254,10 +254,10 @@ class SnapshotPanel extends React.Component {
     }
 
     onClick = () => {
-        if (this.refs.snapshotPreview.isTainted()) {
+        if (this.snapshotPreview.isTainted()) {
             this.createSnapshot();
         } else {
-            let dataURL = this.refs.snapshotPreview.exportImage();
+            let dataURL = this.snapshotPreview.exportImage();
             this.props.downloadImg(dataURL);
         }
     };

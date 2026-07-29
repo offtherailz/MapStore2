@@ -10,6 +10,7 @@ import PropTypes from 'prop-types';
 import { createPlugin } from '../utils/PluginsUtils';
 import FlexBox from '../components/layout/FlexBox';
 import usePluginItems from "../hooks/usePluginItems";
+import { usePluginsContext } from '../components/plugins/PluginsContext';
 
 const fixedTools = [
     { name: 'Attribution', target: 'left-footer', position: 0, Component: () => <div key="attribution" id="footer-attribution-container" /> },
@@ -27,8 +28,8 @@ function MapFooter({
     style,
     items,
     id
-}, context) {
-    const { loadedPlugins } = context;
+}) {
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({ items, loadedPlugins });
     const allItems = [...fixedTools, ...configuredItems].sort((a, b) => a.position - b.position);
     const leftFooterItems = allItems.filter(({ target }) => target === 'left-footer');

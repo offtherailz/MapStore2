@@ -47,6 +47,7 @@ import {
     getCurrentParams
 } from '../../selectors/usergroups';
 import SecurityUtils from '../../utils/SecurityUtils';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 
 const ConnectedGroupDialog = connect((state) => {
     const usergroups = state && state.usergroups;
@@ -216,9 +217,9 @@ function GroupManager({
     showAttributesTab,
     attributeFields,
     ...props
-}, context) {
+}) {
 
-    const { loadedPlugins } = context;
+    const { loadedPlugins } = usePluginsContext();
 
     const configuredItems = usePluginItems({ items, loadedPlugins }, []);
 

@@ -13,7 +13,7 @@ import { getMessageById } from '../../../../../utils/LocaleUtils';
 import PropTypes from 'prop-types';
 
 
-const EditGSInstanceMain = ({instance = {}, setOption = () => {}, active = true, isCreateNew}, context) => {
+const EditGSInstanceMain = ({instance = {}, setOption = () => {}, active = true, isCreateNew}, context = {}) => {
     const handleChange = (event) => {
         setOption({key: event.target.name, value: event.target.value});
     };

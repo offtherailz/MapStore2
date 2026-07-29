@@ -10,6 +10,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import { FormattedDate } from 'react-intl';
+import { __MS_INTL_CTX } from 'react-intl';
 
 class DateFormat extends React.Component {
     static propTypes = {
@@ -17,9 +18,7 @@ class DateFormat extends React.Component {
         dateParams: PropTypes.object
     };
 
-    static contextTypes = {
-        intl: PropTypes.object
-    };
+    static contextType = __MS_INTL_CTX;
 
     static defaultProps = {
         value: new Date()

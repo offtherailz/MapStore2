@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import '../react19-spike-shims';
 import main from './main';
 import appConfig from './appConfig';
 import pluginsDef from './plugins';

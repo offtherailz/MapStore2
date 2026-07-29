@@ -6,7 +6,7 @@ import Font from "../../components/print/Font";
 import PrintOption from "../../components/print/PrintOption";
 import { TextInput } from "./TextInput";
 
-export const LegendOptions = ({spec, onChangeParameter, actions}, context) => {
+export const LegendOptions = ({spec, onChangeParameter, actions}, context = {}) => {
     return (
         <>
             <Font

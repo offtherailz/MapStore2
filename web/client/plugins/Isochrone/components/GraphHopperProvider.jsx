@@ -44,7 +44,7 @@ import { getMessageById } from '../../../utils/LocaleUtils';
  * @param {function} props.registerApi - The function to register the API
  * @param {object} props.config - The config of the provider
  */
-const Graphhopper = ({ registerApi, config, currentRunParameters }, context) => {
+const Graphhopper = ({ registerApi, config, currentRunParameters }, context = {}) => {
 
     const [range, setRange] = useState(RANGE.DISTANCE);
     const [providerBody, setProviderBody] = useState(currentRunParameters);

@@ -18,9 +18,7 @@ class Message extends React.Component {
         msgParams: PropTypes.object
     };
 
-    static contextTypes = {
-        intl: PropTypes.object
-    };
+    static contextType = ReactIntl.__MS_INTL_CTX;
 
     renderFormattedMsg = ({msgId, msgParams, children}) => {
         if (children && typeof children === 'function') {

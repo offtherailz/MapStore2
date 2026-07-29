@@ -70,9 +70,13 @@ describe('Catalog Plugin', () => {
 
         setTimeout(() => {
             ReactDOM.render(<div/>, document.getElementById("container"));
-            expect(actions.length).toBeTruthy();
-            expect(actions.map(a => a.type).includes("CATALOG:CATALOG_CLOSE")).toBeTruthy();
-            done();
+            // unmount cleanup of passive effects is scheduled asynchronously (React 18),
+            // so the close action is dispatched on a later tick
+            setTimeout(() => {
+                expect(actions.length).toBeTruthy();
+                expect(actions.map(a => a.type).includes("CATALOG:CATALOG_CLOSE")).toBeTruthy();
+                done();
+            }, 0);
         }, 0);
     });
     it('renders in dialog mode when configured as default view', (done) => {

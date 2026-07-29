@@ -9,6 +9,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import * as ReactIntl from 'react-intl';
+import { __MS_INTL_CTX } from 'react-intl';
 
 var FormattedHTMLMessage = ReactIntl.FormattedHTMLMessage;
 
@@ -18,9 +19,7 @@ class Message extends React.Component {
         msgParams: PropTypes.object
     };
 
-    static contextTypes = {
-        intl: PropTypes.object
-    };
+    static contextType = __MS_INTL_CTX;
 
     render() {
         return this.context.intl ? <FormattedHTMLMessage id={this.props.msgId} values={this.props.msgParams}/> : <span>{this.props.msgId || ""}</span>;

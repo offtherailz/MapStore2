@@ -140,7 +140,7 @@ class UserDialog extends React.Component {
                             glyph="info-sign" style={{position: "relative", marginLeft: "10px", display: "inline-block", width: 24}}
                             helpText="Password must contain at least 6 characters"/>
                     </ControlLabel>
-                    <FormControl ref="newPassword"
+                    <FormControl ref={(c) => { this.newPassword = c; }}
                         inputRef={node => {this.newPasswordField = node;}}
                         key="newPassword"
                         type="password"
@@ -151,7 +151,7 @@ class UserDialog extends React.Component {
                 </FormGroup>
                 <FormGroup validationState={ (this.isValidPassword() ? "success" : "error") }>
                     <ControlLabel><Message msgId="user.retypePwd"/>{' '}<span style={{ fontWeight: 'bold' }}>*</span></ControlLabel>
-                    <FormControl ref="confirmPassword"
+                    <FormControl ref={(c) => { this.confirmPassword = c; }}
                         inputRef={node => {this.confirmPasswordField = node;}}
                         key="confirmPassword"
                         name="confirmPassword"
@@ -168,7 +168,7 @@ class UserDialog extends React.Component {
         return (<div style={{clear: "both", marginTop: "10px"}}>
             <FormGroup>
                 <ControlLabel><Message msgId="user.username"/>{' '}<span style={{ fontWeight: 'bold' }}>*</span></ControlLabel>
-                <FormControl ref="name"
+                <FormControl ref={(c) => { this.name = c; }}
                     key="name"
                     type="text"
                     name="name"
