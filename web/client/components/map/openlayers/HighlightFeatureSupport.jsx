@@ -12,6 +12,7 @@ import Select from 'ol/interaction/Select';
 import {platformModifierKeyOnly} from 'ol/events/condition';
 import {Style, Stroke, Fill} from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
+import LocaleContext from '../../I18N/LocaleContext';
 
 export default class HighlightFeatureSupport extends React.Component {
     static propTypes = {
@@ -23,9 +24,7 @@ export default class HighlightFeatureSupport extends React.Component {
         features: PropTypes.array
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         status: 'disabled',

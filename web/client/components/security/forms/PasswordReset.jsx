@@ -12,6 +12,7 @@ import { FormControl, FormGroup, ControlLabel, Alert } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import Message from '../../../components/I18N/Message';
 import { getMessageById } from '../../../utils/LocaleUtils';
+import LocaleContext from '../../I18N/LocaleContext';
 
 /**
  * A DropDown menu for user details:
@@ -30,9 +31,7 @@ class PasswordReset extends React.Component {
         error: PropTypes.object
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         // config

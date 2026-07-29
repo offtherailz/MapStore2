@@ -36,6 +36,7 @@ import OverlayTrigger from '../misc/OverlayTrigger';
 import ResizableModal from '../misc/ResizableModal';
 import { MapLibraries } from '../../utils/MapTypeUtils';
 import Portal from '../misc/Portal';
+import LocaleContext from '../I18N/LocaleContext';
 
 /**
  * SharePanel allow to share the current map in some different ways.
@@ -124,9 +125,7 @@ class SharePanel extends React.Component {
         onClearShareResource: () => {}
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     state = {
         eventKey: 1,

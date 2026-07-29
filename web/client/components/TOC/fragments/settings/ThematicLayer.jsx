@@ -21,6 +21,7 @@ import SwitchPanel from '../../../misc/switch/SwitchPanel';
 import ColorPicker from '../../../style/ColorPicker';
 import ThemaClassesEditor from '../../../style/ThemaClassesEditor';
 import ColorRamp from '../../../styleeditor/ColorRamp';
+import LocaleContext from '../../../I18N/LocaleContext';
 
 const internalProperties = { current: undefined, unconfigured: undefined, applied: undefined };
 
@@ -116,9 +117,7 @@ class ThematicLayer extends React.Component {
         onEditorReady: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         onChange: () => { },

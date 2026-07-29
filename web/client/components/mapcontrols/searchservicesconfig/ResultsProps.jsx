@@ -15,6 +15,7 @@ import PropTypes from 'prop-types';
 import Select from 'react-select';
 import Message from '../../I18N/Message';
 import { getMessageById } from '../../../utils/LocaleUtils';
+import LocaleContext from '../../I18N/LocaleContext';
 
 function validate(service = {}) {
     return service.displayName && service.displayName.length > 0;
@@ -29,9 +30,7 @@ class ResultsProps extends React.Component {
         onPropertyChange: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         service: {},

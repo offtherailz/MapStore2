@@ -12,6 +12,7 @@ import PropTypes from 'prop-types';
 import { injectIntl, intlShape, defineMessages } from 'react-intl';
 import { getMessageById } from '../../utils/LocaleUtils';
 import Portal from '../misc/Portal';
+import LocaleContext from '../I18N/LocaleContext';
 
 /**
  * Container for Notifications. Allows to display notifications by passing
@@ -44,9 +45,7 @@ class NotificationContainer extends React.Component {
         onDispatch: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         notifications: [],

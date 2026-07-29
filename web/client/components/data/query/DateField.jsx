@@ -24,6 +24,7 @@ import Message from '../../I18N/Message';
 import DateTimePicker from '../../misc/datetimepicker';
 import RangedDateTimePicker from '../../misc/datetimepicker/RangedDateTimePicker';
 import { DATE_TYPE } from '../../../utils/FeatureGridUtils';
+import LocaleContext from '../../I18N/LocaleContext';
 
 const DEFAULT_QUICK_TIME_SELECTORS = [
     {
@@ -157,10 +158,7 @@ class DateField extends React.Component {
         className: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object,
-        locale: PropTypes.string
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         timeEnabled: false,

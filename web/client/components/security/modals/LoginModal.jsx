@@ -19,6 +19,7 @@ import google from './assets/google.svg';
 import keycloak from './assets/keycloak.svg';
 import withTooltip from '../../misc/enhancers/tooltip';
 import FlexBox from '../../layout/FlexBox';
+import LocaleContext from '../../I18N/LocaleContext';
 
 
 const logos = {
@@ -58,9 +59,7 @@ class LoginModal extends React.Component {
         includeCloseButton: PropTypes.bool
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         providers: [{type: "basic", provider: "geostore"}],

@@ -24,6 +24,7 @@ import {
 } from '../../../../plugins/TOC/utils/TOCUtils';
 import { supportsFeatureEditing } from "../../../../utils/FeatureGridUtils";
 import { DEFAULT_GROUP_ID, flattenGroups, getTitle as _getTitle } from '../../../../utils/LayersUtils';
+import LocaleContext from '../../../I18N/LocaleContext';
 /**
  * General Settings form for layer
  */
@@ -42,9 +43,7 @@ class General extends React.Component {
         showFeatureEditOption: PropTypes.bool
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         element: {},

@@ -17,6 +17,7 @@ import {getMessageById} from '../../../../utils/LocaleUtils';
 import Message from '../../../I18N/Message';
 import Button from '../../../misc/Button';
 import SecurityUtils from '../../../../utils/SecurityUtils';
+import LocaleContext from '../../../I18N/LocaleContext';
 /**
  * @deprecated
  */
@@ -44,9 +45,7 @@ class PermissionEditor extends React.Component {
         newPermission: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         disabled: false,

@@ -11,6 +11,7 @@ import PropTypes from 'prop-types';
 import ComboField from './ComboField';
 
 import localizedProps from '../../misc/enhancers/localizedProps';
+import LocaleContext from '../../I18N/LocaleContext';
 
 // support for localized attribute names and placeholder
 export const AttributeNameField = localizedProps('placeholder')(localizedProps('fieldOptions', 'label', 'object')(ComboField));
@@ -29,9 +30,7 @@ class FilterField extends React.Component {
         onChangeCascadingValue: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         attributes: [],

@@ -21,6 +21,7 @@ import ComboField from './ComboField';
 import ComboFieldListItem from './ComboFieldListItem';
 import GeometryDetails from './GeometryDetails';
 import ZoneField from './ZoneField';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class SpatialFilter extends React.Component {
     static propTypes = {
@@ -38,9 +39,7 @@ class SpatialFilter extends React.Component {
         projection: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         useMapProjection: true,

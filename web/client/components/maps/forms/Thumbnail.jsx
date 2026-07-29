@@ -13,6 +13,7 @@ import Message from '../../../components/I18N/Message';
 import { getResourceIdFromURL } from '../../../utils/ResourceUtils';
 import { randomInt } from '../../../utils/RandomUtils';
 import Thumbnail from '../../misc/Thumbnail';
+import LocaleContext from '../../I18N/LocaleContext';
 
 const errorMessages = {
     "FORMAT": <Message msgId="map.errorFormat" />,
@@ -46,9 +47,7 @@ class MapThumbnail extends React.Component {
         checkOriginalFileSize: PropTypes.bool
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         loading: false,

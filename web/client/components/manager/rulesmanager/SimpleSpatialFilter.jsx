@@ -17,6 +17,7 @@ import RoiCql from './RoiCql';
 import { getMessageById } from '../../../utils/LocaleUtils';
 import SwitchPanel from '../../misc/switch/SwitchPanel';
 import I18N from '../../I18N/I18N';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class SpatialFilter extends React.Component {
     static propTypes = {
@@ -32,9 +33,7 @@ class SpatialFilter extends React.Component {
         onError: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         useMapProjection: true,

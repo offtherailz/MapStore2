@@ -12,6 +12,7 @@ import React from 'react';
 import {Badge} from 'react-bootstrap';
 
 import { getMessageById } from '../../utils/LocaleUtils';
+import LocaleContext from '../I18N/LocaleContext';
 
 /**
  * A badge to show that there is a help text available for the parent component.
@@ -32,9 +33,7 @@ class HelpBadge extends React.Component {
         className: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         helpText: '',

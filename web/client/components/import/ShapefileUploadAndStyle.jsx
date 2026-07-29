@@ -30,6 +30,7 @@ import {
 } from '../../utils/FileUtils';
 import Button from '../misc/Button';
 import SelectShape from './SelectShape';
+import LocaleContext from '../I18N/LocaleContext';
 
 class ShapeFileUploadAndStyle extends React.Component {
     static propTypes = {
@@ -59,9 +60,7 @@ class ShapeFileUploadAndStyle extends React.Component {
         createId: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         shapeLoading: () => {},

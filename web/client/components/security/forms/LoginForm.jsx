@@ -15,6 +15,7 @@ import PropTypes from 'prop-types';
 import Message from '../../I18N/Message';
 import { getMessageById } from '../../../utils/LocaleUtils';
 import Button from '../../misc/Button';
+import LocaleContext from '../../I18N/LocaleContext';
 
 /**
  * A Form to login menu for user details:
@@ -38,9 +39,7 @@ class LoginForm extends React.Component {
         loginFailedMessage: PropTypes.node
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         onSubmit: () => {},

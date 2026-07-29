@@ -13,6 +13,7 @@ import { isEqual } from 'lodash';
 import MeasureComponent from './MeasureComponent';
 import Message from '../../I18N/Message';
 import ResponsivePanel from "../../misc/panels/ResponsivePanel";
+import LocaleContext from '../../I18N/LocaleContext';
 
 class MeasureDialog extends React.Component {
     static propTypes = {
@@ -28,9 +29,7 @@ class MeasureDialog extends React.Component {
         size: PropTypes.number
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         show: false,

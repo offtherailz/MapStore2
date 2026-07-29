@@ -14,6 +14,7 @@ import Button from '../misc/Button';
 import Message from '../../components/I18N/Message';
 import MoreDetails from './MoreDetails';
 import { getApi, getItemKey } from '../../api/userPersistedStorage';
+import LocaleContext from '../I18N/LocaleContext';
 
 /**
   * Component used to show a panel with the information about cookies
@@ -39,9 +40,7 @@ class Cookie extends React.Component {
         seeMore: PropTypes.bool,
         show: PropTypes.bool
     };
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
     static defaultProps = {
         declineUrl: "http://www.google.com",
         onMoreDetails: () => {},

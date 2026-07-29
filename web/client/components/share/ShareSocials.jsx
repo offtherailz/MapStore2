@@ -10,6 +10,7 @@ import React from 'react';
 import {getMessageById} from '../../utils/LocaleUtils';
 import PropTypes from 'prop-types';
 import Message from '../../components/I18N/Message';
+import LocaleContext from '../I18N/LocaleContext';
 
 import {
     ShareButtons,
@@ -49,9 +50,7 @@ class ShareSocials extends React.Component {
         sharedTitle: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         sharedTitle: ""

@@ -20,6 +20,7 @@ import Popover from '../../styleeditor/Popover';
 import { getMessageById } from '../../../utils/LocaleUtils';
 import Message from '../../I18N/Message';
 import QuickTimeSelectors from './QuickTimeSelectors';
+import LocaleContext from '../../I18N/LocaleContext';
 
 localizer(moment);
 
@@ -84,10 +85,7 @@ class DateTimePickerWithRange extends Component {
         value: null,
         popupPosition: 'bottom'
     }
-	static contextTypes = {
-	    messages: PropTypes.object,
-	    locale: PropTypes.string
-	};
+	static contextType = LocaleContext;
     state = {
         openRangeContainer: false,
         openRangeInputs: 'start',			// start, end

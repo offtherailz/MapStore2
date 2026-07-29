@@ -13,6 +13,7 @@ import { Tooltip } from 'react-bootstrap';
 import OverlayTrigger from '../../misc/OverlayTrigger';
 import { getMessageById } from '../../../utils/LocaleUtils';
 import IntlNumberFormControl from '../../I18N/IntlNumberFormControl';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class NumberField extends React.Component {
     static propTypes = {
@@ -44,9 +45,7 @@ class NumberField extends React.Component {
         style: PropTypes.object
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         style: { borderColor: "#dedede"},

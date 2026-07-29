@@ -14,6 +14,7 @@ import Spinner from 'react-spinkit';
 import { getMessageById } from '../../utils/LocaleUtils';
 import JSZip from 'jszip';
 import { readZip, recognizeExt, MIME_LOOKUPS } from '../../utils/FileUtils';
+import LocaleContext from '../I18N/LocaleContext';
 
 class SelectShape extends React.Component {
     static propTypes = {
@@ -25,9 +26,7 @@ class SelectShape extends React.Component {
         errorMessage: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         text: "Drop or click to import a local Shape",

@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import L from 'leaflet';
+import LocaleContext from '../../I18N/LocaleContext';
 import {
     isNil,
     slice
@@ -181,9 +182,7 @@ class MeasurementSupport extends React.Component {
         updateOnMouseMove: PropTypes.bool
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         uom: {

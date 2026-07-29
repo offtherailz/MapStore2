@@ -12,6 +12,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Message from '../../../components/I18N/Message';
 import BaseThumbnail from '../../../components/misc/Thumbnail';
+import LocaleContext from '../../I18N/LocaleContext';
 
 /**
  * A Dropzone area for a thumbnail.
@@ -34,9 +35,7 @@ class Thumbnail extends React.Component {
         suggestion: PropTypes.oneOfType([PropTypes.string, PropTypes.element])
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         loading: false,

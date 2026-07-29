@@ -5,6 +5,7 @@ import DateTimePicker from "../../../misc/datetimepicker";
 import utcDateWrapper from "../../../misc/enhancers/utcDateWrapper";
 
 import {getDateTimeFormat} from "../formatters";
+import LocaleContext from '../../../I18N/LocaleContext';
 
 /**
  * Date time picker enhanced with UTC and timezone offset
@@ -40,9 +41,7 @@ class DateTimeEditor extends AttributeEditor {
         onBlur: PropTypes.func
     };
 
-    static contextTypes = {
-        locale: PropTypes.string
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         dataType: "date-time",
