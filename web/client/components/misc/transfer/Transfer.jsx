@@ -41,7 +41,7 @@ const renderMoveButtons = (moveButtons) => (
     </ButtonGroup>
 );
 
-const localizeItem = (messages, { title, description, children, ...other}) => ({
+const localizeItem = (messages, { title, description, children, ...other} = {}) => ({
     ...other,
     title: title && getMessageById(messages, title),
     description: description && getMessageById(messages, description),
@@ -167,7 +167,7 @@ const Transfer = ({
             onSelect([]);
         }
     }]
-}, context) => (
+}, context = {}) => (
     <div className={`ms2-transfer${className ? ' ' + className : ''}`}>
         {renderColumn(localizeItems, context.messages, 'left', leftColumn, allowCtrlMultiSelect, selectedItems, selectedSide, onSelect, sortStrategy, filter)}
         {renderMoveButtons(moveButtons)}

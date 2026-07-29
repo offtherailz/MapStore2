@@ -157,7 +157,7 @@ class MapPreview extends React.Component {
         return this.props.map && this.props.map.center ?
 
             <div className="print-map-preview"><PMap
-                ref="mappa"
+                ref={(c) => { this.mappa = c; }}
                 {...this.props.map}
                 resize={this.props.height}
                 style={style}

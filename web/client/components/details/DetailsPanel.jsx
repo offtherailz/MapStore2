@@ -13,6 +13,7 @@ import { Panel } from 'react-bootstrap';
 import BorderLayout from '../layout/BorderLayout';
 import ResponsivePanel from "../misc/panels/ResponsivePanel";
 import { DEFAULT_PANEL_WIDTH } from '../../utils/LayoutUtils';
+import LocaleContext from '../I18N/LocaleContext';
 class DetailsPanel extends React.Component {
     static propTypes = {
         id: PropTypes.string,
@@ -26,9 +27,7 @@ class DetailsPanel extends React.Component {
         isDashboard: PropTypes.bool
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         id: "mapstore-details",

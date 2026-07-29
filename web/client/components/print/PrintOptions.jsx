@@ -11,6 +11,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Radio } from 'react-bootstrap';
 import { getMessageById } from '../../utils/LocaleUtils';
+import LocaleContext from '../I18N/LocaleContext';
 
 class PrintOptions extends React.Component {
     static propTypes = {
@@ -22,9 +23,7 @@ class PrintOptions extends React.Component {
         isEnabled: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         layouts: [],

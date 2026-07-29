@@ -11,6 +11,7 @@ import React from 'react';
 import { DropdownList } from 'react-widgets';
 import { getMessageById } from '../../utils/LocaleUtils';
 import PropTypes from 'prop-types';
+import LocaleContext from '../I18N/LocaleContext';
 
 class MarkNameSelector extends React.Component {
     static propTypes = {
@@ -18,10 +19,7 @@ class MarkNameSelector extends React.Component {
         onChange: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         markName: "circle",

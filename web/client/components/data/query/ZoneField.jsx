@@ -12,6 +12,7 @@ import { isEqual } from 'lodash';
 import ComboField from './ComboField';
 import PropTypes from 'prop-types';
 import { toOGCFilter } from '../../../utils/FilterUtils';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class ZoneField extends React.Component {
     static propTypes = {
@@ -57,9 +58,7 @@ class ZoneField extends React.Component {
         onSelect: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         open: false,

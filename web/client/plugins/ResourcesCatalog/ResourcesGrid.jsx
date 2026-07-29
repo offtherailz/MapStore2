@@ -37,6 +37,7 @@ import {
 } from './selectors/resources';
 
 import resourcesEpics from './epics/resources';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 /**
  * This plugins allows to render a resources grid, it could be configured multiple times in the localConfig with different id
  * @memberof plugins
@@ -419,9 +420,9 @@ function ResourcesGrid({
     resourceTypes = ["MAP", "DASHBOARD", "GEOSTORY", "CONTEXT"],
     onSetResourceTypes,
     ...props
-}, context) {
+}) {
 
-    const { loadedPlugins } = context;
+    const { loadedPlugins } = usePluginsContext();
 
     const configuredItems = usePluginItems({ items, loadedPlugins }, []);
 

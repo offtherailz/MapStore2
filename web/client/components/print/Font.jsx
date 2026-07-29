@@ -58,11 +58,11 @@ class Font extends React.Component {
                 </Row>
                 <Row>
                     <Col xs={5}>
-                        <Choice ref="family" onChange={this.onChangeFamily} label="" items={this.props.fonts.map((font) => ({name: font, value: font}))}
+                        <Choice ref={(c) => { this.family = c; }} onChange={this.onChangeFamily} label="" items={this.props.fonts.map((font) => ({name: font, value: font}))}
                             selected={this.props.family}/>
                     </Col>
                     <Col xs={3}>
-                        <IntlNumberFormControl ref="size" type="number" value={this.props.size} min={0} precision={0} onChange={this.onChangeSize}/>
+                        <IntlNumberFormControl ref={(c) => { this.size = c; }} type="number" value={this.props.size} min={0} precision={0} onChange={this.onChangeSize}/>
                     </Col>
                     <Col xs={2}>
                         <Button bsStyle="primary" bsSize="small" active={this.props.bold} onClick={this.toggleBold}><Glyphicon glyph="bold"/></Button>

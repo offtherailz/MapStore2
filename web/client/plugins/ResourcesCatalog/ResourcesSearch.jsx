@@ -23,6 +23,7 @@ import { searchResources } from './actions/resources';
 import tooltip from '../../components/misc/enhancers/tooltip';
 import Button from '../../components/layout/Button';
 import resourcesReducer from './reducers/resources';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 
 const ButtonWithTooltip = tooltip(Button);
 
@@ -87,8 +88,8 @@ function ResourcesSearch({
     location,
     onSearch,
     debounceTime
-}, context) {
-    const { loadedPlugins } = context;
+}) {
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({ items, loadedPlugins }, []);
     const toolbarItems = configuredItems.filter(({ target }) => target === 'toolbar');
 

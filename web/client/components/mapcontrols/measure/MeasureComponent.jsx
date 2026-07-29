@@ -23,6 +23,7 @@ import BorderLayout from '../../layout/BorderLayout';
 import Toolbar from '../../misc/toolbar/Toolbar';
 import CoordinatesEditor from '../annotations/CoordinatesEditor';
 import MeasureToolbar from './MeasureToolbar';
+import LocaleContext from '../../I18N/LocaleContext';
 
 import('./measure.css');
 
@@ -96,9 +97,7 @@ class MeasureComponent extends React.Component {
         onClose: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         mapProjection: "EPSG:3857",

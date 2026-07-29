@@ -43,6 +43,7 @@ const RIGHT_MARGIN = 55;
 
 import WidgetsViewBase from '../components/widgets/view/WidgetsView';
 import {mapLayoutValuesSelector} from "../selectors/maplayout";
+import { usePluginsContext } from '../components/plugins/PluginsContext';
 
 const WidgetsView =
 compose(
@@ -284,8 +285,8 @@ compose(
 )(WidgetsViewBase);
 
 
-const Widgets = (props, context) => {
-    const { loadedPlugins } = context;
+const Widgets = (props) => {
+    const { loadedPlugins } = usePluginsContext();
 
     useEffect(() => {
         props.onMount(props.pluginCfg?.defaults);

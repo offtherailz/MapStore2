@@ -37,7 +37,7 @@ const FeatureInfoEditor = ({
     onShowEditor,
     onChange,
     enableIFrameModule
-}, {messages}) => {
+}, {messages} = {}) => {
     const [, setCounter] = useState(0);
     useEffect(() => {
         const imageButton = document.querySelector(".rdw-image-wrapper");

@@ -10,6 +10,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import { IntlProvider } from 'react-intl';
+import { __setCurrentMessages } from '../../utils/LocaleUtils';
+import LocaleContext from './LocaleContext';
 
 class Localized extends React.Component {
     static propTypes = {
@@ -34,11 +36,18 @@ class Localized extends React.Component {
         };
     }
 
+    UNSAFE_componentWillMount() {
+        __setCurrentMessages(this.props.messages);
+    }
+
     componentDidMount() {
         this.updateDocumentLangAttribute();
     }
 
     componentDidUpdate(prevProps) {
+        if (this.props.messages !== prevProps.messages) {
+            __setCurrentMessages(this.props.messages);
+        }
         if (this.props.locale !== prevProps.locale) {
             this.updateDocumentLangAttribute();
         }
@@ -52,11 +61,13 @@ class Localized extends React.Component {
                 children = children();
             }
 
-            return (<IntlProvider {...this.props.localeKey && { key: this.props.locale }} locale={this.props.locale}
-                messages={this.flattenMessages(this.props.messages)}
-            >
-                {children}
-            </IntlProvider>);
+            return (<LocaleContext.Provider value={{ locale: this.props.locale, messages: this.props.messages }}>
+                <IntlProvider {...this.props.localeKey && { key: this.props.locale }} locale={this.props.locale}
+                    messages={this.flattenMessages(this.props.messages)}
+                >
+                    {children}
+                </IntlProvider>
+            </LocaleContext.Provider>);
             // return React.Children.only(children);
         } else if (this.props.loadingError) {
             return <div className="loading-locale-error">{this.props.loadingError}</div>;

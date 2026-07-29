@@ -13,6 +13,7 @@ import Button from '../../misc/toolbar/ToolbarButton';
 import ContainerDimensions from 'react-container-dimensions';
 import CodeMirror from '../../../libs/codemirror/react-codemirror-suspense';
 import { getMessageById } from '../../../utils/LocaleUtils';
+import LocaleContext from '../../I18N/LocaleContext';
 
 
 class RoiCql extends React.Component {
@@ -20,9 +21,7 @@ class RoiCql extends React.Component {
         wkt: PropTypes.string,
         onChangeFilter: PropTypes.func
     };
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
     constructor(props) {
         super(props);
         this.state = {cql: props.wkt};

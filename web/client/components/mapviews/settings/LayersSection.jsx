@@ -109,7 +109,7 @@ function LayersSection({
     onShowClipGeometries,
     isTerrainAvailable,
     isClippingAvailable
-}, { messages }) {
+}, { messages } = {}) {
 
     const [filterText, setFilterText] = useState('');
     const [expandedNodes, setExpandedNodes] = useState([

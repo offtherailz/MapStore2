@@ -23,7 +23,7 @@ const LayerStylesList = ({
     styles = [],
     stylesLoading = false,
     stylesError = null
-}, context) => {
+}, context = {}) => {
     const [filterText, setFilterText] = useState('');
     const [showPopover, setShowPopover] = useState(false);
 

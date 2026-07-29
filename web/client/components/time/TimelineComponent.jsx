@@ -133,7 +133,7 @@ class Timeline extends React.Component {
         };
     }
     componentDidMount() {
-        const { container } = this.refs;
+        const container = this.container;
 
         this.$el = new vis.Timeline(container, undefined, this.props.options);
 
@@ -170,7 +170,7 @@ class Timeline extends React.Component {
 
 
     render() {
-        return <div ref="container" className={this.props.readOnly ? 'read-only-timeline' : ''} onMouseOut={this.props.onMouseOutHandler} />;
+        return <div ref={(c) => { this.container = c; }} className={this.props.readOnly ? 'read-only-timeline' : ''} onMouseOut={this.props.onMouseOutHandler} />;
     }
     /**
      * forces the re-render of all items

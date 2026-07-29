@@ -13,9 +13,10 @@ import { Tabs, Tab } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import { Message } from '../../components/I18N/I18N';
 import usePluginItems from '../../hooks/usePluginItems';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 
-function Manager({ items, selectedTool, onItemSelected }, context) {
-    const { loadedPlugins } = context;
+function Manager({ items, selectedTool, onItemSelected }) {
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({ items, loadedPlugins }, []);
 
     return (

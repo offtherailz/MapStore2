@@ -13,6 +13,7 @@ import React from 'react';
 
 import snapshotSupportComp from './SnapshotSupport';
 import { MapLibraries } from '../../../utils/MapTypeUtils';
+import LocaleContext from '../../I18N/LocaleContext';
 
 let SnapshotSupport;
 
@@ -31,9 +32,7 @@ class SnapshotQueue extends React.Component {
 
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         onRemoveSnapshot: () => {},

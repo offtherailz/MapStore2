@@ -30,6 +30,7 @@ import Message from '../../I18N/Message';
 import { validateCoords, coordToArray } from '../../../plugins/Annotations/utils/AnnotationsUtils';
 import CoordinatesRow from '../../misc/coordinateeditors/CoordinatesRow';
 import MeasureEditor from './MeasureEditor';
+import LocaleContext from '../../I18N/LocaleContext';
 
 /**
  * Geometry editor for annotation Features.
@@ -84,9 +85,7 @@ class CoordinatesEditor extends React.Component {
         enableHeightField: PropTypes.bool
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         components: [],

@@ -15,7 +15,7 @@ export const OutputFormat = ({
     defaultFormat = "pdf",
     allowedFormats,
     enabled = true
-}, context) => {
+}, context = {}) => {
     function filterNotAllowed(formats) {
         return allowedFormats ?
             allowedFormats.filter(f1 => formats.find(f2 => f2.value === f1.value)) :

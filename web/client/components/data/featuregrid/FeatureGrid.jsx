@@ -13,6 +13,7 @@ import { isProperty, isValidValueForPropertyName } from '../../../utils/FeatureG
 import AdaptiveGrid from '../../misc/AdaptiveGrid';
 import featuresToGrid from './enhancers/editor';
 import rowRenderer from './renderers/RowRenderer';
+import FeatureGridContext from './FeatureGridContext';
 
 /**
  * A component that gets the describeFeatureType and the features to display
@@ -96,10 +97,12 @@ class FeatureGrid extends React.PureComponent {
     }
     render() {
         const Grid = this.props.gridComponent;
-        return (<Grid
-            rowRenderer={rowRenderer}
-            {...this.props}
-        />);
+        return (<FeatureGridContext.Provider value={this.getChildContext()}>
+            <Grid
+                rowRenderer={rowRenderer}
+                {...this.props}
+            />
+        </FeatureGridContext.Provider>);
     }
 }
 export default featuresToGrid(FeatureGrid);

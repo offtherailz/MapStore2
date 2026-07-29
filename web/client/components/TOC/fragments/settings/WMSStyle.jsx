@@ -62,7 +62,7 @@ class WMSStyle extends React.Component {
         }
         return (
             <Grid fluid style={{paddingTop: 15, paddingBottom: 15}}>
-                <form ref="style">
+                <form ref={(c) => { this.style = c; }}>
                     <Select.Creatable
                         key="styles-dropdown"
                         options={options}

@@ -29,14 +29,14 @@ function FiltersForm({
     id,
     style,
     styleContainerForm,
-    query,
-    defaultQuery,
-    fields,
-    onChange,
-    onClose,
-    onClear,
+    query = {},
+    defaultQuery = {},
+    fields = [],
+    onChange = () => {},
+    onClose = () => {},
+    onClear = () => {},
     extentProps,
-    timeDebounce,
+    timeDebounce = 500,
     filters,
     setFilters
 }) {
@@ -95,7 +95,7 @@ function FiltersForm({
     );
 }
 
-FiltersForm.defaultProps = {
+FiltersForm.propTypes = {
     id: PropTypes.string,
     style: PropTypes.object,
     styleContainerForm: PropTypes.object,
@@ -112,17 +112,6 @@ FiltersForm.defaultProps = {
 
 };
 
-FiltersForm.defaultProps = {
-    query: {},
-    defaultQuery: {},
-    fields: [],
-    onChange: () => {},
-    onClose: () => {},
-    onClear: () => {},
-    submitOnChangeField: true,
-    timeDebounce: 500,
-    formParams: {}
-};
 
 const arePropsEqual = (prevProps, nextProps) => {
     return isEqual(prevProps.query, nextProps.query)

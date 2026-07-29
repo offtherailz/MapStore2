@@ -202,7 +202,7 @@ class DefaultViewer extends React.Component {
                 onChangeIndex={(index) => {
                     this.props.setIndex(this.getPanelIndex(index, false));
                 }}
-                ref="container"
+                ref={(c) => { this.container = c; }}
                 index={this.getPanelIndex(this.props.index) || 0}
                 key={"swiper"}
                 style={this.containerStyle(currResponse)}

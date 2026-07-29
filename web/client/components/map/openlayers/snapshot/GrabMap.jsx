@@ -103,7 +103,7 @@ export default class GrabOlMap extends React.Component {
                 zoomControl={false}
                 onLayerLoading={this.layerLoading}
                 onLayerLoad={this.layerLoad}
-                ref={"snapMap"}
+                ref={(c) => { this.snapMap = c; }}
             >
                 {this.renderLayers(this.props.layers)}
             </LMap>
@@ -113,7 +113,7 @@ export default class GrabOlMap extends React.Component {
     layerLoad = () => {
         this.toLoad--;
         if (this.toLoad === 0) {
-            let map = this.refs.snapMap ? this.refs.snapMap.map : null;
+            let map = this.snapMap ? this.snapMap.map : null;
             if (map) {
                 map.once('postrender', (e) => setTimeout( () => {
                     let canvas = e.map && e.map.getTargetElement() && e.map.getTargetElement().getElementsByTagName("canvas")[0];

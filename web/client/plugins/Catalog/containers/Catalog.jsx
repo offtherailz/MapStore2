@@ -88,6 +88,7 @@ import { buildSRSMap } from '../../../utils/CatalogUtils';
 import { useCatalogSelection } from '../../../components/catalog/hooks/useCatalogSelection';
 import tooltip from '../../../components/misc/enhancers/tooltip';
 import Message from '../../../components/I18N/Message';
+import { usePluginsContext } from '../../../components/plugins/PluginsContext';
 
 const ButtonWithTooltip = tooltip(Button);
 
@@ -127,8 +128,8 @@ const Catalog = ({
     searchOptions,
     layerOptions,
     ...props
-}, context) => {
-    const { loadedPlugins } = context;
+}) => {
+    const { loadedPlugins } = usePluginsContext();
     const addonsItems = usePluginItems({ items: items, loadedPlugins }).filter(({ target }) => target === 'url-addon');
     const defaultPanel = defaultView !== 'dialog';
     const panel = catalogPanel ?? defaultPanel;

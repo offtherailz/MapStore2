@@ -55,7 +55,7 @@ function ResourceDetails({
     onSelectTab,
     selectedTab,
     availableResourceTypes
-}, context) {
+}, context = {}) {
 
     const parsedConfig = useParsePluginConfigExpressions(monitoredState, { tabs }, context?.plugins?.requires,
         {

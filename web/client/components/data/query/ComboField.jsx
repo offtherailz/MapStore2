@@ -13,6 +13,7 @@ import { Tooltip } from 'react-bootstrap';
 import OverlayTrigger from '../../misc/OverlayTrigger';
 import { DropdownList, Multiselect } from 'react-widgets';
 import Message from '../../../components/I18N/Message';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class ComboField extends React.Component {
     static propTypes = {
@@ -56,9 +57,7 @@ class ComboField extends React.Component {
         onUpdateExceptionField: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         options: {},

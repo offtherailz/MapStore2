@@ -83,11 +83,11 @@ class PasswordResetModal extends React.Component {
             <FlexBox.Fill />
             {this.props.includeCloseButton ? <Button
                 key="closeButton"
-                ref="closeButton"
+                ref={(c) => { this.closeButton = c; }}
                 onClick={this.props.onClose}><Message msgId="close"/></Button> : <span/>}
             <Button
                 value={"user.changePwd"}
-                ref="passwordChangeButton"
+                ref={(c) => { this.passwordChangeButton = c; }}
                 key="passwordChangeButton"
                 variant="success"
                 disabled={!this.state.passwordValid || this.props.loading}
@@ -99,7 +99,7 @@ class PasswordResetModal extends React.Component {
     };
 
     getBody = () => {
-        return (<PasswordReset error={this.props.error} role="body" ref="passwordResetForm"
+        return (<PasswordReset error={this.props.error} role="body" ref={(c) => { this.passwordResetForm = c; }}
             changed={this.props.changed}
             onChange={(password, valid) => {
                 this.setState({passwordValid: valid, password});

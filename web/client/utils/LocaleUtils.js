@@ -160,13 +160,24 @@ export const getSupportedLocales = function() {
 export const getDateFormat = (locale) => {
     return DATE_FORMATS[locale] || DATE_FORMATS.default;
 };
+/*
+ * SPIKE ONLY (React 19 trial, #12506) — NOT a proposal.
+ * The ~124 call sites pass `this.context.messages`, which is empty once legacy
+ * context is gone. Localized publishes the current catalog here so the call
+ * sites keep working untouched while the real migration is designed.
+ */
+let currentMessages = null;
+export const __setCurrentMessages = (messages) => {
+    currentMessages = messages;
+};
+
 export const getMessageById = function(messages, msgId) {
     if (!isString(msgId)) {
         console.warn('Expected String, but got ' + typeof msgId);
         return '';
     }
 
-    let message = messages;
+    let message = messages || currentMessages;
     msgId.split('.').forEach(part => {
         message = message ? message[part] : null;
     });

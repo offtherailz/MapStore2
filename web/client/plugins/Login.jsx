@@ -20,6 +20,7 @@ import  usePluginItems  from '../hooks/usePluginItems';
 import { connect } from 'react-redux';
 import { itemSelected } from '../actions/manager';
 import { isPageConfigured } from '../selectors/plugins';
+import { usePluginsContext } from '../components/plugins/PluginsContext';
 
 const IMPORTER_ID = 'importer';
 const RULE_MANAGER_ID = 'rulesmanager';
@@ -107,9 +108,9 @@ function LoginPlugin({
     showAccountInfo,
     bsStyle,
     className
-}, context) {
+}) {
 
-    const { loadedPlugins } = context;
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({ items, loadedPlugins });
     const showPasswordChange = !(!isAdmin && isUsingLDAP);
     const authenticated = user?.[displayName];

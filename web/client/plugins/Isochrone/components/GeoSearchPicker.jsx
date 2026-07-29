@@ -47,7 +47,7 @@ const GeoSearchPicker = ({
     onUpdateLocation,
     onSelectLocationFromMap,
     onToggleCoordinateEditor
-}, {messages}) => {
+}, {messages} = {}) => {
 
     const onLocationChange = (value) => {
         onSetWaypoint((prev)=> ({...prev, value}));

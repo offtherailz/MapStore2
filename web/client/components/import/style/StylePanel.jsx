@@ -17,6 +17,7 @@ import { applyDefaultStyleToVectorLayer } from '../../../utils/StyleUtils';
 
 import Button from '../../misc/Button';
 import { checkFeaturesStyle } from '../../../utils/ImporterUtils';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class StylePanel extends React.Component {
     static propTypes = {
@@ -46,9 +47,7 @@ class StylePanel extends React.Component {
         skipMessage: PropTypes.object
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         buttonSize: "small",

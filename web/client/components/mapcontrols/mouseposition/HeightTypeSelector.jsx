@@ -24,7 +24,7 @@ import { getMessageById } from "../../../utils/LocaleUtils";
  * @prop {function} onHeightTypeChange callback when a new height type is selected
  */
 
-const HeightTypeSelector = (props, context) => {
+const HeightTypeSelector = (props, context = {}) => {
     const {
         id,
         label,

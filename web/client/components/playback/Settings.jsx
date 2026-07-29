@@ -84,7 +84,7 @@ const Settings = ({
     layers = [],
     changeLayerSetting = () => { },
     selectedLayer
-}, context) => (<div className="ms-playback-settings" style={style}>
+}, context = {}) => (<div className="ms-playback-settings" style={style}>
     <h4><Message msgId="timeline.settings.title" /></h4>
     <FormGroup controlId="timelineSettings">
         <Form componentClass="fieldset" inline className="snap-guide-form">

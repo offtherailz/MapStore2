@@ -46,7 +46,7 @@ const Component = ({
     isCesium,
     updateConfigAction,
     mapOptions: defaultMapOptions
-}, { messages }) => {
+}, { messages } = {}) => {
     const SelectLocalized = localizedProps(["placeholder", "options"])(Select);
 
     const mapOptions = {

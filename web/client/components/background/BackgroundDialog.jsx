@@ -28,6 +28,7 @@ import { ServerTypes } from '../../utils/LayersUtils';
 import {getMessageById} from '../../utils/LocaleUtils';
 import tooltip from '../misc/enhancers/tooltip';
 import InfoPopover from '../widgets/widget/InfoPopover';
+import LocaleContext from '../I18N/LocaleContext';
 const Button = tooltip(ButtonRB);
 const Editor = localizedProps("placeholder")(WYSIWYGEditor);
 
@@ -61,9 +62,7 @@ export default class BackgroundDialog extends React.Component {
         disableCropToProjectionExtent: PropTypes.bool
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         updateThumbnail: () => {},

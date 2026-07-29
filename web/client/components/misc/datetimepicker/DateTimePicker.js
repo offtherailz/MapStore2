@@ -19,6 +19,7 @@ import Hours from './Hours';
 import Popover from '../../styleeditor/Popover';
 import {getMessageById} from '../../../utils/LocaleUtils';
 import QuickTimeSelectors from './QuickTimeSelectors';
+import LocaleContext from '../../I18N/LocaleContext';
 
 localizer(moment);
 
@@ -76,10 +77,7 @@ class DateTimePicker extends Component {
         quickDateTimeSelectors: PropTypes.array,
         onPopoverOpen: PropTypes.func
     }
-    static contextTypes = {
-        messages: PropTypes.object,
-        locale: PropTypes.string
-    };
+    static contextType = LocaleContext;
     static defaultProps = {
         placeholder: 'Type date...',
         calendar: true,

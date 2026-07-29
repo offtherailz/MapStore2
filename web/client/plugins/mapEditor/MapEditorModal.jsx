@@ -31,7 +31,7 @@ const MapViewer = withResizeMap(MapViewerContainer);
  * @param {array} props.overrideDefaultPlugins plugins to override the default plugins configuration
  * @param {string} [props.titleMsgId] message id for the title
  */
-const MapModal = ({ open = false, overrideDefaultPlugins = [], pluginsConfig = getDefaultConfig(overrideDefaultPlugins), hide = () => {}, save = () => {}, titleMsgId} = {}, {plugins}) => {
+const MapModal = ({ open = false, overrideDefaultPlugins = [], pluginsConfig = getDefaultConfig(overrideDefaultPlugins), hide = () => {}, save = () => {}, titleMsgId} = {}, {plugins} = {}) => {
     return (
         <Portal>
             <ResizableModal

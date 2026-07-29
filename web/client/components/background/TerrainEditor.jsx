@@ -57,7 +57,7 @@ function TerrainEditor({
     onUpdate = () => {},
     layer = {},
     isEditing
-}, context) {
+}, context = {}) {
     const { messages = {} } = context || {};
 
     const providers = [

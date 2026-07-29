@@ -22,6 +22,7 @@ import MainForm from './fragments/MainForm';
 import PermissionEditorComp from './fragments/PermissionEditor';
 
 import withSuspense from '../../misc/withSuspense';
+import LocaleContext from '../../I18N/LocaleContext';
 const DetailsComp = withSuspense()(lazy(() => import('./fragments/Details')));
 
 const PermissionEditor = ruleEditor(PermissionEditorComp);
@@ -96,9 +97,7 @@ class SaveModal extends React.Component {
         dialogClassName: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         id: "MetadataModal",

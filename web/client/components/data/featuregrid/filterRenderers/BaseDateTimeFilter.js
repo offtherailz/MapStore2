@@ -16,6 +16,7 @@ import {getMessageById} from '../../../../utils/LocaleUtils';
 import { getDateTimeFormat } from '../../../../utils/TimeUtils';
 import AttributeFilter from './AttributeFilter';
 import utcDateWrapper from '../../../misc/enhancers/utcDateWrapper';
+import LocaleContext from '../../../I18N/LocaleContext';
 
 const UTCDateTimePicker = utcDateWrapper({
     dateProp: "value",
@@ -37,10 +38,7 @@ export class DateFilter extends AttributeFilter {
         onChange: PropTypes.func,
         intl: intlShape
     };
-    static contextTypes = {
-        messages: PropTypes.object,
-        locale: PropTypes.string
-    };
+    static contextType = LocaleContext;
     static defaultProps = {
         value: null,
         type: "date-time",

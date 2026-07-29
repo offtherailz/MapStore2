@@ -64,7 +64,7 @@ function MeasurementSupport({
     onClose,
     measurement,
     onAddAsLayer
-}, { messages }) {
+}, { messages } = {}) {
 
     const [clearId, setClearId] = useState(0);
 

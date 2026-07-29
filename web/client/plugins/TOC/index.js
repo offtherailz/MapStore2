@@ -45,6 +45,7 @@ import { registerCustomSaveHandler } from '../../selectors/mapsave';
 import toc from './reducers/toc';
 import { setControlProperty } from '../../actions/controls';
 import Message from '../../components/I18N/Message';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 const Button = tooltip(ButtonRB);
 const FormControl = localizedProps('placeholder')(FormControlRB);
 registerCustomSaveHandler('toc', (state) => (state?.toc?.config));
@@ -367,7 +368,7 @@ function TOC({
     toolbarButtonProps,
     init,
     onOpen
-}, context) {
+}) {
     const activateParameter = (allow, activate) => {
         const isUserAdmin = user && user.role === 'ADMIN' || false;
         return (allow || isUserAdmin) ? activate : false;
@@ -389,7 +390,7 @@ function TOC({
         showFullTitle,
         showOpacityTooltip
     };
-    const { loadedPlugins } = context;
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({
         items: [
             ...(activateZoomTool

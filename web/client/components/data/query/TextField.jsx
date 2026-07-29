@@ -14,6 +14,7 @@ import OverlayTrigger from '../../../components/misc/OverlayTrigger';
 import HTML from '../../../components/I18N/HTML';
 import PropTypes from 'prop-types';
 import { isLikeOrIlike } from '../../../utils/FilterUtils';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class TextField extends React.Component {
     static propTypes = {
@@ -33,9 +34,7 @@ class TextField extends React.Component {
         style: PropTypes.object
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         operator: "like",

@@ -102,7 +102,7 @@ export default class GrabLMap extends React.Component {
     }
 
     getCanvas = () => {
-        return this.refs.canvas;
+        return this.canvas;
     };
 
     render() {
@@ -116,7 +116,7 @@ export default class GrabLMap extends React.Component {
                     width: "100%",
                     visibility: this.props.active ? "block" : "none"
                 }}
-                ref="canvas" />
+                ref={(c) => { this.canvas = c; }} />
         );
     }
 
@@ -153,7 +153,7 @@ export default class GrabLMap extends React.Component {
     };
 
     isTainted = (canv) => {
-        let canvas = canv || this.refs.canvas;
+        let canvas = canv || this.canvas;
         let ctx = canvas.getContext("2d");
         try {
             ctx.getImageData(0, 0, 1, 1);
@@ -164,6 +164,6 @@ export default class GrabLMap extends React.Component {
     };
 
     exportImage = () => {
-        return this.refs.canvas.toDataURL();
+        return this.canvas.toDataURL();
     };
 }

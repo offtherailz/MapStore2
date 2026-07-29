@@ -12,6 +12,7 @@ import { FormControl, FormGroup, ControlLabel, Alert } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import Message from '../../../components/I18N/Message';
 import { getMessageById } from '../../../utils/LocaleUtils';
+import LocaleContext from '../../I18N/LocaleContext';
 
 /**
  * A DropDown menu for user details:
@@ -30,9 +31,7 @@ class PasswordReset extends React.Component {
         error: PropTypes.object
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         // config
@@ -87,10 +86,10 @@ class PasswordReset extends React.Component {
     };
 
     render() {
-        return (<form ref="loginForm" onSubmit={this.handleSubmit}>
+        return (<form ref={(c) => { this.loginForm = c; }} onSubmit={this.handleSubmit}>
             <FormGroup validationState={this.getPwStyle()}>
                 <ControlLabel>{this.props.newPasswordText}</ControlLabel>
-                <FormControl ref="password"
+                <FormControl ref={(c) => { this.password = c; }}
                     key="password"
                     type="password"
                     hasFeedback
@@ -99,7 +98,7 @@ class PasswordReset extends React.Component {
             </FormGroup>
             <FormGroup validationState={this.isValid(this.state.password, this.state.passwordcheck) && this.getPwStyle() ? "success" : "error"}>
                 <ControlLabel>{this.props.passwordCheckText}</ControlLabel>
-                <FormControl ref="passwordcheck"
+                <FormControl ref={(c) => { this.passwordcheck = c; }}
                     key="passwordcheck"
                     hasFeedback
                     type="password"

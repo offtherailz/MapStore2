@@ -40,7 +40,7 @@ const RouteDetail = ({
     onDeleteIsochroneData = () => {},
     onSetCurrentRunParameters = () => {},
     onUpdateLocation = () => {}
-}, context) => {
+}, context = {}) => {
 
     const exportGeoJSON = (layer, config) => {
         const features = layer.features ?? [];

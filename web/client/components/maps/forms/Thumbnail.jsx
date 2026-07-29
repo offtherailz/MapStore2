@@ -13,6 +13,7 @@ import Message from '../../../components/I18N/Message';
 import { getResourceIdFromURL } from '../../../utils/ResourceUtils';
 import { randomInt } from '../../../utils/RandomUtils';
 import Thumbnail from '../../misc/Thumbnail';
+import LocaleContext from '../../I18N/LocaleContext';
 
 const errorMessages = {
     "FORMAT": <Message msgId="map.errorFormat" />,
@@ -46,9 +47,7 @@ class MapThumbnail extends React.Component {
         checkOriginalFileSize: PropTypes.bool
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         loading: false,
@@ -112,7 +111,7 @@ class MapThumbnail extends React.Component {
     render() {
         return (
             <Thumbnail
-                ref="imgThumbnail"
+                ref={(c) => { this.imgThumbnail = c; }}
                 thumbnail={this.getThumbnailUrl()}
                 className={null}
                 checkOriginalFileSize={this.props.checkOriginalFileSize}
@@ -170,26 +169,26 @@ class MapThumbnail extends React.Component {
         const name = this.generateUUID(); // create new unique name
         const category = "THUMBNAIL";
         // user removed the thumbnail (the original url is present but not the preview)
-        if (this.props.map && !data && this.props.map.thumbnail && !this.refs.imgThumbnail && !metadata) {
+        if (this.props.map && !data && this.props.map.thumbnail && !this.imgThumbnail && !metadata) {
             this.deleteThumbnail(this.props.map.thumbnail, this.props.map.id, true);
         // there is a thumbnail to upload
         }
-        if (this.props.map && !data && this.props.map.newThumbnail && !this.refs.imgThumbnail && metadata) {
+        if (this.props.map && !data && this.props.map.newThumbnail && !this.imgThumbnail && metadata) {
             this.deleteThumbnail(this.props.map.thumbnail, this.props.map.id, false);
             this.props.onSaveAll(map, metadata, name, data, category, this.props.map.id);
         // there is a thumbnail to upload
         }
         // remove old one if present
-        if (this.props.map.newThumbnail && data && this.refs.imgThumbnail) {
+        if (this.props.map.newThumbnail && data && this.imgThumbnail) {
             this.deleteThumbnail(this.props.map.thumbnail, null, false);
             // create the new one (and update the thumbnail attribute)
             this.props.onSaveAll(map, metadata, name, data, category, this.props.map.id);
         }
         // nothing dropped it will be closed the modal
-        if (this.props.map.newThumbnail && !data && this.refs.imgThumbnail) {
+        if (this.props.map.newThumbnail && !data && this.imgThumbnail) {
             this.props.onSaveAll(map, metadata, name, data, category, this.props.map.id);
         }
-        if (!this.props.map.newThumbnail && !data && !this.refs.imgThumbnail) {
+        if (!this.props.map.newThumbnail && !data && !this.imgThumbnail) {
             if (this.props.map.thumbnail && metadata) {
                 this.deleteThumbnail(this.props.map.thumbnail, this.props.map.id, false);
             }

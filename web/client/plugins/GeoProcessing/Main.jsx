@@ -40,7 +40,7 @@ const MainComp = ({
     selectedTool,
     onReset,
     onSetSelectedTool
-},  {messages}) => {
+},  {messages} = {}) => {
     const getProcessById = processId => find(processes, ({id}) => id === processId);
     const handleOnChangeTool = (sel) => {
         onSetSelectedTool(sel?.value || "");

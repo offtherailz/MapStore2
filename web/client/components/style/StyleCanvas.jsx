@@ -33,19 +33,19 @@ class StyleCanvas extends React.Component {
     };
 
     componentDidMount() {
-        let context = this.refs.styleCanvas.getContext('2d');
+        let context = this.styleCanvas.getContext('2d');
         context.clearRect(0, 0, this.props.width || 500, this.props.height || 500);
         this.paint(context);
     }
 
     componentDidUpdate() {
-        let context = this.refs.styleCanvas.getContext('2d');
+        let context = this.styleCanvas.getContext('2d');
         context.clearRect(0, 0, this.props.width || 500, this.props.height || 500);
         this.paint(context);
     }
 
     render() {
-        return <canvas ref="styleCanvas" style={this.props.style} width={this.props.width} height={this.props.height} />;
+        return <canvas ref={(c) => { this.styleCanvas = c; }} style={this.props.style} width={this.props.width} height={this.props.height} />;
     }
 
     paint = (ctx) => {

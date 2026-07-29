@@ -13,6 +13,7 @@ import { getMessageById } from '../../../../utils/LocaleUtils';
 import { Tooltip } from 'react-bootstrap';
 import OverlayTrigger from '../../../misc/OverlayTrigger';
 import ComboField from '../../query/ComboField';
+import LocaleContext from '../../../I18N/LocaleContext';
 
 class AttributeFilter extends React.PureComponent {
     static propTypes = {
@@ -28,9 +29,7 @@ class AttributeFilter extends React.PureComponent {
         isWithinAttrTbl: PropTypes.bool
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         value: '',

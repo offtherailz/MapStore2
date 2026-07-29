@@ -110,7 +110,7 @@ class GroupDialog extends React.Component {
         return (<div style={{clear: "both", marginTop: "10px"}}>
             <FormGroup>
                 <ControlLabel><Message msgId="usergroups.groupName"/>{' '}<span style={{ fontWeight: 'bold' }}>*</span></ControlLabel>
-                <FormControl ref="groupName"
+                <FormControl ref={(c) => { this.groupName = c; }}
                     key="groupName"
                     type="text"
                     name="groupName"
@@ -123,7 +123,7 @@ class GroupDialog extends React.Component {
             <FormGroup>
                 <ControlLabel><Message msgId="usergroups.groupDescription"/></ControlLabel>
                 <FormControl componentClass="textarea"
-                    ref="description"
+                    ref={(c) => { this.description = c; }}
                     key="description"
                     name="description"
                     maxLength={this.props.descLimit}

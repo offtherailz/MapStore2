@@ -153,7 +153,7 @@ const VideoForm = ({
     setProperties = () => {},
     onSave = () => {},
     onClick = () => {}
-}, context) => {
+}, context = {}) => {
     const { messages = {} } = context || {};
     const { src, thumbnail } = properties;
     return (

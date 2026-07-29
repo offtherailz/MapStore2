@@ -22,6 +22,7 @@ import StringSelector from '../../misc/StringSelector';
 import { getMessageById } from '../../../utils/LocaleUtils';
 import I18N from '../../I18N/I18N';
 import Button from '../../misc/Button';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class GroupField extends React.Component {
     static propTypes = {
@@ -50,9 +51,7 @@ class GroupField extends React.Component {
         textFieldTooltipMessageId: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         autocompleteEnabled: true,

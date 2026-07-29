@@ -14,6 +14,7 @@ import { Glyphicon, Tooltip } from 'react-bootstrap';
 import { getMessageById } from '../../../utils/LocaleUtils';
 import OverlayTrigger from '../OverlayTrigger';
 import AutocompleteListItem from '../../data/query/AutocompleteListItem';
+import LocaleContext from '../../I18N/LocaleContext';
 
 /**
  * Combobox with remote autocomplete functionality.
@@ -64,9 +65,7 @@ class PagedCombobox extends React.Component {
         unCheckedAnyField: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         stopPropagation: false,

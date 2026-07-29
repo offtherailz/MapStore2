@@ -206,7 +206,7 @@ function ResourcesFiltersForm({
     height,
     user,
     availableResourceTypes
-}, context) {
+}, context = {}) {
 
     const { query } = url.parse(location.search, true);
     const updatedQuery = defaultQuery ? mergeDefaultQuery(query, defaultQuery) : query;

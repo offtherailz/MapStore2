@@ -22,7 +22,7 @@ const selector = (state) => ({
     instances: gsInstancesDDListSelector(state)
 });
 
-const GSInstanceSelector = (props, context) => {
+const GSInstanceSelector = (props, context = {}) => {
     const [gsInstancesList, setGsInstanceList] = useState(props.instances || []);
     const handleGetGSInstances = () => {
         GeoFence.getGSInstancesForDD().then(response => {

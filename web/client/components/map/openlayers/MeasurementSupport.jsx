@@ -37,6 +37,7 @@ import Draw from 'ol/interaction/Draw';
 import GeoJSON from 'ol/format/GeoJSON';
 import {unByKey} from 'ol/Observable';
 import {getArea} from 'ol/sphere';
+import LocaleContext from '../../I18N/LocaleContext';
 
 const getProjectionCode = (olMap) => {
     return olMap.getView().getProjection().getCode();
@@ -58,9 +59,7 @@ export default class MeasurementSupport extends React.Component {
         setTextLabels: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         changeMeasurementState: () => {},

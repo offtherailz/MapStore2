@@ -46,6 +46,7 @@ import {
     getCurrentParams
 } from '../../selectors/users';
 import { userSelector } from '../../selectors/security';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 
 const ConnectedUserDialog = connect((state) => {
     const users = state && state.users;
@@ -223,8 +224,8 @@ function UserManager({
     },
     attributeFields,
     ...props
-}, context) {
-    const { loadedPlugins } = context;
+}) {
+    const { loadedPlugins } = usePluginsContext();
 
     const configuredItems = usePluginItems({ items, loadedPlugins }, []);
 

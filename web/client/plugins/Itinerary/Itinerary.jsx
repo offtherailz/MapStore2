@@ -40,6 +40,7 @@ import {
     triggerItineraryRun,
     updateLocations
 } from './actions/itinerary';
+import { usePluginsContext } from '../../components/plugins/PluginsContext';
 
 /**
  * Itinerary plugin that provides route planning functionality
@@ -160,9 +161,9 @@ import {
  * }
  * ```
  */
-const Itinerary = ({ items, ...props }, context) => {
+const Itinerary = ({ items, ...props }) => {
 
-    const { loadedPlugins } = context;
+    const { loadedPlugins } = usePluginsContext();
     const configuredItems = usePluginItems({ items, loadedPlugins });
 
     return (

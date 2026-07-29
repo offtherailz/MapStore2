@@ -16,15 +16,14 @@ import { isValidEmail } from '../../../../utils/StringUtils';
 import { isValidURL } from '../../../../utils/URLUtils';
 import Message from '../../../I18N/Message';
 import Button from '../../../misc/Button';
+import LocaleContext from '../../../I18N/LocaleContext';
 
 class MetadataTemplate extends React.Component {
     static propTypes = {
         model: PropTypes.object
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         model: {}

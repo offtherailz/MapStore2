@@ -17,6 +17,7 @@ import {getMessageById} from '../../../../utils/LocaleUtils';
 import Message from '../../../I18N/Message';
 import Button from '../../../misc/Button';
 import SecurityUtils from '../../../../utils/SecurityUtils';
+import LocaleContext from '../../../I18N/LocaleContext';
 /**
  * @deprecated
  */
@@ -44,9 +45,7 @@ class PermissionEditor extends React.Component {
         newPermission: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         disabled: false,
@@ -172,7 +171,7 @@ class PermissionEditor extends React.Component {
                         }
                         <Button
                             key={"deleteButton" + index}
-                            ref="deleteButton"
+                            ref={(c) => { this.deleteButton = c; }}
                             bsStyle="danger"
                             className="square-button"
                             disabled={this.props.disabled}
@@ -206,7 +205,7 @@ class PermissionEditor extends React.Component {
                             <td>
                                 <Select
                                     noResultsText={getMessageById(this.context.messages, "map.permissions.noResult")}
-                                    ref="newGroup"
+                                    ref={(c) => { this.newGroup = c; }}
                                     isLoading={!this.getSelectableGroups()}
                                     clearable={false}
                                     placeholder={getMessageById(this.context.messages, "map.permissions.selectGroup")}
@@ -216,7 +215,7 @@ class PermissionEditor extends React.Component {
                             </td>
                             <td style={{ width: "150px" }}>
                                 <Select
-                                    ref="newChoice"
+                                    ref={(c) => { this.newChoice = c; }}
                                     clearable={false}
                                     options={this.getAvailablePermissions()}
                                     value={this.getCurrentPermission()}
@@ -224,7 +223,7 @@ class PermissionEditor extends React.Component {
                             </td>
                             <td style={{ width: "50px" }}>
                                 <Button
-                                    ref="buttonAdd"
+                                    ref={(c) => { this.buttonAdd = c; }}
                                     disabled={this.props.disabled || !this.props.newGroup || this.isPermissionPresent(this.props.newGroup && this.props.newGroup.groupName)}
                                     className="square-button"
                                     bsStyle="success"

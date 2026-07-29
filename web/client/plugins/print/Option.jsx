@@ -6,7 +6,7 @@ import PrintOptionComp from "../../components/print/PrintOption";
 
 import get from "lodash/get";
 
-export const Option = (props, context) => {
+export const Option = (props, context = {}) => {
     const {spec, property, label, onChangeParameter, enabled = true, actions, path = "params.", additionalProperty = true} = props;
     const fullProperty = path + property;
     useEffect(() => {

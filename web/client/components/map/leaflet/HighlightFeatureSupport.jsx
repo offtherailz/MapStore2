@@ -10,6 +10,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {findIndex} from 'lodash/findIndex';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class HighlightFeatureSupport extends React.Component {
     static propTypes = {
@@ -21,9 +22,7 @@ class HighlightFeatureSupport extends React.Component {
         features: PropTypes.array
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         status: 'disabled',

@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Cell } from 'react-data-grid';
 import CellValidationErrorMessage from './CellValidationErrorMessage';
+import FeatureGridContext from '../FeatureGridContext';
 
 class CellRenderer extends React.Component {
     static propTypes = {
@@ -9,12 +10,7 @@ class CellRenderer extends React.Component {
         rowData: PropTypes.object,
         column: PropTypes.object
     };
-    static contextTypes = {
-        isModified: PropTypes.func,
-        isProperty: PropTypes.func,
-        isValid: PropTypes.func,
-        cellControls: PropTypes.any
-    };
+    static contextType = FeatureGridContext;
     static defaultProps = {
         value: null,
         rowData: {},
@@ -22,7 +18,7 @@ class CellRenderer extends React.Component {
     }
     constructor(props) {
         super(props);
-        this.setScrollLeft = (scrollBy) => this.refs.cell.setScrollLeft(scrollBy);
+        this.setScrollLeft = (scrollBy) => this.cell.setScrollLeft(scrollBy);
     }
     render() {
         const value = this.props.rowData.get(this.props.column.key);
@@ -40,7 +36,7 @@ class CellRenderer extends React.Component {
         return (
             <Cell
                 {...this.props}
-                ref="cell"
+                ref={(c) => { this.cell = c; }}
                 className={className}
                 cellControls={<>
                     {this.props.cellControls}

@@ -70,7 +70,7 @@ class Background extends Component {
 
     render() {
         const theme = getThemeStyleFromProps(this.props);
-        const parentNode = !this.props.disableToolbarPortal && this.refs && this.refs.div && this.refs.div.parentNode;
+        const parentNode = !this.props.disableToolbarPortal && this.div && this.div.parentNode;
         const defaultTools = this.props.sectionType === SectionTypes.TITLE ? ['editMedia', 'cover' ] : ['editMedia' ];
         const ContentToolbar = this.props.contentToolbar || DefaultContentToolbar;
         const toolbar = (
@@ -95,7 +95,7 @@ class Background extends Component {
 
         return (
             <div
-                ref="div"
+                ref={(c) => { this.div = c; }}
                 className="ms-section-background"
                 style={{ ...this.props.style }}>
                 <div

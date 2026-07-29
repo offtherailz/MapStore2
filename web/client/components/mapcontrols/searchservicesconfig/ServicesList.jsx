@@ -12,6 +12,7 @@ import { FormGroup, Checkbox, ControlLabel, Glyphicon } from 'react-bootstrap';
 import Message from '../../I18N/Message';
 import ConfirmButton from '../../buttons/ConfirmButton';
 import PropTypes from 'prop-types';
+import LocaleContext from '../../I18N/LocaleContext';
 
 function validate() {
     return true;
@@ -25,9 +26,7 @@ class ServicesList extends React.Component {
         onPropertyChange: PropTypes.func
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         services: [],

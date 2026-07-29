@@ -8,6 +8,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import PluginsUtils from '../../utils/PluginsUtils';
+import PluginsContext from './PluginsContext';
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 import { componentFromProp } from 'recompose';
@@ -144,11 +145,13 @@ class PluginsContainer extends React.Component {
                 [k]: this.renderPlugins(containerPlugins[k])
             }), {});
             return (
-                <Component id={this.props.id} className={this.props.className} style={this.props.style} component={this.props.component} {...containerProps}>
-                    {
-                        this.renderPlugins(bodyPlugins || [])
-                    }
-                </Component>
+                <PluginsContext.Provider value={this.getChildContext()}>
+                    <Component id={this.props.id} className={this.props.className} style={this.props.style} component={this.props.component} {...containerProps}>
+                        {
+                            this.renderPlugins(bodyPlugins || [])
+                        }
+                    </Component>
+                </PluginsContext.Provider>
             );
         }
         return null;

@@ -31,12 +31,12 @@ class PrintOption extends React.Component {
     };
 
     onChange = () => {
-        this.props.onChange(!this.refs.input.props.checked);
+        this.props.onChange(!this.input.props.checked);
     };
 
     render() {
         return (
-            <Checkbox disabled={!this.isEnabled()} ref="input" checked={this.props.checked}
+            <Checkbox disabled={!this.isEnabled()} ref={(c) => { this.input = c; }} checked={this.props.checked}
                 onChange={this.onChange}
             >{this.props.label}</Checkbox>
         );

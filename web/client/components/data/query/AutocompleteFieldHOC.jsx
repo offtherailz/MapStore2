@@ -14,6 +14,7 @@ import AutocompleteListItem from './AutocompleteListItem';
 import PagedCombobox from '../../misc/combobox/PagedCombobox';
 import { isLikeOrIlike } from '../../../utils/FilterUtils';
 import HTML from '../../../components/I18N/HTML';
+import LocaleContext from '../../I18N/LocaleContext';
 
 class AutocompleteFieldHOC extends React.Component {
     static propTypes = {
@@ -31,9 +32,7 @@ class AutocompleteFieldHOC extends React.Component {
         valueField: PropTypes.string
     };
 
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         label: null,

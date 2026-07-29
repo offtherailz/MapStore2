@@ -24,6 +24,7 @@ import WidgetTypeBuilder from './widgetbuilder/WidgetTypeBuilder';
 import epics from '../epics/dashboard';
 import dashboard from '../reducers/dashboard';
 import usePluginItems from '../hooks/usePluginItems';
+import { usePluginsContext } from '../components/plugins/PluginsContext';
 
 const Builder =
     compose(
@@ -117,8 +118,8 @@ class DashboardEditorComponent extends React.Component {
     }
 }
 
-const DashboardEditorComponentWrapper = (props, context) => {
-    const { loadedPlugins } = context;
+const DashboardEditorComponentWrapper = (props) => {
+    const { loadedPlugins } = usePluginsContext();
     const addonsItems = usePluginItems({ items: props.items, loadedPlugins }).filter(({ target }) => target === 'url-addon');
     return <DashboardEditorComponent {...props} addonsItems={addonsItems}/>;
 };

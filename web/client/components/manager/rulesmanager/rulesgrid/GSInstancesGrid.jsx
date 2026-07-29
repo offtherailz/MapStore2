@@ -14,6 +14,7 @@ import { Draggable } from 'react-data-grid-addons';
 import DataGrid from '../../../data/grid/DataGrid';
 const { Container: DraggableContainer, DropTargetRowContainer: dropTargetRowContainer } = Draggable;
 import Message from '../../../I18N/Message';
+import LocaleContext from '../../../I18N/LocaleContext';
 const RowRenderer = dropTargetRowContainer(RuleRenderer);
 
 class GSInstancesGrid extends React.Component {
@@ -32,9 +33,7 @@ class GSInstancesGrid extends React.Component {
         onReorderRows: PropTypes.func,
         isEditing: PropTypes.bool
     };
-    static contextTypes = {
-        messages: PropTypes.object
-    };
+    static contextType = LocaleContext;
 
     static defaultProps = {
         rowKey: 'id',
