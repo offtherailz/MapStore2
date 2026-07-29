@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Cell } from 'react-data-grid';
 import CellValidationErrorMessage from './CellValidationErrorMessage';
+import FeatureGridContext from '../FeatureGridContext';
 
 class CellRenderer extends React.Component {
     static propTypes = {
@@ -9,12 +10,7 @@ class CellRenderer extends React.Component {
         rowData: PropTypes.object,
         column: PropTypes.object
     };
-    static contextTypes = {
-        isModified: PropTypes.func,
-        isProperty: PropTypes.func,
-        isValid: PropTypes.func,
-        cellControls: PropTypes.any
-    };
+    static contextType = FeatureGridContext;
     static defaultProps = {
         value: null,
         rowData: {},
