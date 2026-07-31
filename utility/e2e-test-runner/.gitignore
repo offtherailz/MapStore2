@@ -9,3 +9,6 @@ playwright-report/
 .env.dev
 .env.qa
 .env.customer*
+
+# Generated runtime files (datadirs built per docker profile)
+.tmp/

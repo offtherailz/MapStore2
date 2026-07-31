@@ -1,5 +1,4 @@
 [
-  { "op": "add", "path": "/plugins/desktop/-", "value": "MyAwesomePlugin" },
   {
     "op": "add",
     "path": "/catalogServices",
@@ -10,6 +9,18 @@
           "type": "wms",
           "title": "Local GeoServer WMS",
           "autoload": true
+        },
+        "local_geoserver_wfs": {
+          "url": "http://localhost:8082/geoserver/wfs",
+          "type": "wfs",
+          "title": "Local GeoServer WFS",
+          "autoload": false
+        },
+        "local_geoserver_csw": {
+          "url": "http://localhost:8082/geoserver/csw",
+          "type": "csw",
+          "title": "Local GeoServer CSW",
+          "autoload": false
         }
       },
       "selectedService": "local_geoserver_wms"
