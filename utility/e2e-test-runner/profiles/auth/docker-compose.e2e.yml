@@ -1,0 +1,20 @@
+version: "3.8"
+
+# E2E overlay for the authentication stack (docker/docker-compose.auth.yml).
+# Layer order: docker-compose.yml + docker/docker-compose.auth.yml + this file.
+#
+# It adapts the developer-oriented auth stack to an automated run:
+#   - the WAR comes from the Maven build output instead of a hand-copied ./mapstore.war
+#   - Keycloak imports the committed sample realm, so no realm-mapstore.json has to be created
+#   - the datadir is the generated per-profile one (DATADIR_PATH, see e2e-docker.sh)
+
+services:
+  mapstore:
+    build:
+      args:
+        MAPSTORE_WEBAPP_SRC: "product/target/mapstore.war"
+
+  keycloak:
+    volumes:
+      - ./docker/keycloak/realm-mapstore.sample.json:/opt/keycloak/data/import/realm-mapstore.json:ro
+      - keycloak_data:/opt/keycloak/data

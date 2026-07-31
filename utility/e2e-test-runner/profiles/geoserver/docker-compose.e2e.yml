@@ -1,13 +1,29 @@
 version: "3.8"
 
+# E2E overlay adding a local GeoServer, so WMS/WFS interactions are exercised against
+# a disposable service instead of a remote one.
+#
+# SAMPLE_DATA installs the GeoServer release data directory, which provides the
+# well-known sample layers (topp:states, sf:*, tiger:*) used by the catalog specs.
+# The postgres init script adds a PostGIS table that seed-geoserver.sh publishes,
+# so DB-backed WFS behaviour (attribute table, filters) is covered as well.
+
 services:
+  postgres:
+    volumes:
+      - ./utility/e2e-test-runner/profiles/geoserver/02-init-gisdata.sh:/docker-entrypoint-initdb.d/02-init-gisdata.sh:ro
+
   geoserver:
     image: docker.osgeo.org/geoserver:2.27.2
     container_name: geoserver
     restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      GEOSERVER_ADMIN_USER: admin
-      GEOSERVER_ADMIN_PASSWORD: geoserver
+      GEOSERVER_ADMIN_USER: "${GEOSERVER_ADMIN_USER:-admin}"
+      GEOSERVER_ADMIN_PASSWORD: "${GEOSERVER_ADMIN_PASSWORD:-geoserver}"
+      SAMPLE_DATA: "true"
       CORS_ENABLED: "true"
     ports:
       - "8082:8080"
@@ -22,4 +38,4 @@ services:
 
   mapstore:
     volumes:
-      - ./utility/e2e-test-runner/profiles/geoserver/localConfig.e2e.geoserver.patch.json:/mapstore/datadir/configs/localConfig.json.patch:ro
+      - ./utility/e2e-test-runner/profiles/geoserver/localConfig.e2e.geoserver.patch.json:/usr/local/tomcat/datadir/configs/localConfig.json.patch:ro
