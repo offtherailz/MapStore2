@@ -1,11 +1,19 @@
 version: "3.8"
 
+# Containers are renamed with an e2e- prefix: docker-compose.yml pins fixed names,
+# which would otherwise clash with a developer stack started from the same files.
+
 services:
+  postgres:
+    container_name: e2e-postgres
+
   mapstore:
+    container_name: e2e-mapstore
     build:
       args:
         MAPSTORE_WEBAPP_SRC: "product/target/mapstore.war"
 
   proxy:
+    container_name: e2e-proxy
     ports:
       - "8081:80"
