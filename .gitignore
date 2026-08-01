@@ -60,6 +60,8 @@ datadir/*
 reports/
 test-results/
 playwright-report/
+e2e-docker-logs-*.txt
+utility/e2e-test-runner/.tmp/
 
 # E2E local env files (contain credentials)
 .env.local

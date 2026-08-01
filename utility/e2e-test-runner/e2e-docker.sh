@@ -54,6 +54,12 @@ RUNNER_DIR="utility/e2e-test-runner"
 TMP_ROOT="${RUNNER_DIR}/.tmp"
 AUTH_ENV_FILE="${RUNNER_DIR}/profiles/auth/.env.e2e"
 
+# The E2E containers are renamed by the profile overlays, so the stack can run next
+# to a developer stack started from the same compose files.
+MAPSTORE_CONTAINER="e2e-mapstore"
+GEOSERVER_CONTAINER="e2e-geoserver"
+KEYCLOAK_CONTAINER="e2e-keycloak"
+
 # ── argument parsing ──────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -93,7 +99,7 @@ AVAILABLE_PROFILES=(base geoserver oidc ldap)
 
 BASE_COMPOSE="docker-compose.yml ${RUNNER_DIR}/profiles/base/docker-compose.e2e.yml"
 AUTH_COMPOSE="docker-compose.yml docker/docker-compose.auth.yml ${RUNNER_DIR}/profiles/auth/docker-compose.e2e.yml"
-CORE_SUITES="smoke,auth,accounts,homepage,resources,map-toc,map-tools"
+CORE_SUITES="smoke,auth,homepage,maps"
 
 PROFILE_MAVEN[base]=""
 PROFILE_COMPOSE[base]="$BASE_COMPOSE"
@@ -118,7 +124,8 @@ PROFILE_WAIT_KC[geoserver]=false
 # Keycloak OpenID: standard WAR, GeoStore generic OIDC provider, DB user store.
 PROFILE_MAVEN[oidc]=""
 PROFILE_COMPOSE[oidc]="$AUTH_COMPOSE"
-PROFILE_SUITES[oidc]="smoke,auth,oidc"
+# No OIDC spec yet: the profile only proves the stack starts and the login form works.
+PROFILE_SUITES[oidc]="smoke"
 PROFILE_ENV[oidc]="E2E_FEATURES=oidc E2E_IDENTITIES_JSON={\"oidcAdmin\":{\"username\":\"kcadmin\",\"password\":\"changeme-kcadmin-pw-123\",\"role\":\"ADMIN\",\"provider\":\"keycloak\"},\"oidcUser\":{\"username\":\"kcuser\",\"password\":\"changeme-kcuser-pw-123\",\"role\":\"USER\",\"provider\":\"keycloak\"}}"
 PROFILE_BASE_URL[oidc]="http://localhost/mapstore/"
 PROFILE_ENV_FILE[oidc]="$AUTH_ENV_FILE"
@@ -253,26 +260,26 @@ wait_mapstore() {
             if [[ "$http_code" != "000" && "$http_code" != "502" && "$http_code" != "503" && "$http_code" != "504" ]]; then
                 fail "MapStore returned HTTP $http_code — WAR likely failed to start (${elapsed}s)"
                 echo "  Last error in logs:" >&2
-                docker logs mapstore 2>&1 | grep -E "SEVERE|ERROR|Exception" | tail -5 >&2 || true
+                docker logs "$MAPSTORE_CONTAINER" 2>&1 | grep -E "SEVERE|ERROR|Exception" | tail -5 >&2 || true
                 return 1
             fi
 
             local state
-            state=$(docker inspect --format='{{.State.Status}}' mapstore 2>/dev/null || echo "unknown")
+            state=$(docker inspect --format='{{.State.Status}}' "$MAPSTORE_CONTAINER" 2>/dev/null || echo "unknown")
             if [[ "$state" == "exited" || "$state" == "dead" ]]; then
                 fail "MapStore container stopped unexpectedly (state: $state, ${elapsed}s)"
-                docker logs mapstore 2>&1 | tail -10 >&2 || true
+                docker logs "$MAPSTORE_CONTAINER" 2>&1 | tail -10 >&2 || true
                 return 1
             fi
 
             local fatal_line
-            fatal_line=$(docker logs mapstore 2>&1 | grep -E \
+            fatal_line=$(docker logs "$MAPSTORE_CONTAINER" 2>&1 | grep -E \
                 "Context initialization failed|ClassNotFoundException|BeanCreationException.*Initialization of bean failed" \
                 | tail -1 || true)
             if [[ -n "$fatal_line" ]]; then
                 fail "MapStore startup failed — fatal error in logs (${elapsed}s):"
                 echo "  $fatal_line" >&2
-                docker logs mapstore 2>&1 | grep -E "SEVERE|ERROR|Caused by" | tail -15 >&2 || true
+                docker logs "$MAPSTORE_CONTAINER" 2>&1 | grep -E "SEVERE|ERROR|Caused by" | tail -15 >&2 || true
                 return 1
             fi
         fi
@@ -285,17 +292,17 @@ wait_mapstore() {
         elapsed=$(( elapsed + interval ))
     done
     fail "MapStore did not become ready within ${max_seconds}s"
-    docker logs mapstore 2>&1 | grep -E "SEVERE|ERROR" | tail -5 >&2 || true
+    docker logs "$MAPSTORE_CONTAINER" 2>&1 | grep -E "SEVERE|ERROR" | tail -5 >&2 || true
     return 1
 }
 
 wait_geoserver() {
-    wait_http "GeoServer" geoserver "http://localhost:8082/geoserver/web/" "${1:-120}" 30
+    wait_http "GeoServer" "$GEOSERVER_CONTAINER" "http://localhost:8082/geoserver/web/" "${1:-120}" 30
 }
 
 # The realm discovery document is the first thing MapStore needs from Keycloak.
 wait_keycloak() {
-    wait_http "Keycloak realm" keycloak \
+    wait_http "Keycloak realm" "$KEYCLOAK_CONTAINER" \
         "http://localhost/keycloak/realms/mapstore/.well-known/openid-configuration" \
         "${1:-120}" 40
 }
@@ -390,6 +397,13 @@ for raw_profile in "${PROFILE_LIST[@]}"; do
     fi
 
     # ── start stack ───────────────────────────────────────────────────────────
+    # A run killed before its teardown leaves containers behind: they answer the
+    # readiness checks and then disappear when compose recreates them, so the suites
+    # fail with connection errors. Start from a known empty stack instead.
+    log "Removing leftovers from a previous run …"
+    # shellcheck disable=SC2086
+    docker compose $CARGS down -v --remove-orphans > /dev/null 2>&1 || true
+
     log "Starting Docker stack …"
     # shellcheck disable=SC2086
     docker compose $CARGS up -d --build

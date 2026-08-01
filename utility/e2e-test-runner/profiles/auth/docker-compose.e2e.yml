@@ -8,13 +8,27 @@ version: "3.8"
 #   - Keycloak imports the committed sample realm, so no realm-mapstore.json has to be created
 #   - the datadir is the generated per-profile one (DATADIR_PATH, see e2e-docker.sh)
 
+#   - containers are renamed with an e2e- prefix, so the stack does not clash with a
+#     developer stack started from the same compose files
+
 services:
+  postgres:
+    container_name: e2e-postgres
+
+  proxy:
+    container_name: e2e-proxy
+
+  ldap:
+    container_name: e2e-ldap
+
   mapstore:
+    container_name: e2e-mapstore
     build:
       args:
         MAPSTORE_WEBAPP_SRC: "product/target/mapstore.war"
 
   keycloak:
+    container_name: e2e-keycloak
     volumes:
       - ./docker/keycloak/realm-mapstore.sample.json:/opt/keycloak/data/import/realm-mapstore.json:ro
       - keycloak_data:/opt/keycloak/data
