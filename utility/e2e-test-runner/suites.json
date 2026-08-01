@@ -91,6 +91,14 @@
       "files": [
         "tests/context.spec.js"
       ]
+    },
+    "accounts": {
+      "title": "Accounts",
+      "why": "Verify the user manager lists accounts and that a created user can authenticate.",
+      "active": true,
+      "files": [
+        "tests/accounts.spec.js"
+      ]
     }
   }
 }
