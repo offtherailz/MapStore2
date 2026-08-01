@@ -83,6 +83,14 @@
       "files": [
         "tests/geostory.spec.js"
       ]
+    },
+    "context": {
+      "title": "Application contexts",
+      "why": "Verify the context creator wizard, opening a created context and removing it.",
+      "active": true,
+      "files": [
+        "tests/context.spec.js"
+      ]
     }
   }
 }
