@@ -138,10 +138,11 @@ E2E_ENV_FILE=.env.customer-acme npx @mapstore/e2e-test-runner --suites auth
 
 | Variable | Purpose |
 | --- | --- |
-| `E2E_FEATURES` | Comma-separated feature list (for example `oidc,ldap,geoserverIntegration`) |
+| `E2E_FEATURES` | Comma-separated feature list (for example `oidc,ldap,geoserverIntegration`), see `KNOWN_FEATURES` in `tests/config.js` |
 | `E2E_SERVICES_JSON` | JSON map of third-party service endpoints |
 | `E2E_RESOURCES_JSON` | JSON map of environment-specific resources |
-| `MS_USER_STANDARD` | Non-admin user for LDAP / mixed-auth tests |
+| `E2E_IDENTITIES_JSON` | JSON map of named identities, for example `{"ldapUser":{"username":"ldapuser","password":"…","role":"USER"}}` |
+| `MS_USER_STANDARD` | Non-admin user for LDAP / mixed-auth tests, exposed as the `standardUser` identity |
 | `MS_PASSWORD_STANDARD` | Password for `MS_USER_STANDARD` |
 
 ---
@@ -197,9 +198,19 @@ Default suite mapping by Docker profile:
 
 | Docker profile | Suites |
 | --- | --- |
-| `base` | `auth`, `smoke`, `homepage`, `maps` |
-| `geoserver` | `auth`, `smoke`, `homepage`, `maps`, `geoserver` |
-| `ldap` | `auth`, `smoke`, `homepage`, `maps`, `ldap` |
+| `base` | `smoke`, `auth`, `accounts`, `homepage`, `maps`, `geostory`, `context` |
+| `geoserver` | `smoke`, `geoserver`, `map-toc`, `map-tools`, `dashboard` |
+| `oidc` | `smoke` |
+| `ldap` | `smoke`, `ldap` |
+
+The suites of the `geoserver` profile read data, so they are gated on the
+`geoserverIntegration` and `geoserverDb` features and are skipped elsewhere. Everything
+they display comes from the `e2e:e2e_points` layer the profile publishes.
+
+The profile installs the GeoServer WPS extension (`STABLE_EXTENSIONS=wps`): chart and
+counter widgets aggregate through `gs:Aggregate`, and without it MapStore answers
+"the server doesn't provide the needed services for the layer". The extension is fetched
+when the container starts, so that profile needs registry access on a cold start.
 
 ---
 
