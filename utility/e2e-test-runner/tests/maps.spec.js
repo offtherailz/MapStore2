@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { login } from './helpers/auth.js';
 import { openAppTarget } from './helpers/navigation.js';
 
 test.describe('Maps', () => {
-    test('Admin can create and delete a map', async({ page }) => {
-        const mapName = `E2E Map ${Date.now()}`;
+    test('Admin can create and delete a map', async({ page, api, data }) => {
+        const mapName = data.name('map');
 
         await test.step('Sign in as admin', async() => {
             await login(page);
@@ -22,6 +22,12 @@ test.describe('Maps', () => {
             await page.getByRole('textbox').fill(mapName);
             await page.getByRole('button', { name: 'Create' }).click();
             await expect(page.getByText('Saved successfully')).toBeVisible();
+        });
+
+        await test.step('Adopt the saved map, so it is removed even if a later step fails', async() => {
+            const [resource] = await api.findResources('MAP', mapName);
+            expect(resource, `map ${mapName} not found through the API`).toBeTruthy();
+            data.track({ id: resource.id, name: mapName, category: 'MAP' });
         });
 
         await test.step('Navigate back to homepage and verify the map appears in the grid', async() => {

@@ -1,18 +1,21 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, describeIfFeature } from './fixtures.js';
 import { hasFeature } from './config.js';
 import { login } from './helpers/auth.js';
-import { openAppTarget } from './helpers/navigation.js';
+import { openAppTarget, moveAwayFromTooltips } from './helpers/navigation.js';
 
 // The geoserver profile patch file (profiles/geoserver/localConfig.e2e.geoserver.patch.json)
-// pre-configures a catalog service
-// titled "Local GeoServer WMS" pointing to http://localhost:8082/geoserver/wms
-// and sets it as selectedService, so no manual service selection is required.
+// replaces the default catalog services with the local GeoServer and selects the WMS one,
+// so no service has to be picked manually and no remote service is ever queried.
 
-test.describe('GeoServer', () => {
-    test('Admin can add a layer from the local GeoServer catalog to a map', async({ page }) => {
-        test.skip(!hasFeature('geoserverIntegration'), 'Requires feature geoserverIntegration');
+/** Layer published by profiles/geoserver/seed-geoserver.sh from the PostGIS fixture. */
+const FIXTURE_LAYER = 'e2e_points';
+const FIXTURE_LAYER_ID = 'e2e:e2e_points';
 
-        const mapName = `E2E GeoServer Map ${Date.now()}`;
+describeIfFeature('geoserverIntegration', 'GeoServer', () => {
+    test('Admin can add a layer from the local GeoServer catalog to a map', async({ page, api, data }) => {
+        test.skip(!hasFeature('geoserverDb'), 'Requires feature geoserverDb');
+
+        const mapName = data.name('geoserver-map');
 
         await test.step('Sign in as admin', async() => {
             await login(page);
@@ -23,45 +26,30 @@ test.describe('GeoServer', () => {
             await page.getByRole('menuitem', { name: 'Create map' }).click();
         });
 
-        await test.step('Open catalog panel', async() => {
-            // Prefer the accessible button name, then fallback to icon/tooltip selectors.
-            const roleButton = page.getByRole('button', { name: /add layer/i }).first();
-            if (await roleButton.isVisible()) {
-                await roleButton.click();
-            } else {
-                const fallbackButton = page.locator(
-                    '[title="Add layers to the map"], [data-original-title="Add layers to the map"], ' +
-                    'button.square-button:has(.glyphicon-plus)'
-                ).first();
-                await expect(fallbackButton).toBeVisible({ timeout: 15000 });
-                await fallbackButton.click();
-            }
-
-            const catalogPanel = page.locator('#mapstore-catalog-panel, #mapstore-metadata-explorer');
-            await expect(catalogPanel).toBeVisible({ timeout: 15000 });
+        await test.step('Open the catalog from the layers panel', async() => {
+            // Buttons expose no accessible name, so the glyph is the stable hook.
+            await page.locator('button.ms-drawer-menu-button:has(.glyphicon-1-layer)').click();
+            await moveAwayFromTooltips(page);
+            await page.locator('button.toc-toolbar-button:has(.glyphicon-add-layer)').click();
+            await expect(page.locator('.ms-catalog-panel')).toBeVisible({ timeout: 15000 });
         });
 
-        await test.step('Verify "Local GeoServer WMS" is selected and search for layers', async() => {
-            // The patch sets selectedService to "local_geoserver_wms" with title "Local GeoServer WMS"
-            const catalogPanel = page.locator('#mapstore-catalog-panel, #mapstore-metadata-explorer');
-            await expect(catalogPanel.getByText('Local GeoServer WMS')).toBeVisible({ timeout: 10000 });
+        await test.step('Search the fixture layer in the local GeoServer service', async() => {
+            const catalogPanel = page.locator('.ms-catalog-panel');
+            await catalogPanel.locator('.ms-catalog-search-input').fill(FIXTURE_LAYER);
 
-            // Search for a well-known GeoServer sample layer
-            const searchField = catalogPanel.getByPlaceholder(/search/i);
-            await searchField.fill('states');
-            await catalogPanel.getByRole('button', { name: /search/i }).click();
+            const record = catalogPanel.locator('.ms-catalog-card').filter({ hasText: FIXTURE_LAYER_ID });
+            // The workspace-qualified name proves the record comes from the local service.
+            await expect(record).toBeVisible({ timeout: 20000 });
         });
 
-        await test.step('Add first result to the map', async() => {
-            const catalogPanel = page.locator('#mapstore-catalog-panel, #mapstore-metadata-explorer');
-            // Wait for search results and click the first add-to-map button
-            const firstAddBtn = catalogPanel.locator('button.square-button').filter({ has: page.locator('.glyphicon-plus') }).first();
-            await expect(firstAddBtn).toBeVisible({ timeout: 20000 });
-            await firstAddBtn.click();
+        await test.step('Add the fixture layer to the map', async() => {
+            const record = page.locator('.ms-catalog-panel .ms-catalog-card').filter({ hasText: FIXTURE_LAYER_ID }).first();
+            await record.locator('button:has(.glyphicon-plus)').first().click();
         });
 
-        await test.step('Verify layer appears in the TOC', async() => {
-            await expect(page.locator('.ms-node-layer').first()).toBeVisible({ timeout: 15000 });
+        await test.step('Verify the fixture layer appears in the TOC', async() => {
+            await expect(page.locator('.ms-node-layer').filter({ hasText: FIXTURE_LAYER })).toBeVisible({ timeout: 15000 });
         });
 
         await test.step('Save the map with a unique name', async() => {
@@ -71,6 +59,12 @@ test.describe('GeoServer', () => {
             await page.getByRole('textbox').fill(mapName);
             await page.getByRole('button', { name: 'Create' }).click();
             await expect(page.getByText('Saved successfully')).toBeVisible({ timeout: 10000 });
+        });
+
+        await test.step('Adopt the saved map, so it is removed even if a later step fails', async() => {
+            const [resource] = await api.findResources('MAP', mapName);
+            expect(resource, `map ${mapName} not found through the API`).toBeTruthy();
+            data.track({ id: resource.id, name: mapName, category: 'MAP' });
         });
 
         await test.step('Return to homepage and delete the map', async() => {
