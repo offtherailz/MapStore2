@@ -1,17 +1,16 @@
-import { test, expect } from '@playwright/test';
-import { environment, hasFeature } from './config.js';
+import { test, expect, describeIfFeature } from './fixtures.js';
+import { getIdentity } from './config.js';
 import { login, logout } from './helpers/auth.js';
 
-test.describe('LDAP', () => {
+describeIfFeature('ldap', 'LDAP', () => {
     test('LDAP user can sign in and sign out', async({ page }) => {
-        test.skip(!hasFeature('ldap'), 'Requires feature ldap');
-
-        const username = environment.user.username;
-        const password = environment.user.password;
-        test.skip(!username || !password, 'Requires MS_USER_STANDARD and MS_PASSWORD_STANDARD');
+        // A profile may declare a dedicated ldapUser; otherwise the standard user of
+        // the environment is expected to live in the LDAP store.
+        const identity = getIdentity('ldapUser') ?? getIdentity('standardUser');
+        test.skip(!identity, 'Requires an ldapUser identity or MS_USER_STANDARD/MS_PASSWORD_STANDARD');
 
         await test.step('Sign in with LDAP standard user credentials', async() => {
-            await login(page, username, password);
+            await login(page, identity.username, identity.password);
         });
 
         await test.step('Verify user menu is available and no error alert is shown', async() => {
