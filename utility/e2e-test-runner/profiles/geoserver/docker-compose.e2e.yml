@@ -3,10 +3,10 @@ version: "3.8"
 # E2E overlay adding a local GeoServer, so WMS/WFS interactions are exercised against
 # a disposable service instead of a remote one.
 #
-# SAMPLE_DATA installs the GeoServer release data directory, which provides the
-# well-known sample layers (topp:states, sf:*, tiger:*) used by the catalog specs.
-# The postgres init script adds a PostGIS table that seed-geoserver.sh publishes,
-# so DB-backed WFS behaviour (attribute table, filters) is covered as well.
+# The suites only use data this repository owns: the postgres init script creates a
+# PostGIS table that seed-geoserver.sh publishes as e2e:e2e_points, covering WMS and
+# DB-backed WFS behaviour (attribute table, filters). The GeoServer release sample
+# data is therefore not installed.
 
 services:
   postgres:
@@ -15,7 +15,7 @@ services:
 
   geoserver:
     image: docker.osgeo.org/geoserver:2.27.2
-    container_name: geoserver
+    container_name: e2e-geoserver
     restart: on-failure
     depends_on:
       postgres:
@@ -23,8 +23,12 @@ services:
     environment:
       GEOSERVER_ADMIN_USER: "${GEOSERVER_ADMIN_USER:-admin}"
       GEOSERVER_ADMIN_PASSWORD: "${GEOSERVER_ADMIN_PASSWORD:-geoserver}"
-      SAMPLE_DATA: "true"
+      SKIP_DEMO_DATA: "true"
       CORS_ENABLED: "true"
+      # Chart and counter widgets aggregate through WPS (gs:Aggregate), which the base
+      # image does not ship.
+      INSTALL_EXTENSIONS: "true"
+      STABLE_EXTENSIONS: "wps"
     ports:
       - "8082:8080"
     healthcheck:

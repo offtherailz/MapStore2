@@ -1,29 +1,57 @@
 [
   {
-    "op": "add",
-    "path": "/catalogServices",
+    "op": "replace",
+    "path": "/initialState/defaultState/catalog/default/services",
     "value": {
-      "services": {
-        "local_geoserver_wms": {
-          "url": "http://localhost:8082/geoserver/wms",
-          "type": "wms",
-          "title": "Local GeoServer WMS",
-          "autoload": true
-        },
-        "local_geoserver_wfs": {
-          "url": "http://localhost:8082/geoserver/wfs",
-          "type": "wfs",
-          "title": "Local GeoServer WFS",
-          "autoload": false
-        },
-        "local_geoserver_csw": {
-          "url": "http://localhost:8082/geoserver/csw",
-          "type": "csw",
-          "title": "Local GeoServer CSW",
-          "autoload": false
-        }
+      "local_geoserver_wms": {
+        "url": "http://localhost:8082/geoserver/wms",
+        "type": "wms",
+        "title": "Local GeoServer WMS",
+        "autoload": true
       },
-      "selectedService": "local_geoserver_wms"
+      "local_geoserver_wfs": {
+        "url": "http://localhost:8082/geoserver/wfs",
+        "type": "wfs",
+        "title": "Local GeoServer WFS",
+        "autoload": false
+      },
+      "local_geoserver_csw": {
+        "url": "http://localhost:8082/geoserver/csw",
+        "type": "csw",
+        "title": "Local GeoServer CSW",
+        "autoload": false
+      }
     }
+  },
+  {
+    "op": "replace",
+    "path": "/initialState/defaultState/catalog/default/selectedService",
+    "value": "local_geoserver_wms"
+  },
+  {
+    "op": "test",
+    "path": "/plugins/dashboard/22/name",
+    "value": "DashboardEditor"
+  },
+  {
+    "op": "replace",
+    "path": "/plugins/dashboard/22/cfg/services",
+    "value": {
+      "Local GeoServer WFS": {
+        "url": "http://localhost:8082/geoserver/wfs",
+        "type": "wfs",
+        "title": "Local GeoServer WFS"
+      },
+      "Local GeoServer WMS": {
+        "url": "http://localhost:8082/geoserver/wms",
+        "type": "wms",
+        "title": "Local GeoServer WMS"
+      }
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/plugins/dashboard/22/cfg/selectedService",
+    "value": "Local GeoServer WFS"
   }
 ]
