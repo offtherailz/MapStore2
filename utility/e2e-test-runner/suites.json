@@ -67,6 +67,14 @@
       "files": [
         "tests/map-tools.spec.js"
       ]
+    },
+    "dashboard": {
+      "title": "Dashboards",
+      "why": "Verify dashboard creation, text widgets and data widgets built on the local GeoServer layer.",
+      "active": true,
+      "files": [
+        "tests/dashboard.spec.js"
+      ]
     }
   }
 }
