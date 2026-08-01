@@ -59,6 +59,14 @@
       "files": [
         "tests/map-toc.spec.js"
       ]
+    },
+    "map-tools": {
+      "title": "Map tools",
+      "why": "Verify zoom controls, zoom to layer extent, projection readout and persistence of viewer changes.",
+      "active": true,
+      "files": [
+        "tests/map-tools.spec.js"
+      ]
     }
   }
 }
