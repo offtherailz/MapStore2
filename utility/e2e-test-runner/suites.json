@@ -75,6 +75,14 @@
       "files": [
         "tests/dashboard.spec.js"
       ]
+    },
+    "geostory": {
+      "title": "GeoStories",
+      "why": "Verify geostory creation, edit mode and section authoring.",
+      "active": true,
+      "files": [
+        "tests/geostory.spec.js"
+      ]
     }
   }
 }
