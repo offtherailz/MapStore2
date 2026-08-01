@@ -51,6 +51,14 @@
       "files": [
         "tests/geoserver.spec.js"
       ]
+    },
+    "map-toc": {
+      "title": "Map table of contents",
+      "why": "Verify layer visibility, settings, attribute table, removal and filtering in the map viewer.",
+      "active": true,
+      "files": [
+        "tests/map-toc.spec.js"
+      ]
     }
   }
 }
