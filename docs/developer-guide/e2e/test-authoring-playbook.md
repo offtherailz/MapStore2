@@ -127,18 +127,44 @@ Use this table before generating code.
 | Core behavior available everywhere | No | `auth`, `smoke`, `homepage`, `maps` |
 | LDAP-specific authentication behavior | Yes (`ldap`) | `ldap` |
 | GeoServer catalog integration behavior | Yes (`geoserverIntegration`) | `geoserver` |
+| Behavior needing the PostGIS fixture layer | Yes (`geoserverDb`) | `geoserver` |
 | Optional integration/capability behavior | Yes | profile-specific suite |
 
-Pattern:
+The full list of gates is `KNOWN_FEATURES` in `tests/config.js`; a profile enables them
+through `E2E_FEATURES`.
+
+Gate a whole spec file with `describeIfFeature`:
 
 ```js
-import { test } from '@playwright/test';
+import { test, expect, describeIfFeature } from './fixtures.js';
+
+describeIfFeature('ldap', 'LDAP', () => {
+    test('profile-specific behavior', async({ page }) => {
+        // steps
+    });
+});
+```
+
+Gate a single test with `test.skip` when the rest of the file is core behavior:
+
+```js
 import { hasFeature } from './config.js';
 
-test('profile-specific behavior', async({ page }) => {
-    test.skip(!hasFeature('ldap'), 'Requires feature ldap');
+test('behavior needing the fixture layer', async({ page }) => {
+    test.skip(!hasFeature('geoserverDb'), 'Requires feature geoserverDb');
     // steps
 });
+```
+
+Never hardcode credentials: ask for a named identity instead, so the same spec runs
+against a local stack, an LDAP profile or a customer instance.
+
+```js
+import { getIdentity } from './config.js';
+
+const identity = getIdentity('ldapUser') ?? getIdentity('standardUser');
+test.skip(!identity, 'Requires an ldapUser identity');
+await login(page, identity.username, identity.password);
 ```
 
 ## 7) Selector strategy (long-term stability)
@@ -150,6 +176,21 @@ Use selectors in this priority order to reduce maintenance cost:
 3. `getByText` only for stable user-facing text.
 4. `getByTestId` when available and intentionally maintained.
 5. CSS selectors only as last resort.
+
+In the viewers, most toolbar buttons carry no accessible name and only show a tooltip on
+hover, so their glyph is the stable hook — `button.toc-toolbar-button:has(.glyphicon-wrench)`
+rather than a position or a tooltip text. Two glyphs are worth remembering: `floppy-disk`
+saves a resource in place, `floppy-open` creates a copy of it.
+
+Reuse the helpers instead of rediscovering those selectors:
+
+| Helper | Covers |
+| --- | --- |
+| `helpers/map.js` | fixture layer descriptor, viewer routes, layers drawer, layer toolbar |
+| `helpers/dashboard.js` | dashboard editor, widget wizard, widget and resource saving |
+| `helpers/geostory.js` | story view and edit mode, section add bar |
+| `helpers/context.js` | context creator wizard |
+| `helpers/navigation.js` | app URLs, guided tour dismissal, tooltip clearing |
 
 Rules:
 
@@ -188,6 +229,8 @@ Quality pattern:
 - Suite pollution: putting profile-specific behavior in core suites.
 - Overly broad tests covering unrelated business behaviors.
 - Random test data without deterministic cleanup.
+- Importing `test`/`expect` from `@playwright/test` instead of `./fixtures.js`.
+- Hardcoded hosts, credentials or data owned by a third party.
 - Merging generated code without human validation.
 
 ## 10) Automation scope and cost awareness
@@ -207,53 +250,51 @@ Cost controls:
 - Track maintenance hotspots (frequent flaky tests, unstable pages).
 - Refactor helpers before adding more scenarios in unstable areas.
 
-## 11) Shared-state strategy: one-time setup with `beforeAll`
+## 11) Test data: fixtures instead of pre-existing resources
 
-Creating one map per test gives strong isolation but can be slow and noisy.
-Using pre-existing maps is faster but can create domino failures.
+Specs import `test` and `expect` from `./fixtures.js`, not from `@playwright/test`.
+Two fixtures come with it:
 
-Recommended compromise for MapStore2 suites:
+- `data` — factory for maps, dashboards, geostories, users and groups. Everything it
+  creates is deleted after the test, in reverse creation order, through the API. Names
+  are unique and prefixed with `E2E_`.
+- `api` — the authenticated GeoStore client (`tests/api/geostore.js`) behind the factory,
+  for lookups and for cases the factory does not cover.
 
-- Create one dedicated baseline map in `test.beforeAll` per spec file (or per suite shard).
-- Reuse that map across tests only if tests operate on separate, non-conflicting areas.
-- Remove baseline resources in `test.afterAll`.
-
-Guardrails to avoid cascade failures:
-
-1. Do not share mutable objects across unrelated behaviors.
-2. Keep test data names unique and traceable (`E2E <suite> <timestamp>`).
-3. If tests mutate shared state, use serial execution for that block.
-4. Never rely on pre-existing manual maps as test fixtures.
-5. If a test can permanently alter the baseline map, clone/reset first.
-
-Minimal pattern:
+Setup through the API, assert through the UI:
 
 ```js
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
-let baselineMapName;
-
-test.beforeAll(async({ browser }) => {
-    const page = await browser.newPage();
-    baselineMapName = `E2E Baseline ${Date.now()}`;
-    // create baseline map once
-    await page.close();
-});
-
-test.afterAll(async({ browser }) => {
-    const page = await browser.newPage();
-    // delete baseline map
-    await page.close();
-});
-
-test('scenario A uses baseline safely', async({ page }) => {
-    // use baseline map without breaking scenario B
-    await expect(page).toBeTruthy();
+test('a dashboard opens from the homepage', async({ page, data }) => {
+    const dashboard = await data.dashboard();
+    // the resource already exists, the test only validates the UI behavior
+    await expect(page.locator('.ms-resource-card').filter({ hasText: dashboard.name })).toBeVisible();
 });
 ```
 
-Use this strategy when speed is critical and behavior can be partitioned safely.
-If behavior is highly stateful or destructive, prefer strict per-test isolation.
+When the flow under test is the creation itself, take the name from the factory and
+adopt the resulting resource, so teardown works even if a later step fails:
+
+```js
+const mapName = data.name('map');
+// … create the map through the UI …
+const [resource] = await api.findResources('MAP', mapName);
+data.track({ id: resource.id, name: mapName, category: 'MAP' });
+```
+
+Rules:
+
+1. Never rely on pre-existing manual resources as test fixtures.
+2. Never point a spec at data or services outside this repository: use the fixture layer
+   published by the `geoserver` profile (`e2e:e2e_points`) and reach services through
+   `getServiceUrl`.
+3. Do not share mutable resources across unrelated behaviors; if a block mutates shared
+   state, run it serially.
+4. `globalSetup` removes leftover `E2E_*` fixtures before a run, so an interrupted run
+   never breaks the next one — but a spec must still clean up after itself.
+5. Only fall back to `beforeAll` for a per-file baseline when creating one resource per
+   test is measurably too slow, and remove it in `afterAll`.
 
 ## 12) AI limitations and review expectations
 
