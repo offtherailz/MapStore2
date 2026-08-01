@@ -17,7 +17,7 @@
 #
 # Profiles:
 #   base        Plain stack on http://localhost:8081/mapstore/
-#   geoserver   base + local GeoServer 8082 with sample data and a PostGIS layer
+#   geoserver   base + local GeoServer 8082 publishing the PostGIS fixture layer
 #   oidc        Auth stack on http://localhost/mapstore/ with Keycloak OpenID login
 #   ldap        Auth stack on http://localhost/mapstore/ with an LDAP-profile WAR
 #
