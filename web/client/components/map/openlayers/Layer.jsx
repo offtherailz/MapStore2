@@ -17,6 +17,20 @@ import omit from 'lodash/omit';
 import isEqual from 'lodash/isEqual';
 import isNil from 'lodash/isNil';
 import { getZoomFromResolution } from '../../../utils/MapUtils';
+import rateLimitManager from '../../../utils/RateLimitManager';
+
+/**
+ * A tile that failed while its server is rate limiting us is not a layer error: it is going to be
+ * sent again as soon as the bucket frees a slot, and reporting it would dim the layer in the TOC
+ * and trigger the automatic refresh, putting the whole viewport back in the queue.
+ * @param {string} src the url of the tile or image that failed
+ * @param {object} options the layer options
+ * @return {boolean} true when the failure is only the effect of the throttling
+ */
+const isRateLimited = (src, options = {}) => !!src && rateLimitManager.isThrottled(src, {
+    msRateLimitBucket: options.msRateLimitBucket,
+    msRateLimitKey: options.msRateLimitKey
+});
 
 export default class OpenlayersLayer extends React.Component {
     static propTypes = {
@@ -253,7 +267,7 @@ export default class OpenlayersLayer extends React.Component {
                 }
             });
             this.layer.getSource().on('tileloaderror', (event) => {
-                tileLoadEndStream$.next({type: 'tileloaderror', event});
+                tileLoadEndStream$.next({type: 'tileloaderror', event, rateLimited: isRateLimited(event?.tile?.src_, options)});
                 this.tilestoload--;
                 if (this.tilestoload === 0) {
                     tileStopStream$.next();
@@ -264,7 +278,7 @@ export default class OpenlayersLayer extends React.Component {
                 .bufferWhen(() => tileStopStream$)
                 .subscribe({
                     next: (tileEvents) => {
-                        const errors = tileEvents.filter(e => e.type === 'tileloaderror');
+                        const errors = tileEvents.filter(e => e.type === 'tileloaderror' && !e.rateLimited);
                         if (errors.length > 0 && (options && !options.hideErrors || !options)) {
                             this.props.onLayerLoad(options.id, {error: true});
                             this.props.onLayerError(options.id, tileEvents.length, errors.length);
@@ -297,7 +311,7 @@ export default class OpenlayersLayer extends React.Component {
             });
             this.layer.getSource().on('imageloaderror', (event) => {
                 this.imagestoload--;
-                imageLoadEndStream$.next({type: 'imageloaderror', event});
+                imageLoadEndStream$.next({type: 'imageloaderror', event, rateLimited: isRateLimited(event?.image?.src_, options)});
                 if (this.imagestoload === 0) {
                     imageStopStream$.next();
                 }
@@ -307,7 +321,7 @@ export default class OpenlayersLayer extends React.Component {
                 .bufferWhen(() => imageStopStream$)
                 .subscribe({
                     next: (imageEvents) => {
-                        const errors = imageEvents.filter(e => e.type === 'imageloaderror');
+                        const errors = imageEvents.filter(e => e.type === 'imageloaderror' && !e.rateLimited);
                         if (errors.length > 0) {
                             this.props.onLayerLoad(options.id, {error: true});
                             if (options && !options.hideErrors || !options) {

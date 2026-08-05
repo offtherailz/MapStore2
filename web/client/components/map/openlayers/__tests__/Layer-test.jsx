@@ -2742,13 +2742,13 @@ describe('Openlayers layer', () => {
             }
         }, 20);
     });
-    it('releases the tile queue and retries after a long rate-limit wait', (done) => {
+    it('spaces the tiles of a rate limited bucket instead of flagging them in error', (done) => {
         ConfigUtils.setConfigProp('rateLimit', {
             baseDelay: 1,
-            maxDelay: 100,
-            maxTileWait: 0
+            maxDelay: 100
         });
         const src = "http://sample.server/geoserver/wms?SERVICE=WMS&LAYERS=nurc:Long_Wait&BBOX=1,2,3,4";
+        const other = "http://sample.server/geoserver/wms?SERVICE=WMS&LAYERS=nurc:Long_Wait&BBOX=5,6,7,8";
         const options = {
             type: "wms",
             visibility: true,
@@ -2762,31 +2762,45 @@ describe('Openlayers layer', () => {
             options={options}
             map={map}
         />, document.getElementById("container"));
-        let errorState;
-        let loadCalls = 0;
-        const image = {
-            getImage: () => ({ addEventListener: () => {} }),
-            setState: (state) => {
-                errorState = state;
-            },
-            load: () => {
-                loadCalls++;
+        const sent = [];
+        const tile = (url) => ({
+            getImage: () => ({
+                addEventListener: () => {},
+                set src(value) {
+                    sent.push(value);
+                },
+                get src() {
+                    return url;
+                }
+            }),
+            setState: () => {
+                throw new Error('a tile waiting for its slot must not be flagged in error');
             }
-        };
+        });
 
         rateLimitManager.register429(src, {'Retry-After': '0.05'});
-        layer.layer.getSource().getTileLoadFunction()(image, src);
+        const load = layer.layer.getSource().getTileLoadFunction();
+        load(tile(src), src);
+        load(tile(other), other);
 
-        expect(errorState).toBe(ImageState.ERROR);
-        expect(loadCalls).toBe(0);
+        expect(sent.length).toBe(0);
+        // the two tiles share the bucket, so they leave one spacing interval apart
         setTimeout(() => {
             try {
-                expect(loadCalls).toBe(1);
-                done();
+                expect(sent).toEqual([src]);
             } catch (e) {
                 done(e);
+                return;
             }
-        }, 100);
+            setTimeout(() => {
+                try {
+                    expect(sent).toEqual([src, other]);
+                    done();
+                } catch (e) {
+                    done(e);
+                }
+            }, 60);
+        }, 60);
     });
     it('stops the native image fallback after its 429 retries are exhausted', (done) => {
         ConfigUtils.setConfigProp('rateLimit', {

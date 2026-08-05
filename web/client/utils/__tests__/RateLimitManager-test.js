@@ -93,8 +93,6 @@ describe('RateLimitManager', () => {
         const waitPromise = manager.wait(url).then(() => {
             resolved = true;
         });
-        expect(manager.getBucket(url).pendingWaiters.length).toBe(1);
-
         currentTime = now + 500;
         manager.register429(url, { 'retry-after': '2' });
 
@@ -104,7 +102,6 @@ describe('RateLimitManager', () => {
         scheduled.shift().resolve();
 
         expect(resolved).toBe(false);
-        expect(manager.getBucket(url).pendingWaiters.length).toBe(1);
         expect(scheduled.length).toBe(1);
         expect(scheduled[0].delay).toBe(1500);
 
@@ -113,7 +110,6 @@ describe('RateLimitManager', () => {
         waitPromise
             .then(() => {
                 expect(resolved).toBe(true);
-                expect(manager.getBucket(url).pendingWaiters.length).toBe(0);
                 done();
             })
             .catch(done);
@@ -197,10 +193,9 @@ describe('RateLimitManager', () => {
         expect(manager.register429(url).shouldRetry).toBe(false);
     });
 
-    it('defaults to three retries and a two-second OpenLayers wait', () => {
+    it('defaults to three retries', () => {
         const manager = new RateLimitManager();
 
         expect(manager.getRetryAttempts()).toBe(3);
-        expect(manager.getMaxTileWait()).toBe(2000);
     });
 });

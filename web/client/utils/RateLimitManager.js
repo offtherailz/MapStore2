@@ -13,12 +13,13 @@ const DEFAULT_CONFIG = {
     baseDelay: 1000,
     maxDelay: 60000,
     maxRetries: 3,
-    maxTileWait: 2000,
     defaultBucket: 'wmsLayer',
     bucketRules: []
 };
 
 const RATE_LIMIT_STATUS = 429;
+const MIN_SPACING = 100; // below this the spacing is noise and the bucket is considered healthy again
+const SUCCESSES_BEFORE_RELAXING = 4; // consecutive successes needed before giving part of the rate back
 
 const normalizeConfig = (config = {}) => ({
     ...DEFAULT_CONFIG,
@@ -29,7 +30,6 @@ const normalizeConfig = (config = {}) => ({
     maxRetries: config.maxRetries === null || Number.isFinite(config.maxRetries)
         ? config.maxRetries
         : DEFAULT_CONFIG.maxRetries,
-    maxTileWait: Number.isFinite(config.maxTileWait) ? config.maxTileWait : DEFAULT_CONFIG.maxTileWait,
     bucketRules: Array.isArray(config.bucketRules) ? config.bucketRules : []
 });
 
@@ -175,7 +175,9 @@ export class RateLimitManager {
             this.buckets[key] = {
                 blockedUntil: 0,
                 consecutive429: 0,
-                pendingWaiters: []
+                spacing: 0,        // minimum interval between two requests, learnt from Retry-After
+                nextAllowedAt: 0,  // instant the next request may leave, moved forward by every reservation
+                successStreak: 0
             };
         }
         return this.buckets[key];
@@ -189,38 +191,73 @@ export class RateLimitManager {
         return Math.max(0, bucket.blockedUntil - this.now());
     }
 
+    /**
+     * True while the bucket is spacing its requests, i.e. after a 429 and before it has
+     * recovered. A bucket that never answered 429 is never throttled and never paced.
+     * @param {string} url the request url
+     * @param {object} options bucket options
+     * @return {boolean} whether the requests to this bucket are being spaced
+     */
+    isThrottled(url, options = {}) {
+        const key = this.getBucketKey(url, options);
+        const bucket = key ? this.buckets[key] : null;
+        return !!bucket && bucket.spacing > 0;
+    }
+
+    /**
+     * How long a request would have to wait before leaving, without taking the slot.
+     * Callers that only need to decide whether to hold a request back, like the tile queue,
+     * use this and leave the reservation to whoever actually sends the request.
+     * @param {string} url the request url
+     * @param {object} options bucket options
+     * @return {number} milliseconds to wait, 0 when the request can leave now
+     */
+    getSlotDelay(url, options = {}) {
+        const key = this.getBucketKey(url, options);
+        const bucket = key ? this.buckets[key] : null;
+        if (!bucket || !bucket.spacing) {
+            return 0;
+        }
+        return Math.max(0, Math.max(bucket.blockedUntil, bucket.nextAllowedAt) - this.now());
+    }
+
+    /**
+     * Books the next free slot of the bucket for the caller and returns how long it has to
+     * wait for it. Reserving moves the bucket forward by one spacing interval, so concurrent
+     * callers are handed consecutive slots instead of all waking up together.
+     * @param {string} url the request url
+     * @param {object} options bucket options
+     * @return {number} milliseconds to wait before sending
+     */
+    reserveSlot(url, options = {}) {
+        const bucket = this.getBucket(url, options);
+        if (!bucket || !bucket.spacing) {
+            return 0;
+        }
+        const now = this.now();
+        const start = Math.max(now, bucket.blockedUntil, bucket.nextAllowedAt);
+        bucket.nextAllowedAt = start + bucket.spacing;
+        return start - now;
+    }
+
     wait(url, options = {}) {
-        const delay = this.getWaitDelay(url, options);
+        const delay = this.reserveSlot(url, options);
         if (!delay) {
             return Promise.resolve();
         }
         const bucket = this.getBucket(url, options);
-        if (!bucket) {
-            return Promise.resolve();
-        }
         return new Promise((resolve) => {
-            const waiter = {
-                resolved: false,
-                resolve
-            };
-            bucket.pendingWaiters.push(waiter);
-            const resolveWaiter = () => {
-                if (waiter.resolved) {
-                    return;
-                }
-                waiter.resolved = true;
-                bucket.pendingWaiters = bucket.pendingWaiters.filter((pendingWaiter) => pendingWaiter !== waiter);
-                resolve();
-            };
-            const drainWhenReady = () => {
+            // the reserved instant can be pushed further away by a 429 arriving in the meantime,
+            // so the slot is re-checked against the block before letting the request through
+            const sendWhenReady = () => {
                 const remainingDelay = Math.max(0, bucket.blockedUntil - this.now());
                 if (remainingDelay) {
-                    this.scheduler(drainWhenReady, remainingDelay);
+                    this.scheduler(sendWhenReady, remainingDelay);
                     return;
                 }
-                resolveWaiter();
+                resolve();
             };
-            this.scheduler(drainWhenReady, delay);
+            this.scheduler(sendWhenReady, delay);
         });
     }
 
@@ -252,9 +289,17 @@ export class RateLimitManager {
             Number.isFinite(retryAfterDelay) ? retryAfterDelay : exponentialDelay
         );
         bucket.blockedUntil = Math.max(bucket.blockedUntil, this.now() + delay);
+        // the server just told us how far apart it wants the requests: that interval becomes the
+        // pace of the whole bucket, not only of the request that was refused
+        bucket.spacing = delay;
+        bucket.nextAllowedAt = bucket.blockedUntil;
+        bucket.successStreak = 0;
 
         const maxRetries = config.maxRetries;
-        const shouldRetry = maxRetries === null || maxRetries === undefined || bucket.consecutive429 <= maxRetries;
+        // the budget belongs to the single request: a viewport is dozens of concurrent tiles and a
+        // shared counter would be spent before most of them had their first retry
+        const attempt = Number.isFinite(options.attempt) ? options.attempt : bucket.consecutive429;
+        const shouldRetry = maxRetries === null || maxRetries === undefined || attempt <= maxRetries;
         return {
             shouldRetry,
             delay,
@@ -266,13 +311,21 @@ export class RateLimitManager {
     registerSuccess(url, options = {}) {
         const key = this.getBucketKey(url, options);
         const bucket = key ? this.buckets[key] : null;
-        if (bucket) {
-            bucket.consecutive429 = Math.max(0, bucket.consecutive429 - 1);
+        if (!bucket) {
+            return;
         }
-    }
-
-    getMaxTileWait() {
-        return this.getEffectiveConfig().maxTileWait;
+        bucket.consecutive429 = Math.max(0, bucket.consecutive429 - 1);
+        if (!bucket.spacing || ++bucket.successStreak < SUCCESSES_BEFORE_RELAXING) {
+            return;
+        }
+        // the rate is given back a half at a time: dropping the spacing in one go would send the
+        // whole viewport again and earn a new 429
+        bucket.successStreak = 0;
+        bucket.spacing = Math.floor(bucket.spacing / 2);
+        if (bucket.spacing < MIN_SPACING) {
+            bucket.spacing = 0;
+            bucket.nextAllowedAt = 0;
+        }
     }
 
     getRetryAttempts() {

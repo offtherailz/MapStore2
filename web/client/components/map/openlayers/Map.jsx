@@ -24,6 +24,7 @@ import ConfigUtils from '../../../utils/ConfigUtils';
 import mapUtils, { isNearlyEqual, getResolutionsForProjection } from '../../../utils/MapUtils';
 import projUtils from '../../../utils/openlayers/projUtils';
 import { DEFAULT_INTERACTION_OPTIONS } from '../../../utils/openlayers/DrawUtils';
+import { installTilePacing } from '../../../utils/openlayers/RateLimitPacing';
 
 import {isEqual, find, throttle, isArray, isNil} from 'lodash';
 
@@ -159,6 +160,7 @@ class OpenlayersMap extends React.Component {
         });
 
         this.map = map;
+        installTilePacing(map);
         if (this.props.registerHooks) {
             this.registerHooks();
         }

@@ -74,7 +74,6 @@ This is the main structure:
     // maximum consecutive retries; null explicitly enables unlimited retries
     "maxRetries": 3,
     // maximum time an OpenLayers tile can occupy the loading queue while waiting
-    "maxTileWait": 2000,
     // default bucketing strategy: "origin", "path" or "wmsLayer"
     "defaultBucket": "wmsLayer",
     // optional per-server bucketing rules
@@ -252,7 +251,6 @@ For configuring plugins, see the [Configuring Plugins Section](plugins-documenta
   - `baseDelay` - First exponential backoff delay in milliseconds when `Retry-After` is missing. Default is `1000`.
   - `maxDelay` - Maximum delay in milliseconds for both exponential backoff and `Retry-After`. Default is `60000`.
   - `maxRetries` - Maximum number of consecutive retries per bucket. Default is `3`; set it explicitly to `null` to retry until success, cancellation, or a non-429 error.
-  - `maxTileWait` - Maximum time in milliseconds that an OpenLayers tile stays in the shared loading queue while waiting for a rate-limit bucket. For longer delays, the tile enters the error state to release the queue and is loaded again after the backoff. Default is `2000`.
   - `defaultBucket` - Default throttling scope. Supported values are `origin`, `path`, and `wmsLayer`. Default is `wmsLayer`.
   - `bucketRules` - Array of `{ "urlPattern": "...", "bucket": "..." }` rules used to override the default bucket for matching URLs. A `wmsLayer` key contains the URL origin, path, and normalized `LAYERS` value; it ignores every other query parameter. Requests without a layer name, including MapStore API requests, are not assigned to the default `wmsLayer` bucket. Use an explicit `origin` or `path` rule to opt other endpoints into throttling.
 
@@ -264,8 +262,7 @@ For configuring plugins, see the [Configuring Plugins Section](plugins-documenta
       "baseDelay": 1000,
       "maxDelay": 60000,
       "maxRetries": 3,
-      "maxTileWait": 2000,
-      "defaultBucket": "wmsLayer",
+        "defaultBucket": "wmsLayer",
       "bucketRules": [
         {
           "urlPattern": ".*tiles.example.org/.*",

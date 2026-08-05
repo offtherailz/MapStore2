@@ -35,8 +35,10 @@ import { OL_VECTOR_FORMATS, applyStyle } from '../../../../utils/openlayers/Vect
 
 import { proxySource, getWMSURLs, wmsToOpenlayersOptions, toOLAttributions, generateTileGrid } from '../../../../utils/openlayers/WMSUtils';
 import rateLimitManager from '../../../../utils/RateLimitManager';
+import { registerSourceBucket } from '../../../../utils/openlayers/RateLimitPacing';
 
 const failTiles = new Set(); // registry of fail tile urls to prevent reloading loops
+const rateLimitRetries = new Map(); // tile url -> attempts already spent against a rate limited bucket
 const loadingErrorRefreshState = new Map(); // layer id -> { attempts, windowStart }
 const MAX_LOADING_ERROR_REFRESH_ATTEMPTS = 3; // caps refresh() retries within the cooldown window
 const LOADING_ERROR_REFRESH_COOLDOWN_MS = 30000; // window resets only after this much quiet time, NOT on every transient recovery (error/success can oscillate every render during a real loop, which would otherwise reset the counter before it ever caps)
@@ -74,23 +76,48 @@ const getRateLimitRequestConfig = (options, src) => ({
     ...getRateLimitOptions(options)
 });
 
-const loadWhenRateLimitAllows = (image, src, options, load) => {
-    const rateLimitOptions = getRateLimitOptions(options);
-    const waitDelay = rateLimitManager.getWaitDelay(src, rateLimitOptions);
-    if (waitDelay > rateLimitManager.getMaxTileWait()) {
-        // Release the shared OpenLayers tile queue during long backoffs. The tile
-        // remains retryable because it is deliberately not added to failTiles.
-        setErrorState(image);
-        if (typeof image.load === 'function') {
-            rateLimitManager.wait(src, rateLimitOptions).then(() => {
-                if (!failTiles.has(src)) {
-                    image.load();
-                }
-            });
-        }
+// how many times a single tile can be sent again while its bucket is rate limiting us,
+// following the same `maxRetries` budget the interceptor applies to the other requests
+const getTileRetryBudget = () => rateLimitManager.getRetryAttempts();
+
+const isRateLimitError = (error) => error?.status === 429
+    || error?.response?.status === 429
+    || error?.originalError?.response?.status === 429;
+
+/**
+ * Sends the tile again once the bucket has a slot for it.
+ * The tile has to go through `ERROR` first, because that is the only state `Tile#load` accepts
+ * to start over, and it is also what gives OpenLayers a fresh image to paint on: the one that
+ * failed has already been replaced by the blank placeholder.
+ * @param {object} image the `ol/ImageTile` or `ol/Image` passed to the load function
+ * @param {string} src the tile url
+ * @return {boolean} true when the tile was handed back for another attempt
+ */
+const retryRateLimitedTile = (image, src) => {
+    const retries = rateLimitRetries.get(src) || 0;
+    if (typeof image.load !== 'function' || retries >= getTileRetryBudget()) {
+        return false;
+    }
+    rateLimitRetries.set(src, retries + 1);
+    setErrorState(image);
+    // no delay here: the load function reserves the slot for the request it is about to send,
+    // and adding a second wait would space the same tile twice
+    image.load();
+    return true;
+};
+
+const handleLoadError = (image, src, options, error) => {
+    const rateLimited = isRateLimitError(error) && !!rateLimitManager.getBucketKey(src, getRateLimitOptions(options));
+    if (rateLimited && retryRateLimitedTile(image, src)) {
         return;
     }
-    rateLimitManager.wait(src, rateLimitOptions).then(load);
+    setErrorState(image);
+    failTiles.add(src);
+    console.error(error);
+};
+
+const loadWhenRateLimitAllows = (image, src, options, load) => {
+    rateLimitManager.wait(src, getRateLimitOptions(options)).then(load);
 };
 
 const loadFunction = (options, headers) => function(image, src) {
@@ -133,9 +160,7 @@ const loadFunction = (options, headers) => function(image, src) {
                     }
                 }
             }).catch(e => {
-                setErrorState(image);
-                failTiles.add(src);
-                console.error(e);
+                handleLoadError(image, src, options, e);
             });
         } else {
             if (headers) { // case of custom headers is setted in localConfig, example requestsConfigurationRules
@@ -156,12 +181,21 @@ const loadFunction = (options, headers) => function(image, src) {
                             throw new Error(response.dataText);
                         }
                     }).catch(errorMessage => {
-                        setErrorState(image);          // set error state for tile and removed from the queue to prevent reloading loops
-                        failTiles.add(src);            // indexing fail url tile to prevent reloading loops
-                        console.error(errorMessage);   // show ogc exception in console for debugging
+                        // a 429 is transient and the tile is sent again, any other failure is
+                        // blacklisted as before to prevent reloading loops
+                        handleLoadError(image, src, options, errorMessage);
                     });
             } else {
+                const rateLimitOptions = getRateLimitOptions(options);
                 const onDirectImageError = () => {
+                    // a native image never exposes the status, so the first failure of a bucket is
+                    // repeated through axios to find out whether it was a 429. Once the bucket is
+                    // known to be rate limited that answer is already there and the tile goes
+                    // straight back to the queue, without spending a second request to ask again
+                    if (rateLimitManager.isThrottled(src, rateLimitOptions)) {
+                        handleLoadError(image, src, options, { status: 429 });
+                        return;
+                    }
                     axios.get(newSrc, {
                         responseType: 'blob',
                         ...getRateLimitRequestConfig(options, src)
@@ -179,12 +213,17 @@ const loadFunction = (options, headers) => function(image, src) {
                             }
                         })
                         .catch((errorMessage) => {
-                            setErrorState(image);
-                            failTiles.add(src);
-                            console.error(errorMessage);
+                            handleLoadError(image, src, options, errorMessage);
                         });
                 };
                 if (typeof img.addEventListener === 'function') {
+                    // the native path is the only one that does not go through the interceptor, so
+                    // its outcome is reported to the manager here, otherwise a bucket paced after a
+                    // 429 would never see the successes that let it speed up again
+                    img.addEventListener('load', () => {
+                        rateLimitRetries.delete(src);
+                        rateLimitManager.registerSuccess(src, rateLimitOptions);
+                    }, { once: true });
                     img.addEventListener('error', onDirectImageError, { once: true });
                 }
                 img.src = newSrc;
@@ -236,6 +275,7 @@ const createLayer = (options, map, mapId) => {
     };
 
     const wmsSource = new TileWMS({ ...sourceOptions });
+    registerSourceBucket(wmsSource, options);
     const layerConfig = {
         msId: options.id,
         opacity: options.opacity !== undefined ? options.opacity : 1,
