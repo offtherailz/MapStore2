@@ -49,6 +49,13 @@ const LOADING_ERROR_REFRESH_COOLDOWN_MS = 30000; // window resets only after thi
  * @param {object} image the `ol/ImageTile` or `ol/Image` passed to the load function
  */
 const setErrorState = (image) => {
+    // `EMPTY` is the state OpenLayers assigns when the cache releases a tile that was
+    // already in error; moving back to `ERROR` from there makes `Tile.setState` throw
+    // `Tile load sequence violation`. Re-flagging a tile still in `ERROR` is a no-op.
+    const state = typeof image.getState === 'function' ? image.getState() : image.state;
+    if (state === ImageState.ERROR || state === ImageState.EMPTY) {
+        return;
+    }
     if (image.setState) {
         image.setState(ImageState.ERROR);
         return;
