@@ -35,11 +35,11 @@ import { OL_VECTOR_FORMATS, applyStyle } from '../../../../utils/openlayers/Vect
 
 import { proxySource, getWMSURLs, wmsToOpenlayersOptions, toOLAttributions, generateTileGrid } from '../../../../utils/openlayers/WMSUtils';
 import rateLimitManager from '../../../../utils/RateLimitManager';
+import { probeBucket, isRateLimitError } from '../../../../utils/RateLimitProbe';
 import { registerSourceBucket } from '../../../../utils/openlayers/RateLimitPacing';
 
 const failTiles = new Set(); // registry of fail tile urls to prevent reloading loops
 const rateLimitRetries = new Map(); // tile url -> attempts already spent against a rate limited bucket
-const bucketProbes = new Map(); // bucket key -> the fallback request in flight, shared by the tiles failing together
 const loadingErrorRefreshState = new Map(); // layer id -> { attempts, windowStart }
 const MAX_LOADING_ERROR_REFRESH_ATTEMPTS = 3; // caps refresh() retries within the cooldown window
 const LOADING_ERROR_REFRESH_COOLDOWN_MS = 30000; // window resets only after this much quiet time, NOT on every transient recovery (error/success can oscillate every render during a real loop, which would otherwise reset the counter before it ever caps)
@@ -81,10 +81,6 @@ const getRateLimitRequestConfig = (options, src) => ({
 // following the same `maxRetries` budget the interceptor applies to the other requests
 const getTileRetryBudget = () => rateLimitManager.getRetryAttempts();
 
-const isRateLimitError = (error) => error?.status === 429
-    || error?.response?.status === 429
-    || error?.originalError?.response?.status === 429;
-
 /**
  * Sends the tile again once the bucket has a slot for it.
  * The tile has to go through `ERROR` first, because that is the only state `Tile#load` accepts
@@ -115,37 +111,6 @@ const handleLoadError = (image, src, options, error) => {
     setErrorState(image);
     failTiles.add(src);
     console.error(error);
-};
-
-/**
- * Runs the axios fallback of the first tile that fails on a bucket and lets the tiles failing at
- * the same moment reuse its outcome.
- * A whole viewport fails together, and a native image tells nothing about why, so without this
- * every tile would spend a request to ask the same question to a server that is already refusing
- * them. The followers get the answer, not the image: a 429 sends them back to the queue, anything
- * else is the failure they would have found on their own.
- * @param {string} src the tile url, used to resolve the bucket
- * @param {object} options the layer options
- * @param {function} fetchTile issues the fallback request for the tile that probes
- * @return {Promise} resolved when the tile was painted, rejected with the failure to handle
- */
-const probeBucket = (src, options, fetchTile) => {
-    const key = rateLimitManager.getBucketKey(src, getRateLimitOptions(options));
-    const running = key && bucketProbes.get(key);
-    if (running) {
-        return running.then((failure) => Promise.reject(failure || new Error(`Tile load failed: ${src}`)));
-    }
-    const rateLimitOptions = getRateLimitOptions(options);
-    rateLimitManager.beginProbe(src, rateLimitOptions);
-    const probe = fetchTile();
-    if (key) {
-        bucketProbes.set(key, probe.then(() => null, (failure) => failure).then((failure) => {
-            bucketProbes.delete(key);
-            rateLimitManager.endProbe(src, rateLimitOptions);
-            return failure;
-        }));
-    }
-    return probe;
 };
 
 const loadWhenRateLimitAllows = (image, src, options, load) => {
@@ -244,7 +209,7 @@ const loadFunction = (options, headers) => function(image, src) {
                         handleLoadError(image, src, options, { status: 429 });
                         return;
                     }
-                    probeBucket(src, options, fetchThroughAxios)
+                    probeBucket(src, rateLimitOptions, fetchThroughAxios)
                         .catch((errorMessage) => {
                             handleLoadError(image, src, options, errorMessage);
                         });

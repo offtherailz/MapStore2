@@ -28,6 +28,7 @@ import { reprojectBbox } from '../../../utils/CoordinatesUtils';
 import { throttle, isEqual, debounce } from 'lodash';
 import TIFFImageryProvider from 'tiff-imagery-provider';
 import { getCOGPixelData } from '../../../utils/cog/IdentifyUtils';
+import { installRequestPacing, uninstallRequestPacing } from '../../../utils/cesium/RateLimitPacing';
 
 class CesiumMap extends React.Component {
     static propTypes = {
@@ -174,6 +175,7 @@ class CesiumMap extends React.Component {
         this.setMousePointer(this.props.mousePointer);
 
         this.map = map;
+        installRequestPacing(map);
         const scene = this.map.scene;
         // update interactions after this.map is defined
         this.updateInteractions(this.props);
@@ -256,6 +258,7 @@ class CesiumMap extends React.Component {
     }
 
     componentWillUnmount() {
+        uninstallRequestPacing(this.map);
         this.clickStream$.complete();
         this.pauserStream$.complete();
         this.hand.destroy();

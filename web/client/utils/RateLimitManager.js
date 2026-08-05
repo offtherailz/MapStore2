@@ -334,12 +334,14 @@ export class RateLimitManager {
         if (!delay) {
             return Promise.resolve();
         }
+        // a url can be paced without having a bucket of its own: the pace is kept per server while
+        // the bucket needs a layer name, which not every request carries
         const bucket = this.getBucket(url, options);
         return new Promise((resolve) => {
             // the reserved instant can be pushed further away by a 429 arriving in the meantime,
             // so the slot is re-checked against the block before letting the request through
             const sendWhenReady = () => {
-                const remainingDelay = Math.max(0, bucket.blockedUntil - this.now());
+                const remainingDelay = Math.max(0, (bucket ? bucket.blockedUntil : 0) - this.now());
                 if (remainingDelay) {
                     this.scheduler(sendWhenReady, remainingDelay);
                     return;

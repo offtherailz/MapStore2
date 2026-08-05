@@ -16,6 +16,8 @@ import { isVectorFormat } from '../VectorTileUtils';
 import { optionsToVendorParams } from '../VendorParamsUtils';
 import { randomInt } from '../RandomUtils';
 import rateLimitManager from '../RateLimitManager';
+import { probeBucket, isRateLimitError } from '../RateLimitProbe';
+import axios from '../../libs/ajax';
 
 function getQueryString(parameters) {
     return Object.keys(parameters).map((key) => key + '=' + encodeURIComponent(parameters[key])).join('&');
@@ -31,24 +33,44 @@ const getRateLimitOptions = (options = {}) => ({
     msRateLimitKey: options.msRateLimitKey
 });
 
+// the resource can hand back a template or a relative url, which would resolve against the
+// application origin and throttle MapStore itself instead of the service
 const getResourceUrl = (resource, fallbackUrl) => {
-    if (resource && typeof resource.getUrlComponent === 'function') {
-        return resource.getUrlComponent(true, false);
-    }
-    return resource?.url || fallbackUrl;
+    const url = typeof resource?.getUrlComponent === 'function'
+        ? resource.getUrlComponent(true, false)
+        : resource?.url;
+    return /^https?:\/\//i.test(url || '') ? url : fallbackUrl;
 };
 
+// Cesium loads its imagery with a native image, which hides the status, so a 429 reaches here as a
+// plain failure. One request per server asks what happened and the tiles failing with it reuse the
+// answer, instead of each of them asking the same question to a server that is already refusing.
+const askServer = (url, rateLimitOptions) => probeBucket(url, rateLimitOptions, () => axios.get(url, {
+    responseType: 'blob',
+    _msRateLimitUrl: url,
+    // the imagery owns its retries through `retryCallback`, the interceptor must not add more
+    _msRateLimitNoRetry: true,
+    ...rateLimitOptions
+}));
+
+const retryWhenAllowed = (url, rateLimitOptions) => rateLimitManager
+    .wait(url, rateLimitOptions)
+    .then(() => true);
+
 const createRateLimitRetryCallback = (options, fallbackUrl) => (resource, error) => {
-    if (error?.statusCode !== 429) {
-        return false;
-    }
     const url = getResourceUrl(resource, fallbackUrl);
     const rateLimitOptions = getRateLimitOptions(options);
-    const response = rateLimitManager.register429(url, error.responseHeaders, rateLimitOptions);
-    if (!response.shouldRetry) {
-        return false;
+    if (error?.statusCode === 429) {
+        const response = rateLimitManager.register429(url, error.responseHeaders, rateLimitOptions);
+        return response.shouldRetry ? retryWhenAllowed(url, rateLimitOptions) : false;
     }
-    return rateLimitManager.wait(url, rateLimitOptions).then(() => true);
+    if (rateLimitManager.isThrottled(url, rateLimitOptions)) {
+        return retryWhenAllowed(url, rateLimitOptions);
+    }
+    return askServer(url, rateLimitOptions).then(
+        () => false,
+        (probeError) => (isRateLimitError(probeError) ? retryWhenAllowed(url, rateLimitOptions) : false)
+    );
 };
 
 const getRateLimitResourceOptions = (options, fallbackUrl) => ({

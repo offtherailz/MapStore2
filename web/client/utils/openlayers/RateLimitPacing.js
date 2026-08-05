@@ -60,14 +60,21 @@ export const installTilePacing = (map) => {
     queue.msRateLimitPaced = true;
 
     let pendingRender = null;
+    let pendingAt = Infinity;
     const renderIn = (delay) => {
-        if (pendingRender !== null) {
+        const at = Date.now() + Math.max(delay, MIN_RENDER_DELAY);
+        // buckets due sooner win: a frame already scheduled for a long backoff must not swallow
+        // the one a shorter wait needs
+        if (pendingRender !== null && at >= pendingAt) {
             return;
         }
+        clearTimeout(pendingRender);
+        pendingAt = at;
         pendingRender = setTimeout(() => {
             pendingRender = null;
+            pendingAt = Infinity;
             map.render();
-        }, Math.max(delay, MIN_RENDER_DELAY));
+        }, at - Date.now());
     };
 
     queue.loadMoreTiles = function(maxTotalLoading, maxNewLoads) {
