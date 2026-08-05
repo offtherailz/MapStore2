@@ -71,6 +71,7 @@
     "baseDelay": 1000,
     "maxDelay": 60000,
     "maxRetries": 3,
+    "pacingBucket": "origin",
     "defaultBucket": "wmsLayer",
     "bucketRules": []
   },

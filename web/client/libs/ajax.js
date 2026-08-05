@@ -179,10 +179,18 @@ axios.interceptors.response.use(response => {
     if (error?.response?.status === 429 && error.config) {
         const rateLimitUrl = getRateLimitUrl(error.config);
         const rateLimitOptions = getRateLimitOptions(error.config);
-        const rateLimitResponse = rateLimitManager.register429(rateLimitUrl, error.response.headers, rateLimitOptions);
-        if (rateLimitResponse.shouldRetry) {
+        // the budget follows the single request: dozens of concurrent tiles share a bucket and a
+        // counter kept there would be spent before most of them had their first retry
+        const attempt = (error.config._msRateLimitAttempt || 0) + 1;
+        const rateLimitResponse = rateLimitManager.register429(rateLimitUrl, error.response.headers, {
+            ...rateLimitOptions,
+            attempt
+        });
+        // a request sent only to find out the status of a failed native image is not retried here:
+        // the caller owns the retry and a second one would double the traffic towards a busy server
+        if (rateLimitResponse.shouldRetry && !error.config._msRateLimitNoRetry) {
             return rateLimitManager.wait(rateLimitUrl, rateLimitOptions)
-                .then(() => axios({ ...error.config }));
+                .then(() => axios({ ...error.config, _msRateLimitAttempt: attempt }));
         }
     }
     if (error.config && proxyUrl && !(error.config.url || '').includes(proxyUrl) && !sameOrigin) {

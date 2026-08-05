@@ -39,6 +39,7 @@ import { registerSourceBucket } from '../../../../utils/openlayers/RateLimitPaci
 
 const failTiles = new Set(); // registry of fail tile urls to prevent reloading loops
 const rateLimitRetries = new Map(); // tile url -> attempts already spent against a rate limited bucket
+const bucketProbes = new Map(); // bucket key -> the fallback request in flight, shared by the tiles failing together
 const loadingErrorRefreshState = new Map(); // layer id -> { attempts, windowStart }
 const MAX_LOADING_ERROR_REFRESH_ATTEMPTS = 3; // caps refresh() retries within the cooldown window
 const LOADING_ERROR_REFRESH_COOLDOWN_MS = 30000; // window resets only after this much quiet time, NOT on every transient recovery (error/success can oscillate every render during a real loop, which would otherwise reset the counter before it ever caps)
@@ -116,6 +117,37 @@ const handleLoadError = (image, src, options, error) => {
     console.error(error);
 };
 
+/**
+ * Runs the axios fallback of the first tile that fails on a bucket and lets the tiles failing at
+ * the same moment reuse its outcome.
+ * A whole viewport fails together, and a native image tells nothing about why, so without this
+ * every tile would spend a request to ask the same question to a server that is already refusing
+ * them. The followers get the answer, not the image: a 429 sends them back to the queue, anything
+ * else is the failure they would have found on their own.
+ * @param {string} src the tile url, used to resolve the bucket
+ * @param {object} options the layer options
+ * @param {function} fetchTile issues the fallback request for the tile that probes
+ * @return {Promise} resolved when the tile was painted, rejected with the failure to handle
+ */
+const probeBucket = (src, options, fetchTile) => {
+    const key = rateLimitManager.getBucketKey(src, getRateLimitOptions(options));
+    const running = key && bucketProbes.get(key);
+    if (running) {
+        return running.then((failure) => Promise.reject(failure || new Error(`Tile load failed: ${src}`)));
+    }
+    const rateLimitOptions = getRateLimitOptions(options);
+    rateLimitManager.beginProbe(src, rateLimitOptions);
+    const probe = fetchTile();
+    if (key) {
+        bucketProbes.set(key, probe.then(() => null, (failure) => failure).then((failure) => {
+            bucketProbes.delete(key);
+            rateLimitManager.endProbe(src, rateLimitOptions);
+            return failure;
+        }));
+    }
+    return probe;
+};
+
 const loadWhenRateLimitAllows = (image, src, options, load) => {
     rateLimitManager.wait(src, getRateLimitOptions(options)).then(load);
 };
@@ -187,31 +219,32 @@ const loadFunction = (options, headers) => function(image, src) {
                     });
             } else {
                 const rateLimitOptions = getRateLimitOptions(options);
+                const fetchThroughAxios = () => axios.get(newSrc, {
+                    responseType: 'blob',
+                    // the tile owns its retries, the interceptor must not add its own on top
+                    _msRateLimitNoRetry: true,
+                    ...getRateLimitRequestConfig(options, src)
+                })
+                    .then((response) => {
+                        return response.data.type === "text/xml"
+                            ? response.data.text().then(dataText => ({...response, dataText}))
+                            : response;
+                    })
+                    .then((response) => {
+                        if (isValidResponse(response)) {
+                            image.getImage().src = URL.createObjectURL(response.data);
+                        } else {
+                            throw new Error(response.dataText);
+                        }
+                    });
                 const onDirectImageError = () => {
-                    // a native image never exposes the status, so the first failure of a bucket is
-                    // repeated through axios to find out whether it was a 429. Once the bucket is
-                    // known to be rate limited that answer is already there and the tile goes
-                    // straight back to the queue, without spending a second request to ask again
                     if (rateLimitManager.isThrottled(src, rateLimitOptions)) {
+                        // the bucket is already known to be rate limited: the tile goes back in the
+                        // queue without spending a request to ask what it already knows
                         handleLoadError(image, src, options, { status: 429 });
                         return;
                     }
-                    axios.get(newSrc, {
-                        responseType: 'blob',
-                        ...getRateLimitRequestConfig(options, src)
-                    })
-                        .then((response) => {
-                            return response.data.type === "text/xml"
-                                ? response.data.text().then(dataText => ({...response, dataText}))
-                                : response;
-                        })
-                        .then((response) => {
-                            if (isValidResponse(response)) {
-                                image.getImage().src = URL.createObjectURL(response.data);
-                            } else {
-                                throw new Error(response.dataText);
-                            }
-                        })
+                    probeBucket(src, options, fetchThroughAxios)
                         .catch((errorMessage) => {
                             handleLoadError(image, src, options, errorMessage);
                         });

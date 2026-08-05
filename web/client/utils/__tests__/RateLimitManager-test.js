@@ -193,6 +193,72 @@ describe('RateLimitManager', () => {
         expect(manager.register429(url).shouldRetry).toBe(false);
     });
 
+    it('paces two layers of the same server on a single rate', () => {
+        let currentTime = now;
+        const manager = new RateLimitManager({
+            getConfig: () => ({ baseDelay: 1000 }),
+            now: () => currentTime
+        });
+        const first = 'https://example.com/geoserver/wms?LAYERS=workspace:one&BBOX=1,2,3,4';
+        const second = 'https://example.com/geoserver/wms?LAYERS=workspace:two&BBOX=1,2,3,4';
+
+        manager.register429(first, { 'retry-after': '1' });
+
+        // the second layer has its own bucket but shares the pace of the server
+        expect(manager.getBucketKey(first)).toNotBe(manager.getBucketKey(second));
+        expect(manager.isThrottled(second)).toBe(true);
+        expect(manager.reserveSlot(first)).toBe(1000);
+        expect(manager.reserveSlot(second)).toBe(2000);
+        expect(manager.reserveSlot(first)).toBe(3000);
+    });
+
+    it('keeps the pace per layer when pacingBucket says so', () => {
+        const manager = new RateLimitManager({
+            getConfig: () => ({ baseDelay: 1000, pacingBucket: 'wmsLayer' }),
+            now: () => now
+        });
+        const first = 'https://example.com/geoserver/wms?LAYERS=workspace:one&BBOX=1,2,3,4';
+        const second = 'https://example.com/geoserver/wms?LAYERS=workspace:two&BBOX=1,2,3,4';
+
+        manager.register429(first, { 'retry-after': '1' });
+
+        expect(manager.isThrottled(second)).toBe(false);
+        expect(manager.reserveSlot(second)).toBe(0);
+    });
+
+    it('holds back the requests of a server while a probe is in flight', () => {
+        let currentTime = now;
+        const manager = new RateLimitManager({
+            getConfig: () => ({ baseDelay: 1000 }),
+            now: () => currentTime
+        });
+        const url = 'https://example.com/geoserver/wms?LAYERS=workspace:layer&BBOX=1,2,3,4';
+
+        expect(manager.getSlotDelay(url)).toBe(0);
+        manager.beginProbe(url);
+        expect(manager.getSlotDelay(url) > 0).toBe(true);
+        manager.endProbe(url);
+        expect(manager.getSlotDelay(url)).toBe(0);
+    });
+
+    it('gives the rate back a half at a time once the backlog is gone', () => {
+        let currentTime = now;
+        const manager = new RateLimitManager({
+            getConfig: () => ({ baseDelay: 1000 }),
+            now: () => currentTime
+        });
+        const url = 'https://example.com/geoserver/wms?LAYERS=workspace:layer&BBOX=1,2,3,4';
+
+        manager.register429(url, { 'retry-after': '1' });
+        currentTime += 10000;
+        for (let i = 0; i < 4; i++) {
+            manager.registerSuccess(url);
+        }
+        expect(manager.reserveSlot(url)).toBe(0);
+        // the spacing halved, so the slot after this one is 500ms away instead of a second
+        expect(manager.reserveSlot(url)).toBe(500);
+    });
+
     it('defaults to three retries', () => {
         const manager = new RateLimitManager();
 

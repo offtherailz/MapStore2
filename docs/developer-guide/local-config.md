@@ -250,9 +250,18 @@ For configuring plugins, see the [Configuring Plugins Section](plugins-documenta
   - `enabled` - Boolean to enable or disable adaptive throttling. Default is `true`.
   - `baseDelay` - First exponential backoff delay in milliseconds when `Retry-After` is missing. Default is `1000`.
   - `maxDelay` - Maximum delay in milliseconds for both exponential backoff and `Retry-After`. Default is `60000`.
-  - `maxRetries` - Maximum number of consecutive retries per bucket. Default is `3`; set it explicitly to `null` to retry until success, cancellation, or a non-429 error.
+  - `maxRetries` - Maximum number of retries per request. Default is `3`; set it explicitly to `null` to retry until success, cancellation, or a non-429 error.
+  - `pacingBucket` - Scope the announced rate is applied to, once a server has answered 429. Supported values are `origin`, `path`, and `wmsLayer`. Default is `origin`, because a rate limit belongs to the service: two layers of the same server each pacing themselves at the announced rate would together send twice what it allows. Use `path` or `wmsLayer` for services that count per endpoint or per layer.
   - `defaultBucket` - Default throttling scope. Supported values are `origin`, `path`, and `wmsLayer`. Default is `wmsLayer`.
   - `bucketRules` - Array of `{ "urlPattern": "...", "bucket": "..." }` rules used to override the default bucket for matching URLs. A `wmsLayer` key contains the URL origin, path, and normalized `LAYERS` value; it ignores every other query parameter. Requests without a layer name, including MapStore API requests, are not assigned to the default `wmsLayer` bucket. Use an explicit `origin` or `path` rule to opt other endpoints into throttling.
+
+  Throttling only applies to a server that has answered 429. Until then the requests are not
+  delayed. When one does, the tiles of that server are spaced by the interval it asked for, they
+  keep waiting in the OpenLayers tile queue rather than being reported as failed, and the rate is
+  given back a half at a time after a run of successes. Two limitations are worth knowing: the 3D
+  view is not throttled, and neither is a cross origin service that does not send
+  `Access-Control-Expose-Headers: Retry-After`, because the browser hides both the status and the
+  header from the application.
 
   Example:
 
@@ -262,7 +271,8 @@ For configuring plugins, see the [Configuring Plugins Section](plugins-documenta
       "baseDelay": 1000,
       "maxDelay": 60000,
       "maxRetries": 3,
-        "defaultBucket": "wmsLayer",
+      "pacingBucket": "origin",
+      "defaultBucket": "wmsLayer",
       "bucketRules": [
         {
           "urlPattern": ".*tiles.example.org/.*",
