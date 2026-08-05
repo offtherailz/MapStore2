@@ -299,6 +299,17 @@ export class RateLimitManager {
         }
     }
 
+    /**
+     * Whether a request sent to find out why this server is failing is still on its way.
+     * @param {string} url the request url
+     * @param {object} options bucket options
+     * @return {boolean} true while the answer is pending
+     */
+    isProbing(url, options = {}) {
+        const pacer = this.pacers[this.getPacingKey(url, options)];
+        return !!pacer && pacer.probingUntil > this.now();
+    }
+
     endProbe(url, options = {}) {
         const pacer = this.pacers[this.getPacingKey(url, options)];
         if (pacer) {

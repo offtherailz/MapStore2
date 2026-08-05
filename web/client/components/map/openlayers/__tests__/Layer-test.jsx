@@ -50,6 +50,7 @@ import MockAdapter from "axios-mock-adapter";
 import {get} from 'ol/proj';
 import { getResolutions } from '../../../../utils/MapUtils';
 import rateLimitManager from '../../../../utils/RateLimitManager';
+import { resetProbes } from '../../../../utils/RateLimitProbe';
 
 let mockAxios;
 
@@ -178,6 +179,8 @@ describe('Openlayers layer', () => {
     let map;
 
     beforeEach(() => {
+        rateLimitManager.reset();
+        resetProbes();
         mockAxios = new MockAdapter(axios);
         document.body.innerHTML = '<div id="map" style="width:200px;height:200px;"></div><div id="container"></div>';
         map = new Map({
@@ -199,6 +202,7 @@ describe('Openlayers layer', () => {
     afterEach(() => {
         mockAxios.restore();
         rateLimitManager.reset();
+        resetProbes();
         ConfigUtils.setConfigProp('rateLimit', undefined);
         map.setTarget(null);
         document.body.innerHTML = '';

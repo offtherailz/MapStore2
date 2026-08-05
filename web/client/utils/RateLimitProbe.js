@@ -9,6 +9,7 @@
 import rateLimitManager from './RateLimitManager';
 
 const probes = new Map();
+const PROBE_MAX_WAIT = 5000; // a probe that does not answer within this stops standing for its server
 
 export const isRateLimitError = (error) => error?.status === 429
     || error?.statusCode === 429
@@ -32,14 +33,21 @@ export const isRateLimitError = (error) => error?.status === 429
  */
 export const probeBucket = (url, options = {}, fetchOnce) => {
     const key = rateLimitManager.getPacingKey(url, options);
-    const running = key && probes.get(key);
+    // the manager owns the lifetime of the probe, and gives up on it after a deadline: an entry it
+    // no longer knows about is stale and must not make the next failure wait on an answer that is
+    // never coming
+    const running = key && rateLimitManager.isProbing(url, options) && probes.get(key);
     if (running) {
         return running.then((failure) => Promise.reject(failure || new Error(`Request failed: ${url}`)));
     }
     rateLimitManager.beginProbe(url, options);
     const probe = fetchOnce();
     if (key) {
-        probes.set(key, probe.then(() => null, (failure) => failure).then((failure) => {
+        const answered = probe.then(() => null, (failure) => failure);
+        // a probe that never answers must not stand for its server for ever, or the next failure
+        // would wait on it instead of asking again
+        const gaveUp = new Promise((resolve) => setTimeout(resolve, PROBE_MAX_WAIT, null));
+        probes.set(key, Promise.race([answered, gaveUp]).then((failure) => {
             probes.delete(key);
             rateLimitManager.endProbe(url, options);
             return failure;

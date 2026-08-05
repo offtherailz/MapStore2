@@ -31,7 +31,9 @@ class CesiumLayer extends React.Component {
 
     static defaultProps = {
         onLayerLoading: () => {},
-        onLayerLoad: () => {}
+        onLayerLoad: () => {},
+        onCreationError: () => {},
+        onImageryLayersTreeUpdate: () => {}
     };
 
     componentDidMount() {
