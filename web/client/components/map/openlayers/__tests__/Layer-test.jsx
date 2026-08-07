@@ -2748,14 +2748,9 @@ describe('Openlayers layer', () => {
         expect(states).toEqual([3]);
         expect(loads).toBe(0);
 
-        setTimeout(() => {
-            try {
-                expect(loads).toBe(1);
-                done();
-            } catch (e) {
-                done(e);
-            }
-        }, 30);
+        waitFor(() => expect(loads).toBe(1))
+            .then(() => done())
+            .catch(done);
     });
     it('loads the tiles of a rate limited bucket one slot apart', (done) => {
         ConfigUtils.setConfigProp('rateLimit', {

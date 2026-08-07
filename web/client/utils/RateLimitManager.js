@@ -24,6 +24,7 @@ const SUCCESSES_BEFORE_RELAXING = 4; // consecutive successes needed before givi
 const PROBE_TIMEOUT = 5000; // a probe that does not answer within this stops holding back its bucket
 const PROBE_POLL = 150; // how long a held request waits before asking again whether the probe answered
 const NOT_LIMITED_MEMORY = 60000; // how long a server that failed for other reasons is left alone
+const PACE_FLOOR_MEMORY = 30000; // how long the last rate a server asked for is treated as its real limit
 
 const normalizeConfig = (config = {}) => ({
     ...DEFAULT_CONFIG,
@@ -229,6 +230,8 @@ export class RateLimitManager {
                 deferredAt: 0,     // last time a caller was held back, i.e. last sign of a backlog
                 probingUntil: 0,   // deadline of the request sent to find out why the server is failing
                 notLimitedAt: 0,   // last time a probe answered that this server is failing for other reasons
+                floor: 0,          // shortest interval this server has accepted so far, i.e. its known limit
+                limitedAt: 0,      // last time this server refused a request
                 successStreak: 0
             };
         }
@@ -373,7 +376,19 @@ export class RateLimitManager {
     }
 
     wait(url, options = {}) {
-        const delay = this.reserveSlot(url, options);
+        return this.waitReserved(url, options, this.reserveSlot(url, options));
+    }
+
+    /**
+     * The waiting half of `wait`, for callers that booked the slot themselves and can go on without
+     * a promise when the slot is free. Keeping that case synchronous is what lets a request behave
+     * exactly as it did before the throttling existed.
+     * @param {string} url the request url
+     * @param {object} options bucket options
+     * @param {number} delay milliseconds returned by `reserveSlot`
+     * @return {Promise} resolved when the request may leave
+     */
+    waitReserved(url, options = {}, delay = 0) {
         if (!delay) {
             return Promise.resolve();
         }
@@ -429,6 +444,10 @@ export class RateLimitManager {
             // the pace of every request towards it, not only of the one that was refused
             pacer.notLimitedAt = 0;
             pacer.spacing = delay;
+            // the interval it just asked for is its limit as far as we know, and going below it
+            // again only earns another refusal
+            pacer.floor = Math.max(pacer.floor, delay);
+            pacer.limitedAt = this.now();
             pacer.nextAllowedAt = Math.max(pacer.nextAllowedAt, bucket.blockedUntil);
             pacer.successStreak = 0;
         }
@@ -467,10 +486,18 @@ export class RateLimitManager {
             // at once and earn a new 429 straight away
             return;
         }
+        pacer.successStreak = 0;
+        // a server that has been quiet for long enough may have lifted its limit, and the only way
+        // to find out is to try: until then its own interval is the floor, because walking under it
+        // buys nothing but another round of refusals
+        const floor = this.now() - pacer.limitedAt >= PACE_FLOOR_MEMORY ? 0 : pacer.floor;
         // the rate is given back a half at a time: dropping the spacing in one go would send the
         // whole viewport again and earn a new 429
-        pacer.successStreak = 0;
-        pacer.spacing = Math.floor(pacer.spacing / 2);
+        const relaxed = Math.max(floor, Math.floor(pacer.spacing / 2));
+        if (relaxed >= pacer.spacing) {
+            return;
+        }
+        pacer.spacing = relaxed;
         if (pacer.spacing < MIN_SPACING) {
             pacer.spacing = 0;
             pacer.nextAllowedAt = 0;

@@ -160,15 +160,25 @@ const applyProxyToAxiosConfig = (config) => {
 
 axios.interceptors.request.use(config => {
     addAuthenticationToAxios(config);
+    if (!rateLimitManager.isEnabled()) {
+        return applyProxyToAxiosConfig(config);
+    }
     config._msRateLimitUrl = getRateLimitUrl(config);
     config._msRateLimitParams = config.params;
+    const options = getRateLimitOptions(config);
+    const delay = rateLimitManager.reserveSlot(config._msRateLimitUrl, options);
+    // a request towards a server that is not rate limiting us is configured synchronously, exactly
+    // as it was before the throttling existed: only a request that has to wait becomes a promise
+    if (!delay) {
+        return applyProxyToAxiosConfig(config);
+    }
     return rateLimitManager
-        .wait(config._msRateLimitUrl, getRateLimitOptions(config))
+        .waitReserved(config._msRateLimitUrl, options, delay)
         .then(() => applyProxyToAxiosConfig(config));
 });
 
 axios.interceptors.response.use(response => {
-    if (response?.config) {
+    if (response?.config && rateLimitManager.isEnabled()) {
         rateLimitManager.registerSuccess(getRateLimitUrl(response.config), getRateLimitOptions(response.config));
     }
     return response;

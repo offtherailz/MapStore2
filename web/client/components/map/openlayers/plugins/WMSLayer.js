@@ -34,12 +34,16 @@ import { isValidResponse } from '../../../../utils/WMSUtils';
 import { OL_VECTOR_FORMATS, applyStyle } from '../../../../utils/openlayers/VectorTileUtils';
 
 import { proxySource, getWMSURLs, wmsToOpenlayersOptions, toOLAttributions, generateTileGrid } from '../../../../utils/openlayers/WMSUtils';
-import rateLimitManager from '../../../../utils/RateLimitManager';
-import { probeBucket, isRateLimitError } from '../../../../utils/RateLimitProbe';
-import { paceTile } from '../../../../utils/openlayers/RateLimitPacing';
+import {
+    paceTile,
+    retryRateLimitedTile,
+    explainNativeImageError,
+    registerTileLoaded,
+    rateLimitRequestConfig,
+    probeRequestConfig
+} from '../../../../utils/openlayers/RateLimitPacing';
 
 const failTiles = new Set(); // registry of fail tile urls to prevent reloading loops
-const rateLimitRetries = new Map(); // tile url -> attempts already spent against a rate limited bucket
 const loadingErrorRefreshState = new Map(); // layer id -> { attempts, windowStart }
 const MAX_LOADING_ERROR_REFRESH_ATTEMPTS = 3; // caps refresh() retries within the cooldown window
 const LOADING_ERROR_REFRESH_COOLDOWN_MS = 30000; // window resets only after this much quiet time, NOT on every transient recovery (error/success can oscillate every render during a real loop, which would otherwise reset the counter before it ever caps)
@@ -67,45 +71,8 @@ const setErrorState = (image) => {
     image.changed();
 };
 
-const getRateLimitOptions = (options = {}) => ({
-    msRateLimitBucket: options.msRateLimitBucket,
-    msRateLimitKey: options.msRateLimitKey
-});
-
-const getRateLimitRequestConfig = (options, src) => ({
-    _msRateLimitUrl: src,
-    ...getRateLimitOptions(options)
-});
-
-// how many times a single tile can be sent again while its bucket is rate limiting us,
-// following the same `maxRetries` budget the interceptor applies to the other requests
-const getTileRetryBudget = () => rateLimitManager.getRetryAttempts();
-
-/**
- * Sends the tile again once the bucket has a slot for it.
- * The tile has to go through `ERROR` first, because that is the only state `Tile#load` accepts
- * to start over, and it is also what gives OpenLayers a fresh image to paint on: the one that
- * failed has already been replaced by the blank placeholder.
- * @param {object} image the `ol/ImageTile` or `ol/Image` passed to the load function
- * @param {string} src the tile url
- * @return {boolean} true when the tile was handed back for another attempt
- */
-const retryRateLimitedTile = (image, src) => {
-    const retries = rateLimitRetries.get(src) || 0;
-    if (typeof image.load !== 'function' || retries >= getTileRetryBudget()) {
-        return false;
-    }
-    rateLimitRetries.set(src, retries + 1);
-    setErrorState(image);
-    // no delay here: the load function reserves the slot for the request it is about to send,
-    // and adding a second wait would space the same tile twice
-    image.load();
-    return true;
-};
-
 const handleLoadError = (image, src, options, error) => {
-    const rateLimited = isRateLimitError(error) && !!rateLimitManager.getBucketKey(src, getRateLimitOptions(options));
-    if (rateLimited && retryRateLimitedTile(image, src)) {
+    if (retryRateLimitedTile({ tile: image, src, options, error, fail: setErrorState })) {
         return;
     }
     setErrorState(image);
@@ -137,7 +104,7 @@ const loadFunction = (options, headers, map, tileGrid) => function(image, src) {
                     ...headers
                 },
                 responseType: 'arraybuffer',
-                ...getRateLimitRequestConfig(options, src)
+                ...rateLimitRequestConfig(options, src)
             }).then(response => {
                 if (response.status === 200) {
                     const uInt8Array = new Uint8Array(response.data);
@@ -160,7 +127,7 @@ const loadFunction = (options, headers, map, tileGrid) => function(image, src) {
                 axios.get(newSrc, {
                     headers,
                     responseType: 'blob',
-                    ...getRateLimitRequestConfig(options, src)
+                    ...rateLimitRequestConfig(options, src)
                 })
                     .then((response) => {
                         return response.data.type === "text/xml"
@@ -179,12 +146,9 @@ const loadFunction = (options, headers, map, tileGrid) => function(image, src) {
                         handleLoadError(image, src, options, errorMessage);
                     });
             } else {
-                const rateLimitOptions = getRateLimitOptions(options);
                 const fetchThroughAxios = () => axios.get(newSrc, {
                     responseType: 'blob',
-                    // the tile owns its retries, the interceptor must not add its own on top
-                    _msRateLimitNoRetry: true,
-                    ...getRateLimitRequestConfig(options, src)
+                    ...probeRequestConfig(options, src)
                 })
                     .then((response) => {
                         return response.data.type === "text/xml"
@@ -198,26 +162,17 @@ const loadFunction = (options, headers, map, tileGrid) => function(image, src) {
                             throw new Error(response.dataText);
                         }
                     });
-                const onDirectImageError = () => {
-                    if (rateLimitManager.isThrottled(src, rateLimitOptions)) {
-                        // the bucket is already known to be rate limited: the tile goes back in the
-                        // queue without spending a request to ask what it already knows
-                        handleLoadError(image, src, options, { status: 429 });
-                        return;
-                    }
-                    probeBucket(src, rateLimitOptions, fetchThroughAxios)
-                        .catch((errorMessage) => {
-                            handleLoadError(image, src, options, errorMessage);
-                        });
-                };
+                const onDirectImageError = () => explainNativeImageError({
+                    src,
+                    options,
+                    ask: fetchThroughAxios,
+                    onFailure: (errorMessage) => handleLoadError(image, src, options, errorMessage)
+                });
                 if (typeof img.addEventListener === 'function') {
                     // the native path is the only one that does not go through the interceptor, so
                     // its outcome is reported to the manager here, otherwise a bucket paced after a
                     // 429 would never see the successes that let it speed up again
-                    img.addEventListener('load', () => {
-                        rateLimitRetries.delete(src);
-                        rateLimitManager.registerSuccess(src, rateLimitOptions);
-                    }, { once: true });
+                    img.addEventListener('load', () => registerTileLoaded(src, options), { once: true });
                     img.addEventListener('error', onDirectImageError, { once: true });
                 }
                 img.src = newSrc;
@@ -229,7 +184,7 @@ const loadFunction = (options, headers, map, tileGrid) => function(image, src) {
         map,
         tile: image,
         src,
-        options: getRateLimitOptions(options),
+        options,
         tileGrid,
         fail: setErrorState,
         send

@@ -241,7 +241,7 @@ describe('RateLimitManager', () => {
         expect(manager.getSlotDelay(url)).toBe(0);
     });
 
-    it('gives the rate back a half at a time once the backlog is gone', () => {
+    it('keeps the rate a server asked for, instead of walking under it again', () => {
         let currentTime = now;
         const manager = new RateLimitManager({
             getConfig: () => ({ baseDelay: 1000 }),
@@ -251,11 +251,29 @@ describe('RateLimitManager', () => {
 
         manager.register429(url, { 'retry-after': '1' });
         currentTime += 10000;
+        for (let i = 0; i < 8; i++) {
+            manager.registerSuccess(url);
+        }
+        expect(manager.reserveSlot(url)).toBe(0);
+        // successes at the pace the server asked for are not a reason to go faster than it allows
+        expect(manager.reserveSlot(url)).toBe(1000);
+    });
+
+    it('gives the rate back a half at a time once the server has been quiet for long', () => {
+        let currentTime = now;
+        const manager = new RateLimitManager({
+            getConfig: () => ({ baseDelay: 1000 }),
+            now: () => currentTime
+        });
+        const url = 'https://example.com/geoserver/wms?LAYERS=workspace:layer&BBOX=1,2,3,4';
+
+        manager.register429(url, { 'retry-after': '1' });
+        currentTime += 31000;
         for (let i = 0; i < 4; i++) {
             manager.registerSuccess(url);
         }
         expect(manager.reserveSlot(url)).toBe(0);
-        // the spacing halved, so the slot after this one is 500ms away instead of a second
+        // the limit may have been lifted in the meantime, and trying is the only way to find out
         expect(manager.reserveSlot(url)).toBe(500);
     });
 
