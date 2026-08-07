@@ -256,12 +256,17 @@ For configuring plugins, see the [Configuring Plugins Section](plugins-documenta
   - `bucketRules` - Array of `{ "urlPattern": "...", "bucket": "..." }` rules used to override the default bucket for matching URLs. A `wmsLayer` key contains the URL origin, path, and normalized `LAYERS` value; it ignores every other query parameter. Requests without a layer name, including MapStore API requests, are not assigned to the default `wmsLayer` bucket. Use an explicit `origin` or `path` rule to opt other endpoints into throttling.
 
   Throttling only applies to a server that has answered 429. Until then the requests are not
-  delayed. When one does, the tiles of that server are spaced by the interval it asked for, they
-  keep waiting in the OpenLayers tile queue rather than being reported as failed, and the rate is
-  given back a half at a time after a run of successes. Two limitations are worth knowing: the 3D
-  view is not throttled, and neither is a cross origin service that does not send
-  `Access-Control-Expose-Headers: Retry-After`, because the browser hides both the status and the
-  header from the application.
+  delayed. When one does, the tiles of that server are spaced by the interval it asked for: a tile
+  whose turn has not come is put in the error state, which is how OpenLayers releases its slot in
+  the loading queue shared by every layer of the map, and is loaded again when the slot is due. A
+  tile waiting for its turn is not reported as a layer error, and the rate is given back a half at
+  a time after a run of successes.
+
+  Three limitations are worth knowing. In the 3D view only the retries are spaced, so the first
+  request of every new tile is still sent at the pace Cesium decides. A tile parked while the view
+  moves away is sent only if the view comes back to it. And a cross origin service that does not
+  send `Access-Control-Expose-Headers: Retry-After` is not throttled at all, because the browser
+  hides both the status and the header from the application.
 
   Example:
 

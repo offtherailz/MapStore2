@@ -6,111 +6,161 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { getUid } from 'ol/util';
+import { intersects } from 'ol/extent';
+import { unByKey } from 'ol/Observable';
 import TileState from 'ol/TileState';
 
 import rateLimitManager from '../RateLimitManager';
 
-const MIN_RENDER_DELAY = 50; // a render scheduled closer than this costs more than it gains
-
-const bucketOptionsBySource = new Map();
-
 /**
- * Associates a tile source with the bucket options of its layer, so the tile queue can ask the
- * rate limit manager about a tile without having the layer configuration at hand.
- * @param {object} source the `ol/source/Tile` of the layer
- * @param {object} options the layer options
+ * Tiles held back from a rate limited server, waiting for the slot they have been given.
+ *
+ * The way out of the tile queue is the one OpenLayers documents on `Tile#setState`: a tile that
+ * cannot be loaded goes to `ERROR`, "otherwise the tile cannot be removed from the tile queue and
+ * will block other requests". The way back in is `Tile#load`, which the same file describes as
+ * needed "for reloading in case of an error". So a tile that has to wait fails right away, freeing
+ * its slot for the layers pointing at healthy servers, and is loaded again once its turn comes.
+ *
+ * The tiles the view has moved away from stay parked instead of being sent: OpenLayers drops those
+ * from its own queue, and a paced tile is out of that queue by definition, so the check has to
+ * happen here.
  */
-export const registerSourceBucket = (source, options = {}) => {
-    if (!source) {
-        return;
-    }
-    bucketOptionsBySource.set(getUid(source), {
-        msRateLimitBucket: options.msRateLimitBucket,
-        msRateLimitKey: options.msRateLimitKey
-    });
-};
+const parkedByMap = new WeakMap();
 
-export const unregisterSourceBucket = (source) => {
-    if (source) {
-        bucketOptionsBySource.delete(getUid(source));
+// a parked tile comes back through the load function, where the slot it was already given must not
+// be booked a second time, or it would be pushed one spacing further at every round
+const cleared = new WeakSet();
+
+const getState = (tile) => (typeof tile.getState === 'function' ? tile.getState() : tile.state);
+
+const getEntry = (map) => {
+    let entry = parkedByMap.get(map);
+    if (!entry) {
+        entry = { tiles: new Set(), timer: null, dueAt: Infinity, listener: null };
+        parkedByMap.set(map, entry);
     }
+    return entry;
 };
 
 /**
- * Spaces out the tiles of a rate limited bucket, leaving the scheduling to OpenLayers.
- *
- * `ol/TileQueue` already orders the tiles by distance from the center of the view and forgets the
- * ones the view has moved away from, both of which are lost by anyone queueing tiles on the side.
- * What it has no notion of is time: it empties the queue as fast as the loading limit allows. This
- * replaces its `loadMoreTiles` with one that skips the tiles whose bucket has no free slot yet and
- * puts them back in the queue, so they keep being reordered and dropped as usual, and asks the map
- * for a new frame when the slot is due.
- *
- * A bucket that has never answered 429 has no spacing, so nothing here changes for a healthy
- * server: the skip never triggers and the queue behaves exactly as the OpenLayers one.
- *
+ * Whether the view still covers the tile. Images of single tile layers carry no coordinate and are
+ * always sent, their extent being the view itself.
+ */
+const isVisible = (map, tile, tileGrid) => {
+    if (!tileGrid || !tile.tileCoord) {
+        return true;
+    }
+    const view = map.getView?.();
+    const size = map.getSize?.();
+    const resolution = view?.getResolution();
+    if (!view || !size || !resolution) {
+        return true;
+    }
+    if (tileGrid.getZForResolution(resolution) !== tile.tileCoord[0]) {
+        return false;
+    }
+    return intersects(tileGrid.getTileCoordExtent(tile.tileCoord), view.calculateExtent(size));
+};
+
+/**
+ * Releases the tiles whose slot has come, and keeps the timer aligned with the next one due.
+ * Called with a delay it only arms the timer, called without it does the round.
  * @param {object} map the `ol/Map`
+ * @param {number} [delay] milliseconds until the slot of the tile being parked
  */
-export const installTilePacing = (map) => {
-    const queue = map?.tileQueue_;
-    if (!queue || queue.msRateLimitPaced) {
-        return;
-    }
-    queue.msRateLimitPaced = true;
-
-    let pendingRender = null;
-    let pendingAt = Infinity;
-    const renderIn = (delay) => {
-        const at = Date.now() + Math.max(delay, MIN_RENDER_DELAY);
-        // buckets due sooner win: a frame already scheduled for a long backoff must not swallow
-        // the one a shorter wait needs
-        if (pendingRender !== null && at >= pendingAt) {
+function pump(map, delay) {
+    const entry = getEntry(map);
+    const now = rateLimitManager.now();
+    if (delay !== undefined) {
+        const at = now + Math.max(delay, 0);
+        // a round already scheduled for a longer wait must not swallow the one a shorter wait needs
+        if (entry.timer !== null && entry.dueAt <= at) {
             return;
         }
-        clearTimeout(pendingRender);
-        pendingAt = at;
-        pendingRender = setTimeout(() => {
-            pendingRender = null;
-            pendingAt = Infinity;
-            map.render();
-        }, at - Date.now());
-    };
+        clearTimeout(entry.timer);
+        entry.dueAt = at;
+        entry.timer = rateLimitManager.scheduler(() => pump(map), Math.max(delay, 0));
+        return;
+    }
+    entry.timer = null;
+    entry.dueAt = Infinity;
+    let next = Infinity;
+    entry.tiles.forEach((parked) => {
+        // the cache releases the tiles it no longer holds, and a released tile has nothing left to
+        // paint on: it is gone for good, not waiting
+        if (getState(parked.tile) === TileState.EMPTY) {
+            entry.tiles.delete(parked);
+            return;
+        }
+        if (parked.dueAt > now) {
+            next = Math.min(next, parked.dueAt);
+            return;
+        }
+        if (!isVisible(map, parked.tile, parked.tileGrid)) {
+            return; // stays parked, the next view change asks again
+        }
+        entry.tiles.delete(parked);
+        cleared.add(parked.tile);
+        parked.tile.load();
+    });
+    if (next !== Infinity) {
+        pump(map, next - now);
+    }
+}
 
-    queue.loadMoreTiles = function(maxTotalLoading, maxNewLoads) {
-        const deferred = [];
-        let newLoads = 0;
-        let nextSlot = Infinity;
-        while (
-            this.tilesLoading_ < maxTotalLoading &&
-            newLoads < maxNewLoads &&
-            this.getCount() > 0
-        ) {
-            const element = this.dequeue();
-            const tile = element[0];
-            const tileKey = tile.getKey();
-            if (tile.getState() !== TileState.IDLE || tileKey in this.tilesLoadingKeys_) {
-                continue;
-            }
-            // `src_` is the url the tile will request: reprojected or composite tiles have none and
-            // are left to the standard behaviour
-            const src = tile.src_;
-            const delay = src ? rateLimitManager.getSlotDelay(src, bucketOptionsBySource.get(element[1])) : 0;
-            if (delay > 0) {
-                nextSlot = Math.min(nextSlot, delay);
-                deferred.push(element);
-                continue;
-            }
-            this.tilesLoadingKeys_[tileKey] = true;
-            ++this.tilesLoading_;
-            ++newLoads;
-            // the load function reserves the slot for the request it is about to send, which is
-            // what makes the next tile of the same bucket see a delay here
-            tile.load();
-        }
-        deferred.forEach((element) => this.enqueue(element));
-        if (nextSlot !== Infinity) {
-            renderIn(nextSlot);
-        }
-    };
+const listenToView = (map, entry) => {
+    if (entry.listener || typeof map.on !== 'function') {
+        return;
+    }
+    // tiles parked while out of sight are not sent, so the end of a pan is the moment to ask again
+    entry.listener = map.on('moveend', () => pump(map));
+};
+
+/**
+ * Sends the tile, or holds it back until the rate limited server has a slot for it.
+ * @param {object} params.map the `ol/Map` the tile belongs to
+ * @param {object} params.tile the `ol/ImageTile` or `ol/Image` passed to the load function
+ * @param {string} params.src the tile url
+ * @param {object} params.options bucket options of the layer
+ * @param {object} params.tileGrid the tile grid of the source, used to tell whether the tile is still in view
+ * @param {function} params.send loads the tile now
+ * @param {function} params.fail moves the tile to `ERROR`, which is what frees its queue slot
+ */
+export const paceTile = ({ map, tile, src, options = {}, tileGrid, send, fail }) => {
+    if (cleared.delete(tile)) {
+        send();
+        return;
+    }
+    const delay = rateLimitManager.reserveSlot(src, options);
+    if (delay <= 0) {
+        send();
+        return;
+    }
+    if (!map) {
+        // without a map there is nothing to watch the view with, so waiting in place is the only
+        // option left: it is bounded by the slot, unlike the block of a bucket
+        rateLimitManager.scheduler(send, delay);
+        return;
+    }
+    const entry = getEntry(map);
+    entry.tiles.add({ tile, tileGrid, dueAt: rateLimitManager.now() + delay });
+    listenToView(map, entry);
+    fail(tile);
+    pump(map, delay);
+};
+
+/**
+ * Forgets the tiles parked for a map, used when the map goes away and by the tests.
+ * @param {object} map the `ol/Map`
+ */
+export const resetPacing = (map) => {
+    const entry = map && parkedByMap.get(map);
+    if (!entry) {
+        return;
+    }
+    clearTimeout(entry.timer);
+    if (entry.listener) {
+        unByKey(entry.listener);
+    }
+    parkedByMap.delete(map);
 };

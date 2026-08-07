@@ -24,7 +24,7 @@ import ConfigUtils from '../../../utils/ConfigUtils';
 import mapUtils, { isNearlyEqual, getResolutionsForProjection } from '../../../utils/MapUtils';
 import projUtils from '../../../utils/openlayers/projUtils';
 import { DEFAULT_INTERACTION_OPTIONS } from '../../../utils/openlayers/DrawUtils';
-import { installTilePacing } from '../../../utils/openlayers/RateLimitPacing';
+import { resetPacing } from '../../../utils/openlayers/RateLimitPacing';
 
 import {isEqual, find, throttle, isArray, isNil} from 'lodash';
 
@@ -160,7 +160,6 @@ class OpenlayersMap extends React.Component {
         });
 
         this.map = map;
-        installTilePacing(map);
         if (this.props.registerHooks) {
             this.registerHooks();
         }
@@ -333,6 +332,7 @@ class OpenlayersMap extends React.Component {
     }
 
     componentWillUnmount() {
+        resetPacing(this.map);
         const attributionContainer = this.props.mapOptions.attribution && this.props.mapOptions.attribution.container
             && this.getDocument().querySelector(this.props.mapOptions.attribution.container);
         if (attributionContainer && attributionContainer.querySelector('.ol-attribution')) {

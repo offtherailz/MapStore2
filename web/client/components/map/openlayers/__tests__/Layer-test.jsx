@@ -2697,7 +2697,7 @@ describe('Openlayers layer', () => {
         expect(layer).toBeTruthy();
         expect(layer.layer.getSource().crossOrigin).toBe("Anonymous");
     });
-    it('delays tiled wms image load while the rate-limit bucket is blocked', (done) => {
+    it('frees the queue slot of a tile that has to wait, and loads it again when the slot comes', (done) => {
         ConfigUtils.setConfigProp('rateLimit', {
             baseDelay: 1,
             maxDelay: 10
@@ -2729,24 +2729,33 @@ describe('Openlayers layer', () => {
                 return assignedSrc;
             }
         };
+        const states = [];
+        let loads = 0;
         const image = {
             getImage: () => imageElement,
-            setState: () => {}
+            getState: () => (states.length ? states[states.length - 1] : 0),
+            setState: (state) => states.push(state),
+            load: () => loads++
         };
 
         rateLimitManager.register429(src, {'Retry-After': '0.001'});
         layer.layer.getSource().getTileLoadFunction()(image, src);
+
+        // nothing was requested, and the error state is what takes the tile out of the shared queue
         expect(assignedSrc).toNotExist();
+        expect(states).toEqual([3]);
+        expect(loads).toBe(0);
+
         setTimeout(() => {
             try {
-                expect(assignedSrc).toBe(src);
+                expect(loads).toBe(1);
                 done();
             } catch (e) {
                 done(e);
             }
-        }, 20);
+        }, 30);
     });
-    it('spaces the tiles of a rate limited bucket instead of flagging them in error', (done) => {
+    it('loads the tiles of a rate limited bucket one slot apart', (done) => {
         ConfigUtils.setConfigProp('rateLimit', {
             baseDelay: 1,
             maxDelay: 100
@@ -2767,20 +2776,24 @@ describe('Openlayers layer', () => {
             map={map}
         />, document.getElementById("container"));
         const sent = [];
-        const tile = (url) => ({
-            getImage: () => ({
-                addEventListener: () => {},
-                set src(value) {
-                    sent.push(value);
-                },
-                get src() {
-                    return url;
-                }
-            }),
-            setState: () => {
-                throw new Error('a tile waiting for its slot must not be flagged in error');
-            }
-        });
+        const reloaded = [];
+        const tile = (url) => {
+            const states = [];
+            return {
+                getImage: () => ({
+                    addEventListener: () => {},
+                    set src(value) {
+                        sent.push(value);
+                    },
+                    get src() {
+                        return url;
+                    }
+                }),
+                getState: () => (states.length ? states[states.length - 1] : 0),
+                setState: (state) => states.push(state),
+                load: () => reloaded.push(url)
+            };
+        };
 
         rateLimitManager.register429(src, {'Retry-After': '0.05'});
         const load = layer.layer.getSource().getTileLoadFunction();
@@ -2788,17 +2801,17 @@ describe('Openlayers layer', () => {
         load(tile(other), other);
 
         expect(sent.length).toBe(0);
-        // the two tiles share the bucket, so they leave one spacing interval apart
+        // the two tiles share the bucket, so they are handed back one spacing interval apart
         setTimeout(() => {
             try {
-                expect(sent).toEqual([src]);
+                expect(reloaded).toEqual([src]);
             } catch (e) {
                 done(e);
                 return;
             }
             setTimeout(() => {
                 try {
-                    expect(sent).toEqual([src, other]);
+                    expect(reloaded).toEqual([src, other]);
                     done();
                 } catch (e) {
                     done(e);

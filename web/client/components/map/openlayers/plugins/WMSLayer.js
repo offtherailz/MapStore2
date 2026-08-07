@@ -36,7 +36,7 @@ import { OL_VECTOR_FORMATS, applyStyle } from '../../../../utils/openlayers/Vect
 import { proxySource, getWMSURLs, wmsToOpenlayersOptions, toOLAttributions, generateTileGrid } from '../../../../utils/openlayers/WMSUtils';
 import rateLimitManager from '../../../../utils/RateLimitManager';
 import { probeBucket, isRateLimitError } from '../../../../utils/RateLimitProbe';
-import { registerSourceBucket } from '../../../../utils/openlayers/RateLimitPacing';
+import { paceTile } from '../../../../utils/openlayers/RateLimitPacing';
 
 const failTiles = new Set(); // registry of fail tile urls to prevent reloading loops
 const rateLimitRetries = new Map(); // tile url -> attempts already spent against a rate limited bucket
@@ -113,18 +113,14 @@ const handleLoadError = (image, src, options, error) => {
     console.error(error);
 };
 
-const loadWhenRateLimitAllows = (image, src, options, load) => {
-    rateLimitManager.wait(src, getRateLimitOptions(options)).then(load);
-};
-
-const loadFunction = (options, headers) => function(image, src) {
+const loadFunction = (options, headers, map, tileGrid) => function(image, src) {
 
     if (failTiles.has(src)) {  // avoids custom reload in cases of tiles that have already returned exceptions
         setErrorState(image);
         return;
     }
 
-    loadWhenRateLimitAllows(image, src, options, () => {
+    const send = () => {
         // fixes #3916, see https://gis.stackexchange.com/questions/175057/openlayers-3-wms-styling-using-sld-body-and-post-request
         let img = image.getImage();
         let newSrc = proxySource(options.forceProxy, src);
@@ -227,6 +223,16 @@ const loadFunction = (options, headers) => function(image, src) {
                 img.src = newSrc;
             }
         }
+    };
+
+    paceTile({
+        map,
+        tile: image,
+        src,
+        options: getRateLimitOptions(options),
+        tileGrid,
+        fail: setErrorState,
+        send
     });
 };
 
@@ -259,21 +265,21 @@ const createLayer = (options, map, mapId) => {
                 attributions: toOLAttributions(options.credits),
                 params: queryParameters,
                 ratio: options.ratio || 1,
-                imageLoadFunction: loadFunction(options, headers)
+                imageLoadFunction: loadFunction(options, headers, map)
             })
         });
     }
+    const tileGrid = generateTileGrid(options, map);
     const sourceOptions = {
         attributions: toOLAttributions(options.credits),
         urls: urls,
         crossOrigin: options.crossOrigin,
         params: queryParameters,
-        tileGrid: generateTileGrid(options, map),
-        tileLoadFunction: loadFunction(options, headers)
+        tileGrid,
+        tileLoadFunction: loadFunction(options, headers, map, tileGrid)
     };
 
     const wmsSource = new TileWMS({ ...sourceOptions });
-    registerSourceBucket(wmsSource, options);
     const layerConfig = {
         msId: options.id,
         opacity: options.opacity !== undefined ? options.opacity : 1,
