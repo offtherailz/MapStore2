@@ -84,6 +84,12 @@ function pump(map, delay) {
     }
     entry.timer = null;
     entry.dueAt = Infinity;
+    // a map without a target paints nowhere, so its tiles have nothing left to wait for: sending
+    // them would be a request whose answer is thrown away
+    if (typeof map.getTargetElement === 'function' && !map.getTargetElement()) {
+        entry.tiles.clear();
+        return;
+    }
     let next = Infinity;
     entry.tiles.forEach((parked) => {
         // the cache releases the tiles it no longer holds, and a released tile has nothing left to

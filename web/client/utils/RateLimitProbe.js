@@ -40,6 +40,11 @@ export const probeBucket = (url, options = {}, fetchOnce) => {
     if (running) {
         return running.then((failure) => Promise.reject(failure || new Error(`Request failed: ${url}`)));
     }
+    if (!rateLimitManager.shouldProbe(url, options)) {
+        // this server has already answered that it is failing for its own reasons: asking again at
+        // every tile of a broken layer is a request every few seconds, for ever
+        return Promise.reject(new Error(`Request failed: ${url}`));
+    }
     rateLimitManager.beginProbe(url, options);
     const probe = fetchOnce();
     if (key) {
@@ -50,6 +55,9 @@ export const probeBucket = (url, options = {}, fetchOnce) => {
         probes.set(key, Promise.race([answered, gaveUp]).then((failure) => {
             probes.delete(key);
             rateLimitManager.endProbe(url, options);
+            if (failure && !isRateLimitError(failure)) {
+                rateLimitManager.registerNotRateLimited(url, options);
+            }
             return failure;
         }));
     }

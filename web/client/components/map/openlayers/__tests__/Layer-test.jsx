@@ -51,6 +51,7 @@ import {get} from 'ol/proj';
 import { getResolutions } from '../../../../utils/MapUtils';
 import rateLimitManager from '../../../../utils/RateLimitManager';
 import { resetProbes } from '../../../../utils/RateLimitProbe';
+import { resetPacing } from '../../../../utils/openlayers/RateLimitPacing';
 
 let mockAxios;
 
@@ -201,6 +202,7 @@ describe('Openlayers layer', () => {
 
     afterEach(() => {
         mockAxios.restore();
+        resetPacing(map);
         rateLimitManager.reset();
         resetProbes();
         ConfigUtils.setConfigProp('rateLimit', undefined);
@@ -2702,7 +2704,7 @@ describe('Openlayers layer', () => {
             baseDelay: 1,
             maxDelay: 10
         });
-        const src = "http://sample.server/geoserver/wms?SERVICE=WMS&LAYERS=nurc:Arc_Sample&BBOX=1,2,3,4";
+        const src = "http://rate-limit.test/geoserver/wms?SERVICE=WMS&LAYERS=nurc:Arc_Sample&BBOX=1,2,3,4";
         const options = {
             type: "wms",
             visibility: true,
@@ -2711,7 +2713,7 @@ describe('Openlayers layer', () => {
             format: "image/png",
             opacity: 1.0,
             singleTile: false,
-            url: "http://sample.server/geoserver/wms"
+            url: "http://rate-limit.test/geoserver/wms"
         };
 
         const layer = ReactDOM.render(<OpenlayersLayer
@@ -2760,15 +2762,15 @@ describe('Openlayers layer', () => {
             baseDelay: 1,
             maxDelay: 100
         });
-        const src = "http://sample.server/geoserver/wms?SERVICE=WMS&LAYERS=nurc:Long_Wait&BBOX=1,2,3,4";
-        const other = "http://sample.server/geoserver/wms?SERVICE=WMS&LAYERS=nurc:Long_Wait&BBOX=5,6,7,8";
+        const src = "http://rate-limit.test/geoserver/wms?SERVICE=WMS&LAYERS=nurc:Long_Wait&BBOX=1,2,3,4";
+        const other = "http://rate-limit.test/geoserver/wms?SERVICE=WMS&LAYERS=nurc:Long_Wait&BBOX=5,6,7,8";
         const options = {
             type: "wms",
             visibility: true,
             name: "nurc:Long_Wait",
             format: "image/png",
             singleTile: false,
-            url: "http://sample.server/geoserver/wms"
+            url: "http://rate-limit.test/geoserver/wms"
         };
         const layer = ReactDOM.render(<OpenlayersLayer
             type="wms"
@@ -2825,14 +2827,14 @@ describe('Openlayers layer', () => {
             maxDelay: 0,
             maxRetries: 0
         });
-        const src = "http://sample.server/geoserver/wms?SERVICE=WMS&LAYERS=nurc:No_Retry_Loop&BBOX=1,2,3,4";
+        const src = "http://rate-limit.test/geoserver/wms?SERVICE=WMS&LAYERS=nurc:No_Retry_Loop&BBOX=1,2,3,4";
         const options = {
             type: "wms",
             visibility: true,
             name: "nurc:No_Retry_Loop",
             format: "image/png",
             singleTile: false,
-            url: "http://sample.server/geoserver/wms",
+            url: "http://rate-limit.test/geoserver/wms",
             msRateLimitKey: "native-image-fallback"
         };
         const layer = ReactDOM.render(<OpenlayersLayer

@@ -80,4 +80,58 @@ describe('RateLimitProbe', () => {
             }, 0);
         }).catch(done);
     });
+
+    it('stops asking a server that answered it is failing for other reasons', (done) => {
+        let sent = 0;
+        const fetchOnce = () => {
+            sent++;
+            return Promise.reject({ status: 500 });
+        };
+
+        probeBucket(first, {}, fetchOnce).catch(() => setTimeout(() => {
+            // the answer is shared per server, so the next failing tile does not ask again
+            probeBucket(second, {}, fetchOnce).catch(() => {
+                try {
+                    expect(sent).toBe(1);
+                    expect(rateLimitManager.shouldProbe(second)).toBe(false);
+                    done();
+                } catch (e) {
+                    done(e);
+                }
+            });
+        }, 0));
+    });
+
+    it('asks again once the server has served something', (done) => {
+        let sent = 0;
+        const fetchOnce = () => {
+            sent++;
+            return Promise.reject({ status: 404 });
+        };
+
+        probeBucket(first, {}, fetchOnce).catch(() => setTimeout(() => {
+            rateLimitManager.registerSuccess(first);
+            probeBucket(second, {}, fetchOnce).catch(() => {
+                try {
+                    expect(sent).toBe(2);
+                    done();
+                } catch (e) {
+                    done(e);
+                }
+            });
+        }, 0));
+    });
+
+    it('keeps asking a server that answers 429, since that is the answer it is looking for', (done) => {
+        const fetchOnce = () => Promise.reject({ status: 429 });
+
+        probeBucket(first, {}, fetchOnce).catch(() => {
+            try {
+                expect(rateLimitManager.shouldProbe(first)).toBe(true);
+                done();
+            } catch (e) {
+                done(e);
+            }
+        });
+    });
 });

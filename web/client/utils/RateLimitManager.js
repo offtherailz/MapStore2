@@ -23,6 +23,7 @@ const MIN_SPACING = 100; // below this the spacing is noise and the bucket is co
 const SUCCESSES_BEFORE_RELAXING = 4; // consecutive successes needed before giving part of the rate back
 const PROBE_TIMEOUT = 5000; // a probe that does not answer within this stops holding back its bucket
 const PROBE_POLL = 150; // how long a held request waits before asking again whether the probe answered
+const NOT_LIMITED_MEMORY = 60000; // how long a server that failed for other reasons is left alone
 
 const normalizeConfig = (config = {}) => ({
     ...DEFAULT_CONFIG,
@@ -227,6 +228,7 @@ export class RateLimitManager {
                 nextAllowedAt: 0,  // instant the next request may leave, moved forward by every reservation
                 deferredAt: 0,     // last time a caller was held back, i.e. last sign of a backlog
                 probingUntil: 0,   // deadline of the request sent to find out why the server is failing
+                notLimitedAt: 0,   // last time a probe answered that this server is failing for other reasons
                 successStreak: 0
             };
         }
@@ -292,6 +294,36 @@ export class RateLimitManager {
      * @param {string} url the request url
      * @param {object} options bucket options
      */
+    /**
+     * Whether it is worth spending a request to find out why this server is failing.
+     * A server that has just answered something other than 429 is failing for its own reasons, and
+     * asking it again at every tile of a broken layer is a request every few seconds, for ever.
+     * The answer is forgotten after a while and as soon as the server serves something again, so a
+     * service that starts rate limiting later is still noticed.
+     * @param {string} url the request url
+     * @param {object} options bucket options
+     * @return {boolean} true when the failure is still worth a question
+     */
+    shouldProbe(url, options = {}) {
+        const pacer = this.pacers[this.getPacingKey(url, options)];
+        if (!pacer || !pacer.notLimitedAt) {
+            return true;
+        }
+        return this.now() - pacer.notLimitedAt >= NOT_LIMITED_MEMORY;
+    }
+
+    /**
+     * Records that a probe found this server failing for reasons other than a rate limit.
+     * @param {string} url the request url
+     * @param {object} options bucket options
+     */
+    registerNotRateLimited(url, options = {}) {
+        const pacer = this.getPacer(url, options);
+        if (pacer) {
+            pacer.notLimitedAt = this.now();
+        }
+    }
+
     beginProbe(url, options = {}) {
         const pacer = this.getPacer(url, options);
         if (pacer) {
@@ -395,6 +427,7 @@ export class RateLimitManager {
         if (pacer) {
             // the server just told us how far apart it wants the requests: that interval becomes
             // the pace of every request towards it, not only of the one that was refused
+            pacer.notLimitedAt = 0;
             pacer.spacing = delay;
             pacer.nextAllowedAt = Math.max(pacer.nextAllowedAt, bucket.blockedUntil);
             pacer.successStreak = 0;
@@ -414,13 +447,18 @@ export class RateLimitManager {
     }
 
     registerSuccess(url, options = {}) {
+        const pacingKey = this.getPacingKey(url, options);
+        if (this.pacers[pacingKey]) {
+            // the server is answering again, so whatever a probe found last time is out of date
+            this.pacers[pacingKey].notLimitedAt = 0;
+        }
         const key = this.getBucketKey(url, options);
         const bucket = key ? this.buckets[key] : null;
         if (!bucket) {
             return;
         }
         bucket.consecutive429 = Math.max(0, bucket.consecutive429 - 1);
-        const pacer = this.pacers[this.getPacingKey(url, options)];
+        const pacer = this.pacers[pacingKey];
         if (!pacer || !pacer.spacing || ++pacer.successStreak < SUCCESSES_BEFORE_RELAXING) {
             return;
         }
