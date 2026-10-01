@@ -759,6 +759,48 @@ describe('widgets Epics', () => {
             [save(mapData, "widgetInlineEditor")],
             checkActions);
     });
+    it('onMapEditorOpenEpic restores the tile matrix sets of WMTS layers from sources', (done) => {
+        const tileMatrixSet = {
+            TileMatrix: [{
+                'ows:Identifier': 'EPSG:4326:0'
+            }],
+            'ows:Identifier': "EPSG:4326",
+            'ows:SupportedCRS': "urn:ogc:def:crs:EPSG::4326"
+        };
+        const checkActions = actions => {
+            expect(actions.length).toBe(2);
+            expect(actions[0].type).toBe(UPDATE_PROPERTY);
+            expect(actions[0].value.sources).toBe(undefined);
+            expect(actions[0].value.layers[0].availableTileMatrixSets['EPSG:4326'].tileMatrixSet).toEqual(tileMatrixSet);
+            done();
+        };
+        const mapData = {
+            widgetId: "widget-123",
+            mapId: "map-456",
+            layers: [{
+                id: 'layer:001',
+                type: 'wmts',
+                url: 'http:url001',
+                availableTileMatrixSets: {
+                    'EPSG:4326': {
+                        crs: 'EPSG:4326',
+                        tileMatrixSetLink: "sources['http:url001'].tileMatrixSet['EPSG:4326']"
+                    }
+                }
+            }],
+            sources: {
+                'http:url001': {
+                    tileMatrixSet: {
+                        'EPSG:4326': tileMatrixSet
+                    }
+                }
+            }
+        };
+        testEpic(onMapEditorOpenEpic,
+            2,
+            [save(mapData, "widgetInlineEditor")],
+            checkActions);
+    });
     it('onMapEditorOpenEpic does not trigger actions when map has no widgetId', (done) => {
         const checkActions = actions => {
             expect(actions.length).toBe(0);

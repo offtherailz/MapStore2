@@ -302,6 +302,19 @@ export const extractTileMatrixFromSources = (sources, layer) => {
 };
 
 /**
+ * Adds to each layer the tile matrix sets stored in sources (e.g. the ones referenced by `tileMatrixSetLink`)
+ *
+ * @param {object} sources sources object of the map configuration
+ * @param {object[]} layers array of layer objects
+ * @return {object[]} new layers with tile matrix sets included
+ */
+export const addTileMatrixFromSourcesToLayers = (sources, layers) => {
+    return sources && layers
+        ? layers.map(layer => ({ ...layer, ...extractTileMatrixFromSources(sources, layer) }))
+        : layers;
+};
+
+/**
  * It extracts tile matrix set from layers and add them to sources map object
  *
  * @param  {object} groupedLayersByUrl layers grouped by url

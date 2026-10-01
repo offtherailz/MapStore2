@@ -925,6 +925,52 @@ describe('LayersUtils', () => {
         expect( LayersUtils.extractTileMatrixFromSources({}, {})).toEqual({});
     });
 
+    it('addTileMatrixFromSourcesToLayers', () => {
+        const tileMatrixSet = {
+            TileMatrix: [{
+                'ows:Identifier': 'EPSG:4326:0'
+            }],
+            'ows:Identifier': "EPSG:4326",
+            'ows:SupportedCRS': "urn:ogc:def:crs:EPSG::4326"
+        };
+        const sources = {
+            'http:url001': {
+                tileMatrixSet: {
+                    'EPSG:4326': tileMatrixSet
+                }
+            }
+        };
+        const layers = [
+            {
+                id: 'layer:001',
+                type: 'wmts',
+                url: 'http:url001',
+                availableTileMatrixSets: {
+                    'EPSG:4326': {
+                        crs: 'EPSG:4326',
+                        tileMatrixSetLink: "sources['http:url001'].tileMatrixSet['EPSG:4326']"
+                    }
+                }
+            },
+            {
+                id: 'layer:002',
+                type: 'wms',
+                url: 'http:url002'
+            }
+        ];
+        const newLayers = LayersUtils.addTileMatrixFromSourcesToLayers(sources, layers);
+        expect(newLayers.length).toBe(2);
+        expect(newLayers[0].availableTileMatrixSets['EPSG:4326']).toEqual({
+            crs: 'EPSG:4326',
+            tileMatrixSetLink: "sources['http:url001'].tileMatrixSet['EPSG:4326']",
+            tileMatrixSet
+        });
+        expect(newLayers[1]).toEqual(layers[1]);
+        // no sources or layers
+        expect(LayersUtils.addTileMatrixFromSourcesToLayers(undefined, layers)).toBe(layers);
+        expect(LayersUtils.addTileMatrixFromSourcesToLayers(sources, undefined)).toBe(undefined);
+    });
+
     it('extract availableTileMatrixSets from sources', () => {
         const sources = {
             'http:url001': {

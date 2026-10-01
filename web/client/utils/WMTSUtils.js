@@ -147,7 +147,9 @@ export const sortTileMatrix = (tileMatrixSet, ids)  => {
 
 export const parseTileMatrixSetOption = (options) => {
     if (options?.availableTileMatrixSets) {
-        const tileMatrixSetKeys = Object.keys(options.availableTileMatrixSets);
+        // tile matrix sets only referenced by `tileMatrixSetLink` (not resolved from sources) can not be used
+        const tileMatrixSetKeys = Object.keys(options.availableTileMatrixSets)
+            .filter((key) => !!options.availableTileMatrixSets[key].tileMatrixSet);
         const matrixIds = tileMatrixSetKeys.reduce((acc, key) => {
             const limits = options.availableTileMatrixSets[key].limits
                 ? options.availableTileMatrixSets[key].limits

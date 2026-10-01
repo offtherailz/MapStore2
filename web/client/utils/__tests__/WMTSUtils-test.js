@@ -116,6 +116,31 @@ describe('Test the WMTSUtils', () => {
             }
         ]);
     });
+    it('parseTileMatrixSetOption skips tile matrix sets not resolved from sources', () => {
+        const tileMatrixSet = {
+            TileMatrix: [{
+                'ows:Identifier': 'EPSG:4326:0'
+            }],
+            'ows:Identifier': "EPSG:4326",
+            'ows:SupportedCRS': "urn:ogc:def:crs:EPSG::4326"
+        };
+        const options = WMTSUtils.parseTileMatrixSetOption({
+            availableTileMatrixSets: {
+                'EPSG:4326': {
+                    crs: 'EPSG:4326',
+                    tileMatrixSet
+                },
+                'EPSG:900913': {
+                    crs: 'EPSG:900913',
+                    tileMatrixSetLink: "sources['http:url001'].tileMatrixSet['EPSG:900913']"
+                }
+            }
+        });
+        expect(options.matrixIds).toEqual({
+            'EPSG:4326': [{ identifier: 'EPSG:4326:0' }]
+        });
+        expect(options.tileMatrixSet).toEqual([tileMatrixSet]);
+    });
     describe('getDefaultStyleIdentifier', () => {
         it('tests fetching the style when it is missing', () => {
             let style = WMTSUtils.getDefaultStyleIdentifier({});

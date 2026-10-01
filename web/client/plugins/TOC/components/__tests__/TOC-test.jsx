@@ -67,6 +67,44 @@ describe('TOC', () => {
         expect(visibilityChecks.length).toBe(4);
         Simulate.click(visibilityChecks[0]);
     });
+    it('should keep the tile matrix sets of WMTS layers on change map', (done) => {
+        const tileMatrixSet = {
+            TileMatrix: [{
+                'ows:Identifier': 'EPSG:4326:0'
+            }],
+            'ows:Identifier': "EPSG:4326",
+            'ows:SupportedCRS': "urn:ogc:def:crs:EPSG::4326"
+        };
+        ReactDOM.render(<TOC
+            config={{ sortable: false }}
+            map={{
+                layers: [
+                    {
+                        id: 'layer01',
+                        name: 'Layer 01',
+                        type: 'wmts',
+                        url: 'http:url001',
+                        visibility: true,
+                        availableTileMatrixSets: {
+                            'EPSG:4326': {
+                                crs: 'EPSG:4326',
+                                tileMatrixSet
+                            }
+                        }
+                    }
+                ],
+                groups: []
+            }}
+            onChangeMap={(map) => {
+                expect(map.layers[0].visibility).toBe(false);
+                expect(map.layers[0].availableTileMatrixSets['EPSG:4326'].tileMatrixSet).toEqual(tileMatrixSet);
+                done();
+            }}
+        />, document.getElementById("container"));
+        const visibilityChecks = [...document.querySelectorAll('.ms-visibility-check')];
+        expect(visibilityChecks.length).toBe(1);
+        Simulate.click(visibilityChecks[0]);
+    });
     it('should trigger on select node', (done) => {
         ReactDOM.render(<TOC
             config={{ sortable: false }}
