@@ -81,6 +81,7 @@ module.exports = ({ prod = true, name, exposes, sharedLibrariesEager = true, ali
                 use: [{
                     loader: 'url-loader',
                     options: {
+                        esModule: false,
                         name: "assets/img/[path][name][hash].[ext]",
                         limit: 8192
                     }

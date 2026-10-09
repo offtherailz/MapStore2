@@ -120,6 +120,7 @@ module.exports = ({browsers = [ 'ChromeHeadlessWebGL' ], files, path, testFile, 
                     use: [{
                         loader: 'url-loader',
                         options: {
+                            esModule: false,
                             mimetype: "application/font-woff"
                         }
                     }]
@@ -138,6 +139,7 @@ module.exports = ({browsers = [ 'ChromeHeadlessWebGL' ], files, path, testFile, 
                     use: [{
                         loader: 'url-loader',
                         options: {
+                            esModule: false,
                             name: "[path][name].[ext]",
                             limit: 8192
                         }
