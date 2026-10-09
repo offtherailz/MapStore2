@@ -248,6 +248,7 @@ module.exports = (...args) => mapArgumentsToObject(args, ({
                 use: [{
                     loader: 'url-loader',
                     options: {
+                        esModule: false,
                         mimetype: "application/font-woff"
                     }
                 }]
@@ -266,6 +267,7 @@ module.exports = (...args) => mapArgumentsToObject(args, ({
                 use: [{
                     loader: 'url-loader',
                     options: {
+                        esModule: false,
                         name: "[path][name].[ext]",
                         limit: 8192
                     }
