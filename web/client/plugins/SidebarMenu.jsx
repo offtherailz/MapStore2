@@ -233,7 +233,7 @@ class SidebarMenu extends React.Component {
         const menuItems = items.map((item) => {
             if (item.tool) {
                 const CustomMenuItem = item.tool;
-                return <CustomMenuItem key={item.name} menuItem component={SidebarMenuItem}/>;
+                return <CustomMenuItem key={item.name} {...item.cfg} menuItem component={SidebarMenuItem}/>;
             }
             const ConnectedItem = connect((item?.selector ?? dummySelector),
                 (dispatch, ownProps) => {

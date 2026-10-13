@@ -401,6 +401,45 @@ function BrandNavbarDetailsButton({
     );
 }
 
+function SidebarMenuDetailsButton({
+    resource: selectedResource,
+    resourceInfo,
+    resourceType,
+    onSelect,
+    onShow,
+    show,
+    component,
+    menuItem
+}) {
+    if (!resourceType) {
+        return null;
+    }
+    const Component = component;
+    return (
+        <Component
+            active={show}
+            glyph="details"
+            labelId="resourcesCatalog.viewResourceProperties"
+            menuItem={menuItem}
+            onClick={() => {
+                if (show) {
+                    onShow(false);
+                    return;
+                }
+                if (!selectedResource) {
+                    onSelect(parseResourceProperties({
+                        ...resourceInfo?.initialResource,
+                        category: {
+                            name: resourceType
+                        }
+                    }));
+                }
+                onShow(true);
+            }}
+        />
+    );
+}
+
 export default createPlugin('ResourceDetails', {
     component: resourceDetailsConnect(withResizeDetector(ResourceDetails)),
     containers: {
@@ -410,6 +449,12 @@ export default createPlugin('ResourceDetails', {
             Component: resourceDetailsConnect(BrandNavbarDetailsButton),
             doNotHide: true,
             position: 5
+        },
+        SidebarMenu: {
+            position: 25,
+            priority: 0,
+            tool: resourceDetailsConnect(SidebarMenuDetailsButton),
+            doNotHide: true
         },
         ResourcesGrid: {
             priority: 2,
