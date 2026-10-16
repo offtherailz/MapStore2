@@ -15,6 +15,7 @@ import { hasFeature } from './config.js';
  * @property {(overrides?: object) => Promise<object>} map
  * @property {(overrides?: object) => Promise<object>} dashboard
  * @property {(overrides?: object) => Promise<object>} geostory
+ * @property {(overrides?: object) => Promise<object>} context
  * @property {(overrides?: object) => Promise<object>} user
  * @property {(overrides?: object) => Promise<object>} group
  * @property {(overrides?: object) => Promise<object>} tag
@@ -25,6 +26,8 @@ import { hasFeature } from './config.js';
  * @property {(resource: object) => void} track adopt a resource created by the UI
  * @property {(user: {id: number, name: string}) => void} trackUser adopt a user created by the UI
  * @property {(group: {id: number, groupName: string}) => void} trackGroup adopt a group created by the UI
+ * @property {(range: {id: number}) => void} trackIPRange adopt an IP range created by the UI
+ * @property {(tag: {id: number, name: string}) => void} trackTag adopt a tag created by the UI
  */
 
 /** 1x1 PNG, the smallest image a thumbnail can hold. */
@@ -56,7 +59,7 @@ const test = base.extend({
      */
     data: async({ api }, use, testInfo) => {
         const bundle = testInfo.titlePath[0] ?? 'suite';
-        const created = { resources: [], users: [], groups: [], tags: [] };
+        const created = { resources: [], users: [], groups: [], tags: [], ipRanges: [] };
 
         const factory = {
             name: (label) => uniqueName(bundle, label),
@@ -71,6 +74,14 @@ const test = base.extend({
 
             trackGroup: ({ id, groupName }) => {
                 created.groups.push({ id, groupName });
+            },
+
+            trackIPRange: ({ id }) => {
+                created.ipRanges.push({ id });
+            },
+
+            trackTag: ({ id, name }) => {
+                created.tags.push({ id, name });
             },
 
             map: async(overrides = {}) => {
@@ -104,6 +115,20 @@ const test = base.extend({
                     name: uniqueName(bundle, 'geostory'),
                     category: 'GEOSTORY',
                     data: { type: 'cascade', sections: [] },
+                    ...overrides
+                });
+
+                created.resources.push(resource);
+
+                return resource;
+            },
+
+            context: async(overrides = {}) => {
+                const resource = await api.createResource({
+                    // A context name ends up in the URL, so it stays free of the usual separators.
+                    name: `E2E_context${Math.random().toString(36).slice(2, 8)}`,
+                    category: 'CONTEXT',
+                    data: { plugins: { desktop: [] }, mapConfig: {} },
                     ...overrides
                 });
 
@@ -201,6 +226,10 @@ const test = base.extend({
 
         for (const tag of created.tags.reverse()) {
             await api.deleteTag(tag.id).catch(() => {});
+        }
+
+        for (const range of created.ipRanges.reverse()) {
+            await api.deleteIPRange(range.id).catch(() => {});
         }
     }
 });

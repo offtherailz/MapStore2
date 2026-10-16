@@ -103,12 +103,12 @@ async function cleanFixtures() {
     try {
         client = await createGeoStoreClient();
         const removed = await client.deleteFixtures(FIXTURE_PREFIX);
-        const total = removed.resources + removed.users + removed.groups + removed.tags;
+        const total = removed.resources + removed.users + removed.groups + removed.tags + removed.ipRanges;
 
         if (total > 0) {
             console.log(
                 `[e2e] cleaned ${total} leftover ${FIXTURE_PREFIX}* fixtures `
-                + `(${removed.resources} resources, ${removed.users} users, ${removed.groups} groups, ${removed.tags} tags)`
+                + `(${removed.resources} resources, ${removed.users} users, ${removed.groups} groups, ${removed.tags} tags, ${removed.ipRanges} IP ranges)`
             );
         }
     } catch (error) {

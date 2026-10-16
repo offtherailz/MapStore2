@@ -305,6 +305,21 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
         );
     }
 
+    // ── IP ranges ────────────────────────────────────────────────────────────
+
+    /** @returns {Promise<object[]>} every IP range of the instance */
+    async function listIPRanges() {
+        return extractList(await json('ipranges/'), 'IPRange');
+    }
+
+    async function deleteIPRange(id) {
+        const response = await context.delete(`ipranges/${id}`);
+
+        if (response.status() !== 404) {
+            await expectOk(response, `delete IP range ${id}`);
+        }
+    }
+
     async function deleteResource(id) {
         const response = await context.delete(`resources/resource/${id}`);
 
@@ -320,10 +335,10 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
      * Removes every leftover fixture. Runs in globalSetup so a run that follows a
      * crashed one still starts from a clean instance.
      *
-     * @returns {Promise<{resources: number, users: number, groups: number, tags: number}>}
+     * @returns {Promise<{resources: number, users: number, groups: number, tags: number, ipRanges: number}>}
      */
     async function deleteFixtures(prefix = FIXTURE_PREFIX) {
-        const removed = { resources: 0, users: 0, groups: 0, tags: 0 };
+        const removed = { resources: 0, users: 0, groups: 0, tags: 0, ipRanges: 0 };
 
         for (const category of [...CATEGORIES, ...SUPPORT_CATEGORIES]) {
             const resources = await findResources(category, prefix);
@@ -347,6 +362,14 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
             if (String(group.groupName ?? '').startsWith(prefix)) {
                 await deleteGroup(group.id);
                 removed.groups += 1;
+            }
+        }
+
+        // IP ranges have no name: fixtures carry the prefix in their description.
+        for (const range of await listIPRanges()) {
+            if (String(range.description ?? '').startsWith(prefix)) {
+                await deleteIPRange(range.id);
+                removed.ipRanges += 1;
             }
         }
 
@@ -386,6 +409,8 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
         findTags,
         deleteTag,
         tagResource,
+        listIPRanges,
+        deleteIPRange,
         deleteFixtures,
         dispose
     };
