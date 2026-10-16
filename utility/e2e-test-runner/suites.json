@@ -123,6 +123,14 @@
       "files": [
         "tests/accounts.spec.js"
       ]
+    },
+    "url-params": {
+      "title": "Opening MapStore from a link",
+      "why": "Verify that the map view passed in the URL or posted by an external page through setParams is applied.",
+      "active": true,
+      "files": [
+        "tests/url-params.spec.js"
+      ]
     }
   }
 }
