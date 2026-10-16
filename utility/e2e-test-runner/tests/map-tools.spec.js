@@ -4,6 +4,7 @@ import { login } from './helpers/auth.js';
 import { moveAwayFromTooltips } from './helpers/navigation.js';
 import {
     FIXTURE_LAYER_TITLE,
+    fixtureLayer,
     mapConfig,
     openMapViewer,
     openLayersDrawer,
@@ -59,6 +60,24 @@ describeIfFeature('geoserverIntegration', 'Map tools', () => {
         await openMapViewer(page, map.id);
 
         await expect(page.locator('.ms-crs-select-button')).toHaveText('EPSG:3857');
+    });
+
+    test('The map projection can be changed from the status bar', async({ page, data }) => {
+        // The projection change is refused when the map has no background compatible with
+        // it; a WMS background is available in any projection GeoServer publishes.
+        const background = fixtureLayer({ id: 'e2e_background', title: 'E2E background', group: 'background', search: undefined });
+        const map = await data.map({ data: mapConfig([background, fixtureLayer()]) });
+
+        await openMapViewer(page, map.id);
+        // The fixture layer is requested again in the new projection.
+        const reprojected = page.waitForResponse((response) => /\/wms\?/i.test(response.url())
+            && /[CS]RS=EPSG(%3A|:)4326/i.test(response.url()));
+
+        await page.locator('.ms-crs-select-button').click();
+        await page.locator('.ms-crs-dropdown .dropdown-menu').getByText('EPSG:4326', { exact: true }).click();
+
+        await expect(page.locator('.ms-crs-select-button')).toHaveText('EPSG:4326');
+        expect((await reprojected).ok()).toBe(true);
     });
 
     test('A change to a saved map survives a reload', async({ page, data }) => {
