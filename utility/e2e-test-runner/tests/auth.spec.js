@@ -1,11 +1,11 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, fromScenario } from './fixtures.js';
 import { login, logout } from './helpers/auth.js';
 
 /**
  * Authentication suite.
  */
 test.describe('Authentication', () => {
-    test('Admin can sign in and sign out', async({ page }) => {
+    test('Admin can sign in and sign out', fromScenario('Authentication — Login/logout as admin'), async({ page }) => {
         await test.step('Sign in as admin', async() => {
             await login(page);
         });

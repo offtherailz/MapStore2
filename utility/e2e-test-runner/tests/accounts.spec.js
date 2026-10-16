@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, fromScenario } from './fixtures.js';
 import { login, logout, closeLoginDialog } from './helpers/auth.js';
 import { openAppTarget } from './helpers/navigation.js';
 
@@ -23,7 +23,29 @@ async function openUserDialogTab(dialog, index) {
     return pane;
 }
 
+/** Opens the group manager through the account menu. */
+async function openGroupManager(page) {
+    await page.locator('button.dropdown-toggle.btn-success').click();
+    await page.locator('.dropdown-menu li').filter({ hasText: 'Manage Groups' }).first().click();
+    await expect(page).toHaveURL(/#\/manager\/groupmanager/, { timeout: 20000 });
+}
+
+/** Group dialog tabs, identified by their glyph. */
+async function openGroupDialogTab(dialog, glyph) {
+    await dialog.locator(`.nav-tabs a:has(.glyphicon-${glyph})`).click();
+}
+
+/** Confirms the delete dialog of the user and group managers. */
+async function confirmDelete(page) {
+    const confirm = page.locator('[role="dialog"]').filter({ hasText: 'Are you sure you want to delete' }).last();
+    await confirm.getByRole('button', { name: 'Delete' }).click();
+}
+
 function userEntry(page, name) {
+    return page.locator('[role="tabpanel"] li').filter({ hasText: name });
+}
+
+function groupEntry(page, name) {
     return page.locator('[role="tabpanel"] li').filter({ hasText: name });
 }
 
@@ -64,7 +86,7 @@ test.describe('Accounts', () => {
         });
     });
 
-    test('Admin creates a user from the manager, then edits its attributes and groups', async({ page, api, data }) => {
+    test('Admin creates a user from the manager, then edits its attributes and groups', fromScenario('Authentication — Create an user', 'Authentication — Update user information'), async({ page, api, data }) => {
         const name = data.name('user');
         const password = 'E2ePassword!1';
         const email = `${name.toLowerCase()}@example.com`;
@@ -145,5 +167,102 @@ test.describe('Accounts', () => {
             await expect(page.locator('[role="alert"].alert-danger')).toHaveCount(0);
             await expect(page.locator('button.dropdown-toggle.btn-success')).toBeVisible();
         });
+    });
+
+    test('A standard user signs in and out', fromScenario('Authentication — Login/logout as user'), async({ page, data }) => {
+        const password = 'E2ePassword!1';
+        const user = await data.user({ password });
+
+        await openAppTarget(page, '#/');
+        await logout(page);
+        await login(page, user.name, password);
+        await expect(page.locator('button.dropdown-toggle.btn-success')).toBeVisible();
+        // A standard user has no access to the account managers.
+        await page.locator('button.dropdown-toggle.btn-success').click();
+        await expect(page.locator('.dropdown-menu li').filter({ hasText: 'Manage Accounts' })).toHaveCount(0);
+        await page.keyboard.press('Escape');
+        await logout(page);
+        await expect(page.locator('button.dropdown-toggle.btn-success')).toHaveCount(0);
+    });
+
+    test('Admin deletes a user from the manager', fromScenario('Authentication — Delete a user'), async({ page, api, data }) => {
+        const user = await data.user();
+
+        await openUserManager(page);
+        await page.getByPlaceholder('Search users...').fill(user.name);
+        await expect(page.getByText(/^1 Users? found$/)).toBeVisible({ timeout: 20000 });
+        await userEntry(page, user.name).locator('button:has(.glyphicon-trash)').click();
+        await confirmDelete(page);
+
+        await expect(userEntry(page, user.name)).toHaveCount(0, { timeout: 20000 });
+        expect((await api.findUsers(user.name)).filter((entry) => entry.name === user.name)).toHaveLength(0);
+    });
+
+    test('Admin creates a group, adds a note and deletes it', fromScenario(
+        'Authentication — Create a group',
+        'Authentication — Add group attribute (@GH-7874)',
+        'Authentication — Delete a group'
+    ), async({ page, api, data }) => {
+        const groupName = data.name('group');
+        const note = 'Written by the E2E suite';
+        const dialog = page.locator('[role="dialog"]').filter({ has: page.locator('input[name="groupName"]') });
+
+        await test.step('Create the group', async() => {
+            await openGroupManager(page);
+            await page.getByRole('button', { name: 'New Group' }).click();
+            await dialog.locator('input[name="groupName"]').fill(groupName);
+            await dialog.locator('textarea[name="description"]').fill('E2E group description');
+            await dialog.getByRole('button', { name: 'Create' }).click();
+            // The dialog stays open, switching to the editing of the created group; its
+            // buttons are disabled through a class, not the attribute.
+            await expect(dialog.getByRole('button', { name: 'Save' })).toHaveClass(/disabled/, { timeout: 20000 });
+            await dialog.getByRole('button', { name: 'Close' }).click();
+            await expect(groupEntry(page, groupName)).toBeVisible({ timeout: 20000 });
+
+            const [group] = (await api.findGroups(groupName)).filter((entry) => entry.groupName === groupName);
+            expect(group, `group ${groupName} not found through the API`).toBeTruthy();
+            data.trackGroup(group);
+        });
+
+        await test.step('Add a note to the group', async() => {
+            await groupEntry(page, groupName).locator('button:has(.glyphicon-wrench)').click();
+            await openGroupDialogTab(dialog, 'list-alt');
+            await dialog.locator('textarea[name="notes"]').fill(note);
+            const save = dialog.getByRole('button', { name: 'Save' });
+            await expect(save).not.toHaveClass(/disabled/);
+            await save.click();
+            await expect(save).toHaveClass(/disabled/, { timeout: 20000 });
+            await dialog.getByRole('button', { name: 'Close' }).click();
+
+            await groupEntry(page, groupName).locator('button:has(.glyphicon-wrench)').click();
+            await openGroupDialogTab(dialog, 'list-alt');
+            await expect(dialog.locator('textarea[name="notes"]')).toHaveValue(note);
+            await dialog.getByRole('button', { name: 'Close' }).click();
+        });
+
+        await test.step('Delete the group', async() => {
+            await groupEntry(page, groupName).locator('button:has(.glyphicon-trash)').click();
+            await confirmDelete(page);
+            await expect(groupEntry(page, groupName)).toHaveCount(0, { timeout: 20000 });
+        });
+    });
+
+    test('A long group name added to a user shows in a tooltip', fromScenario('Authentication — Add user to a group (@GH-10753)'), async({ page, data }) => {
+        const user = await data.user();
+        const group = await data.group({ groupName: data.name('LONG_NAME_GROUUUUUUUUUUUUUP') });
+        const dialog = page.locator('[role="dialog"]').filter({ has: page.locator('#userDetails-tabs') });
+
+        await openUserManager(page);
+        await page.getByPlaceholder('Search users...').fill(user.name);
+        await userEntry(page, user.name).locator('button:has(.glyphicon-wrench)').click();
+        const groups = await openUserDialogTab(dialog, 3);
+        await groups.getByRole('combobox').fill(group.groupName);
+        await page.locator('.Select-option').filter({ hasText: group.groupName }).click();
+
+        const value = groups.locator('.Select-value-label[data-tip]').filter({ hasText: group.groupName });
+        await expect(value).toHaveAttribute('data-tip', group.groupName);
+        await value.hover();
+        await expect(page.locator('.__react_component_tooltip, [role="tooltip"]').filter({ hasText: group.groupName }).first())
+            .toBeVisible({ timeout: 10000 });
     });
 });

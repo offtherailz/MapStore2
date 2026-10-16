@@ -1,9 +1,9 @@
-import { test, expect, describeIfFeature } from './fixtures.js';
+import { test, expect, describeIfFeature, fromScenario } from './fixtures.js';
 import { getIdentity } from './config.js';
 import { login, logout } from './helpers/auth.js';
 
 describeIfFeature('ldap', 'LDAP', () => {
-    test('LDAP user can sign in and sign out', async({ page }) => {
+    test('LDAP user can sign in and sign out', fromScenario('Authentication — Login/logout as LDAP user'), async({ page }) => {
         // A profile may declare a dedicated ldapUser; otherwise the standard user of
         // the environment is expected to live in the LDAP store.
         const identity = getIdentity('ldapUser') ?? getIdentity('standardUser');

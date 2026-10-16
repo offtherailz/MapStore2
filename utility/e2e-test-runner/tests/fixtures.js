@@ -24,6 +24,7 @@ import { hasFeature } from './config.js';
  * @property {(label: string) => string} name unique fixture name, not persisted
  * @property {(resource: object) => void} track adopt a resource created by the UI
  * @property {(user: {id: number, name: string}) => void} trackUser adopt a user created by the UI
+ * @property {(group: {id: number, groupName: string}) => void} trackGroup adopt a group created by the UI
  */
 
 /** 1x1 PNG, the smallest image a thumbnail can hold. */
@@ -66,6 +67,10 @@ const test = base.extend({
 
             trackUser: ({ id, name }) => {
                 created.users.push({ id, name });
+            },
+
+            trackGroup: ({ id, groupName }) => {
+                created.groups.push({ id, groupName });
             },
 
             map: async(overrides = {}) => {
@@ -217,13 +222,13 @@ function describeIfFeature(feature, title, body) {
 }
 
 /**
- * Records the original manual scenario a test comes from, keeping the imported
+ * Records the original manual scenarios a test comes from, keeping the imported
  * CucumberStudio corpus traceable without a separate tracking document.
  *
- * @param {string} scenario e.g. 'Maps/CreateDelete — Create a Map (@GH-11458)'
+ * @param {...string} scenarios e.g. 'Maps/CreateDelete — Create a Map (@GH-11458)'
  */
-function fromScenario(scenario) {
-    return { annotation: { type: 'cucumber', description: scenario } };
+function fromScenario(...scenarios) {
+    return { annotation: scenarios.map((description) => ({ type: 'cucumber', description })) };
 }
 
 export { test, expect, describeIfFeature, fromScenario };
