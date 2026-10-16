@@ -46,4 +46,49 @@ function titledStory(titles) {
     };
 }
 
-export { textDashboard, titledStory };
+/** Plugins every context needs to show its map. */
+const CONTEXT_BASE_PLUGINS = [
+    {
+        name: 'Map',
+        cfg: {
+            mapOptions: { openlayers: { attribution: { container: '#footer-attribution-container' } } },
+            toolsOptions: { scalebar: { container: '#footer-scalebar-container' } },
+            containerPosition: 'background'
+        }
+    },
+    { name: 'Notifications' },
+    { name: 'SecurityPopup' },
+    { name: 'MapFooter', cfg: { containerPosition: 'footer' } },
+    { name: 'FeedbackMask' }
+];
+
+/**
+ * Context in the format the context creator saves.
+ *
+ * @param {object} [options]
+ * @param {string} [options.windowTitle]
+ * @param {object[]} [options.layers] layers of the context map (no remote background)
+ * @param {object[]} [options.plugins] plugins added to the base ones, e.g. [{ name: 'TOC' }]
+ */
+function contextPayload({ windowTitle = 'E2E context', layers = [], plugins = [] } = {}) {
+    return {
+        windowTitle,
+        mapConfig: {
+            version: 2,
+            map: {
+                center: { x: 11.2, y: 43.4, crs: 'EPSG:4326' },
+                maxExtent: [-20037508.34, -20037508.34, 20037508.34, 20037508.34],
+                projection: 'EPSG:900913',
+                units: 'm',
+                zoom: 5,
+                mapOptions: {},
+                layers
+            }
+        },
+        customVariablesEnabled: false,
+        plugins: { desktop: [...CONTEXT_BASE_PLUGINS, ...plugins] },
+        userPlugins: []
+    };
+}
+
+export { textDashboard, titledStory, contextPayload };

@@ -9,6 +9,7 @@
 import { test as base, expect } from '@playwright/test';
 import { createGeoStoreClient, uniqueName } from './api/geostore.js';
 import { hasFeature } from './config.js';
+import { contextPayload } from './helpers/content.js';
 
 /**
  * @typedef {object} DataFactory
@@ -128,7 +129,7 @@ const test = base.extend({
                     // A context name ends up in the URL, so it stays free of the usual separators.
                     name: `E2E_context${Math.random().toString(36).slice(2, 8)}`,
                     category: 'CONTEXT',
-                    data: { plugins: { desktop: [] }, mapConfig: {} },
+                    data: contextPayload(),
                     ...overrides
                 });
 

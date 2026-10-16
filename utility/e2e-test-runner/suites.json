@@ -171,6 +171,22 @@
       "files": [
         "tests/resource-share.spec.js"
       ]
+    },
+    "context-resources": {
+      "title": "Application context resources",
+      "why": "Verify permissions, editing, import and export of application contexts and the maps that depend on them.",
+      "active": true,
+      "files": [
+        "tests/context-resources.spec.js"
+      ]
+    },
+    "context-share": {
+      "title": "Context sharing",
+      "why": "Verify direct links and embed code of application contexts, with their layers and identify.",
+      "active": true,
+      "files": [
+        "tests/context-share.spec.js"
+      ]
     }
   }
 }
