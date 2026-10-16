@@ -76,6 +76,14 @@
         "tests/map-tools.spec.js"
       ]
     },
+    "map-services": {
+      "title": "Map backgrounds, search and 3D",
+      "why": "Verify the background selector, place search and the 3D viewer on services of the local GeoServer.",
+      "active": true,
+      "files": [
+        "tests/map-services.spec.js"
+      ]
+    },
     "dashboard": {
       "title": "Dashboards",
       "why": "Verify dashboard creation, text widgets and data widgets built on the local GeoServer layer.",
