@@ -139,6 +139,22 @@
       "files": [
         "tests/url-params.spec.js"
       ]
+    },
+    "dashboard-views": {
+      "title": "Dashboard views",
+      "why": "Verify the layout views of a dashboard: naming, adding, ordering, removal and read only display.",
+      "active": true,
+      "files": [
+        "tests/dashboard-views.spec.js"
+      ]
+    },
+    "resource-permissions": {
+      "title": "Dashboard and story permissions",
+      "why": "Verify view, edit and IP range permissions of dashboards and geostories, and the tools of their viewers.",
+      "active": true,
+      "files": [
+        "tests/resource-permissions.spec.js"
+      ]
     }
   }
 }

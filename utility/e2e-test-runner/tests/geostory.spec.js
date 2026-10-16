@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, fromScenario } from './fixtures.js';
 import { login } from './helpers/auth.js';
 import { openAppTarget, dismissTutorial } from './helpers/navigation.js';
 import { openGeostory, enterEditMode, addSection, saveGeostory } from './helpers/geostory.js';
@@ -42,7 +42,7 @@ test.describe('GeoStory', () => {
         });
     });
 
-    test('Admin can create and delete a geostory from the homepage', async({ page, api, data }) => {
+    test('Admin can create and delete a geostory from the homepage', fromScenario('GeoStory/CreateDelete — Create a GeoStory', 'GeoStory/CreateDelete — Delete a GeoStory'), async({ page, api, data }) => {
         const storyName = data.name('geostory');
 
         await test.step('Create a geostory', async() => {

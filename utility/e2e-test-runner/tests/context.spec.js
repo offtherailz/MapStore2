@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, fromScenario } from './fixtures.js';
 import { login, ensureSignedIn } from './helpers/auth.js';
 import { openAppTarget, dismissTutorial } from './helpers/navigation.js';
 import { CREATOR, STEPS, openContextCreator, fillGeneralSettings, wizardNext } from './helpers/context.js';
@@ -26,7 +26,7 @@ test.describe('Application contexts', () => {
     });
 
     // Opening a context from its card is asserted by the extension test below.
-    test('Admin can create a context and delete it', async({ page, api, data }) => {
+    test('Admin can create a context and delete it', fromScenario('Context/CreateDelete — Create a Context', 'Context/CreateDelete — Delete a Context'), async({ page, api, data }) => {
         // A context name ends up in the URL, so it stays free of the usual separators.
         const contextName = `E2Econtext${Math.random().toString(36).slice(2, 8)}`;
 
@@ -62,7 +62,7 @@ test.describe('Application contexts', () => {
         });
     });
 
-    test('An uploaded extension is used by a context and then removed', async({ page, api, data }) => {
+    test('An uploaded extension is used by a context and then removed', fromScenario('Context/Extension — Add an extension'), async({ page, api, data }) => {
         const suffix = Math.random().toString(36).slice(2, 8);
         const extensionName = `E2EExtension${suffix}`;
         const contextName = `E2Econtext${suffix}`;

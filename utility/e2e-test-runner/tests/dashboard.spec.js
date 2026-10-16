@@ -1,4 +1,4 @@
-import { test, expect, describeIfFeature } from './fixtures.js';
+import { test, expect, describeIfFeature, fromScenario } from './fixtures.js';
 import { hasFeature } from './config.js';
 import { login } from './helpers/auth.js';
 import { openAppTarget, dismissTutorial } from './helpers/navigation.js';
@@ -35,7 +35,7 @@ describeIfFeature('geoserverIntegration', 'Dashboard', () => {
         }
     });
 
-    test('Text widget can be added and survives a reload', async({ page, data }) => {
+    test('Text widget can be added and survives a reload', fromScenario('Dashboard/Widget — Add a Text Widget'), async({ page, data }) => {
         const dashboard = await data.dashboard();
         const widgetTitle = 'E2E text widget';
         const widgetBody = 'Written by the E2E suite';
@@ -69,7 +69,7 @@ describeIfFeature('geoserverIntegration', 'Dashboard', () => {
         });
     });
 
-    test('Table widget on the fixture layer lists its features', async({ page, data }) => {
+    test('Table widget on the fixture layer lists its features', fromScenario('Dashboard/Widget — Add a Table Widget'), async({ page, data }) => {
         const dashboard = await data.dashboard();
         const widgetTitle = 'E2E table widget';
 
@@ -101,7 +101,7 @@ describeIfFeature('geoserverIntegration', 'Dashboard', () => {
         });
     });
 
-    test('Admin can create and delete a dashboard from the homepage', async({ page, api, data }) => {
+    test('Admin can create and delete a dashboard from the homepage', fromScenario('Dashboard/CreateDelete — Create a Dashboard', 'Dashboard/CreateDelete — Delete a Dashboard'), async({ page, api, data }) => {
         const dashboardName = data.name('dashboard');
 
         await test.step('Create a dashboard', async() => {
@@ -140,7 +140,7 @@ describeIfFeature('geoserverIntegration', 'Dashboard', () => {
         });
     });
 
-    test('Counter widget aggregates the fixture population', async({ page, data }) => {
+    test('Counter widget aggregates the fixture population', fromScenario('Dashboard/Widget — Add a Counter Widget'), async({ page, data }) => {
         const dashboard = await data.dashboard();
         // 2748000 + 1352000 + 913000 + 361000 + 561000 of the PostGIS fixture, rendered
         // without thousands separators.
@@ -167,7 +167,7 @@ describeIfFeature('geoserverIntegration', 'Dashboard', () => {
         });
     });
 
-    test('Chart widget groups the fixture features by category', async({ page, data }) => {
+    test('Chart widget groups the fixture features by category', fromScenario('Dashboard/Widget — Add a Chart Widget'), async({ page, data }) => {
         const dashboard = await data.dashboard();
 
         await openDashboard(page, dashboard.id);
