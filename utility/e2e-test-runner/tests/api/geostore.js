@@ -37,7 +37,12 @@ function toArray(value) {
     return Array.isArray(value) ? value : [value];
 }
 
-function extractList(body, itemKey) {
+/**
+ * @param {object} body
+ * @param {string|string[]} itemKeys key of the items in the list wrapper; several when
+ * GeoStore versions name it differently (UserGroup / Group)
+ */
+function extractList(body, itemKeys) {
     if (!body || typeof body !== 'object') {
         return [];
     }
@@ -50,9 +55,15 @@ function extractList(body, itemKey) {
         return [body.results];
     }
 
-    const wrapper = Object.values(body).find((value) => value && typeof value === 'object' && value[itemKey]);
+    for (const itemKey of toArray(itemKeys)) {
+        const wrapper = Object.values(body).find((value) => value && typeof value === 'object' && value[itemKey]);
 
-    return wrapper ? toArray(wrapper[itemKey]) : [];
+        if (wrapper) {
+            return toArray(wrapper[itemKey]);
+        }
+    }
+
+    return [];
 }
 
 function uniqueName(bundle, label) {
@@ -142,7 +153,8 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
     }
 
     async function findUsers(textSearch = FIXTURE_PREFIX) {
-        return extractList(await json(`extjs/search/users/${encodeURIComponent(textSearch)}`), 'User');
+        // Wildcards are explicit: some GeoStore versions match the bare text exactly.
+        return extractList(await json(`extjs/search/users/*${encodeURIComponent(textSearch)}*`), 'User');
     }
 
     async function deleteUser(id) {
@@ -160,7 +172,7 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
     }
 
     async function findGroups(textSearch = FIXTURE_PREFIX) {
-        return extractList(await json(`extjs/search/groups/${encodeURIComponent(textSearch)}`), 'UserGroup');
+        return extractList(await json(`extjs/search/groups/*${encodeURIComponent(textSearch)}*`), ['UserGroup', 'Group']);
     }
 
     async function deleteGroup(id) {
