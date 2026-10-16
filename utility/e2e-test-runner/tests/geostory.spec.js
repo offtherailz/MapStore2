@@ -88,6 +88,41 @@ test.describe('GeoStory', () => {
         await expect(page.getByText('Insert text here...')).toBeVisible();
     });
 
+    test('Title and paragraph sections are kept when the story is reopened', async({ page, data }) => {
+        const story = await data.geostory();
+        const titleText = 'E2E story title';
+        const paragraphText = 'E2E story paragraph';
+
+        await openGeostory(page, story.id);
+        await enterEditMode(page);
+
+        await test.step('Write a title section', async() => {
+            await addSection(page, 'title');
+            const editor = page.locator('[contenteditable="true"]').first();
+            await expect(editor).toBeVisible({ timeout: 15000 });
+            await editor.click();
+            await page.keyboard.press('ControlOrMeta+a');
+            await editor.pressSequentially(titleText, { delay: 20 });
+            await expect(editor).toContainText(titleText);
+        });
+
+        await test.step('Write a paragraph section', async() => {
+            await addSection(page, 'paragraph');
+            await expect(page.getByText('Insert text here...')).toBeVisible({ timeout: 15000 });
+            const editor = page.locator('[contenteditable="true"]').last();
+            await editor.click();
+            await editor.pressSequentially(paragraphText, { delay: 20 });
+            await expect(editor).toContainText(paragraphText);
+        });
+
+        await test.step('Save, reopen and find both texts', async() => {
+            await saveGeostory(page);
+            await openGeostory(page, story.id);
+            await expect(page.getByText(titleText)).toBeVisible({ timeout: 20000 });
+            await expect(page.getByText(paragraphText)).toBeVisible({ timeout: 20000 });
+        });
+    });
+
     test('Section content can be removed', async({ page, data }) => {
         const story = await data.geostory();
 

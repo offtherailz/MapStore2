@@ -210,4 +210,64 @@ describeIfFeature('geoserverIntegration', 'Dashboard', () => {
             await expect(page.getByText(widgetTitle)).toHaveCount(0, { timeout: 15000 });
         });
     });
+
+    test('Table, counter and chart widgets are kept when the dashboard is reopened', async({ page, data }) => {
+        const dashboard = await data.dashboard();
+        const titles = { table: 'E2E saved table', counter: 'E2E saved counter', chart: 'E2E saved chart' };
+        const totalPopulation = '5935000';
+
+        await openDashboard(page, dashboard.id);
+
+        await test.step('Add a table widget', async() => {
+            await addWidget(page, 'Table');
+            await pickFixtureLayer(page, FIXTURE_LAYER_TITLE);
+            await wizardNext(page);
+            await expect(page.getByText('Configure table options')).toBeVisible({ timeout: 15000 });
+            await wizardNext(page);
+            await page.locator('input.form-control').first().fill(titles.table);
+            await saveWidget(page);
+            await expect(page.getByText(titles.table)).toBeVisible({ timeout: 15000 });
+        });
+
+        await test.step('Add a counter widget', async() => {
+            await addWidget(page, 'Counter');
+            await pickFixtureLayer(page, FIXTURE_LAYER_TITLE);
+            await wizardNext(page);
+            await expect(page.getByText('Configure data')).toBeVisible({ timeout: 20000 });
+            await selectCombo(page, 0, 'population');
+            await selectCombo(page, 1, 'SUM');
+            await expect(page.getByText(totalPopulation)).toBeVisible({ timeout: 30000 });
+            await wizardNext(page);
+            await page.locator('input.form-control').first().fill(titles.counter);
+            await saveWidget(page);
+            await expect(page.getByText(titles.counter)).toBeVisible({ timeout: 15000 });
+        });
+
+        await test.step('Add a chart widget', async() => {
+            await addWidget(page, 'Chart');
+            await pickFixtureLayer(page, FIXTURE_LAYER_TITLE);
+            await wizardNext(page);
+            await selectComboByLabel(page, 'X Attribute', 'category');
+            await selectComboByLabel(page, 'Y Attribute', 'population');
+            await selectComboByLabel(page, 'Operation', 'SUM');
+            await expect(page.locator('.js-plotly-plot')).toBeVisible({ timeout: 30000 });
+            await wizardNext(page);
+            await page.locator('input.form-control').first().fill(titles.chart);
+            await saveWidget(page);
+            await expect(page.getByText(titles.chart)).toBeVisible({ timeout: 15000 });
+        });
+
+        await test.step('Save, reopen and find every widget with its data', async() => {
+            await saveDashboard(page);
+            await openDashboard(page, dashboard.id);
+
+            for (const title of Object.values(titles)) {
+                await expect(page.getByText(title)).toBeVisible({ timeout: 20000 });
+            }
+
+            await expect(page.getByText(`${FIXTURE_FEATURES.length} Items`)).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText(totalPopulation)).toBeVisible({ timeout: 30000 });
+            await expect(page.locator('.js-plotly-plot')).toBeVisible({ timeout: 30000 });
+        });
+    });
 });
