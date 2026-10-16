@@ -18,8 +18,11 @@ async function login(page, username = config.adminUser, password = config.adminP
     await page.getByRole('textbox', { name: 'Username' }).press('Tab');
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('textbox', { name: 'Password' }).press('Enter');
-    await expect(page.locator('#mapstore-login-menu')).toBeVisible();
-    await page.locator('button.btn-success').waitFor({ state: 'visible' });
+    // Waits for the outcome, so callers can assert either: a signed in user gets the
+    // green account menu toggle, a rejected one an error in the login dialog.
+    const signedIn = page.locator('button.dropdown-toggle.btn-success');
+    const rejected = page.locator('[role="alert"].alert-danger');
+    await expect(signedIn.or(rejected).first()).toBeVisible({ timeout: 15000 });
 }
 
 /**

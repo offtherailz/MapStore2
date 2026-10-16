@@ -18,7 +18,8 @@ import { hasFeature } from './config.js';
  * @property {(overrides?: object) => Promise<object>} user
  * @property {(overrides?: object) => Promise<object>} group
  * @property {(overrides?: object) => Promise<object>} tag
- * @property {(resource: object) => Promise<object>} thumbnail attach a generated thumbnail
+ * @property {(resource: object, options?: object) => Promise<object>} thumbnail attach a generated thumbnail
+ * @property {(resource: object, html: string, options?: object) => Promise<object>} details attach a details page
  * @property {(resource: object) => Promise<void>} publish make a resource readable by everyone
  * @property {(label: string) => string} name unique fixture name, not persisted
  * @property {(resource: object) => void} track adopt a resource created by the UI
@@ -156,6 +157,21 @@ const test = base.extend({
                 await api.setAttribute(resource.id, 'thumbnail', `rest/geostore/data/${thumbnail.id}/raw?decode=datauri`);
 
                 return thumbnail;
+            },
+
+            /** Stores the details page of a resource as MapStore does: a linked DETAILS resource. */
+            details: async(resource, html, { everyone = false } = {}) => {
+                const details = await api.createResource({
+                    name: `${resource.name}_details`,
+                    category: 'DETAILS',
+                    data: html
+                });
+
+                created.resources.push(details);
+                await api.setPermissions(details.id, { everyone });
+                await api.setAttribute(resource.id, 'details', `rest/geostore/data/${details.id}`);
+
+                return details;
             },
 
             publish: async(resource) => {

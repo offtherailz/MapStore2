@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.js';
-import { login } from './helpers/auth.js';
+import { login, logout } from './helpers/auth.js';
 import { openAppTarget } from './helpers/navigation.js';
 
 test.describe('Maps', () => {
@@ -45,6 +45,36 @@ test.describe('Maps', () => {
 
         await test.step('Verify the map is no longer in the grid', async() => {
             await expect(page.locator('.ms-resource-card').filter({ hasText: mapName })).toHaveCount(0);
+        });
+    });
+
+    test('A saved map shows its thumbnail and details in the viewer', async({ page, data }) => {
+        const map = await data.map();
+        await data.publish(map);
+        await data.thumbnail(map, { everyone: true });
+        await data.details(map, '<p>E2E details paragraph</p>', { everyone: true });
+
+        async function expectDetailsPanel() {
+            await openAppTarget(page, `#/viewer/${map.id}`);
+            await page.locator('.ms-brand-navbar button:has(.glyphicon-details)').first().click();
+            const panel = page.locator('.ms-resource-detail');
+            const thumbnail = panel.locator('img');
+            await expect(thumbnail).toHaveAttribute('src', /rest\/geostore\/data\/\d+\/raw\?decode=datauri/, { timeout: 20000 });
+            await expect.poll(() => thumbnail.evaluate((image) => image.complete && image.naturalWidth), { timeout: 15000 })
+                .toBeGreaterThan(0);
+            await panel.getByRole('tab', { name: 'About' }).click();
+            await expect(panel.getByText('E2E details paragraph')).toBeVisible({ timeout: 15000 });
+        }
+
+        await test.step('Signed in administrator', async() => {
+            await login(page);
+            await expectDetailsPanel();
+        });
+
+        await test.step('Anonymous visitor of the public map', async() => {
+            await openAppTarget(page, '#/');
+            await logout(page);
+            await expectDetailsPanel();
         });
     });
 });

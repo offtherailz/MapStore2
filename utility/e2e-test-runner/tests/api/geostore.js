@@ -12,8 +12,8 @@ import { config } from '../config.js';
 /** Resource categories handled by the homepage. */
 const CATEGORIES = ['MAP', 'DASHBOARD', 'GEOSTORY', 'CONTEXT'];
 
-/** Categories of the resources created alongside the homepage ones (thumbnails). */
-const SUPPORT_CATEGORIES = ['THUMBNAIL'];
+/** Categories of the resources linked from the homepage ones (thumbnail, details). */
+const SUPPORT_CATEGORIES = ['THUMBNAIL', 'DETAILS'];
 
 /** Prefix every fixture name carries, so leftovers are always identifiable. */
 const FIXTURE_PREFIX = 'E2E_';
