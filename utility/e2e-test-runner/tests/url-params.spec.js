@@ -1,4 +1,4 @@
-import { test, expect, describeIfFeature } from './fixtures.js';
+import { test, expect, describeIfFeature, fromScenario } from './fixtures.js';
 import { config, hasFeature } from './config.js';
 import { login } from './helpers/auth.js';
 import { openAppTarget, resolveAppUrl } from './helpers/navigation.js';
@@ -32,7 +32,7 @@ describeIfFeature('geoserverIntegration', 'Opening MapStore from a link', () => 
         await login(page);
     });
 
-    test('Center and zoom in the URL set the map view', async({ page, data }) => {
+    test('Center and zoom in the URL set the map view', fromScenario('Maps — Map viewer query parameter API'), async({ page, data }) => {
         const map = await linkedMap(data);
 
         await openAppTarget(page, `#/viewer/${map.id}?center=12.4964,41.9028&zoom=10`);

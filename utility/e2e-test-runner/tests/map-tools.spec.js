@@ -1,4 +1,4 @@
-import { test, expect, describeIfFeature } from './fixtures.js';
+import { test, expect, describeIfFeature, fromScenario } from './fixtures.js';
 import { hasFeature } from './config.js';
 import { login } from './helpers/auth.js';
 import { moveAwayFromTooltips } from './helpers/navigation.js';
@@ -62,7 +62,7 @@ describeIfFeature('geoserverIntegration', 'Map tools', () => {
         await expect(page.locator('.ms-crs-select-button')).toHaveText('EPSG:3857');
     });
 
-    test('The map projection can be changed from the status bar', async({ page, data }) => {
+    test('The map projection can be changed from the status bar', fromScenario('Maps/Footer — CRS selector'), async({ page, data }) => {
         // The projection change is refused when the map has no background compatible with
         // it; a WMS background is available in any projection GeoServer publishes.
         const background = fixtureLayer({ id: 'e2e_background', title: 'E2E background', group: 'background', search: undefined });
@@ -129,7 +129,7 @@ describeIfFeature('geoserverIntegration', 'Map tools', () => {
         await expect(page.getByText(map.name).first()).toBeVisible();
     });
 
-    test('Save as copy leaves the original untouched', async({ page, api, data }) => {
+    test('Save as copy leaves the original untouched', fromScenario('Maps/CreateDelete — Save as a map'), async({ page, api, data }) => {
         const map = await data.map({ data: mapConfig() });
         const copyName = data.name('map-copy');
 
@@ -152,7 +152,7 @@ describeIfFeature('geoserverIntegration', 'Map tools', () => {
         });
     });
 
-    test('Map can be deleted from the viewer toolbar', async({ page, api, data }) => {
+    test('Map can be deleted from the viewer toolbar', fromScenario('Maps/CreateDelete — Delete a Map (@GH-11435)'), async({ page, api, data }) => {
         const map = await data.map({ data: mapConfig() });
 
         await openMapViewer(page, map.id);

@@ -1,4 +1,4 @@
-import { test, expect, describeIfFeature } from './fixtures.js';
+import { test, expect, describeIfFeature, fromScenario } from './fixtures.js';
 import { hasFeature, getServiceUrl } from './config.js';
 import { login } from './helpers/auth.js';
 import { FIXTURE_LAYER_NAME, fixtureLayer, mapConfig, openMapViewer } from './helpers/map.js';
@@ -55,7 +55,7 @@ describeIfFeature('geoserverIntegration', 'Map services', () => {
         await openMapViewer(page, map.id);
     });
 
-    test('The background selector switches between the map backgrounds', async({ page }) => {
+    test('The background selector switches between the map backgrounds', fromScenario('Maps/Options/Backgrounds — View and select backgrounds'), async({ page }) => {
         const selector = page.locator('.ms-background-selector');
         const preview = selector.locator('.ms-background-selector-preview img');
 
@@ -70,7 +70,7 @@ describeIfFeature('geoserverIntegration', 'Map services', () => {
         await expect(preview).toHaveAttribute('alt', BACKGROUNDS[1]);
     });
 
-    test('Place search finds a fixture city and zooms to it', async({ page }) => {
+    test('Place search finds a fixture city and zooms to it', fromScenario('Maps/Options/Search_bar — Search a Location'), async({ page }) => {
         const zoomBefore = Number(await zoomSelect(page).inputValue());
 
         await page.getByPlaceholder('Search by location name').fill('Rom');
@@ -93,5 +93,24 @@ describeIfFeature('geoserverIntegration', 'Map services', () => {
         await toggle.click();
         await expect(page.locator('.cesium-widget canvas')).toHaveCount(0, { timeout: 30000 });
         await expect(page.locator('.ol-viewport')).toBeVisible();
+    });
+
+    test('A map saved in 3D opens in 3D, the others stay 2D', fromScenario('Maps/CreateDelete — Create a 3D map (@GH-8334 @GH-8397 @GH-9011)'), async({ page, data }) => {
+        test.skip(!hasFeature('cesium'), 'Requires feature cesium');
+        const map3d = await data.map({ data: servicesMapConfig() });
+        const map2d = await data.map({ data: servicesMapConfig() });
+
+        await openMapViewer(page, map3d.id);
+        await page.locator('button:has(.glyphicon-3d)').click();
+        await expect(page.locator('.cesium-widget canvas')).toBeVisible({ timeout: 30000 });
+        await page.locator('.ms-brand-navbar button:has(.glyphicon-floppy-disk)').first().click();
+        await expect(page.getByText('Saved successfully')).toBeVisible({ timeout: 20000 });
+
+        await openMapViewer(page, map2d.id);
+        await expect(page.locator('.ol-viewport')).toBeVisible({ timeout: 30000 });
+        await expect(page.locator('.cesium-widget canvas')).toHaveCount(0);
+
+        await openMapViewer(page, map3d.id);
+        await expect(page.locator('.cesium-widget canvas')).toBeVisible({ timeout: 30000 });
     });
 });

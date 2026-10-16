@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 
 function parseArgs(argv) {
     const options = {
@@ -218,7 +219,14 @@ function runCli(argv, runtime = {}) {
     });
     console.log(`Files: ${files.join(', ')}`);
 
-    const args = ['playwright', 'test', '--config', absoluteConfigPath, ...files];
+    let playwrightCli;
+    try {
+        playwrightCli = createRequire(import.meta.url).resolve('@playwright/test/cli');
+    } catch (error) {
+        return fail(`Cannot resolve @playwright/test/cli: ${error.message}`);
+    }
+
+    const args = [playwrightCli, 'test', '--config', absoluteConfigPath, ...files];
 
     if (options.grep) {
         args.push('-g', options.grep);
@@ -242,7 +250,7 @@ function runCli(argv, runtime = {}) {
 
     args.push(...options.passThrough);
 
-    const result = spawnSync('npx', args, {
+    const result = spawnSync(process.execPath, args, {
         cwd: workspaceRoot,
         stdio: 'inherit',
         env: process.env

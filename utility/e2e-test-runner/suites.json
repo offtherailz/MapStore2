@@ -36,6 +36,14 @@
         "tests/maps.spec.js"
       ]
     },
+    "map-permissions": {
+      "title": "Map permissions",
+      "why": "Verify view and edit permissions on maps for groups, IP ranges, standard users and anonymous visitors, and unadvertised maps.",
+      "active": true,
+      "files": [
+        "tests/map-permissions.spec.js"
+      ]
+    },
     "ldap": {
       "title": "LDAP authentication",
       "why": "Verify that a standard LDAP user can authenticate when LDAP profile is enabled.",

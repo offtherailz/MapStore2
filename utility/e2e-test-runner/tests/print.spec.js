@@ -1,4 +1,4 @@
-import { test, expect, describeIfFeature } from './fixtures.js';
+import { test, expect, describeIfFeature, fromScenario } from './fixtures.js';
 import { hasFeature } from './config.js';
 import { login } from './helpers/auth.js';
 import { fixtureLayer, mapConfig, openMapViewer } from './helpers/map.js';
@@ -14,7 +14,7 @@ describeIfFeature('printing', 'Printing', () => {
         await login(page);
     });
 
-    test('A map is printed to PDF', async({ page, data }) => {
+    test('A map is printed to PDF', fromScenario('Maps/Options/Print — Print a map'), async({ page, data }) => {
         const layer = fixtureLayer({ url: INTERNAL_WMS, search: undefined });
         const background = { ...layer, id: 'e2e_background', title: 'E2E background', group: 'background' };
         const map = await data.map({ data: mapConfig([background, layer]) });

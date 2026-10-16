@@ -4,6 +4,7 @@ import { openAppTarget } from './helpers/navigation.js';
 import { openDashboard } from './helpers/dashboard.js';
 import { openGeostory } from './helpers/geostory.js';
 import { openMapViewer } from './helpers/map.js';
+import { DETAILS, editDetails, saveDetails } from './helpers/details.js';
 
 /** Searches the homepage grid by name and returns the card of the resource. */
 async function findCard(page, name) {
@@ -24,44 +25,6 @@ async function expectThumbnailLoaded(card) {
     await expect(image).toHaveAttribute('src', /rest\/geostore\/data\/\d+\/raw\?decode=datauri/);
     await expect.poll(() => image.evaluate((element) => element.complete && element.naturalWidth), { timeout: 15000 })
         .toBeGreaterThan(0);
-}
-
-const DETAILS = '.ms-resource-detail';
-
-/** Opens the details panel of a card in edit mode. */
-async function editDetails(page, card) {
-    await card.locator('button:has(.glyphicon-details)').click();
-    const panel = page.locator(DETAILS);
-    await panel.locator('button:has(.glyphicon-edit)').click();
-    await expect(panel.getByText('Tags', { exact: true })).toBeVisible();
-
-    return panel;
-}
-
-/**
- * Saves the details and closes the panel, as a user does before moving on.
- *
- * Pending changes are recomputed with a 500 ms debounce (useComputedPendingChanges), so
- * right after the save the panel still asks to discard them. Nothing in the DOM marks the
- * end of that computation: the close is retried, going back to the panel when asked.
- */
-async function saveDetails(page) {
-    const panel = page.locator(DETAILS);
-    const save = panel.locator('button:has(.glyphicon-floppy-disk)');
-    await expect(save).toBeEnabled();
-    await save.click();
-    await expect(save).toHaveCount(0, { timeout: 20000 });
-
-    await expect(async() => {
-        const backToEditing = page.getByRole('button', { name: 'Back to editing' });
-
-        if (await backToEditing.isVisible()) {
-            await backToEditing.click();
-        }
-
-        await panel.locator('button:has(.glyphicon-1-close)').first().click();
-        await expect(panel).toBeHidden({ timeout: 1000 });
-    }).toPass({ timeout: 10000 });
 }
 
 /** Opens the filter side panel of the homepage. */

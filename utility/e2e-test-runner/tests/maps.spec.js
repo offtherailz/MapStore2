@@ -1,9 +1,9 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, fromScenario } from './fixtures.js';
 import { login, logout } from './helpers/auth.js';
 import { openAppTarget } from './helpers/navigation.js';
 
 test.describe('Maps', () => {
-    test('Admin can create and delete a map', async({ page, api, data }) => {
+    test('Admin can create and delete a map', fromScenario('Maps/CreateDelete — Create a Map', 'Maps/CreateDelete — Delete a Map (@GH-11435)'), async({ page, api, data }) => {
         const mapName = data.name('map');
 
         await test.step('Sign in as admin', async() => {
@@ -48,7 +48,7 @@ test.describe('Maps', () => {
         });
     });
 
-    test('A saved map shows its thumbnail and details in the viewer', async({ page, data }) => {
+    test('A saved map shows its thumbnail and details in the viewer', fromScenario('Maps/Options/Details — Add details'), async({ page, data }) => {
         const map = await data.map();
         await data.publish(map);
         await data.thumbnail(map, { everyone: true });
