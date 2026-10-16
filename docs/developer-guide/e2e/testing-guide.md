@@ -205,18 +205,32 @@ Default suite mapping by Docker profile:
 | Docker profile | Suites |
 | --- | --- |
 | `base` | `smoke`, `auth`, `accounts`, `homepage`, `maps`, `geostory`, `context` |
-| `geoserver` | `smoke`, `geoserver`, `map-toc`, `map-tools`, `dashboard` |
+| `geoserver` | `smoke`, `geoserver`, `catalog`, `map-toc`, `map-tools`, `map-services`, `print`, `url-params`, `dashboard` |
 | `oidc` | `smoke` |
 | `ldap` | `smoke`, `ldap` |
 
 The suites of the `geoserver` profile read data, so they are gated on the
 `geoserverIntegration` and `geoserverDb` features and are skipped elsewhere. Everything
-they display comes from the `e2e:e2e_points` layer the profile publishes.
+they display comes from the `e2e:e2e_points` layer the profile publishes; no suite reaches
+a service outside the stack (backgrounds, place search and 3D use the local GeoServer too).
 
-The profile installs the GeoServer WPS extension (`STABLE_EXTENSIONS=wps`): chart and
-counter widgets aggregate through `gs:Aggregate`, and without it MapStore answers
-"the server doesn't provide the needed services for the layer". The extension is fetched
-when the container starts, so that profile needs registry access on a cold start.
+The profile installs the GeoServer WPS and CSW extensions (`STABLE_EXTENSIONS=wps,csw`):
+chart and counter widgets aggregate through `gs:Aggregate`, and the `catalog` suite searches
+the CSW service. The extensions are fetched when the container starts, so that profile needs
+registry access on a cold start.
+
+The `print` suite points its layer to `http://e2e-geoserver:8080`, the GeoServer container
+on the Docker network: the print service downloads the layers from inside the MapStore
+container, where `localhost:8082` is not reachable.
+
+Other behaviours the suites rely on:
+
+- every page starts with the cookie policy accepted, so the banner never covers the UI;
+- the `context` suite builds a minimal extension in memory and uploads it, so it needs a
+  writable datadir (the `base` profile has one; in the `geoserver` profile `datadir/configs`
+  is created by Docker as root to mount the patch file);
+- the global setup uninstalls extensions whose name starts with `E2E`, and removes
+  `E2E_*` resources, thumbnails, details, users, groups and tags left by an interrupted run.
 
 ---
 
@@ -384,28 +398,33 @@ utility/e2e-test-runner/
 ├── e2e-docker.sh            # Docker profile runner (build, up, test, teardown)
 ├── profiles/
 │   ├── base/
-│   │   └── docker-compose.e2e.yml   # Base overlay: WAR mount and port mapping
+│   │   ├── docker-compose.e2e.yml   # WAR, port 8081, INITIAL_ADMIN_PASSWORD
+│   │   └── nginx.conf               # Proxy forwarding the Host header with its port
 │   ├── geoserver/
-│   │   ├── docker-compose.e2e.yml   # GeoServer integration overlay
+│   │   ├── docker-compose.e2e.yml   # Local GeoServer (WPS, CSW) on port 8082
+│   │   ├── 02-init-gisdata.sh       # PostGIS fixture table
+│   │   ├── seed-geoserver.sh        # Publishes e2e:e2e_points
 │   │   └── localConfig.e2e.geoserver.patch.json
-│   └── ldap/
-│       └── docker-compose.e2e.yml   # LDAP authentication overlay
+│   └── auth/
+│       ├── docker-compose.e2e.yml   # Overlay of docker/docker-compose.auth.yml (ldap, oidc)
+│       └── .env.e2e                 # Compose variables of the auth stack
 ├── playwright.config.js      # Main Playwright configuration
-├── suites.json               # Named test suites and their file/grep mappings
+├── suites.json               # Named test suites and their file mappings
 ├── loadEnv.js                # Loads the selected environment profile
-├── .env                      # Local credentials and base URL (git-ignored)
 ├── .env.example              # Template for environment profiles
 ├── bin/
 │   └── e2e-test-runner.js   # CLI entry point (used by npx)
 ├── src/
 │   └── cli.js               # Suite resolution and Playwright invocation logic
 └── tests/
-    ├── config.js             # Reads env variables, capabilities, and services
-    ├── helpers/
-    │   ├── auth.js           # login() and logout() helpers
-    │   └── navigation.js     # Opens app URLs respecting custom base paths
-    ├── auth.spec.js          # Authentication tests
-    └── smoke.spec.js         # Core smoke tests
+    ├── config.js             # Reads env variables, features, identities and services
+    ├── fixtures.js           # test/expect with the GeoStore client and the data factory
+    ├── globalSetup.js        # Credential check and cleanup of leftovers
+    ├── api/
+    │   ├── geostore.js       # GeoStore REST client used for setup and teardown
+    │   └── extensions.js     # Extension upload service client
+    ├── helpers/              # auth, navigation, map, dashboard, geostory, context, extension
+    └── *.spec.js             # One file per suite, see suites.json
 ```
 
 The base `docker-compose.yml` at repository root is always used as the first `-f` argument.
@@ -631,6 +650,7 @@ Each profile job publishes a job summary showing the test status and uploads:
 - **Docker logs** (`e2e-docker-logs-<profile>.txt`) — container logs from the run
 
 Click the Playwright HTML report link in the job summary to view detailed test results for each profile, including:
+
 - Pass/fail status and error messages
 - Screenshots and videos (on failure)
 - Traces for step-by-step replay (on first retry)
