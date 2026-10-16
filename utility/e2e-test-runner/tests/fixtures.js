@@ -18,7 +18,8 @@ import { hasFeature } from './config.js';
  * @property {(overrides?: object) => Promise<object>} user
  * @property {(overrides?: object) => Promise<object>} group
  * @property {(label: string) => string} name unique fixture name, not persisted
- * @property {(resource: object) => void} track adopt an object created by the UI
+ * @property {(resource: object) => void} track adopt a resource created by the UI
+ * @property {(user: {id: number, name: string}) => void} trackUser adopt a user created by the UI
  */
 
 const test = base.extend({
@@ -43,6 +44,10 @@ const test = base.extend({
 
             track: ({ id, name, category = 'MAP' }) => {
                 created.resources.push({ id, name, category });
+            },
+
+            trackUser: ({ id, name }) => {
+                created.users.push({ id, name });
             },
 
             map: async(overrides = {}) => {

@@ -33,4 +33,16 @@ async function logout(page) {
     await expect(page.locator('#mapstore-login-menu')).toBeVisible();
 }
 
-export { login, logout };
+/**
+ * Closes the login dialog, which stays open after a rejected login.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+async function closeLoginDialog(page) {
+    const dialog = page.locator('[role="dialog"]').filter({ has: page.getByRole('heading', { name: 'Login' }) });
+
+    await dialog.getByRole('button', { name: 'Close' }).first().click();
+    await expect(dialog).toHaveCount(0);
+}
+
+export { login, logout, closeLoginDialog };

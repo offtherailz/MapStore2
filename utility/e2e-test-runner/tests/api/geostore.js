@@ -115,6 +115,21 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
 
     /**
      * @param {number} id
+     * @returns {Promise<object>} the user, with its attributes and groups as arrays
+     */
+    async function getUser(id) {
+        const body = await json(`users/user/${id}?includeattributes=true`);
+        const found = body?.User ?? body;
+
+        return {
+            ...found,
+            attribute: toArray(found?.attribute),
+            groups: toArray(found?.groups?.group ?? found?.groups)
+        };
+    }
+
+    /**
+     * @param {number} id
      * @param {string} newPassword
      */
     async function changePassword(id, newPassword) {
@@ -247,6 +262,7 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
         context,
         whoAmI,
         createUser,
+        getUser,
         changePassword,
         findUsers,
         deleteUser,
