@@ -48,4 +48,21 @@ async function closeLoginDialog(page) {
     await expect(dialog).toHaveCount(0);
 }
 
-export { login, logout, closeLoginDialog };
+/**
+ * Signs in unless the session is still valid, e.g. after a page reload.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+async function ensureSignedIn(page) {
+    await openAppTarget(page, '#/');
+    await expect(page.locator('#mapstore-login-menu')).toBeVisible({ timeout: 30000 });
+    const signedIn = await page.locator('button.dropdown-toggle.btn-success')
+        .waitFor({ state: 'visible', timeout: 5000 })
+        .then(() => true, () => false);
+
+    if (!signedIn) {
+        await login(page);
+    }
+}
+
+export { login, logout, closeLoginDialog, ensureSignedIn };

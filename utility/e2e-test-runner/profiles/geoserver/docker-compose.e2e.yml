@@ -40,6 +40,8 @@ services:
     networks:
       - mapstore-network
 
+  # Docker creates datadir/configs as root to bind the patch file, so MapStore cannot
+  # write there: uploading extensions needs a writable datadir, as in the base profile.
   mapstore:
     volumes:
       - ./utility/e2e-test-runner/profiles/geoserver/localConfig.e2e.geoserver.patch.json:/usr/local/tomcat/datadir/configs/localConfig.json.patch:ro

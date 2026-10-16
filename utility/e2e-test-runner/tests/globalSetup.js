@@ -14,6 +14,7 @@
  */
 
 import { createGeoStoreClient, FIXTURE_PREFIX } from './api/geostore.js';
+import { createExtensionsClient } from './api/extensions.js';
 import { config } from './config.js';
 
 /**
@@ -117,9 +118,27 @@ async function cleanFixtures() {
     }
 }
 
+async function cleanExtensions() {
+    let client;
+
+    try {
+        client = await createExtensionsClient();
+        const removed = await client.removeFixtures();
+
+        if (removed > 0) {
+            console.log(`[e2e] uninstalled ${removed} leftover E2E extensions`);
+        }
+    } catch (error) {
+        console.warn(`[e2e] extension cleanup skipped: ${error.message}`);
+    } finally {
+        await client?.dispose();
+    }
+}
+
 async function globalSetup() {
     await checkAdministrator();
     await cleanFixtures();
+    await cleanExtensions();
 }
 
 export default globalSetup;
