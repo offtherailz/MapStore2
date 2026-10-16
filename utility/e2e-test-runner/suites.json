@@ -84,6 +84,14 @@
         "tests/map-services.spec.js"
       ]
     },
+    "print": {
+      "title": "Printing",
+      "why": "Verify that a map with a GeoServer layer is printed to PDF by the printing module.",
+      "active": true,
+      "files": [
+        "tests/print.spec.js"
+      ]
+    },
     "dashboard": {
       "title": "Dashboards",
       "why": "Verify dashboard creation, text widgets and data widgets built on the local GeoServer layer.",
