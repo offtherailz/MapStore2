@@ -12,6 +12,9 @@ import { config } from '../config.js';
 /** Resource categories handled by the homepage. */
 const CATEGORIES = ['MAP', 'DASHBOARD', 'GEOSTORY', 'CONTEXT'];
 
+/** Categories of the resources created alongside the homepage ones (thumbnails). */
+const SUPPORT_CATEGORIES = ['THUMBNAIL'];
+
 /** Prefix every fixture name carries, so leftovers are always identifiable. */
 const FIXTURE_PREFIX = 'E2E_';
 
@@ -206,6 +209,90 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
         return extractList(await response.json(), 'Resource');
     }
 
+    /**
+     * @param {number} id resource id
+     * @param {string} name
+     * @param {string} value
+     */
+    async function setAttribute(id, name, value) {
+        await expectOk(await context.put(`resources/resource/${id}/attributes/`, {
+            data: { restAttribute: { name, value } }
+        }), `set attribute ${name} of resource ${id}`);
+    }
+
+    async function getGroupByName(groupName) {
+        const body = await json(`usergroups/group/name/${encodeURIComponent(groupName)}`);
+
+        return body?.UserGroup ?? body;
+    }
+
+    /**
+     * Replaces the permissions of a resource.
+     *
+     * @param {number} id resource id
+     * @param {object} [options]
+     * @param {boolean} [options.everyone] readable by every visitor, anonymous included
+     */
+    async function setPermissions(id, { everyone = false } = {}) {
+        const owner = await whoAmI();
+        const rules = [
+            `<SecurityRule><canRead>true</canRead><canWrite>true</canWrite><user><id>${owner.id}</id><name>${owner.name}</name></user></SecurityRule>`
+        ];
+
+        if (everyone) {
+            const group = await getGroupByName('everyone');
+            rules.push(`<SecurityRule><canRead>true</canRead><canWrite>false</canWrite><group><id>${group.id}</id><groupName>everyone</groupName></group></SecurityRule>`);
+        }
+
+        await expectOk(await context.post(`resources/resource/${id}/permissions`, {
+            headers: { 'Content-Type': 'application/xml' },
+            data: `<SecurityRuleList>${rules.join('')}</SecurityRuleList>`
+        }), `set permissions of resource ${id}`);
+    }
+
+    // ── tags ─────────────────────────────────────────────────────────────────
+
+    /**
+     * @param {object} tag
+     * @param {string} tag.name
+     * @param {string} [tag.description]
+     * @param {string} [tag.color]
+     */
+    async function createTag({ name, description = 'Created by the E2E suite', color = '#3a7bd5' }) {
+        const response = await expectOk(await context.post('resources/tag', {
+            headers: { 'Content-Type': 'application/xml' },
+            data: `<Tag><name><![CDATA[${name}]]></name><description><![CDATA[${description}]]></description><color>${color}</color></Tag>`
+        }), `create tag ${name}`);
+
+        return { id: Number(await response.text()), name };
+    }
+
+    async function findTags(nameLike = FIXTURE_PREFIX) {
+        const response = await context.get('resources/tag', {
+            headers: { Accept: 'application/json' },
+            params: { nameLike: `%${nameLike}%` }
+        });
+
+        await expectOk(response, 'list tags');
+
+        return extractList(await response.json(), 'Tag');
+    }
+
+    async function deleteTag(id) {
+        const response = await context.delete(`resources/tag/${id}`);
+
+        if (response.status() !== 404) {
+            await expectOk(response, `delete tag ${id}`);
+        }
+    }
+
+    async function tagResource(tagId, resourceId) {
+        await expectOk(
+            await context.post(`resources/tag/${tagId}/resource/${resourceId}`),
+            `tag resource ${resourceId} with ${tagId}`
+        );
+    }
+
     async function deleteResource(id) {
         const response = await context.delete(`resources/resource/${id}`);
 
@@ -221,12 +308,12 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
      * Removes every leftover fixture. Runs in globalSetup so a run that follows a
      * crashed one still starts from a clean instance.
      *
-     * @returns {Promise<{resources: number, users: number, groups: number}>}
+     * @returns {Promise<{resources: number, users: number, groups: number, tags: number}>}
      */
     async function deleteFixtures(prefix = FIXTURE_PREFIX) {
-        const removed = { resources: 0, users: 0, groups: 0 };
+        const removed = { resources: 0, users: 0, groups: 0, tags: 0 };
 
-        for (const category of CATEGORIES) {
+        for (const category of [...CATEGORIES, ...SUPPORT_CATEGORIES]) {
             const resources = await findResources(category, prefix);
 
             for (const resource of resources) {
@@ -248,6 +335,13 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
             if (String(group.groupName ?? '').startsWith(prefix)) {
                 await deleteGroup(group.id);
                 removed.groups += 1;
+            }
+        }
+
+        for (const tag of await findTags(prefix)) {
+            if (String(tag.name ?? '').startsWith(prefix)) {
+                await deleteTag(tag.id);
+                removed.tags += 1;
             }
         }
 
@@ -273,6 +367,13 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
         createResource,
         findResources,
         deleteResource,
+        setAttribute,
+        getGroupByName,
+        setPermissions,
+        createTag,
+        findTags,
+        deleteTag,
+        tagResource,
         deleteFixtures,
         dispose
     };

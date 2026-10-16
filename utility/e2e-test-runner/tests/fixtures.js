@@ -17,12 +17,29 @@ import { hasFeature } from './config.js';
  * @property {(overrides?: object) => Promise<object>} geostory
  * @property {(overrides?: object) => Promise<object>} user
  * @property {(overrides?: object) => Promise<object>} group
+ * @property {(overrides?: object) => Promise<object>} tag
+ * @property {(resource: object) => Promise<object>} thumbnail attach a generated thumbnail
+ * @property {(resource: object) => Promise<void>} publish make a resource readable by everyone
  * @property {(label: string) => string} name unique fixture name, not persisted
  * @property {(resource: object) => void} track adopt a resource created by the UI
  * @property {(user: {id: number, name: string}) => void} trackUser adopt a user created by the UI
  */
 
+/** 1x1 PNG, the smallest image a thumbnail can hold. */
+const THUMBNAIL_DATA_URI = 'data:image/png;base64,'
+    + 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
 const test = base.extend({
+    /**
+     * Every page starts with the cookie policy accepted: the banner covers the bottom of
+     * the viewport and intercepts clicks on whatever sits under it.
+     */
+    page: async({ page }, use) => {
+        // Legacy key, still honoured by epics/cookies.js and independent of the storage prefix.
+        await page.addInitScript(() => window.localStorage.setItem('cookies-policy-approved', 'true'));
+        await use(page);
+    },
+
     /** Administrator-level GeoStore client. */
     api: async({}, use) => {
         const client = await createGeoStoreClient();
@@ -37,7 +54,7 @@ const test = base.extend({
      */
     data: async({ api }, use, testInfo) => {
         const bundle = testInfo.titlePath[0] ?? 'suite';
-        const created = { resources: [], users: [], groups: [] };
+        const created = { resources: [], users: [], groups: [], tags: [] };
 
         const factory = {
             name: (label) => uniqueName(bundle, label),
@@ -112,6 +129,37 @@ const test = base.extend({
                 created.groups.push(group);
 
                 return group;
+            },
+
+            tag: async(overrides = {}) => {
+                const tag = await api.createTag({ name: uniqueName(bundle, 'tag'), ...overrides });
+
+                created.tags.push(tag);
+
+                return tag;
+            },
+
+            /**
+             * Stores a thumbnail the way MapStore does: a THUMBNAIL resource holding a data
+             * URI, linked from the `thumbnail` attribute of the resource. It gets the same
+             * readers as the resource, so call `publish` first for public resources.
+             */
+            thumbnail: async(resource, { everyone = false } = {}) => {
+                const thumbnail = await api.createResource({
+                    name: `${resource.name}_thumbnail`,
+                    category: 'THUMBNAIL',
+                    data: THUMBNAIL_DATA_URI
+                });
+
+                created.resources.push(thumbnail);
+                await api.setPermissions(thumbnail.id, { everyone });
+                await api.setAttribute(resource.id, 'thumbnail', `rest/geostore/data/${thumbnail.id}/raw?decode=datauri`);
+
+                return thumbnail;
+            },
+
+            publish: async(resource) => {
+                await api.setPermissions(resource.id, { everyone: true });
             }
         };
 
@@ -128,6 +176,10 @@ const test = base.extend({
 
         for (const group of created.groups.reverse()) {
             await api.deleteGroup(group.id).catch(() => {});
+        }
+
+        for (const tag of created.tags.reverse()) {
+            await api.deleteTag(tag.id).catch(() => {});
         }
     }
 });
