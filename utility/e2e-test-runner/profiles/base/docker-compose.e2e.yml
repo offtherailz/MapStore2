@@ -18,7 +18,9 @@ services:
 
   proxy:
     container_name: e2e-proxy
-    ports:
+    # Replaces the 80:80 mapping of docker-compose.yml instead of adding to it, so the
+    # stack leaves port 80 to a developer stack.
+    ports: !override
       - "8081:80"
     volumes:
       - ./utility/e2e-test-runner/profiles/base/nginx.conf:/etc/nginx/conf.d/default.conf:ro
