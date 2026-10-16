@@ -29,7 +29,7 @@ This framework is used for validating MapStore2 functionality in various environ
 | **Local / npx** | A running MapStore2 instance reachable via `BASE_URL` |
 | **Docker** | Docker, Java 17, Maven (the script builds the WAR automatically) |
 
-Playwright and Chromium are pre-installed in the repository. To reinstall:
+From the repository root, install the project dependencies and the Chromium revision they require:
 
 ```bash
 npm install
@@ -99,8 +99,14 @@ Minimum required variables:
 ```dotenv
 BASE_URL=http://localhost:8081/   # full URL including base path
 MS_USER=admin
-MS_PASSWORD=admin
+MS_PASSWORD=<administrator password of the instance>
 ```
+
+`MS_PASSWORD` has no default. MapStore does not ship default credentials: on an empty
+database it creates the `admin` user from the `INITIAL_ADMIN_PASSWORD` environment variable
+(or, when it is not set, from a generated password written in the data directory).
+Use that password, or the one it was changed to. The global setup checks the credentials
+before any suite runs and stops with an explicit message when they are rejected.
 
 Common `BASE_URL` values:
 
@@ -293,6 +299,13 @@ MS_USER_STANDARD=ldapuser MS_PASSWORD_STANDARD=secret \
 npm run e2e:docker -- --no-fast-fail --headed --profiles geoserver
 ```
 
+The stack is created with the administrator password taken from `INITIAL_ADMIN_PASSWORD`
+(a disposable test value when unset), which the profiles with a database user store also use
+as `MS_PASSWORD`. When the WAR comes from a version that still created `admin`/`admin`, the
+global setup changes that password to `INITIAL_ADMIN_PASSWORD` before the suites start, so the
+same command runs on every version. This happens only inside the disposable Docker stack
+(`E2E_LEGACY_ADMIN_PASSWORD` is set by the script, never by default).
+
 On failure the script saves Docker logs to `e2e-docker-logs-<profile>.txt` and continues with remaining profiles before exiting non-zero.
 
 #### Manual Docker steps (without the script)
@@ -307,6 +320,8 @@ mvn -pl product -am -DskipTests -Pldap package   # LDAP profile
 **Start the stack:**
 
 ```bash
+export INITIAL_ADMIN_PASSWORD=changeme-e2e-admin-pw-123   # required by the e2e overlays
+
 # base
 docker compose -f docker-compose.yml -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml up -d --build
 
@@ -314,9 +329,12 @@ docker compose -f docker-compose.yml -f utility/e2e-test-runner/profiles/base/do
 docker compose -f docker-compose.yml -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml \
   -f utility/e2e-test-runner/profiles/geoserver/docker-compose.e2e.yml up -d --build
 
-# ldap
-docker compose -f docker-compose.yml -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml \
-  -f utility/e2e-test-runner/profiles/ldap/docker-compose.e2e.yml up -d --build
+# ldap or oidc: the authentication stack of docker/docker-compose.auth.yml (OpenLDAP,
+# Keycloak), on http://localhost/mapstore/. e2e-docker.sh also generates the datadir
+# each profile mounts (DATADIR_PATH).
+docker compose --env-file utility/e2e-test-runner/profiles/auth/.env.e2e \
+  -f docker-compose.yml -f docker/docker-compose.auth.yml \
+  -f utility/e2e-test-runner/profiles/auth/docker-compose.e2e.yml up -d --build
 ```
 
 **Wait for services:**
@@ -330,6 +348,10 @@ until curl -fsS http://localhost:8082/geoserver/web/ > /dev/null; do sleep 5; do
 **Run tests:**
 
 ```bash
+export MS_USER=admin MS_PASSWORD="$INITIAL_ADMIN_PASSWORD"
+# versions that still create admin/admin: let the global setup change it
+export E2E_LEGACY_ADMIN_PASSWORD=admin
+
 # base
 BASE_URL=http://localhost:8081/mapstore/ \
   npm run e2e -- --suites auth,smoke,homepage,maps
@@ -582,7 +604,7 @@ This repository includes a workflow that starts MapStore in Docker (with Postgre
 - Base compose: `docker-compose.yml`
 - CI override (WAR + port): `utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml`
 - Optional GeoServer profile: `utility/e2e-test-runner/profiles/geoserver/docker-compose.e2e.yml`
-- Optional LDAP profile: `utility/e2e-test-runner/profiles/ldap/docker-compose.e2e.yml`
+- Optional LDAP and OpenID profiles: `docker/docker-compose.auth.yml` (OpenLDAP and Keycloak with their sample fixtures) plus `utility/e2e-test-runner/profiles/auth/docker-compose.e2e.yml`
 
 The workflow runs automatically every night at midnight UTC (all profiles discovered by the Docker runner). It can also be triggered
 on demand from GitHub Actions > **E2E Docker Profiles** with these inputs:
@@ -690,14 +712,12 @@ docker compose \
   up -d --build
 ```
 
-**LDAP authentication:**
+**LDAP or OpenID authentication** (the committed auth stack, see [Auth docker setup](../integrations/auth-docker-setup.md)):
 
 ```bash
-docker compose \
-  -f docker-compose.yml \
-  -f utility/e2e-test-runner/profiles/base/docker-compose.e2e.yml \
-  -f utility/e2e-test-runner/profiles/ldap/docker-compose.e2e.yml \
-  up -d --build
+docker compose --env-file utility/e2e-test-runner/profiles/auth/.env.e2e \
+  -f docker-compose.yml -f docker/docker-compose.auth.yml \
+  -f utility/e2e-test-runner/profiles/auth/docker-compose.e2e.yml up -d --build
 ```
 
 The proxy is exposed on port `8081`. Wait for MapStore to be ready:

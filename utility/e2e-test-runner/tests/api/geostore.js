@@ -113,6 +113,16 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
         return { id: Number(await response.text()), name, password: userPassword, role };
     }
 
+    /**
+     * @param {number} id
+     * @param {string} newPassword
+     */
+    async function changePassword(id, newPassword) {
+        await expectOk(await context.put(`users/user/${id}`, {
+            data: { User: { id, newPassword } }
+        }), `change password of user ${id}`);
+    }
+
     async function findUsers(textSearch = FIXTURE_PREFIX) {
         return extractList(await json(`extjs/search/users/${encodeURIComponent(textSearch)}`), 'User');
     }
@@ -237,6 +247,7 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
         context,
         whoAmI,
         createUser,
+        changePassword,
         findUsers,
         deleteUser,
         createGroup,

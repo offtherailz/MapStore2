@@ -43,9 +43,11 @@ const listedFeatures = parseList(process.env.E2E_FEATURES).reduce(
     {}
 );
 
+// No default password: MapStore no longer ships admin/admin, the administrator
+// password is the one the instance was initialized with (INITIAL_ADMIN_PASSWORD).
 const admin = {
     username: process.env.MS_USER ?? 'admin',
-    password: process.env.MS_PASSWORD ?? 'admin',
+    password: process.env.MS_PASSWORD ?? '',
     role: 'ADMIN'
 };
 
@@ -85,7 +87,10 @@ const environment = {
 const config = {
     baseURL: environment.baseURL,
     adminUser: environment.admin.username,
-    adminPassword: environment.admin.password
+    adminPassword: environment.admin.password,
+    // Former default password of the administrator. Set only by the Docker runner
+    // for disposable stacks built from versions that still seeded admin/admin.
+    legacyAdminPassword: process.env.E2E_LEGACY_ADMIN_PASSWORD ?? ''
 };
 
 function hasFeature(name) {

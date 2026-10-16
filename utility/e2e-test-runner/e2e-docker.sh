@@ -30,6 +30,9 @@
 #   E2E_SERVICES_JSON       Override service URLs, e.g. '{"geoserver":"http://..."}'
 #   E2E_IDENTITIES_JSON     Override the named test identities for the profile
 #   E2E_FEATURES            Override the profile feature gates
+#   INITIAL_ADMIN_PASSWORD  Password the MapStore administrator is created with on the
+#                           empty database of the stack (default: a disposable test value).
+#                           Also used as MS_PASSWORD by the profiles with a DB user store
 #   MS_USER / MS_PASSWORD   Override the administrator credentials
 #   GEOSERVER_ADMIN_USER    GeoServer administrator, used to seed the PostGIS layer
 #   GEOSERVER_ADMIN_PASSWORD
@@ -79,6 +82,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# MapStore creates its administrator from INITIAL_ADMIN_PASSWORD on an empty
+# database. Compose reads it from the environment (see the profile overlays).
+export INITIAL_ADMIN_PASSWORD="${INITIAL_ADMIN_PASSWORD:-changeme-e2e-admin-pw-123}"
+
+# Profiles with a DB user store log in as that administrator. Versions released
+# before INITIAL_ADMIN_PASSWORD still seed admin/admin: on these disposable stacks
+# the global setup moves it to INITIAL_ADMIN_PASSWORD.
+DB_ADMIN_ENV="MS_USER=admin MS_PASSWORD=${INITIAL_ADMIN_PASSWORD} E2E_LEGACY_ADMIN_PASSWORD=admin"
+
 # ── profile definitions ───────────────────────────────────────────────────────
 #   Each profile specifies:
 #     MAVEN     — Maven -P flag added to -Pprinting (empty = standard build)
@@ -104,7 +116,7 @@ CORE_SUITES="smoke,auth,accounts,homepage,maps,geostory,context"
 PROFILE_MAVEN[base]=""
 PROFILE_COMPOSE[base]="$BASE_COMPOSE"
 PROFILE_SUITES[base]="$CORE_SUITES"
-PROFILE_ENV[base]="E2E_FEATURES="
+PROFILE_ENV[base]="${DB_ADMIN_ENV} E2E_FEATURES="
 PROFILE_BASE_URL[base]="http://localhost:8081/mapstore/"
 PROFILE_ENV_FILE[base]=""
 PROFILE_DATADIR[base]=false
@@ -114,7 +126,7 @@ PROFILE_WAIT_KC[base]=false
 PROFILE_MAVEN[geoserver]=""
 PROFILE_COMPOSE[geoserver]="$BASE_COMPOSE ${RUNNER_DIR}/profiles/geoserver/docker-compose.e2e.yml"
 PROFILE_SUITES[geoserver]="smoke,geoserver,map-toc,map-tools,dashboard"
-PROFILE_ENV[geoserver]="E2E_FEATURES=geoserverIntegration,geoserverDb E2E_SERVICES_JSON={\"geoserver\":\"http://localhost:8082/geoserver\"}"
+PROFILE_ENV[geoserver]="${DB_ADMIN_ENV} E2E_FEATURES=geoserverIntegration,geoserverDb E2E_SERVICES_JSON={\"geoserver\":\"http://localhost:8082/geoserver\"}"
 PROFILE_BASE_URL[geoserver]="http://localhost:8081/mapstore/"
 PROFILE_ENV_FILE[geoserver]=""
 PROFILE_DATADIR[geoserver]=false
@@ -126,7 +138,7 @@ PROFILE_MAVEN[oidc]=""
 PROFILE_COMPOSE[oidc]="$AUTH_COMPOSE"
 # No OIDC spec yet: the profile only proves the stack starts and the login form works.
 PROFILE_SUITES[oidc]="smoke"
-PROFILE_ENV[oidc]="E2E_FEATURES=oidc E2E_IDENTITIES_JSON={\"oidcAdmin\":{\"username\":\"kcadmin\",\"password\":\"changeme-kcadmin-pw-123\",\"role\":\"ADMIN\",\"provider\":\"keycloak\"},\"oidcUser\":{\"username\":\"kcuser\",\"password\":\"changeme-kcuser-pw-123\",\"role\":\"USER\",\"provider\":\"keycloak\"}}"
+PROFILE_ENV[oidc]="${DB_ADMIN_ENV} E2E_FEATURES=oidc E2E_IDENTITIES_JSON={\"oidcAdmin\":{\"username\":\"kcadmin\",\"password\":\"changeme-kcadmin-pw-123\",\"role\":\"ADMIN\",\"provider\":\"keycloak\"},\"oidcUser\":{\"username\":\"kcuser\",\"password\":\"changeme-kcuser-pw-123\",\"role\":\"USER\",\"provider\":\"keycloak\"}}"
 PROFILE_BASE_URL[oidc]="http://localhost/mapstore/"
 PROFILE_ENV_FILE[oidc]="$AUTH_ENV_FILE"
 PROFILE_DATADIR[oidc]=true
@@ -379,9 +391,9 @@ for raw_profile in "${PROFILE_LIST[@]}"; do
 
         log "Building WAR (Maven profile: printing${MAVEN:+,$MAVEN}) …"
         if [[ -n "$MAVEN" ]]; then
-            mvn --batch-mode -pl product -am -Pprinting,"${MAVEN}" -DskipTests package
+            mvn --batch-mode -pl product -am -Pprinting,"${MAVEN}" -DskipTests clean package
         else
-            mvn --batch-mode -pl product -am -Pprinting -DskipTests package
+            mvn --batch-mode -pl product -am -Pprinting -DskipTests clean package
         fi
         LAST_MAVEN_BUILD="$MAVEN"
     fi

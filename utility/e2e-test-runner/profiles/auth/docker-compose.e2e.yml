@@ -23,6 +23,9 @@ services:
 
   mapstore:
     container_name: e2e-mapstore
+    environment:
+      # Exported by e2e-docker.sh: the administrator created on the empty database
+      INITIAL_ADMIN_PASSWORD: "${INITIAL_ADMIN_PASSWORD:?run the stack through e2e-docker.sh}"
     build:
       args:
         MAPSTORE_WEBAPP_SRC: "product/target/mapstore.war"
