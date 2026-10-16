@@ -187,6 +187,22 @@
       "files": [
         "tests/context-share.spec.js"
       ]
+    },
+    "context-plugins": {
+      "title": "Context plugins",
+      "why": "Verify plugins enabled in application contexts: burger menu, brand navbar, map catalog, save as rules and camera position.",
+      "active": true,
+      "files": [
+        "tests/context-plugins.spec.js"
+      ]
+    },
+    "context-templates": {
+      "title": "Context map templates",
+      "why": "Verify that a map template offered by a context replaces its map.",
+      "active": true,
+      "files": [
+        "tests/context-templates.spec.js"
+      ]
     }
   }
 }
