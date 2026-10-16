@@ -155,6 +155,22 @@
       "files": [
         "tests/resource-permissions.spec.js"
       ]
+    },
+    "map-share": {
+      "title": "Map sharing",
+      "why": "Verify direct links, embed code, permalinks and 3D sharing of maps, with layers and identify on the shared map.",
+      "active": true,
+      "files": [
+        "tests/map-share.spec.js"
+      ]
+    },
+    "resource-share": {
+      "title": "Dashboard and story sharing",
+      "why": "Verify direct links, embed code and permalinks of dashboards and geostories, and the scroll position of a shared story.",
+      "active": true,
+      "files": [
+        "tests/resource-share.spec.js"
+      ]
     }
   }
 }

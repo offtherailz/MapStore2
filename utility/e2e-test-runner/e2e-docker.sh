@@ -111,7 +111,7 @@ AVAILABLE_PROFILES=(base geoserver oidc ldap)
 
 BASE_COMPOSE="docker-compose.yml ${RUNNER_DIR}/profiles/base/docker-compose.e2e.yml"
 AUTH_COMPOSE="docker-compose.yml docker/docker-compose.auth.yml ${RUNNER_DIR}/profiles/auth/docker-compose.e2e.yml"
-CORE_SUITES="smoke,auth,accounts,homepage,maps,map-permissions,dashboard-views,resource-permissions,geostory,context"
+CORE_SUITES="smoke,auth,accounts,homepage,maps,map-permissions,dashboard-views,resource-permissions,resource-share,geostory,context"
 
 PROFILE_MAVEN[base]=""
 PROFILE_COMPOSE[base]="$BASE_COMPOSE"
@@ -125,7 +125,7 @@ PROFILE_WAIT_KC[base]=false
 
 PROFILE_MAVEN[geoserver]=""
 PROFILE_COMPOSE[geoserver]="$BASE_COMPOSE ${RUNNER_DIR}/profiles/geoserver/docker-compose.e2e.yml"
-PROFILE_SUITES[geoserver]="smoke,geoserver,catalog,map-toc,map-tools,map-services,print,url-params,dashboard"
+PROFILE_SUITES[geoserver]="smoke,geoserver,catalog,map-toc,map-tools,map-services,map-share,print,url-params,dashboard"
 PROFILE_ENV[geoserver]="${DB_ADMIN_ENV} E2E_FEATURES=geoserverIntegration,geoserverDb,cesium,printing E2E_SERVICES_JSON={\"geoserver\":\"http://localhost:8082/geoserver\"}"
 PROFILE_BASE_URL[geoserver]="http://localhost:8081/mapstore/"
 PROFILE_ENV_FILE[geoserver]=""
