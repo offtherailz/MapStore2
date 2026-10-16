@@ -125,7 +125,7 @@ PROFILE_WAIT_KC[base]=false
 
 PROFILE_MAVEN[geoserver]=""
 PROFILE_COMPOSE[geoserver]="$BASE_COMPOSE ${RUNNER_DIR}/profiles/geoserver/docker-compose.e2e.yml"
-PROFILE_SUITES[geoserver]="smoke,geoserver,map-toc,map-tools,dashboard"
+PROFILE_SUITES[geoserver]="smoke,geoserver,catalog,map-toc,map-tools,dashboard"
 PROFILE_ENV[geoserver]="${DB_ADMIN_ENV} E2E_FEATURES=geoserverIntegration,geoserverDb E2E_SERVICES_JSON={\"geoserver\":\"http://localhost:8082/geoserver\"}"
 PROFILE_BASE_URL[geoserver]="http://localhost:8081/mapstore/"
 PROFILE_ENV_FILE[geoserver]=""

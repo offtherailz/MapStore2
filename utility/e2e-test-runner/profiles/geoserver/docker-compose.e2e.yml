@@ -25,10 +25,10 @@ services:
       GEOSERVER_ADMIN_PASSWORD: "${GEOSERVER_ADMIN_PASSWORD:-geoserver}"
       SKIP_DEMO_DATA: "true"
       CORS_ENABLED: "true"
-      # Chart and counter widgets aggregate through WPS (gs:Aggregate), which the base
-      # image does not ship.
+      # Chart and counter widgets aggregate through WPS (gs:Aggregate) and the catalog
+      # suite searches a CSW service: the base image ships neither extension.
       INSTALL_EXTENSIONS: "true"
-      STABLE_EXTENSIONS: "wps"
+      STABLE_EXTENSIONS: "wps,csw"
     ports:
       - "8082:8080"
     healthcheck:

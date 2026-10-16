@@ -52,6 +52,14 @@
         "tests/geoserver.spec.js"
       ]
     },
+    "catalog": {
+      "title": "Catalog services",
+      "why": "Verify WFS and CSW catalog searches on the local GeoServer.",
+      "active": true,
+      "files": [
+        "tests/catalog.spec.js"
+      ]
+    },
     "map-toc": {
       "title": "Map table of contents",
       "why": "Verify layer visibility, settings, attribute table, removal and filtering in the map viewer.",
