@@ -39,8 +39,9 @@ async function insertFeature(table, properties, point) {
     const attributes = Object.entries(properties)
         .map(([name, value]) => `<e2e:${name}>${escapeXml(value)}</e2e:${name}>`)
         .join('');
+    // With the plain EPSG:4326 code GeoServer reads the coordinates as longitude, latitude.
     const geometry = point
-        ? `<e2e:geom><gml:Point srsName="EPSG:4326"><gml:pos>${point[1]} ${point[0]}</gml:pos></gml:Point></e2e:geom>`
+        ? `<e2e:geom><gml:Point srsName="EPSG:4326"><gml:pos>${point[0]} ${point[1]}</gml:pos></gml:Point></e2e:geom>`
         : '';
 
     await transaction(`<wfs:Insert><e2e:${table}>${attributes}${geometry}</e2e:${table}></wfs:Insert>`);

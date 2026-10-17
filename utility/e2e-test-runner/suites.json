@@ -331,6 +331,14 @@
       "files": [
         "tests/timeline.spec.js"
       ]
+    },
+    "map-widgets": {
+      "title": "Widgets on map",
+      "why": "Verify counters, charts, tables and filters built as widgets on the map.",
+      "active": true,
+      "files": [
+        "tests/map-widgets.spec.js"
+      ]
     }
   }
 }
