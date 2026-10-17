@@ -26,10 +26,7 @@ const toolbar = (page, id) => page.locator(`#${id}`);
 /** Opens the attribute table of a layer of the open map. */
 async function openAttributeTable(page, title) {
     await openLayersDrawer(page);
-    // Clicking a selected node would deselect it and hide the layer toolbar.
-    if (!await layerToolbarButton(page, 'features-grid').isVisible()) {
-        await selectLayerNode(page, title);
-    }
+    await selectLayerNode(page, title);
     await layerToolbarButton(page, 'features-grid').click();
     await expect(grid(page)).toBeVisible({ timeout: 30000 });
     await expect(rows(page).first().or(page.getByText('No Features Available')).first()).toBeVisible({ timeout: 30000 });
@@ -46,8 +43,8 @@ async function columnX(page, column) {
     return box.x + box.width / 2;
 }
 
-/** Types in the quick filter of a column. */
-async function quickFilter(page, column, text) {
+/** Quick filter cell of a column, below its header. */
+async function filterCell(page, column) {
     const x = await columnX(page, column);
     const cells = page.locator('.react-grid-HeaderRow').nth(1).locator('.react-grid-HeaderCell');
     const count = await cells.count();
@@ -55,11 +52,25 @@ async function quickFilter(page, column, text) {
     for (let index = 0; index < count; index++) {
         const box = await cells.nth(index).boundingBox();
         if (box && box.x <= x && x <= box.x + box.width) {
-            await cells.nth(index).locator('input[type="text"]').last().fill(text);
-            return;
+            return cells.nth(index);
         }
     }
     throw new Error(`No quick filter for column ${column}`);
+}
+
+/** Types in the quick filter of a column. */
+async function quickFilter(page, column, text) {
+    const cell = await filterCell(page, column);
+    await cell.locator('input[type="text"]').last().fill(text);
+}
+
+/** Picks the operator of a quick filter: '=', '>', 'isNull'... */
+async function quickFilterOperator(page, column, operator) {
+    const cell = await filterCell(page, column);
+    await cell.locator('.rw-dropdownlist').click();
+    await page.locator('.rw-list-option').filter({ visible: true }).filter({ hasText: new RegExp(`^${operator.replace(/[<>]/g, '\\$&')}$`) }).first().click();
+
+    return cell;
 }
 
 /** Double clicks the cell of a column in a row, which starts editing it. */
@@ -282,6 +293,39 @@ describeIfFeature('geoserverIntegration', 'Attribute table', () => {
         await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
         await expect(rows(page)).toHaveCount(1, { timeout: 20000 });
         await expect(row(page, 'Roma')).toBeVisible();
+    });
+
+    test('Quick filters compare numbers and dates and find empty values', fromScenario('Maps/TOC/Attribute_Table — Time range filtering for Attribute Table quick filter (@GH-9706)'), async({ page, data }) => {
+        const map = await data.map({ data: mapConfig([background(), fixtureTableLayer('e2e_events'), fixtureTableLayer('e2e_stats', { type: 'wfs', url: fixtureTableLayer('e2e_stats').search.url })]) });
+
+        await openMapViewer(page, map.id);
+        await openAttributeTable(page, 'e2e_events');
+        await expect(rows(page)).toHaveCount(5);
+
+        await test.step('Greater than a date', async() => {
+            const cell = await quickFilterOperator(page, 'event_time', '>');
+            const input = cell.locator('input.rw-input');
+            await input.fill('01/03/2024');
+            await input.press('Enter');
+            await expect(rows(page)).toHaveCount(3, { timeout: 20000 });
+            await expect(row(page, 'Event 3')).toBeVisible();
+            await expect(row(page, 'Event 2')).toHaveCount(0);
+        });
+
+        await test.step('Greater than a number, together with the date', async() => {
+            await quickFilterOperator(page, 'id', '>');
+            await quickFilter(page, 'id', '4');
+            await expect(rows(page)).toHaveCount(1, { timeout: 20000 });
+            await expect(row(page, 'Event 5')).toBeVisible();
+        });
+
+        await test.step('Empty values', async() => {
+            await grid(page).locator('button:has(.glyphicon-1-close)').last().click();
+            await openAttributeTable(page, 'e2e_stats');
+            await quickFilterOperator(page, 'visitors', 'isNull');
+            await expect(rows(page)).toHaveCount(1, { timeout: 20000 });
+            await expect(row(page, 'Liguria')).toBeVisible();
+        });
     });
 
     test('A layer with a second geometry among its attributes opens in the table', fromScenario('Maps/TOC/Attribute_Table — Layer with additional geometries in attributes (@GH-10699)'), async({ page, data }) => {

@@ -121,7 +121,11 @@ async function openLayersDrawer(page) {
 async function selectLayerNode(page, title = FIXTURE_LAYER_TITLE) {
     const node = page.locator('.ms-node-layer').filter({ hasText: title }).first();
 
-    await node.click();
+    // Clicking a selected node deselects it.
+    if (!/\bselected\b/.test(await node.getAttribute('class') ?? '')) {
+        await node.click();
+    }
+    await expect(node).toHaveClass(/\bselected\b/);
     await moveAwayFromTooltips(page);
 
     return node;

@@ -283,6 +283,14 @@
       "files": [
         "tests/attribute-table.spec.js"
       ]
+    },
+    "export-data": {
+      "title": "Export data",
+      "why": "Verify exporting WFS layers, also cropped to the viewport, and imported vector layers as GeoJSON.",
+      "active": true,
+      "files": [
+        "tests/export-data.spec.js"
+      ]
     }
   }
 }
