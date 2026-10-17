@@ -307,6 +307,14 @@
       "files": [
         "tests/toc-settings.spec.js"
       ]
+    },
+    "filter-layer": {
+      "title": "Filter layer",
+      "why": "Verify attribute, time and cross layer filters of a layer, with aliases, applied to the map and saved with it.",
+      "active": true,
+      "files": [
+        "tests/filter-layer.spec.js"
+      ]
     }
   }
 }

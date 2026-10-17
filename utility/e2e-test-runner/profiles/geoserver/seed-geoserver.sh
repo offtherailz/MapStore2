@@ -136,6 +136,42 @@ rest PUT "${FEATURE_TYPES}/e2e_points" "$(cat <<JSON
 JSON
 )" > /dev/null
 
+# Style classifying the cities by category, for the legend and its filters.
+STYLE="e2e_points_by_category"
+if exists "/rest/workspaces/${WORKSPACE}/styles/${STYLE}"; then
+    echo "  style ${WORKSPACE}:${STYLE} already present"
+else
+    echo "  publishing style ${WORKSPACE}:${STYLE}"
+    rest POST "/rest/workspaces/${WORKSPACE}/styles?name=${STYLE}" "$(cat <<'SLD'
+<?xml version="1.0" encoding="UTF-8"?>
+<StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc"
+    xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <NamedLayer>
+    <Name>e2e_points_by_category</Name>
+    <UserStyle>
+      <Title>E2E cities by category</Title>
+      <FeatureTypeStyle>
+        <Rule>
+          <Name>capital</Name>
+          <Title>Capital</Title>
+          <ogc:Filter><ogc:PropertyIsEqualTo><ogc:PropertyName>category</ogc:PropertyName><ogc:Literal>capital</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>
+          <PointSymbolizer><Graphic><Mark><WellKnownName>circle</WellKnownName><Fill><CssParameter name="fill">#d7191c</CssParameter></Fill></Mark><Size>12</Size></Graphic></PointSymbolizer>
+        </Rule>
+        <Rule>
+          <Name>city</Name>
+          <Title>City</Title>
+          <ogc:Filter><ogc:PropertyIsEqualTo><ogc:PropertyName>category</ogc:PropertyName><ogc:Literal>city</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>
+          <PointSymbolizer><Graphic><Mark><WellKnownName>square</WellKnownName><Fill><CssParameter name="fill">#2b83ba</CssParameter></Fill></Mark><Size>10</Size></Graphic></PointSymbolizer>
+        </Rule>
+      </FeatureTypeStyle>
+    </UserStyle>
+  </NamedLayer>
+</StyledLayerDescriptor>
+SLD
+)" "application/vnd.ogc.sld+xml" > /dev/null
+    rest POST "/rest/layers/${WORKSPACE}:e2e_points/styles" "{\"style\":{\"name\":\"${WORKSPACE}:${STYLE}\"}}" > /dev/null
+fi
+
 # Anonymous WFS-T on the editing tables only: MapStore sends the transactions without
 # GeoServer credentials.
 ACL="$(curl -sS -u "${GS_USER}:${GS_PASSWORD}" "${GS_URL}/rest/security/acl/layers.json")"
