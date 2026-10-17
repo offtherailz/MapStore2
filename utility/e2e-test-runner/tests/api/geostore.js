@@ -207,6 +207,14 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
         return { id: Number(await response.text()), name, category };
     }
 
+    /** Returns the stored data of a resource, parsed as JSON. */
+    async function getData(id) {
+        // The data endpoint answers with the stored payload, whatever its type.
+        const response = await expectOk(await context.get(`data/${id}`), `GET data/${id}`);
+
+        return JSON.parse(await response.text());
+    }
+
     async function findResources(category, textSearch = FIXTURE_PREFIX) {
         const path = `extjs/search/category/${category}/*${encodeURIComponent(textSearch)}*/thumbnail,details,featured`;
         const response = await context.get(path, { headers: { Accept: 'application/json' } });
@@ -400,6 +408,7 @@ async function createGeoStoreClient({ username, password, baseURL } = {}) {
         deleteGroup,
         addUserToGroup,
         createResource,
+        getData,
         findResources,
         deleteResource,
         setAttribute,

@@ -291,6 +291,14 @@
       "files": [
         "tests/export-data.spec.js"
       ]
+    },
+    "layer-settings": {
+      "title": "Layer settings",
+      "why": "Verify the display options, fields, description and identify templates of a layer.",
+      "active": true,
+      "files": [
+        "tests/layer-settings.spec.js"
+      ]
     }
   }
 }
