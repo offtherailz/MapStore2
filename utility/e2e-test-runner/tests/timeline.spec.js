@@ -128,4 +128,32 @@ describeIfFeature('geoserverIntegration', 'Timeline', () => {
         await year.press('Enter');
         expect(await earlier).toMatch(/^2023-01-05/);
     });
+
+    test('The timeline and the widgets tray share the footer', fromScenario('Maps/TOC/Timeline — Switch between the Timeline tool and the Widgets selector (@GH-11304)'), async({ page, data }) => {
+        // Since #11844 the widgets tray sits in the footer next to the timeline: expanding
+        // one no longer collapses the other.
+        const config = mapConfig([background(), eventsLayer()]);
+        config.widgetsConfig = { widgets: [1, 2].map((n) => ({
+            id: `e2e_text_${n}`, widgetType: 'text', title: `E2E text ${n}`, text: `<p>E2E text ${n}</p>`, dataGrid: { x: 0, y: n * 2, w: 1, h: 1 }
+        })) };
+        const map = await data.map({ data: config });
+        await openMapViewer(page, map.id);
+        await expect(timeline(page)).toBeVisible({ timeout: 30000 });
+        await timeline(page).locator('.ms-timeline-expand, button:has(.glyphicon-resize-full)').first().click();
+        await expect(timeline(page).getByText('e2e_events').first()).toBeVisible({ timeout: 20000 });
+
+        const trayToggle = page.locator('button:has(.glyphicon-list):not(.timeline-plugin button)');
+        const bar = await timeline(page).boundingBox();
+        const tray = await trayToggle.boundingBox();
+        expect(tray.y).toBeGreaterThanOrEqual(bar.y + bar.height - 1);
+
+        const widget = page.locator('p', { hasText: /^E2E text 1$/ });
+        await expect(widget).toBeVisible();
+        await trayToggle.click();
+        await expect(widget).toBeHidden();
+        await expect(timeline(page).getByText('e2e_events').first()).toBeVisible();
+        await trayToggle.click();
+        await expect(widget).toBeVisible();
+        await expect(timeline(page).getByText('e2e_events').first()).toBeVisible();
+    });
 });
