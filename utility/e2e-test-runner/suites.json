@@ -251,6 +251,14 @@
       "files": [
         "tests/search-bar.spec.js"
       ]
+    },
+    "identify": {
+      "title": "Identify",
+      "why": "Verify feature info on WMS, WFS and imported layers, hidden groups, HTML responses, highlight and hover popups.",
+      "active": true,
+      "files": [
+        "tests/identify.spec.js"
+      ]
     }
   }
 }
