@@ -371,6 +371,14 @@
       "files": [
         "tests/dashboard-data.spec.js"
       ]
+    },
+    "geostory-media": {
+      "title": "GeoStory media",
+      "why": "Verify images, videos and maps added and edited as media of geostory sections.",
+      "active": true,
+      "files": [
+        "tests/geostory-media.spec.js"
+      ]
     }
   }
 }

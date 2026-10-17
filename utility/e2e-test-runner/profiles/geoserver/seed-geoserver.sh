@@ -136,6 +136,14 @@ rest PUT "${FEATURE_TYPES}/e2e_points" "$(cat <<JSON
 JSON
 )" > /dev/null
 
+# Media of the story suites, served by GeoServer from its www folder.
+MEDIA_DIR="$(dirname "$0")/www"
+for media in e2e_image.png e2e_video.mp4; do
+    echo "  publishing the media ${media}"
+    curl -sS -o /dev/null -u "${GS_USER}:${GS_PASSWORD}" -X PUT --data-binary "@${MEDIA_DIR}/${media}" \
+        "${GS_URL}/rest/resource/www/e2e/${media}"
+done
+
 # Style classifying the cities by category, for the legend and its filters.
 STYLE="e2e_points_by_category"
 if exists "/rest/workspaces/${WORKSPACE}/styles/${STYLE}"; then
