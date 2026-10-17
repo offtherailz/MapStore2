@@ -227,6 +227,22 @@
       "files": [
         "tests/import-export.spec.js"
       ]
+    },
+    "map-details": {
+      "title": "Map details",
+      "why": "Verify writing, editing, removing and showing at startup the details of maps, also within a context.",
+      "active": true,
+      "files": [
+        "tests/map-details.spec.js"
+      ]
+    },
+    "map-views": {
+      "title": "Map views",
+      "why": "Verify adding, playing and editing the map views of a 3D map.",
+      "active": true,
+      "files": [
+        "tests/map-views.spec.js"
+      ]
     }
   }
 }
