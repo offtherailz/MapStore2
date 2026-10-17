@@ -363,6 +363,14 @@
       "files": [
         "tests/dashboard-map-widgets.spec.js"
       ]
+    },
+    "dashboard-data": {
+      "title": "Dashboard widget data",
+      "why": "Verify downloading the filtered data of table widgets and filtering widgets by area in dashboards.",
+      "active": true,
+      "files": [
+        "tests/dashboard-data.spec.js"
+      ]
     }
   }
 }
