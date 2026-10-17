@@ -83,7 +83,7 @@ function countColor(png, color, tolerance = 40) {
  */
 async function mapPixels(page, color, tolerance) {
     const screenshot = await page.locator('.ol-viewport, .cesium-widget').first().screenshot({
-        mask: [page.locator('.ms-side-panel')],
+        mask: [page.locator('.ms-side-panel, .ms-geostory-map-editor')],
         maskColor: '#ff00ff'
     });
 

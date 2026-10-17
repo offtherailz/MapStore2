@@ -387,6 +387,14 @@
       "files": [
         "tests/layer-style.spec.js"
       ]
+    },
+    "geostory-maps": {
+      "title": "GeoStory maps",
+      "why": "Map backgrounds of a story: map configuration, TOC, interactive legend, center/scale",
+      "active": true,
+      "files": [
+        "tests/geostory-maps.spec.js"
+      ]
     }
   }
 }
