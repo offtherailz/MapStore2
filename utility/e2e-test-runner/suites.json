@@ -259,6 +259,22 @@
       "files": [
         "tests/identify.spec.js"
       ]
+    },
+    "backgrounds": {
+      "title": "Backgrounds",
+      "why": "Verify adding WMS backgrounds with title and thumbnail, removing them, and the catalog default service afterwards.",
+      "active": true,
+      "files": [
+        "tests/backgrounds.spec.js"
+      ]
+    },
+    "interoperability": {
+      "title": "Interoperability",
+      "why": "Verify layer metadata from the capabilities, WMS 1.1.1 requests in 3D and graticule layers.",
+      "active": true,
+      "files": [
+        "tests/interoperability.spec.js"
+      ]
     }
   }
 }

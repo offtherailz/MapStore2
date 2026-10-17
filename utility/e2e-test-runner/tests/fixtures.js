@@ -261,4 +261,4 @@ function fromScenario(...scenarios) {
     return { annotation: scenarios.map((description) => ({ type: 'cucumber', description })) };
 }
 
-export { test, expect, describeIfFeature, fromScenario };
+export { test, expect, describeIfFeature, fromScenario, THUMBNAIL_DATA_URI };
