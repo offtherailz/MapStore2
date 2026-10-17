@@ -355,6 +355,14 @@
       "files": [
         "tests/dashboard-connections.spec.js"
       ]
+    },
+    "dashboard-map-widgets": {
+      "title": "Dashboard map widgets",
+      "why": "Verify map widgets of dashboards: identify, table of contents, empty maps, legend, background and the advanced editor.",
+      "active": true,
+      "files": [
+        "tests/dashboard-map-widgets.spec.js"
+      ]
     }
   }
 }
