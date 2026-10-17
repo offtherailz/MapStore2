@@ -299,6 +299,14 @@
       "files": [
         "tests/layer-settings.spec.js"
       ]
+    },
+    "toc-settings": {
+      "title": "Table of contents settings",
+      "why": "Verify the settings and context menus of the table of contents, swipe, reordering and editing permissions.",
+      "active": true,
+      "files": [
+        "tests/toc-settings.spec.js"
+      ]
     }
   }
 }
