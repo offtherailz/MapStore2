@@ -101,13 +101,15 @@ function contextPayload({ windowTitle = 'E2E context', layers = [], plugins = []
  * @param {object[]} [options.layers]
  * @param {object} [options.cfg] plugin name -> cfg merged into the cfg of that plugin
  * @param {object[]} [options.plugins] plugins added to the viewer ones
+ * @param {string[]} [options.exclude] names of viewer plugins left out
  */
-async function viewerContextPayload(page, { layers = [], cfg = {}, plugins = [] } = {}) {
+async function viewerContextPayload(page, { layers = [], cfg = {}, plugins = [], exclude = [] } = {}) {
     const localConfig = await (await page.request.get('configs/localConfig.json')).json();
     const payload = contextPayload({ layers });
     payload.plugins.desktop = [
         ...localConfig.plugins.desktop
             .map((plugin) => typeof plugin === 'string' ? { name: plugin } : plugin)
+            .filter(({ name }) => !exclude.includes(name))
             .map((plugin) => cfg[plugin.name] ? { ...plugin, cfg: { ...plugin.cfg, ...cfg[plugin.name] } } : plugin),
         ...plugins
     ];

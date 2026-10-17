@@ -1,7 +1,9 @@
 import { test, expect, describeIfFeature, fromScenario } from './fixtures.js';
-import { hasFeature } from './config.js';
+import { hasFeature, getServiceUrl } from './config.js';
+import { openAppTarget } from './helpers/navigation.js';
+import { viewerContextPayload } from './helpers/content.js';
 import { login } from './helpers/auth.js';
-import { fixtureLayer, mapConfig, openMapViewer, openLayersDrawer, selectLayerNode, layerToolbarButton, FIXTURE_FEATURES, FIXTURE_LAYER_NAME, FIXTURE_LAYER_TITLE } from './helpers/map.js';
+import { fixtureLayer, fixtureTableLayer, mapConfig, openMapViewer, openLayersDrawer, selectLayerNode, layerToolbarButton, FIXTURE_FEATURES, FIXTURE_LAYER_NAME, FIXTURE_LAYER_TITLE } from './helpers/map.js';
 import { wizardNext, saveWidget, selectComboByLabel, openDashboard, addWidget, pickFixtureLayer } from './helpers/dashboard.js';
 
 const background = () => fixtureLayer({ id: 'e2e_background', title: 'E2E background', group: 'background', search: undefined, visibility: false });
@@ -39,6 +41,19 @@ async function connectToLayer(page) {
     await target.locator('button').last().click();
 }
 
+async function saveSlider(page, title) {
+    await wizardNext(page);
+    await page.getByText('Title', { exact: true }).locator('xpath=following::input[1]').fill(title);
+    await saveWidget(page);
+    const widget = page.locator('.mapstore-widget-card').filter({ hasText: 'Event 3' }).last();
+    await expect(widget).toBeVisible({ timeout: 20000 });
+    // The new widget is too small for its ticks to be clicked.
+    await widget.locator('.glyphicon-resize-full').first().click();
+    await expect(widget.getByText('Event 3', { exact: true })).toBeVisible();
+
+    return widget;
+}
+
 async function saveFilter(page, title) {
     await wizardNext(page);
     await page.getByText('Title', { exact: true }).locator('xpath=following::input[1]').fill(title);
@@ -47,6 +62,60 @@ async function saveFilter(page, title) {
     await expect(widget).toBeVisible({ timeout: 20000 });
 
     return widget;
+}
+
+/** e2e_events, one event a day from 2024-01-01 to 2024-01-05, with its time dimension. */
+function eventsLayer() {
+    return fixtureTableLayer('e2e_events', {
+        dimensions: [{ name: 'time', source: { type: 'multidim-extension', url: `${getServiceUrl('geoserver')}/gwc/service/wmts` } }]
+    });
+}
+
+/** The time of the next GetMap of the events. */
+function nextEventsTime(page) {
+    return page.waitForRequest((r) => /request=GetMap/i.test(r.url()) && r.url().includes('e2e_events') && /[?&]time=/i.test(r.url()))
+        .then((r) => new URL(r.url()).searchParams.get('time') ?? new URL(r.url()).searchParams.get('TIME'));
+}
+
+/**
+ * Builds a single selection slider of the event times, labelled by the event names, and
+ * adds the "Apply dimension" interaction.
+ */
+async function newEventsTimeSlider(page) {
+    await openLayersDrawer(page);
+    await selectLayerNode(page, 'e2e_events');
+    await layerToolbarButton(page, 'widgets').click();
+    await page.getByText('Filter selector', { exact: true }).first().click();
+    await page.getByText('Values From').locator('xpath=following::*[contains(@class,"Select-control")][1]').click();
+    await page.locator('.Select-menu-outer').getByText('Attributes', { exact: true }).click();
+    await selectComboByLabel(page, 'Value Attribute', 'event_time');
+    await selectComboByLabel(page, 'Label Attribute', 'name');
+
+    await page.getByText('Layout', { exact: true }).click();
+    const variant = page.getByText('Variant', { exact: true }).locator('xpath=following::*[contains(@class,"Select-control")][1]');
+    await variant.click();
+    // The slider needs a single selection.
+    await expect(page.locator('.Select-option').filter({ hasText: 'Checkbox' })).toBeVisible();
+    await expect(page.locator('.Select-option').filter({ hasText: 'Slider' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await selectComboByLabel(page, 'Selection Mode', 'Single');
+    await variant.click();
+    await page.locator('.Select-option').filter({ hasText: 'Slider' }).click();
+    await expect(page.getByText('Event 3', { exact: true }).first()).toBeVisible();
+
+    await page.getByText('Interactions', { exact: true }).click();
+    await page.getByText('On Selection Change').locator('xpath=following::button[1]').click();
+    await page.getByText('Apply dimension').click();
+}
+
+/** The connect button of a row of the interactions tree. */
+function interactionConnect(page, label) {
+    return page.locator('.ms-connection-row').filter({ hasText: new RegExp(`^${label}$`) }).locator('button:has(.glyphicon-unplug)');
+}
+
+/** Moves the slider of a filter widget to the tick with the given label. */
+async function slideTo(widget, label) {
+    await widget.getByText(label, { exact: true }).click();
 }
 
 describeIfFeature('geoserverIntegration', 'Filter widgets', () => {
@@ -241,3 +310,72 @@ describeIfFeature('geoserverIntegration', 'Filter widgets in dashboards', () => 
         await expect(checked).toHaveText('Genova');
     });
 });
+
+describeIfFeature('geoserverIntegration', 'Filter widgets on time', () => {
+    test.beforeEach(async({ page }) => {
+        test.skip(!hasFeature('geoserverDb'), 'Requires feature geoserverDb');
+        await login(page);
+    });
+
+    test('A time slider drives the timeline of the map', fromScenario('Maps/TOC/Widget — Filter Widget with Time dimension and Slider option'), async({ page, data }) => {
+        const map = await data.map({ data: mapConfig([background(), eventsLayer()]) });
+        await openMapViewer(page, map.id);
+        await newEventsTimeSlider(page);
+        // With the timeline on the map the layer follows it: the slider drives the timeline.
+        await interactionConnect(page, 'Timeline').click();
+        const widget = await saveSlider(page, 'E2E events slider');
+
+        const time = nextEventsTime(page);
+        await slideTo(widget, 'Event 2');
+        expect(await time).toMatch(/^2024-01-02/);
+    });
+
+    test('A time slider filters a layer and highlights the time on a chart', fromScenario('Maps/TOC/Widget — Filter Widget and Chart Widget connection with Time dimension'), async({ page, data }) => {
+        const context = await data.context({ data: await viewerContextPayload(page, { layers: [background(), eventsLayer()], exclude: ['Timeline'] }) });
+        await openAppTarget(page, `#/context/${context.name}`);
+        await expect(page.locator('.ol-viewport')).toBeVisible({ timeout: 30000 });
+
+        await test.step('Line chart of the events highlighting the selected time', async() => {
+            await openLayersDrawer(page);
+            await selectLayerNode(page, 'e2e_events');
+            await layerToolbarButton(page, 'widgets').click();
+            await page.getByText('Chart', { exact: true }).first().click();
+            await selectComboByLabel(page, 'X Attribute', 'event_time');
+            await selectComboByLabel(page, 'Y Attribute', 'id');
+            await selectComboByLabel(page, 'Operation', 'No Operation');
+            await page.getByText('Axes', { exact: true }).first().click();
+            await page.getByText('X axis', { exact: true }).locator('xpath=following::*[normalize-space(text())="Type"][1]/following::*[contains(@class,"Select-control")][1]').click();
+            await page.locator('.Select-menu-outer').getByText('Date', { exact: true }).click();
+            await page.getByText('Highlight selected time', { exact: true }).click();
+            const title = page.getByText('Title', { exact: true }).locator('xpath=following::input[1]');
+            await expect(async() => {
+                await wizardNext(page);
+                await expect(title).toBeVisible({ timeout: 2000 });
+            }).toPass({ timeout: 15000 });
+            await title.fill('E2E events chart');
+            await saveWidget(page);
+            await expect(page.locator('.mapstore-widget-card .js-plotly-plot').first()).toBeVisible({ timeout: 20000 });
+        });
+
+        await newEventsTimeSlider(page);
+        await interactionConnect(page, 'Time').click();
+        const rows = await page.locator('.ms-connection-row').allInnerTexts();
+        const highlight = rows.find((text) => /highlight/i.test(text));
+        expect(highlight, `interaction rows: ${rows.join(' | ')}`).toBeTruthy();
+        await interactionConnect(page, highlight.trim()).click();
+        const widget = await saveSlider(page, 'E2E events slider');
+
+        const time = nextEventsTime(page);
+        await slideTo(widget, 'Event 4');
+        expect(await time).toMatch(/^2024-01-04/);
+        await widget.locator('.glyphicon-resize-small, .glyphicon-resize-full').first().click();
+        const shape = page.locator('.mapstore-widget-card .js-plotly-plot .shapelayer path').first();
+        await expect(shape).toBeAttached({ timeout: 20000 });
+        const before = await shape.getAttribute('d');
+        await widget.locator('.glyphicon-resize-full').first().click();
+        await slideTo(widget, 'Event 2');
+        await widget.locator('.glyphicon-resize-small, .glyphicon-resize-full').first().click();
+        await expect.poll(() => shape.getAttribute('d'), { timeout: 20000 }).not.toBe(before);
+    });
+});
+
