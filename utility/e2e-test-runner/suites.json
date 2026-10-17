@@ -339,6 +339,14 @@
       "files": [
         "tests/map-widgets.spec.js"
       ]
+    },
+    "filter-widgets": {
+      "title": "Filter widgets",
+      "why": "Verify filter selector widgets on the map: values, targets, forced and empty selection.",
+      "active": true,
+      "files": [
+        "tests/filter-widgets.spec.js"
+      ]
     }
   }
 }
