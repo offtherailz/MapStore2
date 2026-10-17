@@ -28,10 +28,11 @@ services:
       # Chart and counter widgets aggregate through WPS (gs:Aggregate), the catalog suite
       # searches a CSW service and cross layer filters need the queryCollection function
       # of the query layer extension; the timeline reads the time values through the
-      # DescribeDomains operation of the WMTS multidimensional extension.
+      # DescribeDomains operation of the WMTS multidimensional extension; the classification
+      # styles of the style editor come from the SLD service extension.
       # The base image ships none of them.
       INSTALL_EXTENSIONS: "true"
-      STABLE_EXTENSIONS: "wps,csw,querylayer,wmts-multi-dimensional"
+      STABLE_EXTENSIONS: "wps,csw,querylayer,wmts-multi-dimensional,sldservice"
     ports:
       - "8082:8080"
     healthcheck:

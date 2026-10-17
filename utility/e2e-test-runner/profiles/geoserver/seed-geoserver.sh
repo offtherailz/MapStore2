@@ -18,7 +18,10 @@ GS_USER="${GEOSERVER_ADMIN_USER:-admin}"
 GS_PASSWORD="${GEOSERVER_ADMIN_PASSWORD:-geoserver}"
 WORKSPACE="e2e"
 STORE="gisdata"
-LAYERS=(e2e_points e2e_edit e2e_events e2e_stats e2e_empty e2e_multigeom)
+LAYERS=(e2e_points e2e_edit e2e_events e2e_stats e2e_empty e2e_multigeom e2e_styled)
+# Layers published from another table: e2e_styled is the cities layer whose styles the
+# style editor suite creates and deletes, so the other suites keep the default one.
+declare -A NATIVE=([e2e_styled]=e2e_points)
 
 # The datastore connects over the compose network, so the host is the service name.
 PG_HOST="postgres"
@@ -84,7 +87,7 @@ for layer in "${LAYERS[@]}"; do
     else
         echo "  publishing layer ${WORKSPACE}:${layer}"
         rest POST "${FEATURE_TYPES}" \
-            "{\"featureType\":{\"name\":\"${layer}\",\"nativeName\":\"${layer}\",\"srs\":\"EPSG:4326\",\"enabled\":true}}" > /dev/null
+            "{\"featureType\":{\"name\":\"${layer}\",\"nativeName\":\"${NATIVE[$layer]:-$layer}\",\"srs\":\"EPSG:4326\",\"enabled\":true}}" > /dev/null
     fi
 done
 
@@ -146,7 +149,7 @@ done
 
 # Style classifying the cities by category, for the legend and its filters.
 STYLE="e2e_points_by_category"
-if exists "/rest/workspaces/${WORKSPACE}/styles/${STYLE}"; then
+if exists "/rest/workspaces/${WORKSPACE}/styles/${STYLE}.json"; then
     echo "  style ${WORKSPACE}:${STYLE} already present"
 else
     echo "  publishing style ${WORKSPACE}:${STYLE}"

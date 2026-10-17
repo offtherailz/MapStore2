@@ -379,6 +379,14 @@
       "files": [
         "tests/geostory-media.spec.js"
       ]
+    },
+    "layer-style": {
+      "title": "Layer style",
+      "why": "Style editor on WMS (GeoServer REST), vector, WFS and 3D layers",
+      "active": true,
+      "files": [
+        "tests/layer-style.spec.js"
+      ]
     }
   }
 }
