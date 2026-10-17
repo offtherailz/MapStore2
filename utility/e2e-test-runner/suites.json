@@ -315,6 +315,14 @@
       "files": [
         "tests/filter-layer.spec.js"
       ]
+    },
+    "legend": {
+      "title": "Legend",
+      "why": "Verify the legends of the table of contents, interactive and filtered by the view, and the floating legend.",
+      "active": true,
+      "files": [
+        "tests/legend.spec.js"
+      ]
     }
   }
 }
