@@ -323,6 +323,14 @@
       "files": [
         "tests/legend.spec.js"
       ]
+    },
+    "timeline": {
+      "title": "Timeline",
+      "why": "Verify the timeline of time enabled layers: playback, ranges, settings, viewport filter and identify in time.",
+      "active": true,
+      "files": [
+        "tests/timeline.spec.js"
+      ]
     }
   }
 }
