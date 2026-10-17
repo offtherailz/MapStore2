@@ -243,6 +243,14 @@
       "files": [
         "tests/map-views.spec.js"
       ]
+    },
+    "search-bar": {
+      "title": "Search bar",
+      "why": "Verify coordinate, map CRS and bookmark searches and custom WFS search services.",
+      "active": true,
+      "files": [
+        "tests/search-bar.spec.js"
+      ]
     }
   }
 }

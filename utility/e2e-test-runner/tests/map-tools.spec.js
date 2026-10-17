@@ -164,4 +164,24 @@ describeIfFeature('geoserverIntegration', 'Map tools', () => {
                 .toBe(0);
         });
     });
+
+    test('The scale chosen in the footer follows a projection change', fromScenario(
+        'Maps/Footer — Scale selector (@GH-10768)',
+        'Maps/Footer — Scale and Zoom handling on projection change'
+    ), async({ page, data }) => {
+        const background = fixtureLayer({ id: 'e2e_background', title: 'E2E background', group: 'background', search: undefined });
+        const map = await data.map({ data: mapConfig([background, fixtureLayer()]) });
+        const scale = page.getByRole('combobox', { name: 'Scale:' });
+
+        await openMapViewer(page, map.id);
+        await scale.selectOption('7');
+        await expect(scale).toHaveValue('7');
+        const scaleIn3857 = await scale.locator('option:checked').innerText();
+
+        await page.locator('.ms-crs-select-button').click();
+        await page.locator('.ms-crs-dropdown .dropdown-menu').getByText('EPSG:4326', { exact: true }).click();
+        await expect(page.locator('.ms-crs-select-button')).toHaveText('EPSG:4326');
+        // The scales of the selector are those of the new projection.
+        await expect.poll(() => scale.locator('option:checked').innerText()).not.toBe(scaleIn3857);
+    });
 });
