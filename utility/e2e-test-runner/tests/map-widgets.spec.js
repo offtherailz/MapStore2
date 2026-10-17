@@ -58,6 +58,36 @@ describeIfFeature('geoserverIntegration', 'Widgets on map', () => {
         await expect(page.getByText(new RegExp(`${TOTAL_POPULATION + 2}`)).first()).toBeVisible();
     });
 
+    test('Widgets follow the layer filter when it is turned on and off', fromScenario('Maps/TOC/Widget — Widget alignment when toggling on/off the layer filter'), async({ page, data }) => {
+        const CAPITAL_POPULATION = 2748000;
+        const layerFilter = {
+            groupFields: [{ id: 1, logic: 'OR', index: 0 }],
+            filterFields: [{ rowId: 1, groupId: 1, attribute: 'category', operator: '=', value: 'capital', type: 'string', exception: null }],
+            spatialField: { method: null, operation: 'INTERSECTS', geometry: null, attribute: 'geom' },
+            disabled: false
+        };
+        await openMap(page, data, [fixtureLayer({ layerFilter })]);
+        await newWidget(page, 'Counter');
+        await selectComboByLabel(page, 'Use', 'population');
+        await selectComboByLabel(page, 'Operation', 'SUM');
+        await saveWithTitle(page, 'E2E population');
+        const counter = page.locator('.mapstore-widget-card').filter({ hasText: 'E2E population' }).first();
+        // The layer filter keeps only Rome, the capital.
+        await expect(counter.getByText(String(CAPITAL_POPULATION))).toBeVisible({ timeout: 30000 });
+
+        const toggle = page.locator('.ms-node-layer').filter({ hasText: FIXTURE_LAYER_TITLE }).locator('button:has(.glyphicon-filter)').first();
+        await openLayersDrawer(page);
+        await expect(toggle).toHaveClass(/active/);
+        // The tooltip of the opacity slider covers the lower half of the button.
+        const clickToggle = () => toggle.click({ position: { x: 8, y: 3 } });
+        await clickToggle();
+        await expect(toggle).not.toHaveClass(/active/);
+        await expect(counter.getByText(String(TOTAL_POPULATION))).toBeVisible({ timeout: 30000 });
+        await clickToggle();
+        await expect(toggle).toHaveClass(/active/);
+        await expect(counter.getByText(String(CAPITAL_POPULATION))).toBeVisible({ timeout: 30000 });
+    });
+
     test('A chart gets a second trace and a line chart a classified style', fromScenario(
         'Maps/TOC/Widget — Create a Multivariable charts (@GH-8755)',
         'Maps/TOC/Widget — Line Chart - Classification style (@GH-11721)'
