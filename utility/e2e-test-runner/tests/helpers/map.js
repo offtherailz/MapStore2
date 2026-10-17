@@ -1,7 +1,7 @@
 /**
  * Map viewer helpers.
  *
- * The layer used by the map suites is the one published by the `geoserver` profile
+ * The layers used by the map suites are the ones published by the `geoserver` profile
  * (profiles/geoserver/seed-geoserver.sh) from the PostGIS fixture, so the suites never
  * depend on data owned by someone else.
  */
@@ -36,6 +36,28 @@ function fixtureLayer(overrides = {}) {
         url: `${geoserver}/wms`,
         name: FIXTURE_LAYER_NAME,
         title: FIXTURE_LAYER_TITLE,
+        visibility: true,
+        search: { type: 'wfs', url: `${geoserver}/wfs` },
+        bbox: FIXTURE_LAYER_BBOX,
+        ...overrides
+    };
+}
+
+/**
+ * WMS layer descriptor for another table of the PostGIS fixture: `e2e_edit` (open to
+ * WFS-T), `e2e_events` (time dimension on `event_time`) or `e2e_stats` (no geometry).
+ *
+ * @param {string} table
+ * @param {object} [overrides]
+ */
+function fixtureTableLayer(table, overrides = {}) {
+    const geoserver = getServiceUrl('geoserver');
+
+    return {
+        type: 'wms',
+        url: `${geoserver}/wms`,
+        name: `e2e:${table}`,
+        title: table,
         visibility: true,
         search: { type: 'wfs', url: `${geoserver}/wfs` },
         bbox: FIXTURE_LAYER_BBOX,
@@ -119,6 +141,7 @@ export {
     FIXTURE_LAYER_TITLE,
     FIXTURE_FEATURES,
     fixtureLayer,
+    fixtureTableLayer,
     mapConfig,
     openMapViewer,
     openLayersDrawer,

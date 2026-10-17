@@ -11,7 +11,7 @@ import {
     layerToolbarButton,
     FIXTURE_LAYER_NAME
 } from './helpers/map.js';
-import { contextPayload } from './helpers/content.js';
+import { contextPayload, viewerContextPayload } from './helpers/content.js';
 
 /** Rome, the first city of the PostGIS fixture: the maps of this suite are centred on it. */
 const ROME = { x: 12.4964, y: 41.9028 };
@@ -154,13 +154,10 @@ describeIfFeature('geoserverIntegration', 'Identify', () => {
     });
 
     test('Hover identify shows a popup on features only', fromScenario('Maps/Options/Get_Feature_Info — Disable identify popup in case of no results (@GH-10545)'), async({ page, data }) => {
-        // The context gets the plugins of the standard viewer, with the identify popup hidden on no results.
-        const localConfig = await (await page.request.get('configs/localConfig.json')).json();
-        const plugins = localConfig.plugins.desktop
-            .map((plugin) => typeof plugin === 'string' ? { name: plugin } : plugin)
-            .map((plugin) => plugin.name === 'Identify' ? { ...plugin, cfg: { ...plugin.cfg, hidePopupIfNoResults: true } } : plugin);
-        const payload = contextPayload({ layers: [background(), fixtureLayer()] });
-        payload.plugins.desktop = plugins;
+        const payload = await viewerContextPayload(page, {
+            layers: [background(), fixtureLayer()],
+            cfg: { Identify: { hidePopupIfNoResults: true } }
+        });
         payload.mapConfig.map.center = { ...ROME, crs: 'EPSG:4326' };
         payload.mapConfig.map.zoom = 10;
         const context = await data.context({ data: payload });

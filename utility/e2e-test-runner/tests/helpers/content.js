@@ -92,6 +92,30 @@ function contextPayload({ windowTitle = 'E2E context', layers = [], plugins = []
 }
 
 /**
+ * Context with the plugins of the standard map viewer, read from the served
+ * localConfig.json, so that it renders like the viewer. A minimal context lacks the
+ * containers some plugins rely on.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {object} options
+ * @param {object[]} [options.layers]
+ * @param {object} [options.cfg] plugin name -> cfg merged into the cfg of that plugin
+ * @param {object[]} [options.plugins] plugins added to the viewer ones
+ */
+async function viewerContextPayload(page, { layers = [], cfg = {}, plugins = [] } = {}) {
+    const localConfig = await (await page.request.get('configs/localConfig.json')).json();
+    const payload = contextPayload({ layers });
+    payload.plugins.desktop = [
+        ...localConfig.plugins.desktop
+            .map((plugin) => typeof plugin === 'string' ? { name: plugin } : plugin)
+            .map((plugin) => cfg[plugin.name] ? { ...plugin, cfg: { ...plugin.cfg, ...cfg[plugin.name] } } : plugin),
+        ...plugins
+    ];
+
+    return payload;
+}
+
+/**
  * Annotations layer, as the annotations editor saves it: a marker on the given point and a
  * small triangle south of it, each styled by its own rule.
  *
@@ -153,4 +177,4 @@ function annotationLayer({ title, description = '', point }) {
     };
 }
 
-export { textDashboard, titledStory, contextPayload, annotationLayer };
+export { textDashboard, titledStory, contextPayload, viewerContextPayload, annotationLayer };

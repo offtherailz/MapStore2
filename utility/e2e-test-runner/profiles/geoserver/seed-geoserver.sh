@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# seed-geoserver.sh — publish the PostGIS fixture table as a WMS/WFS layer.
+# seed-geoserver.sh — publish the PostGIS fixture tables as WMS/WFS layers.
 #
 # Idempotent: existing workspace, store and layer are left untouched, so the
 # script can be re-run against a warm stack.
@@ -18,7 +18,7 @@ GS_USER="${GEOSERVER_ADMIN_USER:-admin}"
 GS_PASSWORD="${GEOSERVER_ADMIN_PASSWORD:-geoserver}"
 WORKSPACE="e2e"
 STORE="gisdata"
-LAYER="e2e_points"
+LAYERS=(e2e_points e2e_edit e2e_events e2e_stats)
 
 # The datastore connects over the compose network, so the host is the service name.
 PG_HOST="postgres"
@@ -28,10 +28,10 @@ PG_USER="postgres"
 PG_PASSWORD="postgres"
 
 rest() {
-    local method="$1" path="$2" body="${3:-}"
+    local method="$1" path="$2" body="${3:-}" type="${4:-application/json}"
     if [[ -n "$body" ]]; then
         curl -sS -o /dev/null -w "%{http_code}" -u "${GS_USER}:${GS_PASSWORD}" \
-            -X "$method" -H "Content-Type: application/json" \
+            -X "$method" -H "Content-Type: ${type}" \
             -d "$body" "${GS_URL}${path}"
     else
         curl -sS -o /dev/null -w "%{http_code}" -u "${GS_USER}:${GS_PASSWORD}" \
@@ -76,19 +76,81 @@ JSON
 )" > /dev/null
 fi
 
-if exists "/rest/workspaces/${WORKSPACE}/datastores/${STORE}/featuretypes/${LAYER}"; then
-    echo "  layer ${WORKSPACE}:${LAYER} already published"
+FEATURE_TYPES="/rest/workspaces/${WORKSPACE}/datastores/${STORE}/featuretypes"
+
+for layer in "${LAYERS[@]}"; do
+    if exists "${FEATURE_TYPES}/${layer}"; then
+        echo "  layer ${WORKSPACE}:${layer} already published"
+    else
+        echo "  publishing layer ${WORKSPACE}:${layer}"
+        rest POST "${FEATURE_TYPES}" \
+            "{\"featureType\":{\"name\":\"${layer}\",\"nativeName\":\"${layer}\",\"srs\":\"EPSG:4326\",\"enabled\":true}}" > /dev/null
+    fi
+done
+
+# The features of e2e_events carry a time: WMS and WFS expose it as the time dimension.
+echo "  enabling the time dimension of ${WORKSPACE}:e2e_events"
+rest PUT "${FEATURE_TYPES}/e2e_events" "$(cat <<JSON
+{
+  "featureType": {
+    "metadata": {
+      "entry": [{
+        "@key": "time",
+        "dimensionInfo": { "enabled": true, "attribute": "event_time", "presentation": "LIST", "units": "ISO8601" }
+      }]
+    }
+  }
+}
+JSON
+)" > /dev/null
+
+# ISO metadata document of e2e_points, served by GeoServer itself and linked from the capabilities.
+echo "  publishing the metadata of ${WORKSPACE}:e2e_points"
+rest PUT "/rest/resource/www/e2e/e2e_points_metadata.xml" "$(cat <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+  <gmd:identificationInfo>
+    <gmd:MD_DataIdentification>
+      <gmd:citation>
+        <gmd:CI_Citation>
+          <gmd:title><gco:CharacterString>E2E cities metadata</gco:CharacterString></gmd:title>
+        </gmd:CI_Citation>
+      </gmd:citation>
+      <gmd:abstract><gco:CharacterString>Italian cities used by the E2E suites</gco:CharacterString></gmd:abstract>
+    </gmd:MD_DataIdentification>
+  </gmd:identificationInfo>
+</gmd:MD_Metadata>
+XML
+)" "application/xml" > /dev/null
+rest PUT "${FEATURE_TYPES}/e2e_points" "$(cat <<JSON
+{
+  "featureType": {
+    "metadataLinks": {
+      "metadataLink": [
+        { "type": "text/xml", "metadataType": "ISO19115:2003", "content": "${GS_URL}/www/e2e/e2e_points_metadata.xml" },
+        { "type": "text/html", "metadataType": "ISO19115:2003", "content": "${GS_URL}/www/e2e/e2e_points_metadata.xml" }
+      ]
+    }
+  }
+}
+JSON
+)" > /dev/null
+
+# Anonymous WFS-T on e2e_edit only: MapStore sends the transactions without GeoServer credentials.
+if [[ "$(curl -sS -u "${GS_USER}:${GS_PASSWORD}" "${GS_URL}/rest/security/acl/layers.json")" == *"${WORKSPACE}.e2e_edit.w"* ]]; then
+    echo "  write rule of ${WORKSPACE}:e2e_edit already present"
 else
-    echo "  publishing layer ${WORKSPACE}:${LAYER}"
-    rest POST "/rest/workspaces/${WORKSPACE}/datastores/${STORE}/featuretypes" \
-        "{\"featureType\":{\"name\":\"${LAYER}\",\"nativeName\":\"${LAYER}\",\"srs\":\"EPSG:4326\",\"enabled\":true}}" > /dev/null
+    echo "  opening ${WORKSPACE}:e2e_edit to WFS-T"
+    rest POST "/rest/security/acl/layers" "{\"${WORKSPACE}.e2e_edit.w\":\"*\"}" > /dev/null
 fi
 
 # Verify through the public capabilities, which is what MapStore actually reads.
-if curl -sS "${GS_URL}/${WORKSPACE}/wfs?service=WFS&version=1.1.0&request=GetCapabilities" \
-    | grep -q "${WORKSPACE}:${LAYER}"; then
-    echo "  ${WORKSPACE}:${LAYER} advertised in WFS capabilities"
-else
-    echo "  ✖ ${WORKSPACE}:${LAYER} missing from WFS capabilities" >&2
-    exit 1
-fi
+CAPABILITIES="$(curl -sS "${GS_URL}/${WORKSPACE}/wfs?service=WFS&version=1.1.0&request=GetCapabilities")"
+for layer in "${LAYERS[@]}"; do
+    if [[ "$CAPABILITIES" == *"${WORKSPACE}:${layer}"* ]]; then
+        echo "  ${WORKSPACE}:${layer} advertised in WFS capabilities"
+    else
+        echo "  ✖ ${WORKSPACE}:${layer} missing from WFS capabilities" >&2
+        exit 1
+    fi
+done
