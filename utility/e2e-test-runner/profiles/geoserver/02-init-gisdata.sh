@@ -60,4 +60,41 @@ psql -v ON_ERROR_STOP=1 --username postgres --dbname gisdata <<-EOSQL
     );
     INSERT INTO e2e_stats (region, visitors) VALUES
         ('Lazio', 1200), ('Lombardia', 1500), ('Campania', 900), ('Toscana', 1100), ('Liguria', NULL);
+
+    -- Layer without features and with many columns.
+    CREATE TABLE e2e_empty (
+        id serial PRIMARY KEY,
+        column_01 varchar(32),
+        column_02 varchar(32),
+        column_03 varchar(32),
+        column_04 varchar(32),
+        column_05 varchar(32),
+        column_06 varchar(32),
+        column_07 varchar(32),
+        column_08 varchar(32),
+        column_09 varchar(32),
+        column_10 varchar(32),
+        column_11 varchar(32),
+        column_12 varchar(32),
+        column_13 varchar(32),
+        column_14 varchar(32),
+        column_15 varchar(32),
+        column_16 varchar(32),
+        column_17 varchar(32),
+        column_18 varchar(32),
+        column_19 varchar(32),
+        column_20 varchar(32),
+        geom geometry(Point, 4326)
+    );
+
+    -- Features with a second geometry among their attributes.
+    CREATE TABLE e2e_multigeom (
+        id serial PRIMARY KEY,
+        name varchar(64) NOT NULL,
+        geom geometry(Point, 4326) NOT NULL,
+        area geometry(Polygon, 4326)
+    );
+    INSERT INTO e2e_multigeom (name, geom, area) VALUES
+        ('Roma area', ST_SetSRID(ST_MakePoint(12.4964, 41.9028), 4326),
+            ST_SetSRID(ST_MakeEnvelope(12.4, 41.8, 12.6, 42.0), 4326));
 EOSQL

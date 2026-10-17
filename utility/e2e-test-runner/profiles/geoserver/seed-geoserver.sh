@@ -18,7 +18,7 @@ GS_USER="${GEOSERVER_ADMIN_USER:-admin}"
 GS_PASSWORD="${GEOSERVER_ADMIN_PASSWORD:-geoserver}"
 WORKSPACE="e2e"
 STORE="gisdata"
-LAYERS=(e2e_points e2e_edit e2e_events e2e_stats)
+LAYERS=(e2e_points e2e_edit e2e_events e2e_stats e2e_empty e2e_multigeom)
 
 # The datastore connects over the compose network, so the host is the service name.
 PG_HOST="postgres"
@@ -136,13 +136,17 @@ rest PUT "${FEATURE_TYPES}/e2e_points" "$(cat <<JSON
 JSON
 )" > /dev/null
 
-# Anonymous WFS-T on e2e_edit only: MapStore sends the transactions without GeoServer credentials.
-if [[ "$(curl -sS -u "${GS_USER}:${GS_PASSWORD}" "${GS_URL}/rest/security/acl/layers.json")" == *"${WORKSPACE}.e2e_edit.w"* ]]; then
-    echo "  write rule of ${WORKSPACE}:e2e_edit already present"
-else
-    echo "  opening ${WORKSPACE}:e2e_edit to WFS-T"
-    rest POST "/rest/security/acl/layers" "{\"${WORKSPACE}.e2e_edit.w\":\"*\"}" > /dev/null
-fi
+# Anonymous WFS-T on the editing tables only: MapStore sends the transactions without
+# GeoServer credentials.
+ACL="$(curl -sS -u "${GS_USER}:${GS_PASSWORD}" "${GS_URL}/rest/security/acl/layers.json")"
+for layer in e2e_edit e2e_stats; do
+    if [[ "$ACL" == *"${WORKSPACE}.${layer}.w"* ]]; then
+        echo "  write rule of ${WORKSPACE}:${layer} already present"
+    else
+        echo "  opening ${WORKSPACE}:${layer} to WFS-T"
+        rest POST "/rest/security/acl/layers" "{\"${WORKSPACE}.${layer}.w\":\"*\"}" > /dev/null
+    fi
+done
 
 # Verify through the public capabilities, which is what MapStore actually reads.
 CAPABILITIES="$(curl -sS "${GS_URL}/${WORKSPACE}/wfs?service=WFS&version=1.1.0&request=GetCapabilities")"

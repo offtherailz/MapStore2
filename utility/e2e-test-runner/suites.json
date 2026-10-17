@@ -275,6 +275,14 @@
       "files": [
         "tests/interoperability.spec.js"
       ]
+    },
+    "attribute-table": {
+      "title": "Attribute table",
+      "why": "Verify browsing, filtering and WFS-T editing of layers in the attribute table, including non spatial ones.",
+      "active": true,
+      "files": [
+        "tests/attribute-table.spec.js"
+      ]
     }
   }
 }
