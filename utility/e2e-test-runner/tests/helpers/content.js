@@ -91,4 +91,66 @@ function contextPayload({ windowTitle = 'E2E context', layers = [], plugins = []
     };
 }
 
-export { textDashboard, titledStory, contextPayload };
+/**
+ * Annotations layer, as the annotations editor saves it: a marker on the given point and a
+ * small triangle south of it, each styled by its own rule.
+ *
+ * @param {object} options
+ * @param {string} options.title
+ * @param {string} [options.description] HTML
+ * @param {number[]} options.point [lon, lat]
+ */
+function annotationLayer({ title, description = '', point }) {
+    const [lon, lat] = point;
+    const marker = randomUUID();
+    const triangle = randomUUID();
+    const rule = (featureId, symbolizer) => ({
+        name: '',
+        filter: ['==', 'id', featureId],
+        mandatory: false,
+        ruleId: randomUUID(),
+        symbolizers: [{ symbolizerId: randomUUID(), ...symbolizer }]
+    });
+
+    return {
+        id: `annotations:${randomUUID()}`,
+        type: 'vector',
+        title,
+        description,
+        visibility: true,
+        rowViewer: 'annotations',
+        options: {},
+        features: [
+            {
+                type: 'Feature',
+                id: marker,
+                properties: { id: marker, name: 'Point', annotationType: 'Point', geodesic: false },
+                geometry: { type: 'Point', coordinates: [lon, lat] }
+            },
+            {
+                type: 'Feature',
+                id: triangle,
+                properties: { id: triangle, name: 'Polygon', annotationType: 'Polygon', geodesic: false },
+                geometry: { type: 'Polygon', coordinates: [[[lon - 1, lat - 2], [lon + 1, lat - 2], [lon, lat - 3], [lon - 1, lat - 2]]] }
+            }
+        ],
+        style: {
+            format: 'geostyler',
+            body: {
+                rules: [
+                    rule(marker, {
+                        kind: 'Icon',
+                        image: { name: 'msMarkerIcon', args: [{ color: 'blue', shape: 'circle', glyph: 'comment' }] },
+                        opacity: 1,
+                        size: 46,
+                        rotate: 0,
+                        anchor: 'bottom'
+                    }),
+                    rule(triangle, { kind: 'Fill', color: '#dddddd', fillOpacity: 1, outlineColor: '#777777', outlineWidth: 1 })
+                ]
+            }
+        }
+    };
+}
+
+export { textDashboard, titledStory, contextPayload, annotationLayer };

@@ -203,6 +203,14 @@
       "files": [
         "tests/context-templates.spec.js"
       ]
+    },
+    "annotations": {
+      "title": "Annotations",
+      "why": "Verify drawing, editing, identifying and removing map annotations.",
+      "active": true,
+      "files": [
+        "tests/annotations.spec.js"
+      ]
     }
   }
 }
