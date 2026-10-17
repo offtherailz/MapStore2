@@ -395,6 +395,14 @@
       "files": [
         "tests/geostory-maps.spec.js"
       ]
+    },
+    "map-3d": {
+      "title": "Map in 3D",
+      "why": "Cesium viewer settings, 3D measures export, zoom and search in 3D",
+      "active": true,
+      "files": [
+        "tests/map-3d.spec.js"
+      ]
     }
   }
 }
