@@ -179,4 +179,16 @@ describeIfFeature('geoserverIntegration', 'Identify', () => {
         await empty;
         await expect(page.getByText(/There is no information available/)).toHaveCount(0);
     });
+
+    test('A feature is identified in a copy of the world, outside the projection extent', fromScenario('Maps/Options/Get_Feature_Info — Identify outside the projection extent'), async({ page, data }) => {
+        // Rome one world east: the map wraps the world and the click lies beyond the extent.
+        const config = romeMap([background(), fixtureLayer()]);
+        config.map.center = { x: ROME.x + 360, y: ROME.y, crs: 'EPSG:4326' };
+        const map = await data.map({ data: config });
+
+        await openMapViewer(page, map.id);
+        await identifyCenter(page);
+        await expect(page.getByText('Roma').first()).toBeVisible({ timeout: 20000 });
+    });
 });
+

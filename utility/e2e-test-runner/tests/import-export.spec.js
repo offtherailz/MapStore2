@@ -59,6 +59,18 @@ test.describe('Map import and export', () => {
         expect(wmc).toMatch(/<(\w+:)?ViewContext/);
     });
 
+    test('A map without max extent is exported as WMC', fromScenario('Maps/Options/Export — Export a WMC map when maxExtent is undefined'), async({ page, data }) => {
+        const wms = { id: 'e2e_wms', type: 'wms', url: 'http://localhost:8082/geoserver/wms', name: 'e2e:e2e_points', title: 'E2E WMS layer', visibility: true };
+        const config = romeMap([wms]);
+        config.map.maxExtent = [];
+        const map = await data.map({ data: config });
+
+        await openMapViewer(page, map.id);
+        const wmc = await exportMap(page, 'WMC');
+        expect(wmc).toMatch(/<(\w+:)?ViewContext/);
+        expect(wmc).toContain('e2e:e2e_points');
+    });
+
     test('An exported map is imported in another map', fromScenario('Maps/Options/Import — Import a map'), async({ page, data }) => {
         const source = await data.map({ data: romeMap([annotationLayer({ title: 'E2E imported map layer', point: [12.5, 41.9] })]) });
         const target = await data.map({ data: romeMap() });
