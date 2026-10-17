@@ -2,7 +2,7 @@ import { test, expect, describeIfFeature, fromScenario } from './fixtures.js';
 import { hasFeature } from './config.js';
 import { login } from './helpers/auth.js';
 import { fixtureLayer, mapConfig, openMapViewer, openLayersDrawer, selectLayerNode, layerToolbarButton, FIXTURE_FEATURES, FIXTURE_LAYER_NAME, FIXTURE_LAYER_TITLE } from './helpers/map.js';
-import { wizardNext, saveWidget, selectComboByLabel } from './helpers/dashboard.js';
+import { wizardNext, saveWidget, selectComboByLabel, openDashboard, addWidget, pickFixtureLayer } from './helpers/dashboard.js';
 
 const background = () => fixtureLayer({ id: 'e2e_background', title: 'E2E background', group: 'background', search: undefined, visibility: false });
 
@@ -77,6 +77,29 @@ describeIfFeature('geoserverIntegration', 'Filter widgets', () => {
         expect(await filter).toContain('Roma');
     });
 
+    test('A style list switches the style of the connected layer', fromScenario('Maps/TOC/Widget — Apply Style on  Filter Widget (@GH-11869 @GH-11870 @GH-12017)'), async({ page, data }) => {
+        const map = await data.map({ data: mapConfig([background(), fixtureLayer()]) });
+        await openMapViewer(page, map.id);
+        await openLayersDrawer(page);
+        await selectLayerNode(page, FIXTURE_LAYER_TITLE);
+        await layerToolbarButton(page, 'widgets').click();
+        await page.getByText('Filter selector', { exact: true }).first().click();
+        await selectComboByLabel(page, 'Data Source', 'User Defined');
+        await selectComboByLabel(page, 'Type', 'Style list');
+        // Each row of the table of styles pairs a label with one style of the layer.
+        await page.getByText('Styles', { exact: true }).locator('xpath=following::button[.//*[contains(@class,"glyphicon-plus")]][1]').click();
+        await page.locator('.ms-layer-styles-list button:has(.glyphicon-chevron-down)').last().click();
+        await page.getByText(/e2e_points_by_category|E2E cities by category/).first().click();
+        await expect(items(preview(page))).toHaveCount(1, { timeout: 20000 });
+
+        await connectToLayer(page);
+        const widget = await saveFilter(page, 'E2E styles filter');
+        const styled = page.waitForRequest((r) => /request=GetMap/i.test(r.url()) && r.url().includes(encodeURIComponent(FIXTURE_LAYER_NAME))
+            && /e2e_points_by_category/.test(decodeURIComponent(r.url())));
+        await items(widget).first().click();
+        await styled;
+    });
+
     test('A filter without targets warns about it', fromScenario('Maps/TOC/Widget — Target message option on Filter Widget (@GH-11871)'), async({ page, data }) => {
         await newCityFilter(page, data);
         await page.getByText('Layout', { exact: true }).click();
@@ -116,5 +139,105 @@ describeIfFeature('geoserverIntegration', 'Filter widgets', () => {
         const filter = nextFilter(page);
         await saveFilter(page, 'E2E exclusive filter');
         expect(await filter).toMatch(/EXCLUDE|1\s*=\s*0|false/i);
+    });
+});
+
+describeIfFeature('geoserverIntegration', 'Filter widgets in dashboards', () => {
+    test.beforeEach(async({ page }) => {
+        test.skip(!hasFeature('geoserverDb'), 'Requires feature geoserverDb');
+        await login(page);
+    });
+
+    /** Adds a table widget on the fixture layer, the target of the filters. */
+    async function addTable(page) {
+        await addWidget(page, 'Table');
+        await pickFixtureLayer(page, FIXTURE_LAYER_TITLE);
+        await wizardNext(page);
+        await wizardNext(page);
+        await page.getByText('Title', { exact: true }).locator('xpath=following::input[1]').fill('E2E target table');
+        await saveWidget(page);
+        await expect(page.getByText(`${FIXTURE_FEATURES.length} Items`)).toBeVisible({ timeout: 30000 });
+    }
+
+    /** Starts a filter selector on the city names of the fixture layer. */
+    async function newDashboardCityFilter(page) {
+        await addWidget(page, 'Filter selector');
+        await page.getByText('Layer', { exact: true }).locator('xpath=following::button[.//*[contains(@class,"glyphicon-folder-open")]][1]').click();
+        await pickFixtureLayer(page, FIXTURE_LAYER_TITLE);
+        // The selected layer is used through the next arrow of the layer selector.
+        await wizardNext(page);
+        await selectComboByLabel(page, 'Value Attribute', 'name');
+        await expect(items(preview(page))).toHaveCount(FIXTURE_FEATURES.length, { timeout: 30000 });
+    }
+
+    test('A filter selector filters the table widget it is connected to', fromScenario('Dashboard/Widget — Filter Widget in dashboard (@GH-11633)'), async({ page, data }) => {
+        const dashboard = await data.dashboard();
+
+        await openDashboard(page, dashboard.id);
+        await addTable(page);
+        await newDashboardCityFilter(page);
+        await page.getByText('Interactions', { exact: true }).click();
+        const target = page.getByText('E2E target table').locator('xpath=ancestor::*[.//button][1]');
+        await target.locator('button').last().click();
+        const widget = await saveFilter(page, 'E2E dashboard filter');
+        await items(widget).filter({ hasText: 'Roma' }).click();
+        await expect(page.getByText('1 Item', { exact: true })).toBeVisible({ timeout: 30000 });
+    });
+
+    test('A style list switches the style of a map widget layer', fromScenario('Dashboard/Widget — Apply Style on  Filter Widget in dashboard'), async({ page, data }) => {
+        const map = await data.map({ data: mapConfig([background(), fixtureLayer()]) });
+        const dashboard = await data.dashboard();
+
+        await openDashboard(page, dashboard.id);
+        await addWidget(page, 'Map');
+        await page.getByText(map.name, { exact: true }).first().click();
+        await wizardNext(page);
+        await wizardNext(page);
+        await page.getByText('Title', { exact: true }).locator('xpath=following::input[1]').fill('E2E styled map');
+        await saveWidget(page);
+
+        await addWidget(page, 'Filter selector');
+        await selectComboByLabel(page, 'Data Source', 'User Defined');
+        await selectComboByLabel(page, 'Type', 'Style list');
+        await page.getByText('Layer', { exact: true }).locator('xpath=following::button[.//*[contains(@class,"glyphicon-folder-open")]][1]').click();
+        await page.locator('.Select input[role="combobox"]').filter({ visible: true }).first().fill('Local GeoServer WMS');
+        await page.keyboard.press('Enter');
+        await page.locator('.ms-catalog-card').filter({ hasText: FIXTURE_LAYER_NAME }).first().click();
+        await wizardNext(page);
+        await page.getByText('Styles', { exact: true }).locator('xpath=following::button[.//*[contains(@class,"glyphicon-plus")]][1]').click();
+        await page.locator('.ms-layer-styles-list button:has(.glyphicon-chevron-down)').last().click();
+        await page.getByText(/e2e_points_by_category|E2E cities by category/).first().click();
+
+        await page.getByText('Interactions', { exact: true }).click();
+        const target = page.getByText(FIXTURE_LAYER_TITLE, { exact: true }).last().locator('xpath=ancestor::*[.//button][1]');
+        await target.locator('button').last().click();
+        const widget = await saveFilter(page, 'E2E dashboard styles');
+        const styled = page.waitForRequest((r) => /request=GetMap/i.test(r.url()) && /e2e_points_by_category/.test(decodeURIComponent(r.url())));
+        await items(widget).first().click();
+        await styled;
+    });
+
+    test('A filter selector without targets warns in a dashboard', fromScenario('Dashboard/Widget — Target message option on Filter Widget in dashboard'), async({ page, data }) => {
+        const dashboard = await data.dashboard();
+
+        await openDashboard(page, dashboard.id);
+        await newDashboardCityFilter(page);
+        const widget = await saveFilter(page, 'E2E lonely filter');
+        await widget.locator('[class*=warning]').first().hover();
+        await expect(page.getByText(/No target connected/)).toBeVisible();
+    });
+
+    test('Force selection works in a dashboard filter', fromScenario('Dashboard/Widget — Force selection and No selection mode options on Filter Widget in dashboard'), async({ page, data }) => {
+        const dashboard = await data.dashboard();
+
+        await openDashboard(page, dashboard.id);
+        await newDashboardCityFilter(page);
+        await page.getByText('Layout', { exact: true }).click();
+        await layoutOption(page, 'Force Selection').evaluate((input) => input.click());
+        await expect(page.getByText('Clear', { exact: true })).toHaveCount(0);
+        await items(preview(page)).filter({ hasText: 'Genova' }).click();
+        const widget = await saveFilter(page, 'E2E forced dashboard filter');
+        const checked = widget.locator('.ms-filter-checkbox-list-items label').filter({ has: page.locator('input:checked') });
+        await expect(checked).toHaveText('Genova');
     });
 });
