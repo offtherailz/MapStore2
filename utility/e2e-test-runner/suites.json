@@ -347,6 +347,14 @@
       "files": [
         "tests/filter-widgets.spec.js"
       ]
+    },
+    "dashboard-connections": {
+      "title": "Dashboard widget connections",
+      "why": "Verify widgets of a dashboard connected to a map widget, and a map connected to a table.",
+      "active": true,
+      "files": [
+        "tests/dashboard-connections.spec.js"
+      ]
     }
   }
 }
