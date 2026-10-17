@@ -211,6 +211,22 @@
       "files": [
         "tests/annotations.spec.js"
       ]
+    },
+    "measure": {
+      "title": "Measure",
+      "why": "Verify length, area and bearing measures, their units, export, conversion to layer and annotation, and 3D measures.",
+      "active": true,
+      "files": [
+        "tests/measure.spec.js"
+      ]
+    },
+    "import-export": {
+      "title": "Map import and export",
+      "why": "Verify map export in MapStore and WMC formats and the import of maps, annotations and vector files.",
+      "active": true,
+      "files": [
+        "tests/import-export.spec.js"
+      ]
     }
   }
 }
