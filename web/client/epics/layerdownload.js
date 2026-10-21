@@ -42,7 +42,7 @@ import {
     MAP_CONFIG_LOADED
 } from '../actions/config';
 
-import { serviceSelector, exportDataResultsSelector, downloadLayerSelector } from '../selectors/layerdownload';
+import { serviceSelector, exportDataResultsSelector, downloadLayerSelector, widgetDownloadViewportSelector } from '../selectors/layerdownload';
 import { queryPanelSelector, wfsDownloadSelector } from '../selectors/controls';
 import { getSelectedLayer } from '../selectors/layers';
 import { currentLocaleSelector } from '../selectors/locale';
@@ -53,7 +53,7 @@ import {
     userSelector
 } from '../selectors/security';
 
-import { getLayerWFSCapabilities, getXMLFeature } from '../observables/wfs';
+import { getLayerWFSCapabilities, getXMLFeature, describeFeatureType } from '../observables/wfs';
 import { download } from '../observables/wps/download';
 import { referenceOutputExtractor, makeOutputsExtractor, getExecutionStatus  } from '../observables/wps/execute';
 
@@ -299,8 +299,29 @@ const getTimeLayerParams = (state, action, layer) => {
     return {isVectorLayer, timeParam, temporalFilter};
 };
 
+const TABULAR_FORMATS = ["csv", "excel", "excel2007"];
+
+/**
+ * Returns the geometry attribute of the exported layer.
+ * Outside the map (e.g. in dashboards) the layer is not described yet, so the description is requested
+ * when only some attributes are exported, otherwise the export would lose the geometry.
+ */
+const getExportGeometryAttribute = (state, layer, exportedAttributes) => {
+    const geometryAttribute = extractGeometryAttributeName(layerDescribeSelector(state, getWFSLayerName(layer)));
+    if (geometryAttribute || !exportedAttributes) {
+        return Rx.Observable.of(geometryAttribute);
+    }
+    return describeFeatureType({ layer })
+        .map(({ data }) => extractGeometryAttributeName(data))
+        .catch(() => Rx.Observable.of(undefined));
+};
+
 export const startFeatureExportDownload = (action$, store) =>
-    action$.ofType(DOWNLOAD_FEATURES).switchMap(action => {
+    action$.ofType(DOWNLOAD_FEATURES).switchMap(action => getExportGeometryAttribute(
+        store.getState(),
+        getSelectedLayer(store.getState()) || downloadLayerSelector(store.getState()),
+        action.downloadOptions?.propertyName
+    ).switchMap(geometryAttribute => {
         const state = store.getState();
         const {virtualScroll = false} = state.featuregrid || {};
         const service = serviceSelector(state);
@@ -309,11 +330,18 @@ export const startFeatureExportDownload = (action$, store) =>
         const downloadLayer = downloadLayerSelector(state);
         const layer = mapLayer || downloadLayer;
 
-        const mapBbox = mapBboxSelector(state);
+        // A table widget synchronized with a map exports only the rows in the map extent, as it shows them.
+        const widgetViewport = widgetDownloadViewportSelector(state);
+        const mapBbox = widgetViewport || mapBboxSelector(state);
+        const cropDataSet = action.downloadOptions.cropDataSet || !!widgetViewport;
         const currentLocale = currentLocaleSelector(state);
-        const geometryAttribute = extractGeometryAttributeName(layerDescribeSelector(state, getWFSLayerName(layer)));
+        // A table widget exported to a tabular format contains only the columns shown, without the geometry.
+        // The geometry attribute is still used by the viewport filter, which does not need it in the output.
+        const exportsTableColumns = !mapLayer && !!downloadLayer?.widgetId
+            && TABULAR_FORMATS.includes(action.downloadOptions.selectedFormat);
+        const exportedGeometry = geometryAttribute && !exportsTableColumns ? [geometryAttribute] : [];
         const propertyNames = action.downloadOptions.propertyName ? [
-            ...(geometryAttribute ? [geometryAttribute] : []),
+            ...exportedGeometry,
             ...action.downloadOptions.propertyName
         ] : null;
         const { layerFilter } = layer;
@@ -324,7 +352,7 @@ export const startFeatureExportDownload = (action$, store) =>
             filterObj: isNil(action.filterObj) ? {} : action.filterObj,
             layer,
             layerFilter,
-            viewportFilter: getViewportFilter(action.downloadOptions.cropDataSet, mapBbox, geometryAttribute),
+            viewportFilter: getViewportFilter(cropDataSet, mapBbox, geometryAttribute),
             temporalFilter: temporalFilter?.ogcFilterObj,
             options: {
                 pagination: !virtualScroll && get(action, "downloadOptions.singlePage") ? action.filterObj && action.filterObj.pagination : null,
@@ -348,13 +376,13 @@ export const startFeatureExportDownload = (action$, store) =>
                     filterObj: action.filterObj,
                     layer,
                     layerFilter,
-                    viewportFilter: getViewportFilter(action.downloadOptions.cropDataSet, mapBbox, geometryAttribute),
+                    viewportFilter: getViewportFilter(cropDataSet, mapBbox, geometryAttribute),
                     temporalFilter: temporalFilter?.ogcFilterObj,
                     options: {
                         pagination: !virtualScroll && get(action, "downloadOptions.singlePage") ? action.filterObj && action.filterObj.pagination : null,
                         sortOptions: getDefaultSortOptions(getFirstAttribute(store.getState())),
                         propertyNames: action.downloadOptions.propertyName ? [...action.downloadOptions.propertyName,
-                            ...(geometryAttribute ? [geometryAttribute] : [])] : null,
+                            ...exportedGeometry] : null,
                         params: timeParam ? { time: timeParam } : undefined
                     }
                 }).do(({ data, headers }) => {
@@ -382,7 +410,7 @@ export const startFeatureExportDownload = (action$, store) =>
             );
 
         const wpsFlow = () => {
-            const cropToROI = action.downloadOptions.cropDataSet && !!mapBbox && !!mapBbox.bounds;
+            const cropToROI = cropDataSet && !!mapBbox && !!mapBbox.bounds;
             const cqlFilter = getCQLFilterFromLayer(layer);
 
             const getOGCDataFilter = (tempFilter) => {
@@ -482,7 +510,7 @@ export const startFeatureExportDownload = (action$, store) =>
         };
 
         return service === 'wps' ? wpsFlow() : wfsFlow();
-    });
+    }));
 
 export const closeExportDownload = (action$, store) =>
     action$.ofType(TOGGLE_CONTROL)

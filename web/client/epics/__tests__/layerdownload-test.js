@@ -99,6 +99,127 @@ describe('layerdownload Epics', () => {
             state
         );
     });
+    it('startFeatureExportDownload adds the geometry when exporting some attributes of a layer not described yet', (done) => {
+        const describe = {
+            featureTypes: [{ properties: [
+                { name: 'the_geom', type: 'gml:Point', localType: 'Point' },
+                { name: 'name', type: 'xsd:string', localType: 'string' }
+            ] }]
+        };
+        const requestBodies = [];
+        mockAxios.onGet(/DescribeFeatureType/).reply(200, describe);
+        mockAxios.onPost().reply(config => {
+            requestBodies.push(config.data);
+            return [500];
+        });
+        mockAxios.onGet().reply(500);
+        const state = {
+            controls: { layerdownload: { enabled: true } },
+            featuregrid: {},
+            layers: { flat: [], selected: [] },
+            layerdownload: {
+                downloadLayer: { id: 'layer', name: 'ws:layer', url: 'http://wms', widgetId: 'w1', search: { type: 'wfs', url: 'http://wfs' } }
+            }
+        };
+        testEpic(
+            startFeatureExportDownload,
+            1,
+            downloadFeatures('http://wfs', { featureTypeName: 'ws:layer' }, { selectedFormat: 'test-format', propertyName: ['name'] }),
+            () => {
+                try {
+                    expect(mockAxios.history.get.filter(r => r.url.indexOf('DescribeFeatureType') > 0).length).toBe(1);
+                    // the second request is the fallback the epic sends after an error
+                    expect(requestBodies.length).toBe(2);
+                    expect(requestBodies[0]).toContain('<ogc:PropertyName>the_geom</ogc:PropertyName><ogc:PropertyName>name</ogc:PropertyName></wfs:Query>');
+                    expect(requestBodies[1]).toContain('<ogc:PropertyName>name</ogc:PropertyName><ogc:PropertyName>the_geom</ogc:PropertyName></wfs:Query>');
+                    done();
+                } catch (e) {
+                    done(e);
+                }
+            },
+            state
+        );
+    });
+    it('startFeatureExportDownload crops the export to the map a table widget is synchronized with', (done) => {
+        const describe = { featureTypes: [{ properties: [{ name: 'the_geom', type: 'gml:Point', localType: 'Point' }, { name: 'name', type: 'xsd:string', localType: 'string' }] }] };
+        const requestBodies = [];
+        mockAxios.onGet(/DescribeFeatureType/).reply(200, describe);
+        mockAxios.onPost().reply(config => {
+            requestBodies.push(config.data);
+            return [500];
+        });
+        mockAxios.onGet().reply(500);
+        const viewport = { bounds: { minx: 0, miny: 0, maxx: 10, maxy: 10 }, crs: 'EPSG:4326' };
+        const state = {
+            controls: { layerdownload: { enabled: true } },
+            featuregrid: {},
+            layers: { flat: [], selected: [] },
+            layerdownload: {
+                downloadLayer: { id: 'layer', name: 'ws:layer', url: 'http://wms', widgetId: 'tbl', search: { type: 'wfs', url: 'http://wfs' } }
+            },
+            widgets: { containers: { floating: { widgets: [
+                { id: 'map1', widgetType: 'map', maps: [{ mapId: 'm1', viewport }], selectedMapId: 'm1' },
+                { id: 'tbl', widgetType: 'table', mapSync: true, dependenciesMap: { viewport: 'widgets[map1].maps[m1].viewport' } }
+            ] } } }
+        };
+        testEpic(
+            startFeatureExportDownload,
+            1,
+            downloadFeatures('http://wfs', { featureTypeName: 'ws:layer' }, { selectedFormat: 'test-format', propertyName: ['name'] }),
+            () => {
+                try {
+                    expect(requestBodies.length).toBe(2);
+                    expect(requestBodies[0]).toContain('<ogc:Intersects><ogc:PropertyName>the_geom</ogc:PropertyName>');
+                    expect(requestBodies[0]).toContain('0 0 0 10 10 10 10 0 0 0');
+                    done();
+                } catch (e) {
+                    done(e);
+                }
+            },
+            state
+        );
+    });
+    it('startFeatureExportDownload exports a table widget to CSV without the geometry, still cropped to the map', (done) => {
+        const describe = { featureTypes: [{ properties: [{ name: 'the_geom', type: 'gml:Point', localType: 'Point' }, { name: 'name', type: 'xsd:string', localType: 'string' }] }] };
+        const requestBodies = [];
+        mockAxios.onGet(/DescribeFeatureType/).reply(200, describe);
+        mockAxios.onPost().reply(config => {
+            requestBodies.push(config.data);
+            return [500];
+        });
+        mockAxios.onGet().reply(500);
+        const viewport = { bounds: { minx: 0, miny: 0, maxx: 10, maxy: 10 }, crs: 'EPSG:4326' };
+        const state = {
+            controls: { layerdownload: { enabled: true } },
+            featuregrid: {},
+            layers: { flat: [], selected: [] },
+            layerdownload: {
+                downloadLayer: { id: 'layer', name: 'ws:layer', url: 'http://wms', widgetId: 'tbl', search: { type: 'wfs', url: 'http://wfs' } }
+            },
+            widgets: { containers: { floating: { widgets: [
+                { id: 'map1', widgetType: 'map', maps: [{ mapId: 'm1', viewport }], selectedMapId: 'm1' },
+                { id: 'tbl', widgetType: 'table', mapSync: true, dependenciesMap: { viewport: 'widgets[map1].maps[m1].viewport' } }
+            ] } } }
+        };
+        testEpic(
+            startFeatureExportDownload,
+            1,
+            downloadFeatures('http://wfs', { featureTypeName: 'ws:layer' }, { selectedFormat: 'csv', propertyName: ['name'] }),
+            () => {
+                try {
+                    expect(requestBodies.length).toBe(2);
+                    requestBodies.forEach(body => {
+                        expect(body).toContain('srsName="EPSG:4326"><ogc:PropertyName>name</ogc:PropertyName><ogc:Filter');
+                        expect(body).toContain('<ogc:Intersects><ogc:PropertyName>the_geom</ogc:PropertyName>');
+                    });
+                    done();
+                } catch (e) {
+                    done(e);
+                }
+            },
+            state
+        );
+    });
     it('startFeatureExportDownload uses the linked WFS URL', (done) => {
         mockAxios.onGet().reply(404);
         const state = {

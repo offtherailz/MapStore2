@@ -9,6 +9,7 @@
 import expect from 'expect';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Simulate } from 'react-dom/test-utils';
 
 import DownloadDialog from '../DownloadDialog';
 
@@ -22,6 +23,38 @@ describe('Test for DownloadDialog component', () => {
         ReactDOM.unmountComponentAtNode(document.getElementById("container"));
         document.body.innerHTML = '';
         setTimeout(done);
+    });
+
+    it('exports the attributes shown by the table widget', () => {
+        const actions = { onExport: () => {} };
+        const spy = expect.spyOn(actions, 'onExport');
+        const downloadLayer = { type: 'wms', id: 'layer', widgetId: 'w1', search: { url: 'http://u.r.l' } };
+        ReactDOM.render(<DownloadDialog
+            enabled
+            service="wfs"
+            downloadLayer={downloadLayer}
+            attributes={[{ attribute: 'A' }, { attribute: 'B' }, { attribute: 'C' }]}
+            customAttributeSettings={{ B: { hide: true } }}
+            widgetPropertyNames={['A', 'C']}
+            onExport={actions.onExport} />, document.getElementById("container"));
+        Simulate.click(document.querySelector('.download-button'));
+        expect(spy.calls.length).toBe(1);
+        expect(spy.calls[0].arguments[2].propertyName).toEqual(['A', 'C']);
+    });
+
+    it('exports the attributes of the attribute table without a table widget', () => {
+        const actions = { onExport: () => {} };
+        const spy = expect.spyOn(actions, 'onExport');
+        const mapLayer = { type: 'wms', id: 'layer', search: { url: 'http://u.r.l' } };
+        ReactDOM.render(<DownloadDialog
+            enabled
+            service="wfs"
+            mapLayer={mapLayer}
+            attributes={[{ attribute: 'A' }, { attribute: 'B' }, { attribute: 'C' }]}
+            customAttributeSettings={{ B: { hide: true } }}
+            onExport={actions.onExport} />, document.getElementById("container"));
+        Simulate.click(document.querySelector('.download-button'));
+        expect(spy.calls[0].arguments[2].propertyName).toEqual(['A', 'C']);
     });
 
     it('render download options', (done) => {

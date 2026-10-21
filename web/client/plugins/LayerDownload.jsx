@@ -34,7 +34,8 @@ import {
     exportDataResultsControlEnabledSelector,
     exportDataResultsSelector,
     downloadLayerSelector,
-    checkingExportDataEntriesSelector
+    checkingExportDataEntriesSelector,
+    widgetDownloadPropertyNamesSelector
 } from '../selectors/layerdownload';
 import {attributesSelector} from '../selectors/query';
 import { getSelectedLayer } from '../selectors/layers';
@@ -169,6 +170,7 @@ const LayerDownloadPlugin = createPlugin('LayerDownload', {
         virtualScroll: state => state && state.featuregrid && state.featuregrid.virtualScroll,
         customAttributeSettings: customAttributesSettingsSelector,
         attributes: attributesSelector,
+        widgetPropertyNames: widgetDownloadPropertyNamesSelector,
         isRangeEnabled: offsetEnabledSelector
     }), {
         onExport: downloadFeatures,

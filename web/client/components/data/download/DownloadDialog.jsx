@@ -50,6 +50,7 @@ import { NETCDF_FORMAT } from '../../../utils/FileFormatUtils';
  */
 const DownloadDialog = ({
     attributes,
+    widgetPropertyNames,
     checkingWPSAvailability,
     closeGlyph,
     cropDataSetVisible,
@@ -135,7 +136,7 @@ const DownloadDialog = ({
 
     const handleExport = () => {
         const selectedSrs = downloadOptions && downloadOptions.selectedSrs || defaultSrs || (head(srsList) || {}).name;
-        const propertyName = getAttributesList(attributes, customAttributeSettings);
+        const propertyName = widgetPropertyNames ?? getAttributesList(attributes, customAttributeSettings);
         onExport(selectedLayer?.url, filterObj, Object.assign({}, downloadOptions, {selectedSrs}, {propertyName}));
     };
 
@@ -210,6 +211,7 @@ const DownloadDialog = ({
 
 DownloadDialog.propTypes = {
     attributes: PropTypes.array,
+    widgetPropertyNames: PropTypes.array,
     checkingWPSAvailability: PropTypes.bool,
     closeGlyph: PropTypes.string,
     cropDataSetVisible: PropTypes.bool,
