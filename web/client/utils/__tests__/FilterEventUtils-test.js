@@ -6,9 +6,29 @@
  * LICENSE file in the root directory of this source tree.
  */
 import expect from 'expect';
-import { getFilterLabelAttribute } from '../FilterEventUtils';
+import { getFilterLabelAttribute, processFilterToCQL } from '../FilterEventUtils';
 
 describe('FilterEventUtils', () => {
+    describe('processFilterToCQL with an interval', () => {
+        const filter = {
+            id: 'f1',
+            data: { dataSource: 'features', valuesFrom: 'range', valueAttribute: 'pm10', valueAttributeType: 'number' },
+            layout: {}
+        };
+        it('builds the CQL filter of the interval', () => {
+            expect(processFilterToCQL(filter, [{ start: 10, end: 20 }])).toEqual({
+                format: 'cql',
+                version: '1.0.0',
+                body: '"pm10" >= 10 AND "pm10" <= 20',
+                id: '["pm10" >= 10 AND "pm10" <= 20]',
+                filterId: 'f1'
+            });
+        });
+        it('returns null when the interval is empty', () => {
+            expect(processFilterToCQL(filter, [])).toBe(null);
+            expect(processFilterToCQL(filter, [{ start: null, end: null }])).toBe(null);
+        });
+    });
     describe('getFilterLabelAttribute', () => {
         it('returns the value attribute when the labels are the values', () => {
             expect(getFilterLabelAttribute({ data: { dataSource: 'features', valueAttribute: 'day', valueAttributeType: 'date', attributeFormats: { day: { type: 'iso' } } } }))

@@ -85,6 +85,22 @@ describe('FilterView component', () => {
         expect(labels).toEqual(['1,500.0']);
     });
 
+    it('shows Clear in the header of an interval filter', () => {
+        const container = document.getElementById("container");
+        const actions = { onSelectionChange: () => {} };
+        const spy = expect.spyOn(actions, 'onSelectionChange');
+        const filterData = {
+            ...createMockFilterData('rangeSlider', 'range'),
+            data: { dataSource: 'features', valuesFrom: 'range', valueAttribute: 'mass', valueAttributeType: 'number' }
+        };
+        renderWithProvider(<FilterView filterData={filterData} selections={[{ start: 1, end: 2 }]} rangeBounds={{ min: 0, max: 10 }} onSelectionChange={actions.onSelectionChange} />, container);
+        const buttons = [...container.querySelectorAll('.ms-filter-actions-wrap .btn-link')];
+        expect(buttons.map(b => b.textContent)).toEqual(['widgets.filterWidget.clear']);
+        buttons[0].click();
+        expect(spy.calls.length).toBe(1);
+        expect(spy.calls[0].arguments[0]).toEqual([]);
+    });
+
     it('returns null when filterData is missing', () => {
         const container = document.getElementById("container");
         ReactDOM.render(<FilterView />, container);

@@ -112,7 +112,7 @@ const FilterAttributesSection = ({
                 />
             )}
 
-            <FormGroup className="form-group-flex">
+            {valuesFrom !== 'range' && <FormGroup className="form-group-flex">
                 <ControlLabel><Message msgId="widgets.filterWidget.sortByAttribute" /></ControlLabel>
                 <InputGroup>
                     <Select
@@ -146,7 +146,7 @@ const FilterAttributesSection = ({
                         </ButtonGroup>
                     </InputGroup.Button>
                 </InputGroup>
-            </FormGroup>
+            </FormGroup>}
         </>
     );
 };

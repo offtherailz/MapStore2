@@ -38,7 +38,8 @@ export const useAttributeSync = (filterData, onChangeProp, onEditorChange, selec
             }
         }
 
-        if (key === 'data.valueAttribute' || key === 'data.valueAttributeType') {
+        // An interval cannot drive a dimension, which takes a single value.
+        if (key === 'data.valueAttribute' || key === 'data.valueAttributeType' || (key === 'data.valuesFrom' && value === 'range')) {
             const filterId = filterData?.id;
             let disconnectedDimensionInteraction = false;
             const updatedInteractions = interactions.map(interaction => {
@@ -65,7 +66,7 @@ export const useAttributeSync = (filterData, onChangeProp, onEditorChange, selec
             }
         }
 
-        if (["data.dataSource", "data.valuesFrom", "data.layer", "data.valueAttribute", "data.labelAttribute", "data.sortByAttribute", "data.maxFeatures", "data.sortOrder"].includes(key)) {
+        if (["data.dataSource", "data.valuesFrom", "data.layer", "data.valueAttribute", "data.labelAttribute", "data.sortByAttribute", "data.maxFeatures", "data.sortOrder", "data.range"].includes(key)) {
             onEditorChange('selections', {
                 ...selections,
                 [filterData.id]: []

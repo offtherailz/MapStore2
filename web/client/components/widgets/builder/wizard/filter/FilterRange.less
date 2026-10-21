@@ -1,0 +1,49 @@
+/*
+ * Copyright 2026, GeoSolutions Sas.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+.ms-filter-range {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 8px;
+    .ms-filter-range-slider {
+        padding: 0 10px;
+        // The theme colors the slider for a single handle; with two handles only the interval is colored.
+        .noUi-target.noUi-horizontal {
+            background-color: var(--ms-main-variant-bg, #e8e8e8);
+            .noUi-base .noUi-origin {
+                background-color: transparent;
+            }
+            .noUi-connect {
+                position: absolute;
+                top: 0;
+                height: 100%;
+                background-color: var(--ms-primary, #078aa3);
+            }
+        }
+    }
+    .ms-filter-range-values,
+    .ms-filter-range-bounds {
+        justify-content: space-between;
+        font-size: 12px;
+    }
+    .ms-filter-range-field {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1 1 140px;
+        min-width: 0;
+    }
+    .ms-filter-range-field-label {
+        font-size: 12px;
+    }
+    &.ms-filter-range-disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+}

@@ -26,6 +26,7 @@ import FilterDropdownList from '../../components/widgets/builder/wizard/filter/F
 import FilterSwitchList from '../../components/widgets/builder/wizard/filter/FilterSwitchList';
 import FilterSlider from '../../components/widgets/builder/wizard/filter/FilterSlider';
 import FilterNoSelectableItems from '../../components/widgets/builder/wizard/filter/FilterNoSelectableItems';
+import FilterRange from '../../components/widgets/builder/wizard/filter/FilterRange';
 import InfoPopover from '../../components/widgets/widget/InfoPopover';
 import { getWidgetByDependencyPath } from '../../utils/WidgetsUtils';
 import { isMapTimeTarget, TARGET_TYPES, getConnectedActiveTargets } from '../../utils/InteractionUtils';
@@ -34,6 +35,7 @@ import FlexBox from '../../components/layout/FlexBox';
 import { isFilterSelectionValid } from './utils/filterBuilder';
 import { getFilterLabelAttribute } from '../../utils/FilterEventUtils';
 import { formatAttributeValue } from '../../utils/AttributeFormatUtils';
+import { isRangeFilter } from '../../utils/FilterRangeUtils';
 
 const toIsoTime = (value) => {
     if (value === undefined || value === null || value === '') {
@@ -222,6 +224,8 @@ const ApplyInteractionOutOfSyncInfo = connect()(
     }
 );
 
+const RANGE_SELECT_ALL_ITEMS = [{ id: 'range' }];
+
 const componentMap = {
     checkbox: FilterCheckboxList,
     button: FilterChipList,
@@ -253,10 +257,12 @@ const FilterView = ({
     onToggleDisabled,
     locale,
     onZoomToFilterExtent,
-    widgets = []
+    widgets = [],
+    rangeBounds
 }) => {
     const layout = filterData?.layout ?? {};
-    const Component = componentMap[layout.variant ?? 'checkbox'];
+    const isRange = isRangeFilter(filterData);
+    const Component = isRange ? FilterRange : componentMap[layout.variant ?? 'checkbox'];
     const showUnsupportedVariantWarning = !Component;
     const forceSelection = layout.forceSelection === true;
     const hasMapTimeApplyDimension = syncCurrentTime && (interactions || []).some(interaction =>
@@ -574,10 +580,11 @@ const FilterView = ({
                     {showSelectAll && !showUnsupportedVariantWarning && !disableMapTimeSelection && !effectiveCollapsed && !filterDisabled && (
                         <FilterSelectAllOptions
                             key={filterData.id + '-select-all'}
-                            items={selectableItems}
+                            // an interval offers only Clear, so it is treated as a single item
+                            items={isRange ? RANGE_SELECT_ALL_ITEMS : selectableItems}
                             selectedValues={selections || []}
                             onSelectionChange={onSelectionChange}
-                            selectionMode={layout.selectionMode}
+                            selectionMode={isRange ? 'single' : layout.selectionMode}
                             allowEmptySelection={!forceSelection}
                         />
                     )}
@@ -605,6 +612,18 @@ const FilterView = ({
                 <MapTimeRangeDisabledInfo />
             ) : showUnsupportedVariantWarning ? (
                 <UnsupportedVariantInfo variant={layout.variant} />
+            ) : isRange ? (
+                !loading && !effectiveCollapsed && (
+                    <FilterRange
+                        key={filterData.id}
+                        filterData={filterData}
+                        bounds={rangeBounds}
+                        selections={selections || []}
+                        onSelectionChange={onChangeSelections}
+                        locale={locale}
+                        disabled={filterDisabled}
+                    />
+                )
             ) : selectableItems?.length > 0 ? (
                 showSliderSingleItemError ? (
                     <div className="ms-filter-view-slider-error">

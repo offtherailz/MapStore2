@@ -9,6 +9,7 @@
 import { v1 as uuid } from 'uuid';
 import { cqlStringField, cqlNumberField, cqlBooleanField, toCQLFilter } from './FilterUtils';
 import { isFormattableType } from './AttributeFormatUtils';
+import { isRangeFilter, getRangeCQL } from './FilterRangeUtils';
 
 /**
  * Returns the attribute whose values are shown as labels by a filter, with its type and its format.
@@ -220,6 +221,11 @@ export const processFilterToCQL = (filter, filterSelections = []) => {
     const { dataSource, valuesFrom, filterComposition = 'OR' } = data || {};
 
     let cqlFilter = null;
+
+    if (isRangeFilter(filter)) {
+        const body = getRangeCQL(filter, filterSelections);
+        return body ? { format: 'cql', version: '1.0.0', body, id: `[${body}]`, filterId: filter.id } : null;
+    }
 
     // Handle userDefined dataSource
     if (dataSource === 'userDefined') {

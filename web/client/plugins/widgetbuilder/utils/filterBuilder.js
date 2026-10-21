@@ -7,6 +7,7 @@
  */
 import { v1 as uuidv1 } from 'uuid';
 import { USER_DEFINED_TYPES, FILTER_SELECTION_MODES } from '../../../components/widgets/builder/wizard/filter/FilterDataTab/constants';
+import { isRangeFilter, isRangeSelectionComplete } from '../../../utils/FilterRangeUtils';
 
 export const createEmptyFilterData = () => ({
     title: '',
@@ -87,6 +88,9 @@ export const isFilterSelectionValid = (filter, selectedValues = []) => {
     const forceSelection = filter?.layout?.forceSelection;
     if (!forceSelection) {
         return true; // No force selection, always valid
+    }
+    if (isRangeFilter(filter)) {
+        return isRangeSelectionComplete(filter, selectedValues);
     }
     return (selectedValues || []).length > 0;
 };

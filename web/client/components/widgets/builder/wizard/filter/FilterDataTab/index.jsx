@@ -19,8 +19,10 @@ import FilterAttributesSection from './components/FilterAttributesSection';
 import MaxFeaturesInput from './components/MaxFeaturesInput';
 import FilterCompositionSelector from './components/FilterCompositionSelector';
 import FilterSelectionModeSelector from './components/FilterSelectionModeSelector';
+import RangeBoundsSelector from './components/RangeBoundsSelector';
 import { VALUES_FROM_TYPES, USER_DEFINED_TYPES } from './constants';
 import { isFilterValid } from '../../../../../../utils/FilterUtils';
+import { RANGE_VARIANTS, RANGE_SELECTION_MODE, isRangeAttributeType } from '../../../../../../utils/FilterRangeUtils';
 
 const getMissingAttributeTypeUpdates = ({
     attributeOptions = [],
@@ -116,11 +118,30 @@ const FilterDataTab = ({
         onChange('items', []);
     };
 
+    const isRange = filterDataState.valuesFrom === VALUES_FROM_TYPES.RANGE;
+    const valueAttributeOptions = isRange
+        ? (attributeOptions || []).filter(option => isRangeAttributeType(option?.type))
+        : attributeOptions;
+
     const handleValuesFromChange = (nextValue) => {
+        if (nextValue === filterDataState.valuesFrom) {
+            return;
+        }
         onChange('data.valuesFrom', nextValue);
         // Clear labelAttribute when switching to grouped mode
-        if (nextValue === VALUES_FROM_TYPES.GROUPED) {
+        if (nextValue === VALUES_FROM_TYPES.GROUPED || nextValue === VALUES_FROM_TYPES.RANGE) {
             onChange('data.labelAttribute', undefined);
+        }
+        if (nextValue === VALUES_FROM_TYPES.RANGE) {
+            if (!isRangeAttributeType(filterDataState.valueAttributeType)) {
+                onChange('data.valueAttribute', undefined);
+                onChange('data.valueAttributeType', undefined);
+            }
+            onChange('layout.variant', RANGE_VARIANTS.SLIDER);
+            onChange('layout.selectionMode', RANGE_SELECTION_MODE);
+        } else if (isRange) {
+            onChange('layout.variant', 'checkbox');
+            onChange('layout.selectionMode', 'multiple');
         }
     };
 
@@ -216,7 +237,7 @@ const FilterDataTab = ({
                         labelAttribute={filterDataState.labelAttribute}
                         sortByAttribute={filterDataState.sortByAttribute}
                         sortOrder={filterDataState.sortOrder}
-                        attributeOptions={attributeOptions}
+                        attributeOptions={valueAttributeOptions}
                         isLoading={attributesLoading}
                         hasLayerSelection={filterDataState.hasLayerSelection}
                         error={attributesError}
@@ -229,10 +250,16 @@ const FilterDataTab = ({
                         locale={locale}
                     />
 
-                    <MaxFeaturesInput
-                        value={filterDataState.maxFeaturesValue}
-                        onChange={handleMaxFeaturesChange}
-                    />
+                    {isRange
+                        ? <RangeBoundsSelector
+                            value={filterDataState.filterData?.range}
+                            attributeType={filterDataState.valueAttributeType}
+                            onChange={createChangeHandler('data.range')}
+                        />
+                        : <MaxFeaturesInput
+                            value={filterDataState.maxFeaturesValue}
+                            onChange={handleMaxFeaturesChange}
+                        />}
                 </>
             )}
 
@@ -249,10 +276,10 @@ const FilterDataTab = ({
 
             {filterDataState.userDefinedType !== USER_DEFINED_TYPES.STYLE_LIST && (
                 <>
-                    <FilterCompositionSelector
+                    {!isRange && <FilterCompositionSelector
                         value={filterDataState.filterComposition}
                         onChange={handleFilterCompositionChange}
-                    />
+                    />}
 
                     <FilterSelectionModeSelector
                         value={filterDataState.noSelectionMode}

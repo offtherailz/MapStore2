@@ -505,7 +505,7 @@ By selecting Features, the user can retrieve information from an underlying feat
 
 * Filter the Layer by clicking the <img src="../img/button/filter-icon.jpg" class="ms-docbutton"/> button
 
-* Select the number of **Values** choosing between `Unique Attribute` or `Attributes`
+* Select the number of **Values** choosing between `Unique Attribute`, `Attributes` or `Interval`. With `Interval` the user selects a range of values instead of picking them from a list (see [Interval](widgets.md#interval) below).
 
 * Choose the **Values Attribute** from the available *Features* of the selected layer. For date and number attributes, the button next to the attribute sets the **Format** of the values shown, as in the [Table](widgets.md#table) widget.
 
@@ -519,6 +519,21 @@ By selecting Features, the user can retrieve information from an underlying feat
 
 !!!warning
     If the user wants the filter to display nothing when no items are selected, create a Default Filter that always returns no features.
+
+##### Interval
+
+With **Values** set to `Interval`, the filter lets the user select a range between a minimum and a maximum value, for example a period of time. Only numeric and date attributes can be used. Instead of the sorting and the maximum number of features, the user sets the **Limits** of the interval:
+
+* `Automatic`: the smallest and the largest value of the attribute, read from the layer.
+* `Manual`: a minimum and a maximum typed by the user.
+
+In the **Layout** tab the user can then choose:
+
+* The **Variant**: `Fields` (calendar or number fields) or `Slider` (a slider with two handles). The slider can also show the fields below it.
+* The **Ends** the user can set: `From - to`, `From only` (all the values from the start onwards) or `Up to only`.
+* The **Step**: day, month or year for dates, a number for numeric attributes. With a month step, an interval ending in March includes the whole of March.
+
+An empty field, or a slider handle left at the limit, means no limit on that side. With **Force Selection** enabled the ends shown must always be set. An interval filter cannot drive the *Time* or *Elevation* dimension, which take a single value.
 
 ##### User Defined
 

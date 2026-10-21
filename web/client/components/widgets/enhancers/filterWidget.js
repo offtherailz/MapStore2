@@ -14,6 +14,7 @@ import { getWFSLayerName, getWpsUrl } from '../../../utils/LayersUtils';
 import { getWpsPayload } from '../../../utils/ogc/WPS/autocomplete';
 import { executeProcess } from '../../../observables/wps/execute';
 import { isFilterValid, composeAttributeFilters } from '../../../utils/FilterUtils';
+import { RANGE_VALUES_FROM } from '../../../utils/FilterRangeUtils';
 
 const CancelToken = axios.CancelToken;
 const DEBOUNCE_TIME = 100; // 1 second
@@ -191,6 +192,34 @@ const fetchWFSFilterData = (filterData, options = {}) => {
         });
 };
 
+// Nulls can come first in a descending order, so a few values are read to find a valid one.
+const RANGE_BOUND_SAMPLE_SIZE = 10;
+
+const fetchRangeBound = (data, sortOrder, options) =>
+    fetchWFSFilterData({
+        ...data,
+        labelAttribute: undefined,
+        maxFeatures: RANGE_BOUND_SAMPLE_SIZE,
+        sortByAttribute: data.valueAttribute,
+        sortOrder
+    }, options).then(items => items[0]?.value ?? null);
+
+/**
+ * Returns the bounds of an interval filter: the manual ones, or the smallest and largest value of the layer.
+ * @param {object} data filter.data
+ * @param {object} options additional options like cancelToken
+ * @returns {Promise} resolves to `{ min, max }`
+ */
+const fetchRangeBounds = (data, options = {}) => {
+    if (data?.range?.bounds === 'manual') {
+        return Promise.resolve({ min: data.range.min ?? null, max: data.range.max ?? null });
+    }
+    return Promise.all([
+        fetchRangeBound(data, 'ASC', options),
+        fetchRangeBound(data, 'DESC', options)
+    ]).then(([min, max]) => ({ min, max }));
+};
+
 /**
  * Checks if filter data has changed and should trigger a new fetch
  */
@@ -207,6 +236,7 @@ const shouldFetch = (prevFilterData, nextFilterData) => {
         prevData.sortOrder !== nextData.sortOrder ||
         prevData.dataSource !== nextData.dataSource ||
         prevData.valuesFrom !== nextData.valuesFrom ||
+        prevData.range !== nextData.range ||
         prevFilterData?.items !== nextFilterData?.items
     );
 };
@@ -219,6 +249,7 @@ const filterWidgetEnhancer = compose(
     withState('fetchedItems', 'setFetchedItems', () => []),
     withState('loading', 'setLoading', false),
     withState('fetchError', 'setFetchError', false),
+    withState('rangeBounds', 'setRangeBounds', null),
     withState('cancelTokenSource', 'setCancelTokenSource', null),
     withHandlers({
         performFetch: ({
@@ -226,6 +257,7 @@ const filterWidgetEnhancer = compose(
             setFetchedItems,
             setLoading,
             setFetchError,
+            setRangeBounds,
             cancelTokenSource,
             setCancelTokenSource
         }) => () => {
@@ -279,7 +311,12 @@ const filterWidgetEnhancer = compose(
             // Route to WPS or WFS based on valuesFrom
             let fetchPromise;
             const valuesFromStr = String(valuesFrom).trim();
-            if (valuesFromStr === 'grouped') {
+            if (valuesFromStr === RANGE_VALUES_FROM) {
+                fetchPromise = fetchRangeBounds(data, { cancelToken: source.token }).then((bounds) => {
+                    setRangeBounds(bounds);
+                    return [];
+                });
+            } else if (valuesFromStr === 'grouped') {
                 // Use WPS for grouped values (distinct values)
                 fetchPromise = fetchWPSFilterData(data, { cancelToken: source.token });
             } else if (valuesFromStr === 'single') {
@@ -341,7 +378,7 @@ const filterWidgetEnhancer = compose(
             }
         }
     }),
-    withProps(({ filterData, fetchedItems, loading, fetchError }) => {
+    withProps(({ filterData, fetchedItems, loading, fetchError, rangeBounds }) => {
         const { data = {} } = filterData || {};
         let selectableItems = [];
         // For userDefined data source, transform userDefinedItems into items format
@@ -360,7 +397,8 @@ const filterWidgetEnhancer = compose(
         return {
             loading,
             selectableItems,
-            fetchError
+            fetchError,
+            rangeBounds
         };
     })
 );

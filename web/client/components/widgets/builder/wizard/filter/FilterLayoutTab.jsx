@@ -18,6 +18,8 @@ import localizedProps from '../../../../misc/enhancers/localizedProps';
 import InfoPopover from '../../../widget/InfoPopover';
 import { USER_DEFINED_TYPES } from './FilterDataTab/constants';
 import { TARGET_TYPES } from '../../../../../utils/InteractionUtils';
+import RangeLayoutOptions from './RangeLayoutOptions';
+import { isRangeFilter, isRangeDateType } from '../../../../../utils/FilterRangeUtils';
 
 const LocalizedFormControl = localizedProps('placeholder')(FormControl);
 const TICK_INPUT_DEBOUNCE_TIME = 300;
@@ -161,6 +163,8 @@ const FilterLayoutTab = ({
     interactions = []
 }) => {
     const layout = data?.layout || {};
+    const isRange = isRangeFilter(data);
+    const clearSelection = () => onEditorChange('selections', { ...selections, [data.id]: [] });
     const filterItems = Array.isArray(selectableItems) ? selectableItems : [];
     const [expandedPanel, setExpandedPanel] = useState("items");
     const isStyleList = data?.data?.userDefinedType === USER_DEFINED_TYPES.STYLE_LIST;
@@ -411,33 +415,42 @@ const FilterLayoutTab = ({
                 {expandedPanel === 'items' && (
                     <Collapse in>
                         <div>
-                            <FormGroup className="form-group-flex">
-                                <ControlLabel><Message msgId="widgets.filterWidget.variant" /></ControlLabel>
-                                <InputGroup>
-                                    <Select
-                                        clearable={false}
-                                        value={layout.variant}
-                                        options={variantOptions}
-                                        placeholder="Select variant..."
-                                        onChange={handleVariantChange}
-                                    />
-                                </InputGroup>
-                            </FormGroup>
-                            <FormGroup className="form-group-flex">
-                                <ControlLabel><Message msgId="widgets.filterWidget.selectionMode" /></ControlLabel>
-                                <InputGroup>
-                                    <Select
-                                        clearable={false}
-                                        value={localizedSelectedSelectionMode}
-                                        options={localizedSelectionModeOptionsWithDisabledMultiple}
-                                        placeholder="Select selection mode..."
-                                        disabled={isStyleList}
-                                        optionRenderer={renderSelectionModeOption}
-                                        onChange={handleSelectionModeChange}
-                                    />
-                                </InputGroup>
-                            </FormGroup>
-                            {!isSliderVariant && (
+                            {isRange
+                                ? <RangeLayoutOptions
+                                    layout={layout}
+                                    isDate={isRangeDateType(data?.data?.valueAttributeType)}
+                                    onChange={onChange}
+                                    onClearSelection={clearSelection}
+                                />
+                                : <>
+                                    <FormGroup className="form-group-flex">
+                                        <ControlLabel><Message msgId="widgets.filterWidget.variant" /></ControlLabel>
+                                        <InputGroup>
+                                            <Select
+                                                clearable={false}
+                                                value={layout.variant}
+                                                options={variantOptions}
+                                                placeholder="Select variant..."
+                                                onChange={handleVariantChange}
+                                            />
+                                        </InputGroup>
+                                    </FormGroup>
+                                    <FormGroup className="form-group-flex">
+                                        <ControlLabel><Message msgId="widgets.filterWidget.selectionMode" /></ControlLabel>
+                                        <InputGroup>
+                                            <Select
+                                                clearable={false}
+                                                value={localizedSelectedSelectionMode}
+                                                options={localizedSelectionModeOptionsWithDisabledMultiple}
+                                                placeholder="Select selection mode..."
+                                                disabled={isStyleList}
+                                                optionRenderer={renderSelectionModeOption}
+                                                onChange={handleSelectionModeChange}
+                                            />
+                                        </InputGroup>
+                                    </FormGroup>
+                                </>}
+                            {!isSliderVariant && !isRange && (
                                 <FormGroup className="form-group-flex ms-filter-direction-form-group">
                                     <ControlLabel><Message msgId="widgets.filterWidget.direction" /></ControlLabel>
                                     <InputGroup>

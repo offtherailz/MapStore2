@@ -13,7 +13,8 @@ export const DATA_SOURCE_TYPES = {
 
 export const VALUES_FROM_TYPES = {
     GROUPED: 'grouped',
-    SINGLE: 'single'
+    SINGLE: 'single',
+    RANGE: 'range'
 };
 
 export const FILTER_COMPOSITION_TYPES = {
@@ -50,6 +51,13 @@ export const VALUES_FROM_OPTIONS = [
         description: 'Query WFS once per attribute value.',
         labelKey: 'widgets.filterWidget.attributes',
         descriptionKey: 'widgets.filterWidget.valueFromAttributeDescription'
+    },
+    {
+        value: VALUES_FROM_TYPES.RANGE,
+        label: 'Interval',
+        description: 'The user selects an interval between a minimum and a maximum.',
+        labelKey: 'widgets.filterWidget.range',
+        descriptionKey: 'widgets.filterWidget.rangeDescription'
     }
 ];
 
@@ -73,4 +81,14 @@ export const FILTER_SELECTION_MODE_OPTIONS = [
     { value: FILTER_SELECTION_MODES.NO_FILTER, labelKey: 'widgets.filterWidget.noFilter' },
     { value: FILTER_SELECTION_MODES.EXCLUDE, labelKey: 'widgets.filterWidget.exclude' },
     { value: FILTER_SELECTION_MODES.CUSTOM, labelKey: 'widgets.filterWidget.custom' }
+];
+
+export const RANGE_BOUNDS_TYPES = {
+    AUTO: 'auto',
+    MANUAL: 'manual'
+};
+
+export const RANGE_BOUNDS_OPTIONS = [
+    { value: RANGE_BOUNDS_TYPES.AUTO, label: 'Automatic', labelKey: 'widgets.filterWidget.rangeBoundsAuto' },
+    { value: RANGE_BOUNDS_TYPES.MANUAL, label: 'Manual', labelKey: 'widgets.filterWidget.rangeBoundsManual' }
 ];
