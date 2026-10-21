@@ -410,6 +410,12 @@ In the *Table Widget* the user can:
 
 <video class="ms-docimage" controls><source src="../img/widgets/table-description.mp4"/></video>
 
+* Choose the **Format** of date and number fields with the button in the *Format* column, available only for these fields:
+  * Dates: `Automatic` (the date format of the user language, as in the rest of the application), `ISO` (the value as returned by the service, for example `2025-12-29Z`) or `Custom` (a pattern typed by the user, for example `DD/MM/YYYY HH:mm`, the same for every language).
+  * Numbers: the same options of the [chart values](#trace-value-formatting), a **Prefix**, a **Format** (e.g. `,.2f` for two decimals and the thousands separator), a **Suffix** and a **Formula**.
+
+  Fields without a format are shown as returned by the service.
+
 Once the desired fields are selected, a click on the <img src="../img/button/next.jpg" class="ms-docbutton"/> button opens the following panel:
 
 <img src="../img/widgets/table-info.jpg" class="ms-docimage"  style="max-width:450px;"/>
@@ -501,7 +507,7 @@ By selecting Features, the user can retrieve information from an underlying feat
 
 * Select the number of **Values** choosing between `Unique Attribute` or `Attributes`
 
-* Choose the **Values Attribute** from the available *Features* of the selected layer
+* Choose the **Values Attribute** from the available *Features* of the selected layer. For date and number attributes, the button next to the attribute sets the **Format** of the values shown, as in the [Table](widgets.md#table) widget.
 
 * Select which attribute to use for sorting the filter and specify whether the values should be in **Ascending** or **Descending** order
 

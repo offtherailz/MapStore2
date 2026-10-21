@@ -15,6 +15,7 @@ import NumberFormat from '../../../I18N/Number';
 import { handleLongTextEnhancer } from '../../../misc/enhancers/handleLongTextEnhancer';
 
 import { dateFormats as defaultDateFormats } from "../../../../utils/FeatureGridUtils";
+import { ATTRIBUTE_FORMATTER_NAME, formatAttributeValue } from "../../../../utils/AttributeFormatUtils";
 
 export const BooleanFormatter =  ({value} = {}) => !isNil(value) ? <span>{value.toString()}</span> : null;
 export const StringFormatter = ({value} = {}) => !isNil(value) ? reactStringReplace(value, /(https?:\/\/\S+)/g, (match, i) => (
@@ -66,6 +67,13 @@ export const register = {};
 export const registerFormatter = (name, formatter) => {
     register[name] = formatter;
 };
+// Formats a column with the format chosen for its attribute (see `addAttributeFormatters`).
+const AttributeFormatter = ({ value, config = {} }) => {
+    const formatted = formatAttributeValue(value, config.localType, config.format, config.locale);
+    return isNil(formatted) ? null : String(formatted);
+};
+registerFormatter(ATTRIBUTE_FORMATTER_NAME, handleLongTextEnhancer(AttributeFormatter));
+
 export const unregisterFormatter = (name) => {
     delete register[name];
 };

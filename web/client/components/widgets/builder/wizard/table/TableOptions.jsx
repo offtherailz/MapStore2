@@ -39,7 +39,8 @@ const AttributeSelector = compose(
                         attribute: a.name,
                         hide: propertyNames?.indexOf( a.name ) < 0,
                         title: currPropertyName?.title || '',
-                        description: currPropertyName?.description || ''
+                        description: currPropertyName?.description || '',
+                        format: currPropertyName?.format
                     };
                 })
         })),
@@ -48,7 +49,7 @@ const AttributeSelector = compose(
 )(AttributeTable);
 
 
-export default ({ data = { options: {} }, onChange = () => { }, featureTypeProperties, sampleChart, layer}) => (<Row>
+export default ({ data = { options: {} }, onChange = () => { }, featureTypeProperties, sampleChart, layer, locale}) => (<Row>
     <StepHeader title={<Message msgId={`widgets.builder.wizard.configureTableOptions`} />} />
     <Col xs={12}>
         <div >
@@ -61,6 +62,7 @@ export default ({ data = { options: {} }, onChange = () => { }, featureTypePrope
                 layer={layer}
                 options={data.options}
                 onChange={onChange}
+                locale={locale}
                 attributes={featureTypeProperties}/>
             {data.options && data.options.columnSettings
                 ? <Button style={{"float": "right"}} onClick={() => onChange("options.columnSettings", undefined)}><Message msgId="widgets.builder.wizard.resetColumnsSizes" /></Button>

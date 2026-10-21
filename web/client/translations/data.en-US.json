@@ -2370,7 +2370,20 @@
           "errorFilter": "One or more filter(s) is invalid",
           "backToTableOptions": "Back to table options",
           "configureTableOptions": "Configure table options",
+          "attributeFormat": {
+            "title": "Format",
+            "auto": "Automatic",
+            "iso": "ISO",
+            "custom": "Custom",
+            "patternPlaceholder": "e.g. DD/MM/YYYY HH:mm",
+            "example": "Example:",
+            "autoDescription": "Uses the date format of the user language, as the rest of the application.",
+            "isoDescription": "Shows the value as returned by the service.",
+            "customDescription": "Moment.js pattern, the same for every language: YYYY, MM, DD, HH, mm, ss, MMMM.",
+            "reset": "Default display"
+          },
           "attributeEditorColumns": {
+            "format": "Format",
             "name": "Name",
             "title": "Title",
             "tooltip": "Tooltip"

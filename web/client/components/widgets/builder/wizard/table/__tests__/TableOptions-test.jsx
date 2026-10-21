@@ -56,7 +56,17 @@ describe('TableOptions component', () => {
             dependencies={{ viewport: {} }} />, document.getElementById("container"));
         const inputs = document.querySelectorAll('input');
         expect(inputs.length).toBe(10);
-        const resetButton = document.querySelector('.btn');
+        // the grid renders only the visible rows: each one has the format button only for numbers and dates
+        const formattable = get(describeStates, "featureTypes[0].properties")
+            .filter(p => ['int', 'number', 'date', 'date-time', 'time'].includes(p.localType))
+            .map(p => p.name);
+        const rows = [...document.querySelectorAll('.react-grid-Row')];
+        expect(rows.length).toBe(9);
+        rows.forEach(row => {
+            const name = row.querySelectorAll('.react-grid-Cell')[1].textContent.trim();
+            expect(!!row.querySelector('.ms-attribute-format-button')).toBe(formattable.includes(name));
+        });
+        const resetButton = [...document.querySelectorAll('.btn')].find(b => b.textContent === 'widgets.builder.wizard.resetColumnsSizes');
         expect(resetButton).toExist();
         ReactTestUtils.Simulate.click(resetButton);
         expect(spyonChange.calls[0].arguments[0]).toBe("options.columnSettings");

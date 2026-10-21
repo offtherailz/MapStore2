@@ -6,13 +6,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import React from 'react';
+import React, { createContext, useContext } from 'react';
 import ReactDataGrid from 'react-data-grid';
 import { castArray, includes, uniqBy, isEmpty } from "lodash";
 
 import Message from '../../I18N/Message';
 import localizedProps from '../../misc/enhancers/localizedProps';
 import FormatEditor from "../../data/featuregrid/editors/FormatEditor";
+import { AttributeFormatButton } from '../../widgets/builder/wizard/common/AttributeFormatEditor';
 
 const DataGrid = localizedProps("columns", "name")(ReactDataGrid);
 
@@ -29,23 +30,46 @@ const range = (start, end) => Array.from({length: (end + 1 - start)}, (v, k) => 
 // Editor with format regex
 const getEditor = (formatRegex) => <FormatEditor dataType="string" formatRegex={formatRegex}/>;
 
+// The grid does not re-render its rows when only these values change, so the cells read them from a context.
+const FormatContext = createContext({});
+
+const FormatCell = ({ row }) => {
+    const { formats = {}, locale, onFormatChange = () => {} } = useContext(FormatContext);
+    return (
+        <AttributeFormatButton
+            id={row.name}
+            type={row.localType}
+            value={formats[row.name]}
+            locale={locale}
+            disabled={row.hide}
+            bsSize="xsmall"
+            onChange={(format) => onFormatChange(row.name, format)}
+        />
+    );
+};
+
 // Columns for configuring table options
 const columns = [{
     name: 'widgets.builder.wizard.attributeEditorColumns.name',
     key: 'label',
-    width: 120
+    width: 110
 }, {
     name: 'widgets.builder.wizard.attributeEditorColumns.title',
     key: 'title',
     editor: getEditor("^[-@.\\/\#&+\\w\\s*]{0,100}$"),
-    width: 120,
+    width: 100,
     editable: (rowData) => !rowData?.hide
 }, {
     name: 'widgets.builder.wizard.attributeEditorColumns.tooltip',
     key: 'description',
     editor: getEditor("^[-@.,\\/\#&+\\w\\s*]{0,200}$"),
-    width: 150,
+    width: 110,
     editable: (rowData) => !rowData?.hide
+}, {
+    name: 'widgets.builder.wizard.attributeEditorColumns.format',
+    key: 'format',
+    width: 60,
+    formatter: FormatCell
 }];
 
 export default ({
@@ -53,9 +77,17 @@ export default ({
     titleMsg = "featuregrid.columns",
     onChange = () => { },
     attributes = [],
-    options = {}
+    options = {},
+    locale
 } = {}) => {
     const rowGetter = idx => attributes[idx];
+    const formatContext = {
+        locale,
+        formats: (options.propertyName || []).reduce((acc, p) => ({ ...acc, [p.name]: p.format }), {}),
+        onFormatChange: (name, format) => onChange("options.propertyName",
+            (options.propertyName || []).map(p => name === p.name ? ({...p, format}) : p)
+        )
+    };
 
     const onGridRowsUpdated = ({fromRow, toRow, updated}) => {
         const [{name} = {}] = range(fromRow, toRow).map((r) => rowGetter(r))
@@ -71,7 +103,7 @@ export default ({
         onChange("options.propertyName", updatePropertyName(options && options.propertyName || [], names, hide));
     };
 
-    return (<div className="bg-body data-attribute-selector" style={style}>
+    return (<FormatContext.Provider value={formatContext}><div className="bg-body data-attribute-selector" style={style}>
         <h4 className="text-center"><strong><Message msgId={titleMsg}/></strong></h4>
         <DataGrid
             rowKey="id"
@@ -89,5 +121,5 @@ export default ({
                     indexes: attributes.reduce((acc, a, idx) => [...acc, ...(a.hide ? [] : [idx])], [])
                 }
             }}/>
-    </div>);
+    </div></FormatContext.Provider>);
 };

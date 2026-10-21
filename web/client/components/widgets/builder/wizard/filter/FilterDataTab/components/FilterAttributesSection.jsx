@@ -14,6 +14,7 @@ import sortByAttributesIcon from '../../../../../../../themes/default/svg/sort-b
 import sortByAttributesAltIcon from '../../../../../../../themes/default/svg/sort-by-attributes-alt.svg';
 import tooltip from '../../../../../../misc/enhancers/tooltip';
 import ButtonWithTooltip from '../../../../../../misc/Button';
+import { AttributeFormatButton } from '../../../common/AttributeFormatEditor';
 import Message from '../../../../../../I18N/Message';
 
 const TButtonWithTooltip = tooltip(({ children, active, ...props }) => (
@@ -50,8 +51,20 @@ const FilterAttributesSection = ({
     onValueAttributeChange,
     onLabelAttributeChange,
     onSortByAttributeChange,
-    onSortOrderChange
+    onSortOrderChange,
+    attributeFormats = {},
+    onAttributeFormatChange = () => {},
+    locale
 }) => {
+    const formatButton = (name) => name && (
+        <AttributeFormatButton
+            id={name}
+            type={attributeOptions.find(option => option.value === name)?.type}
+            value={attributeFormats[name]}
+            locale={locale}
+            onChange={(format) => onAttributeFormatChange(name, format)}
+        />
+    );
     const attributeNoResultsText = getAttributeNoResultsText(hasLayerSelection, error);
     const isAttributeDisabled = !attributeOptions.length && !isLoading;
 
@@ -80,6 +93,7 @@ const FilterAttributesSection = ({
                 disabled={isAttributeDisabled}
                 clearable={false}
                 placeholder={<Message msgId="widgets.filterWidget.selectAttribute" />}
+                addon={formatButton(valueAttribute)}
             />
 
             {valuesFrom === 'single' && (
@@ -94,6 +108,7 @@ const FilterAttributesSection = ({
                     disabled={isAttributeDisabled}
                     clearable={false}
                     placeholder={<Message msgId="widgets.filterWidget.selectAttribute" />}
+                    addon={labelAttribute !== valueAttribute ? formatButton(labelAttribute) : null}
                 />
             )}
 

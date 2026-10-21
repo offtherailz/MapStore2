@@ -61,7 +61,8 @@ const FilterDataTab = ({
     dashBoardEditing,
     selections = {},
     interactions = [],
-    globalWidgetMode = false
+    globalWidgetMode = false,
+    locale
 }) => {
     // Normalize and derive filter data
     const filterDataState = useFilterData(data);
@@ -223,6 +224,9 @@ const FilterDataTab = ({
                         onLabelAttributeChange={handleLabelAttributeChange}
                         onSortByAttributeChange={handleSortByAttributeChange}
                         onSortOrderChange={handleSortOrderChange}
+                        attributeFormats={filterDataState.filterData?.attributeFormats}
+                        onAttributeFormatChange={(name, format) => onChange('data.attributeFormats', { ...filterDataState.filterData?.attributeFormats, [name]: format })}
+                        locale={locale}
                     />
 
                     <MaxFeaturesInput
@@ -271,7 +275,8 @@ FilterDataTab.propTypes = {
     onEditorChange: PropTypes.func,
     dashBoardEditing: PropTypes.bool,
     interactions: PropTypes.array,
-    globalWidgetMode: PropTypes.bool
+    globalWidgetMode: PropTypes.bool,
+    locale: PropTypes.string
 };
 
 export default FilterDataTab;

@@ -32,6 +32,8 @@ import { isMapTimeTarget, TARGET_TYPES, getConnectedActiveTargets } from '../../
 import Text from '../../components/layout/Text';
 import FlexBox from '../../components/layout/FlexBox';
 import { isFilterSelectionValid } from './utils/filterBuilder';
+import { getFilterLabelAttribute } from '../../utils/FilterEventUtils';
+import { formatAttributeValue } from '../../utils/AttributeFormatUtils';
 
 const toIsoTime = (value) => {
     if (value === undefined || value === null || value === '') {
@@ -284,6 +286,15 @@ const FilterView = ({
         .filter(Boolean),
     [zoomToInteractions, widgets]);
     const showZoomButton = zoomToInteractions.length > 0;
+
+    const labelAttribute = getFilterLabelAttribute(filterData);
+    const displayItems = useMemo(() => {
+        if (!labelAttribute?.format) {
+            return selectableItems;
+        }
+        const { type, format } = labelAttribute;
+        return (selectableItems || []).map(item => ({ ...item, label: String(formatAttributeValue(item.label, type, format, locale)) }));
+    }, [selectableItems, labelAttribute?.type, labelAttribute?.format, locale]);
 
     useEffect(() => {
         if (typeof onSelectableItemsChange === 'function') {
@@ -606,7 +617,7 @@ const FilterView = ({
                     <div style={filterDisabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
                         <Component
                             key={filterData.id}
-                            items={selectableItems}
+                            items={displayItems}
                             selectionMode={layout.selectionMode}
                             selectedValues={selections || []}
                             onSelectionChange={onChangeSelections}

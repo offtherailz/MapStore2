@@ -31,7 +31,8 @@ const AttributeSelector = ({
     hasLayerSelection = false,
     error = null,
     disabled = false,
-    clearable = false
+    clearable = false,
+    addon
 }) => {
     const selectedOption = value
         ? options.find(opt => opt.value === value) || null
@@ -55,6 +56,7 @@ const AttributeSelector = ({
                     noResultsText={noResultsText}
                     clearable={clearable}
                 />
+                {addon && <InputGroup.Button>{addon}</InputGroup.Button>}
             </InputGroup>
         </FormGroup>
     );
@@ -74,7 +76,8 @@ AttributeSelector.propTypes = {
     hasLayerSelection: PropTypes.bool,
     error: PropTypes.string,
     disabled: PropTypes.bool,
-    clearable: PropTypes.bool
+    clearable: PropTypes.bool,
+    addon: PropTypes.node
 };
 
 export default AttributeSelector;

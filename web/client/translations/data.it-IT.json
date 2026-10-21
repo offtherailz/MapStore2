@@ -2370,7 +2370,20 @@
           "errorFilter": "Uno o più filtri non sono validi",
           "backToTableOptions": "Torna alle opzioni della tabella",
           "configureTableOptions": "Configura le opzioni della tabella",
+          "attributeFormat": {
+            "title": "Formato",
+            "auto": "Automatico",
+            "iso": "ISO",
+            "custom": "Personalizzato",
+            "patternPlaceholder": "es. DD/MM/YYYY HH:mm",
+            "example": "Esempio:",
+            "autoDescription": "Usa il formato data della lingua dell'utente, come il resto dell'applicazione.",
+            "isoDescription": "Mostra il valore come restituito dal servizio.",
+            "customDescription": "Pattern Moment.js, uguale per tutte le lingue: YYYY, MM, DD, HH, mm, ss, MMMM.",
+            "reset": "Visualizzazione predefinita"
+          },
           "attributeEditorColumns": {
+            "format": "Formato",
             "name": "Nome",
             "title": "Titolo",
             "tooltip": "Tooltip"

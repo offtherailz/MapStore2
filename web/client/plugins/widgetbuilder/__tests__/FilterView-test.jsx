@@ -54,6 +54,37 @@ describe('FilterView component', () => {
     ];
 
 
+    it('formats the labels with the format of their attribute', () => {
+        const container = document.getElementById("container");
+        const dateItems = [
+            { id: '2025-01-15T00:00:00.000Z', label: '2025-01-15Z' },
+            { id: '2025-03-21T00:00:00.000Z', label: '2025-03-21Z' }
+        ];
+        const filterData = {
+            ...createMockFilterData('button', 'multiple'),
+            data: { dataSource: 'features', valueAttribute: 'day', valueAttributeType: 'date' }
+        };
+        renderWithProvider(<FilterView filterData={filterData} selectableItems={dateItems} locale="it-IT" />, container);
+        const rawLabels = [...container.querySelectorAll('.ms-filter-button-list-item')].map(item => item.textContent.trim());
+        expect(rawLabels).toEqual(['2025-01-15Z', '2025-03-21Z']);
+
+        const formattedFilterData = { ...filterData, data: { ...filterData.data, attributeFormats: { day: { type: 'custom', pattern: 'MMM YYYY' } } } };
+        renderWithProvider(<FilterView filterData={formattedFilterData} selectableItems={dateItems} locale="it-IT" />, container);
+        const labels = [...container.querySelectorAll('.ms-filter-button-list-item')].map(item => item.textContent.trim());
+        expect(labels).toEqual(['Jan 2025', 'Mar 2025']);
+    });
+
+    it('formats number labels', () => {
+        const container = document.getElementById("container");
+        const filterData = {
+            ...createMockFilterData('button', 'multiple'),
+            data: { dataSource: 'features', valueAttribute: 'mass', valueAttributeType: 'number', attributeFormats: { mass: { format: ',.1f' } } }
+        };
+        renderWithProvider(<FilterView filterData={filterData} selectableItems={[{ id: '1500', label: '1500' }]} locale="en-US" />, container);
+        const labels = [...container.querySelectorAll('.ms-filter-button-list-item')].map(item => item.textContent.trim());
+        expect(labels).toEqual(['1,500.0']);
+    });
+
     it('returns null when filterData is missing', () => {
         const container = document.getElementById("container");
         ReactDOM.render(<FilterView />, container);

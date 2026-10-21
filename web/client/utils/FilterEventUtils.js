@@ -8,6 +8,24 @@
 
 import { v1 as uuid } from 'uuid';
 import { cqlStringField, cqlNumberField, cqlBooleanField, toCQLFilter } from './FilterUtils';
+import { isFormattableType } from './AttributeFormatUtils';
+
+/**
+ * Returns the attribute whose values are shown as labels by a filter, with its type and its format.
+ * The labels come from the label attribute when set, otherwise from the value attribute.
+ * @param {object} filter filter configuration
+ * @returns {object|null} `{ name, type, format }`, or `null` when the labels are not dates or numbers
+ */
+export const getFilterLabelAttribute = (filter) => {
+    const data = filter?.data;
+    if (data?.dataSource !== 'features') {
+        return null;
+    }
+    const hasOwnLabel = data.labelAttribute && data.labelAttribute !== data.valueAttribute;
+    const name = hasOwnLabel ? data.labelAttribute : data.valueAttribute;
+    const type = hasOwnLabel ? data.labelAttributeType : data.valueAttributeType;
+    return isFormattableType(type) ? { name, type, format: data.attributeFormats?.[name] } : null;
+};
 
 /**
  * Convert filter selections to filterObj format (mapstore format).

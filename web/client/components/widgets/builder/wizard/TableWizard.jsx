@@ -30,7 +30,7 @@ const triggerValidationReset = compose(lifecycle({
 })
 );
 
-export default triggerValidationReset(({ onChange = () => { }, onFinish = () => { }, setPage = () => { }, data = {}, layer = {}, step = 0, types, featureTypeProperties, dependencies }) =>
+export default triggerValidationReset(({ onChange = () => { }, onFinish = () => { }, setPage = () => { }, data = {}, layer = {}, step = 0, types, featureTypeProperties, dependencies, locale }) =>
     (<Wizard
         step={step}
         setPage={setPage}
@@ -44,6 +44,7 @@ export default triggerValidationReset(({ onChange = () => { }, onFinish = () => 
             data={data}
             onChange={onChange}
             layer={data.layer || layer}
+            locale={locale}
         />
         <WidgetOptions
             key="widget-options"

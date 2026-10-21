@@ -2409,7 +2409,20 @@
           "errorFilter": "Mindestens ein Filter ist ungültig",
           "backToTableOptions": "Zurück zu den Tabellenoptionen",
           "configureTableOptions": "Konfigurieren Sie die Tabellenoptionen",
+          "attributeFormat": {
+            "title": "Format",
+            "auto": "Automatisch",
+            "iso": "ISO",
+            "custom": "Benutzerdefiniert",
+            "patternPlaceholder": "z. B. DD.MM.YYYY HH:mm",
+            "example": "Beispiel:",
+            "autoDescription": "Verwendet das Datumsformat der Benutzersprache, wie der Rest der Anwendung.",
+            "isoDescription": "Zeigt den Wert so, wie ihn der Dienst liefert.",
+            "customDescription": "Moment.js-Muster, gleich für alle Sprachen: YYYY, MM, DD, HH, mm, ss, MMMM.",
+            "reset": "Standardanzeige"
+          },
           "attributeEditorColumns": {
+            "format": "Format",
             "name": "Name",
             "title": "Titel",
             "tooltip": "Tooltip"

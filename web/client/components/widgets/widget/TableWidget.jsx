@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import React, { lazy } from 'react';
+import { compose, withPropsOnChange } from 'recompose';
 
 import { getWidgetFilterRenderers } from '../../../plugins/widgets/getWidgetFilterRenderers';
 import EmptyRowsView from '../../data/featuregrid/EmptyRowsView';
@@ -17,6 +18,7 @@ import errorChartState from '../enhancers/errorChartState';
 import WidgetContainer from './WidgetContainer';
 import WidgetEmptyMessage from './WidgetEmptyMessage';
 import withSuspense from '../../misc/withSuspense';
+import { addAttributeFormatters } from '../../../utils/AttributeFormatUtils';
 
 const FeatureGridComp = withSuspense()(lazy(() => import('../../data/featuregrid/FeatureGrid')));
 const FeatureGrid = errorChartState(loadingState(({ describeFeatureType }) => !describeFeatureType)(FeatureGridComp));
@@ -24,7 +26,15 @@ const DEFAULT_GRID_HEIGHT = 28;
 const defaultGridOpts = ['rowHeight', 'headerRowHeight', 'headerFiltersHeight']
     .reduce((acc, prop) => ({...acc, [prop]: DEFAULT_GRID_HEIGHT}), '');
 
-export default getWidgetFilterRenderers(({
+// The format chosen for each attribute becomes the feature grid formatter of its column.
+const withAttributeFormatters = withPropsOnChange(
+    ['layer', 'options', 'describeFeatureType', 'currentLocale'],
+    ({ layer, options, describeFeatureType, currentLocale }) => ({
+        fields: addAttributeFormatters(layer?.fields, options?.propertyName, describeFeatureType, currentLocale)
+    })
+);
+
+export default compose(getWidgetFilterRenderers, withAttributeFormatters)(({
     id,
     title,
     loading,
@@ -43,7 +53,6 @@ export default getWidgetFilterRenderers(({
     filterRenderers,
     columnSettings,
     features,
-    layer,
     size,
     pages,
     error,
@@ -53,6 +62,7 @@ export default getWidgetFilterRenderers(({
     gridOpts = defaultGridOpts,
     options = {},
     dateFormats,
+    fields,
     gridTools
 }) =>
     (<WidgetContainer
@@ -88,7 +98,7 @@ export default getWidgetFilterRenderers(({
                 virtualScroll={virtualScroll}
                 enableColumnFilters={enableColumnFilters}
                 filterRenderers={filterRenderers}
-                fields={layer?.fields}
+                fields={fields}
                 features={features}
                 pages={pages}
                 error={error}

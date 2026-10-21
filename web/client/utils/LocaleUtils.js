@@ -106,7 +106,10 @@ let supportedLocales = {
 };
 export const DATE_FORMATS = {
     "default": "YYYY/MM/DD",
+    "de-DE": "DD.MM.YYYY",
     "en-US": "MM/DD/YYYY",
+    "es-ES": "DD/MM/YYYY",
+    "fr-FR": "DD/MM/YYYY",
     "it-IT": "DD/MM/YYYY",
     "nl-NL": "DD/MM/YYYY",
     "zh-ZH": "YYYY/MM/DD",

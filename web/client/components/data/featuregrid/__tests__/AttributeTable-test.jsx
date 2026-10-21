@@ -25,6 +25,21 @@ describe('Test for AttributeTable component', () => {
         document.body.innerHTML = '';
         setTimeout(done);
     });
+    it('shows the format button for dates and numbers, active when the attribute has a format', () => {
+        const attributes = [
+            { name: 'name', label: 'name', attribute: 'name', localType: 'string' },
+            { name: 'day', label: 'day', attribute: 'day', localType: 'date' },
+            { name: 'mass', label: 'mass', attribute: 'mass', localType: 'number' }
+        ];
+        const options = { propertyName: [{ name: 'name' }, { name: 'day', format: { type: 'iso' } }, { name: 'mass' }] };
+        ReactDOM.render(<AttributeSelector attributes={attributes} options={options} locale="it-IT" />, document.getElementById("container"));
+        const rows = [...document.querySelectorAll('.react-grid-Row')];
+        expect(rows.length).toBe(3);
+        expect(rows[0].querySelector('.ms-attribute-format-button')).toNotExist();
+        expect(rows[1].querySelector('.ms-attribute-format-button.active .glyphicon-calendar')).toExist();
+        expect(rows[2].querySelector('.ms-attribute-format-button .glyphicon-counter')).toExist();
+        expect(rows[2].querySelector('.ms-attribute-format-button.active')).toNotExist();
+    });
     it('render with defaults', () => {
         ReactDOM.render(<AttributeSelector/>, document.getElementById("container"));
         const el = document.getElementsByClassName("data-attribute-selector")[0];
