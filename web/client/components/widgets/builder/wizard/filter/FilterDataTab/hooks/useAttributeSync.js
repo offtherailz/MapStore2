@@ -6,12 +6,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { useCallback } from 'react';
+import { isLayerDimensionTarget } from '../../../../../../../utils/InteractionUtils';
 
 /**
  * Custom hook that provides an onChange handler with automatic attribute synchronization.
  * When valueAttribute changes, it automatically sets labelAttribute and sortByAttribute
  * to the same value if they are not already set.
- * It also disconnects apply-dimension interactions because they depend on valueAttributeType.
+ * It also disconnects apply-dimension interactions because they depend on valueAttributeType,
+ * and, when switching to an interval, the ones that do not target a layer, since only layers take an interval.
  *
  * @param {object} filterData - Current filter data object
  * @param {function} onChangeProp - Original onChange callback
@@ -38,8 +40,8 @@ export const useAttributeSync = (filterData, onChangeProp, onEditorChange, selec
             }
         }
 
-        // An interval cannot drive a dimension, which takes a single value.
-        if (key === 'data.valueAttribute' || key === 'data.valueAttributeType' || (key === 'data.valuesFrom' && value === 'range')) {
+        const switchesToRange = key === 'data.valuesFrom' && value === 'range';
+        if (key === 'data.valueAttribute' || key === 'data.valueAttributeType' || switchesToRange) {
             const filterId = filterData?.id;
             let disconnectedDimensionInteraction = false;
             const updatedInteractions = interactions.map(interaction => {
@@ -48,7 +50,8 @@ export const useAttributeSync = (filterData, onChangeProp, onEditorChange, selec
                     : true;
                 const shouldDisconnect = isCurrentFilterInteraction
                     && interaction?.targetType === 'applyDimension'
-                    && interaction?.plugged === true;
+                    && interaction?.plugged === true
+                    && !(switchesToRange && isLayerDimensionTarget(interaction?.target?.nodePath));
 
                 if (shouldDisconnect) {
                     disconnectedDimensionInteraction = true;

@@ -15,6 +15,7 @@ import {
     findAllApplyFiltersForZoomTo,
     TARGET_TYPES
 } from '../../../../../../utils/InteractionUtils';
+import { RANGE_SELECTION_MODE } from '../../../../../../utils/FilterRangeUtils';
 
 const DEFAULT_NODE_DISABLED = {
     disabled: false,
@@ -218,6 +219,14 @@ export const getInteractionTargetNodeDisabled = ({
             return {
                 disabled: true,
                 reasonMsgId: 'widgets.filterWidget.targetAlreadyConnectedToAnotherFilterTooltip'
+            };
+        }
+
+        // An interval applies to layer dimensions only: the timeline and the chart axis take a single instant.
+        if (sourceSelectionMode === RANGE_SELECTION_MODE && !plugged && !isLayerDimensionTarget(targetNodePath)) {
+            return {
+                disabled: true,
+                reasonMsgId: 'widgets.filterWidget.applyDimensionRangeLayerOnlyTooltip'
             };
         }
 

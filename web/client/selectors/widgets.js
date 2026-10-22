@@ -21,6 +21,7 @@ import { getAttributesNames } from "../utils/FeatureGridUtils";
 import { getDerivedLayersVisibility } from '../utils/LayersUtils';
 import { isFeatureGridOpen } from './featuregrid';
 import { isPluginInContext } from './context';
+import { isRangeFilter, getRangeDimensionValue } from '../utils/FilterRangeUtils';
 
 export const getEditorSettings = state => get(state, "widgets.builder.settings");
 export const getDependenciesMap = s => get(s, "widgets.dependencies") || {};
@@ -661,8 +662,11 @@ export function getApplyDimensionOutOfSyncForFilterWidget(state, widgetId) {
     const result = {};
     if (!widgetId) return result;
 
-    const getSelectedDimensionValue = (selections, filterId) => {
-        const selectedValue = selections?.[filterId]?.[0];
+    const getSelectedDimensionValue = (selections, filter) => {
+        if (isRangeFilter(filter)) {
+            return getRangeDimensionValue(filter, selections?.[filter.id]);
+        }
+        const selectedValue = selections?.[filter?.id]?.[0];
         return selectedValue?.value ?? selectedValue ?? null;
     };
     const normalizeDimensionValue = value => value === null || value === undefined ? '' : String(value);
@@ -700,7 +704,7 @@ export function getApplyDimensionOutOfSyncForFilterWidget(state, widgetId) {
             if (!dimension) continue;
 
             if (isMapTimeTarget(targetPath)) {
-                const expectedValue = getSelectedDimensionValue(selections, filterId);
+                const expectedValue = getSelectedDimensionValue(selections, filter);
                 if (
                     normalizeDimensionValue(expectedValue)
                     && normalizeDimensionValue(currentTime) !== normalizeDimensionValue(expectedValue)
@@ -713,7 +717,7 @@ export function getApplyDimensionOutOfSyncForFilterWidget(state, widgetId) {
 
             if (isChartAxisDimensionTarget(targetPath)) {
                 const currentValue = targetsData.get(cleanPaths(targetPath));
-                const expectedValue = getSelectedDimensionValue(selections, filterId);
+                const expectedValue = getSelectedDimensionValue(selections, filter);
 
                 if (normalizeDimensionValue(currentValue) !== normalizeDimensionValue(expectedValue)) {
                     result[filterId] = { showBanner: true, actionParams: { widgetId, target, filterId } };
@@ -726,7 +730,7 @@ export function getApplyDimensionOutOfSyncForFilterWidget(state, widgetId) {
             if (!layer || typeof layer !== 'object') continue;
 
             const currentValue = layer.params?.[dimension];
-            const expectedValue = getSelectedDimensionValue(selections, filterId);
+            const expectedValue = getSelectedDimensionValue(selections, filter);
 
             if (normalizeDimensionValue(currentValue) !== normalizeDimensionValue(expectedValue)) {
                 result[filterId] = { showBanner: true, actionParams: { widgetId, target, filterId } };

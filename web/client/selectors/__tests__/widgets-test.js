@@ -1140,5 +1140,32 @@ describe('widgets selectors', () => {
             expect(result[filterId].showBanner).toBe(true);
             expect(result[filterId].actionParams).toEqual({ widgetId, filterId, target: 'floating' });
         });
+
+        it('compares the interval of a range filter with the layer time', () => {
+            const rangeFilter = {
+                id: filterId,
+                data: { dataSource: 'features', valuesFrom: 'range', valueAttribute: 'year', valueAttributeType: 'date-time' },
+                layout: { stepUnit: 'year' }
+            };
+            const applyDimensionInteraction = {
+                id: 'apply-dimension-1',
+                plugged: true,
+                targetType: 'applyDimension',
+                source: { nodePath: `widgets[${widgetId}].filters[${filterId}]` },
+                target: {
+                    nodePath: `map.layers[${layerId}].params.time`,
+                    metaData: { dimension: 'time' }
+                }
+            };
+            const withRange = (layerTime) => {
+                let state = set('layers.flat[0].params.time', layerTime, STATE_INTERACTION_MAP_1);
+                state = set('widgets.containers.floating.widgets[0].filters', [rangeFilter], state);
+                state = set(`widgets.containers.floating.widgets[0].selections.${filterId}`, [{ start: '1940-01-01T00:00:00.000Z', end: '1990-01-01T00:00:00.000Z' }], state);
+                state = set('widgets.containers.floating.widgets[0].interactions', [applyDimensionInteraction], state);
+                return set('context.currentContext.plugins.desktop', [], state);
+            };
+            expect(getApplyDimensionOutOfSyncForFilterWidget(withRange('1940-01-01T00:00:00.000Z/1990-12-31T23:59:59.999Z'), widgetId)).toEqual({});
+            expect(getApplyDimensionOutOfSyncForFilterWidget(withRange('1950-01-01T00:00:00.000Z'), widgetId)[filterId].showBanner).toBe(true);
+        });
     });
 });

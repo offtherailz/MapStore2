@@ -92,4 +92,33 @@ describe('useAttributeSync hook', () => {
             done();
         }, 0);
     });
+
+    it('keeps the layer dimensions connected when switching to an interval', (done) => {
+        const container = document.getElementById('container');
+        let onChange;
+        const onEditorChange = expect.createSpy();
+        const source = { nodePath: 'widgets[widget-1].filters[filter-1]' };
+        const layerTime = { id: 'i-1', targetType: 'applyDimension', plugged: true, source, target: { nodePath: 'widgets[map-1].maps[m-1].layers[l-1].params.time' } };
+        const timeline = { id: 'i-2', targetType: 'applyDimension', plugged: true, source, target: { nodePath: 'map.time' } };
+
+        ReactDOM.render(
+            <TestComponent
+                filterData={{ id: 'filter-1', data: { valueAttribute: 'year', valueAttributeType: 'date-time' } }}
+                onChangeProp={() => {}}
+                onEditorChange={onEditorChange}
+                selections={{}}
+                interactions={[layerTime, timeline]}
+                onReady={(handler) => {
+                    onChange = handler;
+                }}
+            />,
+            container
+        );
+
+        setTimeout(() => {
+            onChange('data.valuesFrom', 'range');
+            expect(onEditorChange.calls[0].arguments).toEqual(['interactions', [layerTime, { ...timeline, plugged: false }]]);
+            done();
+        }, 0);
+    });
 });

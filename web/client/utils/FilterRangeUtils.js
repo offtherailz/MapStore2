@@ -28,6 +28,9 @@ export const RANGE_STEP_UNITS = {
     YEAR: 'year'
 };
 
+// Services do not accept open intervals, so an empty end of a date interval becomes a far date.
+const DIMENSION_OPEN_START = '0001-01-01T00:00:00.000Z';
+const DIMENSION_OPEN_END = '9999-12-31T23:59:59.999Z';
 const NUMBER_TYPES = ['int', 'number'];
 const DATE_TYPES = ['date', 'date-time'];
 // Keeps the slider usable when a small step meets a large interval.
@@ -154,6 +157,28 @@ export const getRangeCQL = (filter, selections) => {
         }
     }
     return conditions.join(' AND ');
+};
+
+/**
+ * Builds the value an interval filter applies to a layer dimension, e.g. the WMS `TIME` parameter.
+ * Dates give `start/end` with both ends included: the end is the last instant of its step.
+ * Numbers need both ends.
+ * @param {object} filter filter configuration
+ * @param {array} selections selections of the filter
+ * @returns {string|null} the dimension value, or `null` when nothing can be applied
+ */
+export const getRangeDimensionValue = (filter, selections) => {
+    const selection = getRangeSelection(selections);
+    if (!selection) {
+        return null;
+    }
+    if (isRangeDateType(filter?.data?.valueAttributeType)) {
+        const unit = filter?.layout?.stepUnit ?? RANGE_STEP_UNITS.DAY;
+        const start = isNil(selection.start) ? DIMENSION_OPEN_START : startOfStep(selection.start, unit);
+        const end = isNil(selection.end) ? DIMENSION_OPEN_END : moment.utc(selection.end).endOf(unit).toISOString();
+        return `${start}/${end}`;
+    }
+    return isNil(selection.start) || isNil(selection.end) ? null : `${Number(selection.start)}/${Number(selection.end)}`;
 };
 
 /**

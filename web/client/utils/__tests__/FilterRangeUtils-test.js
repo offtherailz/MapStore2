@@ -11,6 +11,7 @@ import {
     RANGE_STEP_UNITS,
     getRangeStops,
     getRangeCQL,
+    getRangeDimensionValue,
     getRangeSelection,
     toRangeSelections,
     isRangeSelectionComplete,
@@ -72,6 +73,19 @@ describe('FilterRangeUtils', () => {
         expect(getRangeCQL(dateFilter(), [{ start: '2025-02-01T00:00:00.000Z', end: null }])).toBe(`"day" >= '2025-02-01T00:00:00.000Z'`);
         expect(getRangeCQL(numberFilter(), [{ start: null, end: 40.5 }])).toBe(`"pm10" <= 40.5`);
         expect(getRangeCQL(numberFilter(), [{ start: 10, end: 40.5 }])).toBe(`"pm10" >= 10 AND "pm10" <= 40.5`);
+    });
+    it('getRangeDimensionValue includes both ends and the whole last step for dates', () => {
+        const selections = [{ start: '2025-01-15T00:00:00.000Z', end: '2025-03-01T00:00:00.000Z' }];
+        expect(getRangeDimensionValue(dateFilter(), selections)).toBe('2025-01-01T00:00:00.000Z/2025-03-31T23:59:59.999Z');
+    });
+    it('getRangeDimensionValue replaces the open ends of dates with far dates', () => {
+        expect(getRangeDimensionValue(dateFilter(), [{ start: '2025-02-01T00:00:00.000Z', end: null }])).toBe('2025-02-01T00:00:00.000Z/9999-12-31T23:59:59.999Z');
+        expect(getRangeDimensionValue(dateFilter({ stepUnit: RANGE_STEP_UNITS.YEAR }), [{ start: null, end: '1990-06-01T00:00:00.000Z' }])).toBe('0001-01-01T00:00:00.000Z/1990-12-31T23:59:59.999Z');
+    });
+    it('getRangeDimensionValue needs both ends for numbers', () => {
+        expect(getRangeDimensionValue(numberFilter(), [{ start: 10, end: 40.5 }])).toBe('10/40.5');
+        expect(getRangeDimensionValue(numberFilter(), [{ start: 10, end: null }])).toBe(null);
+        expect(getRangeDimensionValue(numberFilter(), [])).toBe(null);
     });
     it('getRangeCQL returns null without a selection', () => {
         expect(getRangeCQL(numberFilter(), [])).toBe(null);

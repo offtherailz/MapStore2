@@ -533,7 +533,7 @@ In the **Layout** tab the user can then choose:
 * The **Ends** the user can set: `From - to`, `From only` (all the values from the start onwards) or `Up to only`.
 * The **Step**: day, month or year for dates, a number for numeric attributes. With a month step, an interval ending in March includes the whole of March.
 
-An empty field, or a slider handle left at the limit, means no limit on that side. With **Force Selection** enabled the ends shown must always be set. An interval filter cannot drive the *Time* or *Elevation* dimension, which take a single value.
+An empty field, or a slider handle left at the limit, means no limit on that side. With **Force Selection** enabled the ends shown must always be set. An interval of dates can also drive the *Time* dimension of a layer (see [Applying Time and Elevation dimensions](widgets.md#applying-time-and-elevation-dimensions)).
 
 ##### User Defined
 
@@ -660,7 +660,7 @@ An example of filter selector widget could be:
 
 #### Applying Time and Elevation dimensions
 
-The dynamic filter tool can also drive the `time` and `elevation` dimensions of WMS layers, synchronize with the map timeline, or control the *Highlight Selected Time* option of a chart (when not already driven by the timeline). If the value attribute is of type `datetime` or `number` and the selection mode is set to *Single*, the **Apply Dimension** option becomes available in the **Interactions** tab, given that there is at least one valid target available.
+The dynamic filter tool can also drive the `time` and `elevation` dimensions of WMS layers, synchronize with the map timeline, or control the *Highlight Selected Time* option of a chart (when not already driven by the timeline). If the value attribute is of type `datetime` or `number` and the selection mode is set to *Single*, the **Apply Dimension** option becomes available in the **Interactions** tab, given that there is at least one valid target available. With **Values** set to `Interval`, the filter applies the whole interval to the layer, for example `TIME=1945-01-01/1990-12-31`: both ends are included, and an empty end means no limit on that side. An interval of numbers is applied to the *Elevation* dimension only when both ends are set.
 
 A valid target is either a WMS layer exposing a `time` or `elevation` dimension, the *timeline* plugin, if present in the current context, or a chart with the *Highlight Selected Time* option enabled.
 

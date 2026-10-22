@@ -110,6 +110,21 @@ describe('interactionHelpers', () => {
             });
         });
 
+        it('should allow only layer dimension targets for interval sources', () => {
+            const params = {
+                item: elementItem,
+                target: applyDimensionTarget,
+                sourceNodePath,
+                plugged: false,
+                sourceSelectionMode: 'range'
+            };
+            expect(getInteractionTargetNodeDisabled({ ...params, targetNodePath: 'map.layers[layer-1].params.time' }).disabled).toBe(false);
+            expect(getInteractionTargetNodeDisabled({ ...params, targetNodePath: 'map.time', timelineEnabled: true })).toEqual({
+                disabled: true,
+                reasonMsgId: 'widgets.filterWidget.applyDimensionRangeLayerOnlyTooltip'
+            });
+        });
+
         it('should disable layer time targets when controlled by map time', () => {
             const result = getInteractionTargetNodeDisabled({
                 item: elementItem,

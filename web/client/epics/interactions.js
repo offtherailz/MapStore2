@@ -41,6 +41,7 @@ import { FILTER_SELECTION_MODES } from '../components/widgets/builder/wizard/fil
 import { getChartAxisDependencyPath, getMapDependencyPath } from '../utils/WidgetsUtils';
 import { shouldSkipInteraction } from '../selectors/widgets';
 import { getLayerFromId, layersSelector } from '../selectors/layers';
+import { isRangeFilter, getRangeDimensionValue } from '../utils/FilterRangeUtils';
 
 // ============================================================================
 // Node Path Utilities
@@ -313,6 +314,10 @@ function updateMapWidgetWithStyle(widget, interaction, widgetId) {
 }
 
 function getSelectedDimensionValue(filterWidget, filterId) {
+    const filter = filterWidget?.filters?.find(f => f.id === filterId);
+    if (isRangeFilter(filter)) {
+        return getRangeDimensionValue(filter, filterWidget?.selections?.[filterId]);
+    }
     const selectedValue = filterWidget?.selections?.[filterId]?.[0];
     return selectedValue?.value ?? selectedValue ?? null;
 }

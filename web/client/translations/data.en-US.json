@@ -2854,6 +2854,7 @@
         "targetAlreadyConnectedToAnotherFilterTooltip": "This target is already connected from another source. It can not be connected from multiple sources at the same time",
         "applyDimensionSelectionModeDisabledTooltip": "Multiple selection is disabled because this filter is connected to Apply Dimension. Disconnect Apply Dimension to use Multiple selection mode.",
         "applyDimensionMultipleSelectionDisabledTooltip": "Apply Dimension can only be connected when the filter selection mode is Single. Switch the layout selection mode to Single to connect this target.",
+        "applyDimensionRangeLayerOnlyTooltip": "An interval can drive the time or elevation dimension of a layer only, not the timeline or a chart axis, which take a single instant.",
         "layerTimeControlledByTimelineTooltip": "Layer time is controlled by the main map Timeline. Connect to the Timeline target instead.",
         "axisCurrentTimeControlledByTimelineTooltip": "Axis current time is controlled by the main map Timeline. Connect to the Timeline target instead.",
         "axisCurrentTimeDisabledTooltip": "Set the axis type to Date and enable \"Show current time\" in chart options before connecting it.",

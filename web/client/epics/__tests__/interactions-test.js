@@ -290,6 +290,44 @@ describe('interactions epics', () => {
             );
         });
 
+        it('applies the interval of a range filter to the time dimension of a map layer', (done) => {
+            const filterWidget = makeFilterWidget({
+                filters: [{
+                    id: FILTER_ID,
+                    data: { dataSource: 'features', valuesFrom: 'range', valueAttribute: 'year', valueAttributeType: 'date-time' },
+                    layout: { stepUnit: 'year' }
+                }],
+                selections: { [FILTER_ID]: [{ start: '1940-01-01T00:00:00.000Z', end: '1990-01-01T00:00:00.000Z' }] },
+                interactions: [{
+                    id: 'int-dim',
+                    plugged: true,
+                    targetType: 'applyDimension',
+                    source: { nodePath: `widgets[${FILTER_WIDGET_ID}].filters[${FILTER_ID}]` },
+                    target: {
+                        nodePath: `widgets[${MAP_WIDGET_ID}].maps[${MAP_ID}].layers[${MAP_LAYER_ID}].params.time`,
+                        metaData: { dimension: 'time' }
+                    }
+                }]
+            });
+            const state = {
+                ...makeState([filterWidget, makeMapWidget()]),
+                context: { currentContext: { plugins: { desktop: [] } } }
+            };
+            testEpic(
+                applyFilterWidgetInteractionsEpic,
+                1,
+                [applyFilterWidgetInteractions(FILTER_WIDGET_ID, 'floating', FILTER_ID)],
+                (actions) => {
+                    expect(actions.length).toBe(1);
+                    expect(actions[0].type).toBe(UPDATE_PROPERTY);
+                    expect(actions[0].key).toBe('maps[0].layers[0].params.time');
+                    expect(actions[0].value).toBe('1940-01-01T00:00:00.000Z/1990-12-31T23:59:59.999Z');
+                },
+                state,
+                done
+            );
+        });
+
         it('dispatches updateWidgetProperty with maps for elevation dimension target on map layer', (done) => {
             const filterWidget = makeFilterWidget({
                 selections: { [FILTER_ID]: [200] },

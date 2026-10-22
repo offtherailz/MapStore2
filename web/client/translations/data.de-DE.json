@@ -2878,6 +2878,7 @@
         "targetAlreadyConnectedToAnotherFilterTooltip": "Dieses Ziel ist bereits von einer anderen Quelle verbunden. Es kann nicht gleichzeitig von mehreren Quellen verbunden werden",
         "applyDimensionSelectionModeDisabledTooltip": "Die Mehrfachauswahl ist deaktiviert, weil dieser Filter mit „Dimension anwenden“ verbunden ist. Trennen Sie „Dimension anwenden“, um den Mehrfachauswahlmodus zu verwenden.",
         "applyDimensionMultipleSelectionDisabledTooltip": "„Dimension anwenden“ kann nur verbunden werden, wenn der Auswahlmodus des Filters „Einzel“ ist. Stellen Sie den Layout-Auswahlmodus auf „Einzel“, um dieses Ziel zu verbinden.",
+        "applyDimensionRangeLayerOnlyTooltip": "Ein Intervall kann nur die Zeit- oder Höhendimension einer Ebene steuern, nicht die Zeitleiste oder eine Diagrammachse, die nur einen Zeitpunkt annehmen.",
         "layerTimeControlledByTimelineTooltip": "Die Layer-Zeit wird von der Timeline der Hauptkarte gesteuert. Verbinden Sie stattdessen das Timeline-Ziel.",
         "axisCurrentTimeControlledByTimelineTooltip": "Die aktuelle Achsenzeit wird von der Timeline der Hauptkarte gesteuert. Verbinden Sie stattdessen das Timeline-Ziel.",
         "axisCurrentTimeDisabledTooltip": "Setzen Sie den Achsentyp auf Datum und aktivieren Sie \"Aktuelle Zeit anzeigen\" in den Diagrammoptionen, bevor Sie sie verbinden.",

@@ -2839,6 +2839,7 @@
         "targetAlreadyConnectedToAnotherFilterTooltip": "Questo target è già connesso da un'altra sorgente. Non può essere connesso da più sorgenti contemporaneamente",
         "applyDimensionSelectionModeDisabledTooltip": "La selezione multipla è disabilitata perché questo filtro è collegato ad «Applica dimensione». Scollega «Applica dimensione» per usare la modalità di selezione multipla.",
         "applyDimensionMultipleSelectionDisabledTooltip": "«Applica dimensione» può essere collegato solo quando la modalità di selezione del filtro è «Singola». Imposta la modalità di selezione del layout su «Singola» per collegare questo target.",
+        "applyDimensionRangeLayerOnlyTooltip": "Un intervallo può pilotare solo la dimensione temporale o di elevazione di un livello, non la timeline o l'asse di un grafico, che accettano un solo istante.",
         "layerTimeControlledByTimelineTooltip": "Il tempo del layer è controllato dalla Timeline della mappa principale. Collega invece il target Timeline.",
         "axisCurrentTimeControlledByTimelineTooltip": "Il tempo corrente dell’asse è controllato dalla Timeline della mappa principale. Collega invece il target Timeline.",
         "axisCurrentTimeDisabledTooltip": "Imposta il tipo di asse su Data e abilita \"Mostra ora corrente\" nelle opzioni del grafico prima di collegarlo.",
