@@ -12,7 +12,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { textSearch, getCatalogRecords } from '../WFS';
+import { textSearch, getCatalogRecords, getLayerFromRecord } from '../WFS';
 import axios from '../../../libs/ajax';
 import expect from 'expect';
 
@@ -135,5 +135,20 @@ describe('WFS (Abstraction) API', () => {
                 done(ex);
             }
         });
+    });
+    it('WFS records carry the version detected from the service', (done) => {
+        mockAxios.onGet(/AcceptVersions/).reply(200, '<wfs:WFS_Capabilities version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0"/>');
+        mockAxios.onGet().reply(200, SINGLE_LAYER_CAPABILITIES);
+        textSearch('detected-url', 1, 4, "").then((result) => {
+            expect(result.records.length).toBe(1);
+            expect(result.records[0].detectedWfsVersion).toBe('2.0.0');
+            done();
+        }).catch(done);
+    });
+    it('the layer from a record gets the detected version, the version of the service wins', () => {
+        const record = { name: 'topp:states', url: 'http://wfs', title: 'States', detectedWfsVersion: '2.0.0' };
+        expect(getLayerFromRecord(record, { service: {} }).search).toEqual({ url: 'http://wfs', type: 'wfs', wfsVersion: '2.0.0' });
+        expect(getLayerFromRecord(record, { service: { wfsVersion: '1.1.0' } }).search).toEqual({ url: 'http://wfs', type: 'wfs', wfsVersion: '1.1.0' });
+        expect(getLayerFromRecord({ ...record, detectedWfsVersion: undefined }, { service: {} }).search).toEqual({ url: 'http://wfs', type: 'wfs' });
     });
 });

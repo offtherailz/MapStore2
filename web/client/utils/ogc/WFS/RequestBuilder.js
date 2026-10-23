@@ -7,7 +7,7 @@
  */
 import filterBuilder from '../Filter/FilterBuilder';
 import castArray from 'lodash/castArray';
-import {wfsToGmlVersion} from "./base";
+import {isWFS2, toWFSRequestVersion, wfsToGmlVersion} from "./base";
 const getStaticAttributesWFS1 = (ver) => 'service="WFS" version="' + ver + '" ' +
     (ver === "1.0.0" ? 'outputFormat="GML2" ' : "") +
     'xmlns:gml="http://www.opengis.net/gml" ' +
@@ -16,7 +16,7 @@ const getStaticAttributesWFS1 = (ver) => 'service="WFS" version="' + ver + '" ' 
     'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
     'xsi:schemaLocation="http://www.opengis.net/wfs ' +
     (ver === "1.0.0" ? `http://schemas.opengis.net/wfs/${ver}/WFS-basic.xsd"` : `http://schemas.opengis.net/wfs/${ver}/wfs.xsd"`);
-const getStaticAttributesWFS2 = (ver) => 'service="WFS" version="' + ver + '" ' +
+const getStaticAttributesWFS2 = (ver) => 'service="WFS" version="' + toWFSRequestVersion(ver) + '" ' +
     'xmlns:wfs="http://www.opengis.net/wfs/2.0" ' +
     'xmlns:fes="http://www.opengis.net/fes/2.0" ' +
     'xmlns:gml="http://www.opengis.net/gml/3.2" ' +
@@ -25,6 +25,24 @@ const getStaticAttributesWFS2 = (ver) => 'service="WFS" version="' + ver + '" ' 
         'http://schemas.opengis.net/wfs/2.0/wfs.xsd ' +
         'http://www.opengis.net/gml/3.2 ' +
         'http://schemas.opengis.net/gml/3.2.1/gml.xsd"';
+
+const SORT_ORDERS = { A: "ASC", D: "DESC" };
+const toSortOrder = (order) => SORT_ORDERS[order] ?? order;
+
+// the schema of a query requires the projection (PropertyName) first, then the Filter, then SortBy
+const QUERY_CONTENT_ORDER = [/^<\w+:PropertyName[ >]/, /^<\w+:Filter[ >]/, /^<\w+:SortBy[ >]/];
+const queryContentRank = (element = "") => {
+    const rank = QUERY_CONTENT_ORDER.findIndex(regex => regex.test(element));
+    return rank < 0 ? 1 : rank;
+};
+const sortQueryContent = (content) => content
+    .map((element, index) => ({ element, index, rank: queryContentRank(element) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map(({ element }) => element);
+
+const namespacesAttributes = (namespaces = {}) => Object.keys(namespaces)
+    .map(prefix => ` xmlns:${prefix}="${namespaces[prefix]}"`)
+    .join("");
 
 /**
  * Returns WFS Request Builder to allow the creation of WFS requests.
@@ -35,7 +53,7 @@ const getStaticAttributesWFS2 = (ver) => 'service="WFS" version="' + ver + '" ' 
  * @memberof utils.ogc.WFS
  * @constuctor
  * @param {Object} [options] the options to create the request builder
- * @param  {String} [options.wfsVersion="1.1.0"] the version of WFS
+ * @param  {String} [options.wfsVersion="1.1.0"] the version of WFS. `2.0` and `2.0.0` produce the same WFS 2.0.0 request
  * @param  {String} [options.gmlVersion]         gml Version ()
  * @param  {String} [options.filterNS]           NameSpace to use for filters
 *  @param  {String} [options.wfsNS="wfs"]        namespace to use for WFS tags
@@ -54,7 +72,7 @@ const getStaticAttributesWFS2 = (ver) => 'service="WFS" version="' + ver + '" ' 
  *      ),
  *      {srsName="EPSG:4326"} // 3rd for query is optional
  *      )
- * {maxFeatures: 10, startIndex: 0, resultType: 'hits', outputFormat: 'application/json'} // 3rd  argument of getFeature is optional, and contains the options for the request.
+ * {maxFeatures: 10, startIndex: 0, resultType: 'hits', outputFormat: 'application/json', namespaces: {workspace: "http://workspace"}} // 3rd  argument of getFeature is optional, and contains the options for the request.
  * );
  * @prop {function} getFeature generates the getFeatureRequest, with the contained query
  * ```
@@ -66,6 +84,7 @@ const getStaticAttributesWFS2 = (ver) => 'service="WFS" version="' + ver + '" ' 
  * ```
  */
 export default function({wfsVersion = "1.1.0", gmlVersion, filterNS, wfsNS = "wfs"} = {}) {
+    const wfs2 = isWFS2(wfsVersion);
     let gmlV = gmlVersion;
     if (!gmlV && wfsVersion) {
         gmlV = wfsToGmlVersion(wfsVersion);
@@ -77,36 +96,40 @@ export default function({wfsVersion = "1.1.0", gmlVersion, filterNS, wfsNS = "wf
         resultType,
         outputFormat,
         startIndex,
-        maxFeatures
+        maxFeatures,
+        namespaces
     } = {}) => {
-        const getMaxFeatures = (mf) => wfsVersion.indexOf("2.") === 0 ? `count="${mf}"` : `maxFeatures="${mf}"`;
-        return (wfsVersion.indexOf("1.") === 0 ? getStaticAttributesWFS1(wfsVersion) : getStaticAttributesWFS2(wfsVersion))
+        const getMaxFeatures = (mf) => wfs2 ? `count="${mf}"` : `maxFeatures="${mf}"`;
+        return (wfs2 ? getStaticAttributesWFS2(wfsVersion) : getStaticAttributesWFS1(wfsVersion))
+            + namespacesAttributes(namespaces)
             + (resultType ? ` resultType="${resultType}"` : "")
             + (outputFormat ? ` outputFormat="${outputFormat}"` : ``)
             + ((startIndex || startIndex === 0) ? ` startIndex="${startIndex}"` : "")
             + ((maxFeatures || maxFeatures === 0) ? ` ${getMaxFeatures(maxFeatures)}` : "")
             + (viewParams ? ` viewParams="${viewParams}"` : "");
     };
-    const fb = filterBuilder({gmlVersion: gmlV, wfsVersion, filterNS: filterNS || wfsVersion === "2.0" ? "fes" : "ogc"});
+    const filterNamespace = filterNS || (wfs2 ? "fes" : "ogc");
+    const fb = filterBuilder({gmlVersion: gmlV, wfsVersion, filterNS: filterNamespace});
     /*
-        Accordingly to XSD, PropertyName in query body is still PropertyName for WFS 2.0
+        The projection clause of a query is wfs:PropertyName in WFS 1.1.0 and 2.0.0, ogc:PropertyName only in WFS 1.0.0.
         https://schemas.opengis.net/wfs/2.0/wfs.xsd
-        While SortBy and Filters use ValueReference
+        SortBy and Filters use ValueReference in FES 2.0
         https://schemas.opengis.net/filter/2.0/sort.xsd
     */
+    const propertyNameNS = wfsVersion === "1.0.0" ? "ogc" : wfsNS;
     const propertyName = (property) =>
         castArray(property)
-            .map(p => `<${wfsVersion === "2.0" ? "fes" : "ogc"}:PropertyName>${p}</${wfsVersion === "2.0" ? "fes" : "ogc"}:PropertyName>`)
+            .map(p => `<${propertyNameNS}:PropertyName>${p}</${propertyNameNS}:PropertyName>`)
             .join("");
     return {
         ...fb,
         getFeature: (content, opts) => `<${wfsNS}:GetFeature ${requestAttributes(opts)}>${Array.isArray(content) ? content.join("") : content}</${wfsNS}:GetFeature>`,
         propertyName,
         sortBy: (property, order = "ASC") =>
-            `<${wfsNS}:SortBy><${wfsNS}:SortProperty>${fb.valueReference(property)}<${wfsNS}:SortOrder>${order}</${wfsNS}:SortOrder></${wfsNS}:SortProperty></${wfsNS}:SortBy>`,
+            `<${filterNamespace}:SortBy><${filterNamespace}:SortProperty>${fb.valueReference(property)}<${filterNamespace}:SortOrder>${toSortOrder(order)}</${filterNamespace}:SortOrder></${filterNamespace}:SortProperty></${filterNamespace}:SortBy>`,
         query: (featureName, content, {srsName = "EPSG:4326"} = {}) =>
-            `<${wfsNS}:Query ${wfsVersion === "2.0" ? "typeNames" : "typeName"}="${featureName}" ${srsName !== 'native' ? `srsName="${srsName}"` : ''}>`
-            + `${Array.isArray(content) ? content.join("") : content}`
+            `<${wfsNS}:Query ${wfs2 ? "typeNames" : "typeName"}="${featureName}" ${srsName !== 'native' ? `srsName="${srsName}"` : ''}>`
+            + `${Array.isArray(content) ? sortQueryContent(content).join("") : content}`
             + `</${wfsNS}:Query>`
     };
 

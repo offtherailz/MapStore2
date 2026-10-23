@@ -168,6 +168,7 @@ import {shutdownToolOnAnotherToolDrawing} from "../utils/ControlUtils";
 import {mapTypeSelector} from "../selectors/maptype";
 import { MapLibraries } from '../utils/MapTypeUtils';
 import { getSearchUrl, getWFSLayerName } from '../utils/LayersUtils';
+import { getLayerRequestVersion } from '../observables/wfs';
 
 const setupDrawSupport = (state, original) => {
     const defaultFeatureProj = getDefaultFeatureProjection();
@@ -269,7 +270,7 @@ const createInitialQueryFlow = (action$, store, layer = {}) => {
     const createInitialQuery = (action) => createQuery(url, filterObj || {
         featureTypeName: name,
         filterType: 'OGC',
-        ogcVersion: '1.1.0'
+        ogcVersion: getLayerRequestVersion(layer)
     }, action.owner);
 
     return Rx.Observable.of(featureTypeSelected(url, name, fields)).merge(

@@ -888,6 +888,15 @@ export const getWFSLayerName = (layer = {}) =>
         && layer.search.typeName !== null)
         ? layer.search.typeName
         : layer.name;
+/**
+ * Returns the WFS version configured for the WFS service of a layer.
+ * `search.wfsVersion` is the canonical place, `wfsVersion` on the layer is a fallback
+ * for layers written by hand. Layers without a version keep the legacy WFS 1.1.0 requests.
+ *
+ * @param {Object} layer layer configuration
+ * @returns {string} the WFS version, undefined when not configured
+ */
+export const getWFSVersion = (layer = {}) => layer.search?.wfsVersion ?? layer.wfsVersion;
 export const invalidateUnsupportedLayer = (layer, maptype) => {
     return isSupportedLayerFunc(layer, maptype) ? checkInvalidParam(layer) : Object.assign({}, layer, {invalid: true});
 };

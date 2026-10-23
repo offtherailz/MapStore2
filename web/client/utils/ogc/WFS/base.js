@@ -33,6 +33,18 @@ const WFS_TO_GML = {
     "2.0.0": "3.2"
 };
 /**
+ * Checks if a WFS version is 2.0.x. `2.0` and `2.0.0` are the same protocol.
+ * @param  {string} version WFS version
+ * @return {boolean} true for WFS 2.0.x
+ */
+export const isWFS2 = (version) => `${version ?? ''}`.indexOf("2.") === 0;
+/**
+ * Returns the version string to send to the service. `2.0` is not a valid WFS version, so it becomes `2.0.0`.
+ * @param  {string} version WFS version
+ * @return {string} the version to send
+ */
+export const toWFSRequestVersion = (version) => isWFS2(version) ? "2.0.0" : version;
+/**
  * retrieve default GML version from WFS version
  * @param  {string} v WFS version
  * @return {string}   GML version

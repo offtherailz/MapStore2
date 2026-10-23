@@ -7,7 +7,7 @@
  */
 
 import Layers from '../../../../utils/openlayers/Layers';
-import { ServerTypes } from '../../../../utils/LayersUtils';
+import { ServerTypes, getWFSVersion } from '../../../../utils/LayersUtils';
 import isEqual from 'lodash/isEqual';
 
 import {getStyle} from '../VectorStyle';
@@ -57,6 +57,7 @@ const createLoader = (source, options) => (extent, resolution, projection, succe
         const params = optionsToVendorParams(options);
         const config = getConfig(options);
         req = getFeature(options.url, options.name, {
+            version: getWFSVersion(options),
             // bbox: extent.join(',') + ',' + proj,
             outputFormat: "application/json",
             // maxFeatures: 3600, // This looks the internal openlayers limit. TODO: investigate more

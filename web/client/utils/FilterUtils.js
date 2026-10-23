@@ -16,7 +16,7 @@ import {
 
 import {canConvert, getConverter} from './filter/converters';
 
-import { wfsToGmlVersion } from './ogc/WFS/base';
+import { isWFS2, toWFSRequestVersion, wfsToGmlVersion } from './ogc/WFS/base';
 import { ogcComparisonOperators, ogcLogicalOperators, ogcSpatialOperators } from './ogc/Filter/operators';
 import { read } from './ogc/Filter/CQL/parser';
 import fromObject from './ogc/Filter/fromObject';
@@ -99,6 +99,7 @@ const normalizeVersion = (version) => {
     return version;
 };
 const ogcVersion = "2.0";
+const SORT_ORDERS = { A: "ASC", D: "DESC" };
 
 const propertyTagReference = {
     "ogc": {startTag: "<ogc:PropertyName>", endTag: "</ogc:PropertyName>"},
@@ -313,7 +314,11 @@ const cqlCollectGeometries = (content) => `collectGeometries(${content})`;
 export const convertFiltersToOGC = (filters, options) => {
     const convertFilter = (filter) => {
         if (canConvert(filter.format, 'ogc')) {
-            return getConverter(filter.format, 'ogc')(filter,  {filterNS: options?.nsplaceholder}); // TODO: handle version OGC, if needed (maybe change gml version)
+            const versionOGC = options?.versionOGC;
+            return getConverter(filter.format, 'ogc')(filter, {
+                filterNS: options?.nsplaceholder,
+                ...(versionOGC && { wfsVersion: versionOGC, gmlVersion: wfsToGmlVersion(versionOGC) })
+            });
         }
         return []; // do not convert if not supported
     };
@@ -426,7 +431,9 @@ export const toOGCFilter = function(ftName, json, version, sortOptions = null, h
         return e;
     }
     const versionOGC = normalizeVersion(version || ogcVersion);
-    const nsplaceholder = versionOGC === "2.0" ? "fes" : "ogc";
+    const nsplaceholder = isWFS2(versionOGC) ? "fes" : "ogc";
+    // the projection clause is wfs:PropertyName from WFS 1.1.0, ogc:PropertyName in WFS 1.0.0
+    const propertyNameNS = versionOGC === "1.0.0" ? "ogc" : "wfs";
 
 
     let ogcFilter = FilterUtils.getGetFeatureBase(versionOGC, objFilter.pagination, hits, format, json && json.options);
@@ -449,15 +456,13 @@ export const toOGCFilter = function(ftName, json, version, sortOptions = null, h
     }
 
     // If srsName === native,  srsName param is omitted!
-    ogcFilter += `<wfs:Query ${versionOGC === "2.0" ? "typeNames" : "typeName"}="${ftName}" ${srsName !== 'native' && `srsName="${srsName}"` || ''}>`;
+    ogcFilter += `<wfs:Query ${isWFS2(versionOGC) ? "typeNames" : "typeName"}="${ftName}" ${srsName !== 'native' && `srsName="${srsName}"` || ''}>`;
 
-    ogcFilter += filter;
+    // the schema of a query requires the projection first, then the filter, then the sorting
     if (propertyNames) {
-        ogcFilter += propertyNames.map( name =>
-            propertyTagReference[nsplaceholder].startTag +
-            name +
-            propertyTagReference[nsplaceholder].endTag ).join("");
+        ogcFilter += propertyNames.map( name => `<${propertyNameNS}:PropertyName>${name}</${propertyNameNS}:PropertyName>`).join("");
     }
+    ogcFilter += filter;
     if (sortOptions && sortOptions.sortBy && sortOptions.sortOrder) {
         ogcFilter +=
             "<" + nsplaceholder + ":SortBy>" +
@@ -466,7 +471,7 @@ export const toOGCFilter = function(ftName, json, version, sortOptions = null, h
                         sortOptions.sortBy +
                     propertyTagReference[nsplaceholder].endTag +
                     "<" + nsplaceholder + ":SortOrder>" +
-                        sortOptions.sortOrder +
+                        (SORT_ORDERS[sortOptions.sortOrder] ?? sortOptions.sortOrder) +
                     "</" + nsplaceholder + ":SortOrder>" +
                 "</" + nsplaceholder + ":SortProperty>" +
             "</" + nsplaceholder + ":SortBy>";
@@ -477,6 +482,27 @@ export const toOGCFilter = function(ftName, json, version, sortOptions = null, h
         '</wfs:GetFeature>';
     return ogcFilter;
 };
+// counts the root elements of an XML fragment, CDATA sections and comments are skipped
+const countRootElements = (xml = "") => {
+    let depth = 0;
+    let count = 0;
+    const content = xml.replace(/<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->/g, "");
+    (content.match(/<[^>]+>/g) || []).forEach((tag) => {
+        if (tag[1] === "/") {
+            depth--;
+            return;
+        }
+        if (depth === 0) {
+            count++;
+        }
+        if (tag[tag.length - 2] !== "/") {
+            depth++;
+        }
+    });
+    return count;
+};
+// And and Or need at least two operands in the filter schema
+const BINARY_LOGIC = ["AND", "OR"];
 export const processOGCFilterGroup = function(root, objFilter, nsplaceholder) {
     let ogc = FilterUtils.processOGCFilterFields(root, objFilter, nsplaceholder);
 
@@ -487,7 +513,9 @@ export const processOGCFilterGroup = function(root, objFilter, nsplaceholder) {
         });
     }
     if (ogc !== "") {
-        return ogcLogicalOperators[root.logic](nsplaceholder, ogc);
+        return BINARY_LOGIC.includes(root.logic) && countRootElements(ogc) === 1
+            ? ogc
+            : ogcLogicalOperators[root.logic](nsplaceholder, ogc);
     }
     return "";
 };
@@ -599,6 +627,8 @@ export const getGetFeatureBase = function(version, pagination, hits, format, opt
     getFeature += format ? 'outputFormat="' + format + '" ' : '';
     getFeature += pagination && (pagination.startIndex || pagination.startIndex === 0) ? 'startIndex="' + pagination.startIndex + '" ' : "";
     getFeature += options.viewParams ? ` viewParams="${options.viewParams}" ` : "";
+    // declares the workspace prefix of the type name, e.g. {topp: "http://www.openplans.org/topp"}
+    getFeature += Object.keys(options.namespaces ?? {}).map(prefix => `xmlns:${prefix}="${options.namespaces[prefix]}" `).join("");
     switch (ver) {
     case "1.0.0":
         getFeature += pagination && pagination.maxFeatures ? 'maxFeatures="' + pagination.maxFeatures + '" ' : "";
@@ -632,7 +662,7 @@ export const getGetFeatureBase = function(version, pagination, hits, format, opt
 
         getFeature = hits && !pagination ? getFeature + ' resultType="hits"' : getFeature;
 
-        getFeature += 'service="WFS" version="' + ver + '" ' +
+        getFeature += 'service="WFS" version="' + toWFSRequestVersion(ver) + '" ' +
                 'xmlns:wfs="http://www.opengis.net/wfs/2.0" ' +
                 'xmlns:fes="http://www.opengis.net/fes/2.0" ' +
                 'xmlns:gml="http://www.opengis.net/gml/3.2" ' +
@@ -685,13 +715,13 @@ export const processOGCCrossLayerFilter = function(crossLayerFilter, nsplacehold
     // only collectGeometries is supported now
     if (crossLayerFilter.collectGeometries) {
         const cqlFilter = FilterUtils.getCrossLayerCqlFilter(crossLayerFilter);
-        ogc += `<ogc:Function name="collectGeometries">` +
-            `<ogc:Function name="queryCollection">` +
-            `<ogc:Literal>${crossLayerFilter.collectGeometries.queryCollection.typeName}</ogc:Literal>` +
-            `<ogc:Literal>${crossLayerFilter.collectGeometries.queryCollection.geometryName}</ogc:Literal>` +
-            `<ogc:Literal><![CDATA[${cqlFilter}]]></ogc:Literal>` +
-            `</ogc:Function>` +
-        `</ogc:Function>`;
+        ogc += `<${nsplaceholder}:Function name="collectGeometries">` +
+            `<${nsplaceholder}:Function name="queryCollection">` +
+            `<${nsplaceholder}:Literal>${crossLayerFilter.collectGeometries.queryCollection.typeName}</${nsplaceholder}:Literal>` +
+            `<${nsplaceholder}:Literal>${crossLayerFilter.collectGeometries.queryCollection.geometryName}</${nsplaceholder}:Literal>` +
+            `<${nsplaceholder}:Literal><![CDATA[${cqlFilter}]]></${nsplaceholder}:Literal>` +
+            `</${nsplaceholder}:Function>` +
+        `</${nsplaceholder}:Function>`;
     }
     if (crossLayerFilter.operation === "DWITHIN") {
         ogc += '<' + nsplaceholder + ':Distance units="m">' + (crossLayerFilter.distance || 0) + '</' + nsplaceholder + ':Distance>';
@@ -1320,15 +1350,15 @@ export const createFeatureFilter = (filterObj) => feature => {
 /**
  * Merges cql filter strings, with mapstore filter objects to make a single OGC filter string
  * @param {string} opts.ogcVersion ogc version string of final ogc filter
- * @param {string} opts.nsPlaceholder xlmns placeholder to use
+ * @param {string} [opts.nsPlaceholder] xlmns placeholder to use, `fes` for WFS 2.0, `ogc` otherwise
  * @param {boolean} opts.addXmlnsToRoot add xmlns information to root ogc:Filter element
  * @param {string[]} opts.xmlnsToAdd xmlns strings to add to root ogc:Filter element if addXmlnsToRoot is true
  * @param {...string|object} filters filters to merge
  */
 export const mergeFiltersToOGC = (opts = {}, ...filters) =>  {
     const {
-        nsPlaceholder = 'ogc',
         ogcVersion: ogcVersionOpt = '2.0',
+        nsPlaceholder = isWFS2(ogcVersionOpt) ? 'fes' : 'ogc',
         addXmlnsToRoot = false,
         xmlnsToAdd = []
     } = opts;
@@ -1342,9 +1372,9 @@ export const mergeFiltersToOGC = (opts = {}, ...filters) =>  {
     const filtersToProcess = filters.filter(filter => !!filter && (isString(filter) || isFilterValid(filter) && !filter.disabled));
     if (isEmpty(filtersToProcess)) return "";
 
-    const filterString = fb.filter(fb.and(
-        ...flatten(filtersToProcess.map(filter => isString(filter) ? [toFilter(read(filter))] : toOGCFilterParts(filter, ogcVersionOpt, nsPlaceholder)))
-    ));
+    const parts = flatten(filtersToProcess.map(filter => isString(filter) ? [toFilter(read(filter))] : toOGCFilterParts(filter, ogcVersionOpt, nsPlaceholder)));
+    // And needs at least two operands in the filter schema
+    const filterString = fb.filter(parts.length === 1 ? parts[0] : fb.and(...parts));
 
     if (addXmlnsToRoot) {
         const filterTagEnd = filterString.indexOf('>');

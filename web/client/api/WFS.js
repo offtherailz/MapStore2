@@ -14,7 +14,8 @@ import {toOGCFilterParts} from '../utils/FilterUtils';
 import { getDefaultUrl } from '../utils/URLUtils';
 import { castArray } from 'lodash';
 import { isValidGetFeatureInfoFormat } from '../utils/WMSUtils';
-import { getSearchUrl, getWFSLayerName } from '../utils/LayersUtils';
+import { getSearchUrl, getWFSLayerName, getWFSVersion } from '../utils/LayersUtils';
+import { isWFS2, toWFSRequestVersion } from '../utils/ogc/WFS/base';
 
 const capabilitiesCache = {};
 
@@ -64,32 +65,67 @@ export const getCapabilitiesURL = (url, {version = "1.1.0"} = {}) => {
     }));
 };
 
+// WFS 2.0 renames these KVP parameters
+const WFS2_PARAMS = {
+    typename: "typeNames",
+    maxfeatures: "count",
+    featureid: "resourceId"
+};
+const toWFS2Params = (params = {}) => Object.keys(params).reduce((acc, key) => ({
+    ...acc,
+    [WFS2_PARAMS[key.toLowerCase()] ?? key]: params[key]
+}), {});
+
 export const getFeatureURL = (url, typeName, { version = "1.1.0", ...params } = {}) => {
     const parsed = urlUtil.parse(getDefaultUrl(url), true);
+    const query = Object.assign({
+        typeName,
+        version: toWFSRequestVersion(version),
+        ...parsed.query,
+        service: "WFS",
+        request: "GetFeature",
+        ...params
+    });
     return urlUtil.format(Object.assign({}, parsed, {
         search: undefined, // this allows to merge parameters correctly
-        query: Object.assign({
-            typeName,
-            version,
-            ...parsed.query,
-            service: "WFS",
-            request: "GetFeature",
-            ...params
-        })
+        query: isWFS2(version) ? toWFS2Params(query) : query
     }));
 };
+const typeNameNamespaces = {};
+/**
+ * Resolves the namespace of the workspace prefix of a type name from DescribeFeatureType, cached by URL and type name.
+ * Only layers with a configured WFS version resolve it, so the requests of legacy layers do not change.
+ * @param {object} layer the layer
+ * @param {string} url the WFS service URL
+ * @param {string} typeName the prefixed type name
+ * @returns {Promise} resolves with the namespaces to declare, e.g. `{topp: "http://www.openplans.org/topp"}`
+ */
+const getTypeNameNamespaces = (layer, url, typeName = "") => {
+    const prefix = typeName.indexOf(":") > 0 ? typeName.split(":")[0] : undefined;
+    if (!prefix || !getWFSVersion(layer)) {
+        return Promise.resolve(undefined);
+    }
+    const key = `${url}|${typeName}`;
+    if (!typeNameNamespaces[key]) {
+        typeNameNamespaces[key] = axios.get(toDescribeURL(url, typeName), {_msAuthSourceId: layer.security?.sourceId})
+            .then(({ data }) => data?.targetNamespace ? { [prefix]: data.targetNamespace } : undefined)
+            .catch(() => undefined);
+    }
+    return typeNameNamespaces[key];
+};
+
 /**
  * Performs a getFeature request (using axios POST) to a WFS service for a given MapStore layer WFS layer object.
  * @param {object} layer MapStore layer object
  * @param {object} requestOptions additional request options. Can include:
- * - `version`: WFS version. Default: `1.1.0`
+ * - `version`: WFS version. Default: the version of the layer, `1.1.0` if missing
  * - `filter`: optional array of mapstore filters. If the layer has a `layerFilter` property or filterObj, it will be added to the filter in a logic AND.
  * - `proj`: projection string
  * - `outputFormat`: output format string. Default: `application/json`
  * - `resultType`: result type string. Default: `results`
  * @param {object} config axios request config (headers, etc...)
  */
-export const getFeatureLayer = (layer, {version =  "1.1.0", filters, proj, outputFormat = 'application/json', resultType = 'results'} = {}, config) => {
+export const getFeatureLayer = (layer, {version = getWFSVersion(layer) ?? "1.1.0", filters, proj, outputFormat = 'application/json', resultType = 'results'} = {}, config) => {
     const {params } = layer;
     const url = layer.type === 'wms' ? getSearchUrl(layer) : layer.url;
     const typeName = getWFSLayerName(layer);
@@ -99,29 +135,25 @@ export const getFeatureLayer = (layer, {version =  "1.1.0", filters, proj, outpu
         .concat(filters ?? [])
         .concat(layerFilter ? layerFilter : [])
         .concat(featureGridFilter ? featureGridFilter : []);
-    const reqBody = wfsGetFeature(query(
+    const filterParts = allFilters.flatMap(f => toOGCFilterParts(f, version, isWFS2(version) ? "fes" : "ogc"));
+    return getTypeNameNamespaces(layer, url, typeName).then((namespaces) => axios.post(url, wfsGetFeature(query(
         typeName,
         // TODO: insert propertyName before filter to limit attributes to return
-        allFilters.length > 0
-            ? filter(
-                and(
-                    allFilters
-                        .map(f => toOGCFilterParts(f, version, "ogc"))
-                )
-
-            ) : "",
+        filterParts.length > 0
+            // And needs at least two operands in the filter schema
+            ? filter(filterParts.length === 1 ? filterParts[0] : and(filterParts))
+            : "",
         {srsName: proj} // 3rd for query is optional
     ),
-    {outputFormat, resultType}
-    );
-    return axios.post(url, reqBody, {
+    {outputFormat, resultType, namespaces}
+    ), {
         ...config,
         params,
         headers: {
             ...config?.headers,
             'Content-Type': 'application/xml'
         }
-    });
+    }));
 };
 
 /**
@@ -154,6 +186,40 @@ export const getCapabilities = function(url, info) {
             };
             return json;
         });
+};
+
+const versionsCache = {};
+/**
+ * Detects the highest WFS version supported by a service, between 2.0.0 and 1.1.0.
+ * The request asks only the service identification, so the response is small.
+ * The result is cached by URL.
+ * @param {string} url the WFS service URL
+ * @param {object} [options]
+ * @param {string} [options.protectedId] the id of the credentials of the service
+ * @returns {Promise} resolves with `2.0.0`, `1.1.0` or undefined when the version cannot be detected
+ */
+export const detectWFSVersion = (url, { protectedId } = {}) => {
+    if (!versionsCache[url]) {
+        const parsed = urlUtil.parse(getDefaultUrl(url), true);
+        const capabilitiesURL = urlUtil.format({
+            ...parsed,
+            search: undefined, // this allows to merge parameters correctly
+            query: {
+                ...parsed.query,
+                service: "WFS",
+                request: "GetCapabilities",
+                AcceptVersions: "2.0.0,1.1.0",
+                Sections: "ServiceIdentification"
+            }
+        });
+        versionsCache[url] = axios.get(capabilitiesURL, {_msAuthSourceId: protectedId})
+            .then(({ data }) => {
+                const version = `${data}`.match(/WFS_Capabilities[^>]*\sversion="([^"]+)"/)?.[1];
+                return isWFS2(version) ? "2.0.0" : ["1.1.0"].find(supported => supported === version);
+            })
+            .catch(() => undefined);
+    }
+    return versionsCache[url];
 };
 
 export const describeFeatureType = function(url, typeName) {

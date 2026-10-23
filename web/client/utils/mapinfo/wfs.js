@@ -9,7 +9,8 @@
 import {Observable} from 'rxjs';
 
 import {normalizeSRS} from '../CoordinatesUtils';
-import { getLayerUrl, getCapabilitiesUrl } from '../LayersUtils';
+import { getLayerUrl, getCapabilitiesUrl, getWFSVersion } from '../LayersUtils';
+import { toWFSRequestVersion } from '../ogc/WFS/base';
 import { isObject } from 'lodash';
 import { optionsToVendorParams } from '../VendorParamsUtils';
 import { describeFeatureType, getFeature, getSupportedFormat } from '../../api/WFS';
@@ -61,7 +62,7 @@ const buildRequest = (layer, { map = {}, point, currentLocale, params, maxItems 
         request: addAuthenticationToSLD({
             point, // THIS WILL NOT BE PASSED TO FINAL REQUEST, BUT USED IN getRetrieveFlow
             service: 'WFS',
-            version: '1.1.1',
+            version: toWFSRequestVersion(getWFSVersion(layer)) ?? '1.1.0',
             request: 'GetFeature',
             outputFormat: 'application/json',
             exceptions: 'application/json',

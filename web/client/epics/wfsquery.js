@@ -46,7 +46,7 @@ import {
 } from '../selectors/queryform';
 
 import { changeDrawingStatus } from '../actions/draw';
-import { getLayerJSONFeature } from '../observables/wfs';
+import { getLayerJSONFeature, getLayerRequestVersion } from '../observables/wfs';
 import {
     describeFeatureTypeToAttributes,
     describeFeatureTypeToJSONSchema
@@ -87,7 +87,7 @@ const getFirstAttribute = (state)=> {
 };
 
 const getDefaultSortOptions = (attribute) => {
-    return attribute ? { sortBy: attribute, sortOrder: 'A'} : {};
+    return attribute ? { sortBy: attribute, sortOrder: 'ASC'} : {};
 };
 
 /**
@@ -196,7 +196,7 @@ export const wfsQueryEpic = (action$, store) =>
             // use original filter if the selected layer is vector type
             const ogcFilter = layer?.type === "vector" ?
                 action.filterObj
-                : mergeFiltersToOGC({ogcVersion: '1.1.0'}, cqlFilter, useLayerFilter ? layerFilter : null, action.filterObj);
+                : mergeFiltersToOGC({ogcVersion: getLayerRequestVersion(layer)}, cqlFilter, useLayerFilter ? layerFilter : null, action.filterObj);
             const { url, options: queryOptions } = addTimeParameter(searchUrl, action.queryOptions || {}, store.getState());
             const options = {
                 ...action.filterObj.pagination,

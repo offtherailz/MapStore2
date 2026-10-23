@@ -77,13 +77,18 @@ const lineStringElement = (coordinates, srsName, version) => {
 };
 
 
-/**
- * Processes the geometry in geojson format to provide the GML version of it
- * @param  {string} version  GML version
- * @param  {object} geometry the geometry in GeoJSON format
- * @return {string}          the GML version of the Geometry
- */
-const processOGCGeometry = (version, geometry) => {
+// GML 3.2 requires a gml:id, unique in the document, on every geometry element.
+// The id derives from the geometry, so the same geometry always produces the same filter
+// and the components comparing filters do not see a change.
+const GML32_GEOMETRY_TAGS = /<gml:(Point|LineString|Polygon|MultiPoint|MultiCurve|MultiSurface)(?=[ >])/g;
+const hashCode = (text) => [...text].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) | 0, 7) >>> 0;
+const addGMLIds = (gml) => {
+    const hash = hashCode(gml).toString(36);
+    let index = 0;
+    return gml.replace(GML32_GEOMETRY_TAGS, (tag) => `${tag} gml:id="ms-${hash}-${++index}"`);
+};
+
+const processGeometry = (version, geometry) => {
     let ogc = '';
     const srsName = geometry.projection || "EPSG:4326";
     switch (geometry.type) {
@@ -157,6 +162,17 @@ const processOGCGeometry = (version, geometry) => {
         break;
     }
     return ogc;
+};
+
+/**
+ * Processes the geometry in geojson format to provide the GML version of it
+ * @param  {string} version  GML version
+ * @param  {object} geometry the geometry in GeoJSON format
+ * @return {string}          the GML version of the Geometry
+ */
+const processOGCGeometry = (version, geometry) => {
+    const gml = processGeometry(version, geometry);
+    return version === "3.2" ? addGMLIds(gml) : gml;
 };
 
 module.exports = {

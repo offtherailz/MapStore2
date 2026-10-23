@@ -131,3 +131,31 @@ describe('Test GeoJSON/GML geometry conversion', () => {
         expect(gmlMultiPolygon).toBe(EXPECTED_RESULTS.V1_1_0.exteriorInterior);
     });
 });
+
+describe('GML 3.2 geometry conversion', () => {
+    const ids = (gml) => (gml.match(/gml:id="[^"]+"/g) || []).map(id => id.slice(8, -1));
+    it('every geometry element gets an id', () => {
+        const gml = processOGCGeometry("3.2", multiPolygon);
+        const geometryTags = gml.match(/<gml:(MultiSurface|Polygon)[ >]/g);
+        expect(geometryTags.length).toBe(1 + multiPolygon.coordinates.length);
+        expect(ids(gml).length).toBe(geometryTags.length);
+        expect(gml).toMatch(/^<gml:MultiSurface gml:id="ms-[a-z0-9]+-1"/);
+        expect(gml).toNotContain('<gml:LinearRing gml:id');
+    });
+    it('ids are unique across geometries of the same request', () => {
+        const all = [
+            ...ids(processOGCGeometry("3.2", point)),
+            ...ids(processOGCGeometry("3.2", lineString)),
+            ...ids(processOGCGeometry("3.2", polygon))
+        ];
+        expect(all.length).toBe(3);
+        expect(new Set(all).size).toBe(3);
+    });
+    it('the same geometry always gets the same ids', () => {
+        expect(processOGCGeometry("3.2", polygon)).toBe(processOGCGeometry("3.2", polygon));
+    });
+    it('GML 3.1.1 and 2 geometries have no id', () => {
+        expect(processOGCGeometry("3.1.1", multiPolygon)).toNotContain('gml:id');
+        expect(processOGCGeometry("2.0", polygon)).toNotContain('gml:id');
+    });
+});

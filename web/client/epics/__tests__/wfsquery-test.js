@@ -78,7 +78,7 @@ describe('wfsquery Epics', () => {
         const expectedResult = require('../../test-resources/wfs/museam.json');
         mockAxios.onPost().reply(config => {
             expect(config.data).toContain('<ogc:PropertyName>NAME</ogc:PropertyName>');
-            expect(config.data).toContain('<wfs:SortOrder>A</wfs:SortOrder>');
+            expect(config.data).toContain('<ogc:SortOrder>ASC</ogc:SortOrder>');
             return [200, expectedResult];
         });
         testEpic(wfsQueryEpic, 2, query("base/web/client/test-resources/wfs/museam.json", { pagination: {} }, {viewParams: "a:b"}), actions => {
@@ -100,11 +100,30 @@ describe('wfsquery Epics', () => {
             query: { typeName: 'layer1', featureTypes: {layer1: {attributes: [{attribute: 'NAME'}]}}}
         });
     });
+    it('wfsQueryEpic sends a WFS 2.0.0 request for a layer set to WFS 2.0.0', (done) => {
+        const expectedResult = require('../../test-resources/wfs/museam.json');
+        mockAxios.onPost().reply(config => {
+            expect(config.data).toContain('<wfs:GetFeature service="WFS" version="2.0.0"');
+            expect(config.data).toContain('startIndex="0" count="20"');
+            expect(config.data).toContain('<wfs:Query typeNames="museam"');
+            expect(config.data).toContain('<fes:SortBy><fes:SortProperty><fes:ValueReference>NAME</fes:ValueReference><fes:SortOrder>ASC</fes:SortOrder></fes:SortProperty></fes:SortBy>');
+            expect(config.data).toNotContain('<ogc:');
+            return [200, expectedResult];
+        });
+        testEpic(wfsQueryEpic, 2, query("base/web/client/test-resources/wfs/museam.json", { featureTypeName: 'museam', pagination: { startIndex: 0, maxFeatures: 20 } }, {}), actions => {
+            expect(actions.map(({ type }) => type)).toEqual([FEATURE_LOADING, QUERY_RESULT]);
+            done();
+        }, {
+            query: { typeName: 'museam', featureTypes: { museam: { attributes: [{ attribute: 'NAME' }] } } },
+            layers: { flat: [{ id: 'TEST_LAYER', name: 'museam', search: { type: 'wfs', wfsVersion: '2.0.0' } }], selected: ['TEST_LAYER'] },
+            featuregrid: { selectedLayer: 'TEST_LAYER' }
+        });
+    });
     it('wfsQueryEpic passing filter object with valid sort options', (done) => {
         const expectedResult = require('../../test-resources/wfs/museam.json');
         mockAxios.onPost().reply(config => {
             expect(config.data).toContain('<ogc:PropertyName>NAME</ogc:PropertyName>');
-            expect(config.data).toContain('<wfs:SortOrder>DESC</wfs:SortOrder>');
+            expect(config.data).toContain('<ogc:SortOrder>DESC</ogc:SortOrder>');
             return [200, expectedResult];
         });
         testEpic(wfsQueryEpic, 2, query("base/web/client/test-resources/wfs/museam.json", { pagination: {maxFeatures: 20, startIndex: 0}, sortOptions: {sortBy: "NAME", sortOrder: "DESC"} }, {}), actions => {
@@ -130,7 +149,7 @@ describe('wfsquery Epics', () => {
         const expectedResult = require('../../test-resources/wfs/museam.json');
         mockAxios.onPost().reply(config => {
             expect(config.data).toContain('<ogc:PropertyName>NAME</ogc:PropertyName>');
-            expect(config.data).toContain('<wfs:SortOrder>DESC</wfs:SortOrder>');
+            expect(config.data).toContain('<ogc:SortOrder>DESC</ogc:SortOrder>');
             return [200, expectedResult];
         });
         testEpic(wfsQueryEpic, 2, query("base/web/client/test-resources/wfs/museam.json", { pagination: {maxFeatures: 20, startIndex: 0}, sortOptions: {sortBy: "NAME", sortOrder: "DESC"}, featureTypeName: "layerId"}, {}), actions => {
@@ -155,7 +174,7 @@ describe('wfsquery Epics', () => {
         const expectedResult = require('../../test-resources/wfs/museam.json');
         mockAxios.onPost().reply(config => {
             expect(config.data).toContain('<ogc:PropertyName>NAME</ogc:PropertyName>');
-            expect(config.data).toContain('<wfs:SortOrder>DESC</wfs:SortOrder>');
+            expect(config.data).toContain('<ogc:SortOrder>DESC</ogc:SortOrder>');
             return [200, expectedResult];
         });
         testEpic(wfsQueryEpic, 2, query("base/web/client/test-resources/wfs/museam.json", { pagination: {maxFeatures: 20, startIndex: 0}, sortOptions: {sortBy: "NAME", sortOrder: "DESC"}, featureTypeName: "layerId"}, {}), actions => {
@@ -209,11 +228,11 @@ describe('wfsquery Epics', () => {
         const expectedResult = require('../../test-resources/wfs/museam.json');
         mockAxios.onPost().reply(config => {
             expect(config.data).toContain('<ogc:PropertyName>NAME</ogc:PropertyName>');
-            expect(config.data).toContain('<wfs:SortOrder>DESC</wfs:SortOrder>');
+            expect(config.data).toContain('<ogc:SortOrder>DESC</ogc:SortOrder>');
             expect(config.data).toContain("<ogc:Filter>"
             + "<ogc:And>"
                 + "<ogc:PropertyIsEqualTo><ogc:PropertyName>attribute2</ogc:PropertyName><ogc:Literal>value2</ogc:Literal></ogc:PropertyIsEqualTo>"
-                + "<ogc:Or><ogc:PropertyIsEqualTo><ogc:PropertyName>attribute1</ogc:PropertyName><ogc:Literal>value1</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Or>"
+                + "<ogc:PropertyIsEqualTo><ogc:PropertyName>attribute1</ogc:PropertyName><ogc:Literal>value1</ogc:Literal></ogc:PropertyIsEqualTo>"
             + "</ogc:And></ogc:Filter>");
             return [200, expectedResult];
         });

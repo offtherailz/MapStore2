@@ -14,6 +14,7 @@ import Layers from '../../../../utils/leaflet/Layers';
 import { optionsToVendorParams } from '../../../../utils/VendorParamsUtils';
 
 import { getFeature } from '../../../../api/WFS';
+import { getWFSVersion } from '../../../../utils/LayersUtils';
 import { needsReload } from '../../../../utils/WFSLayerUtils';
 import {
     getStyle,
@@ -55,6 +56,7 @@ const loadFeatures = (layer, options) => {
         // // TODO: notify error
     };
     return getFeature(options.url, options.name, {
+        version: getWFSVersion(options),
         // bbox: extent.join(',') + ',' + proj,
         outputFormat: "application/json",
         maxFeatures: 1000,

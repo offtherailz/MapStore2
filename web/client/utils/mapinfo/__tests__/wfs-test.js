@@ -33,7 +33,7 @@ describe("mapinfo wfs utils", () => {
             request: {
                 point: undefined,
                 service: "WFS",
-                version: "1.1.1",
+                version: "1.1.0",
                 request: "GetFeature",
                 outputFormat: "application/json",
                 exceptions: "application/json",

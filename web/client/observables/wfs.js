@@ -15,15 +15,30 @@ import { stripPrefix } from 'xml2js/lib/processors';
 
 import axios from '../libs/ajax';
 import { createFeatureFilter, getWFSFilterData } from '../utils/FilterUtils';
-import { getCapabilitiesUrl, getWFSLayerName } from '../utils/LayersUtils';
+import { getCapabilitiesUrl, getWFSLayerName, getWFSVersion } from '../utils/LayersUtils';
 import { interceptOGCError } from '../utils/ObservableUtils';
 import requestBuilder from '../utils/ogc/WFS/RequestBuilder';
+import { isWFS2 } from '../utils/ogc/WFS/base';
 import { getDefaultUrl } from '../utils/URLUtils';
 
-const {getFeature, query, sortBy, propertyName} = requestBuilder({ wfsVersion: "1.1.0" });
+const DEFAULT_WFS_VERSION = "1.1.0";
+const requestBuilders = {
+    [DEFAULT_WFS_VERSION]: requestBuilder({ wfsVersion: DEFAULT_WFS_VERSION }),
+    "2.0.0": requestBuilder({ wfsVersion: "2.0.0" })
+};
+const getRequestBuilder = (version) => isWFS2(version) ? requestBuilders["2.0.0"] : requestBuilders[DEFAULT_WFS_VERSION];
 
-export const toDescribeURL = ({ name, search = {}, url, describeFeatureTypeURL, type } = {}) => {
-    const typeName = getWFSLayerName({ name, search, type });
+/**
+ * Returns the WFS version to use in the requests of a layer
+ * @param {object} layer the layer
+ * @returns {string} `2.0.0` or `1.1.0`, the legacy default
+ */
+export const getLayerRequestVersion = (layer) => isWFS2(getWFSVersion(layer)) ? "2.0.0" : DEFAULT_WFS_VERSION;
+
+export const toDescribeURL = (layer = {}) => {
+    const { search = {}, url, describeFeatureTypeURL } = layer;
+    const typeName = getWFSLayerName(layer);
+    const version = getLayerRequestVersion(layer);
     const parsed = urlUtil.parse(getDefaultUrl(describeFeatureTypeURL || search.url || url), true);
     return urlUtil.format(
         {
@@ -33,15 +48,16 @@ export const toDescribeURL = ({ name, search = {}, url, describeFeatureTypeURL, 
                 ...parsed.query,
 
                 service: "WFS",
-                version: "1.1.0",
-                typeName,
+                version,
+                [isWFS2(version) ? "typeNames" : "typeName"]: typeName,
                 outputFormat: 'application/json',
                 request: "DescribeFeatureType"
             }
         });
 };
-export const toLayerCapabilitiesURL = ({name, search = {}, url, type} = {}) => {
-    const URL = getCapabilitiesUrl({name: getWFSLayerName({name, search, type}), url: search && search.url || url });
+export const toLayerCapabilitiesURL = (layer = {}) => {
+    const { search = {}, url } = layer;
+    const URL = getCapabilitiesUrl({name: getWFSLayerName(layer), url: search && search.url || url });
     const parsed = urlUtil.parse(URL, true);
     return urlUtil.format(
         {
@@ -50,7 +66,7 @@ export const toLayerCapabilitiesURL = ({name, search = {}, url, type} = {}) => {
             query: {
                 ...parsed.query,
                 service: "WFS",
-                version: "1.1.1",
+                version: getLayerRequestVersion(layer),
                 request: "GetCapabilities"
             }
         });
@@ -230,6 +246,37 @@ export const getJSONFeatureWA = (searchUrl, filterObj, { sortOptions = {}, ...op
             throw error;
         });
 
+export const describeFeatureType = ({layer}) => {
+    const url = toDescribeURL(layer);
+    return Rx.Observable.defer(() =>
+        axios.get(url, {_msAuthSourceId: layer?.security?.sourceId})).let(interceptOGCError);
+};
+
+const typeNameNamespaces = {};
+/**
+ * Resolves the namespace of the workspace prefix of the layer type name (e.g. `topp` of `topp:states`).
+ * Strict servers reject a request that uses a prefix not declared in the XML.
+ * Only layers with a configured WFS version resolve it, so the requests of legacy layers do not change.
+ * The namespace comes from DescribeFeatureType and it is cached by service URL and type name.
+ * @param {object} layer the layer
+ * @returns {Observable} a stream that emits the namespaces to declare, e.g. `{topp: "http://www.openplans.org/topp"}`
+ */
+export const getTypeNameNamespaces = (layer = {}) => {
+    const typeName = getWFSLayerName(layer) ?? "";
+    const prefix = typeName.indexOf(":") > 0 ? typeName.split(":")[0] : undefined;
+    if (!prefix || !getWFSVersion(layer)) {
+        return Rx.Observable.of(undefined);
+    }
+    const key = `${layer.search?.url ?? layer.url}|${typeName}`;
+    if (!typeNameNamespaces[key]) {
+        typeNameNamespaces[key] = describeFeatureType({ layer })
+            .map(({ data } = {}) => data?.targetNamespace ? { [prefix]: data.targetNamespace } : undefined)
+            .catch(() => Rx.Observable.of(undefined))
+            .toPromise();
+    }
+    return Rx.Observable.defer(() => typeNameNamespaces[key]);
+};
+
 /**
  * Same of `getJSONFeatureWA` but accepts the layer as first parameter.
  * Accepts filter as a string or object. In case of string filter manages pagination and
@@ -241,49 +288,39 @@ export const getJSONFeatureWA = (searchUrl, filterObj, { sortOptions = {}, ...op
  * retro compatibility the filter object can contain pagination info, typeName and so on.
  * @param {object} options the options (pagination, totalFeatures and so on ...)
  */
-export const getLayerJSONFeature = ({ search = {}, url, name, security, type } = {}, filter, {sortOptions, propertyName: pn, ...options} = {}) => {
-    const typeName = getWFSLayerName({search, name, type});
-    return (
+export const getLayerJSONFeature = (layer = {}, filter, {sortOptions, propertyName: pn, ...options} = {}) => {
+    const { search = {}, url, security } = layer;
+    const typeName = getWFSLayerName(layer);
+    const wfsVersion = getWFSVersion(layer);
+    const {getFeature, query, sortBy, propertyName} = getRequestBuilder(wfsVersion);
+    const toRequest = (namespaces, sortContent) => filter && typeof filter === 'object' ? {
+        ...filter,
+        ...(wfsVersion && { ogcVersion: getLayerRequestVersion(layer) }),
+        typeName: typeName || filter.typeName
+    } : getFeature(
+        query(typeName,
+            [
+                ...sortContent,
+                ...(pn ? [propertyName(pn)] : []),
+                ...(filter ? castArray(filter) : [])
+            ]),
+        {...options, namespaces}); // options contains startIndex, maxFeatures and it can be passed as it is
     // TODO: Apply sort workaround for no primary keys
-        getJSONFeature(search.url || url,
-            filter && typeof filter === 'object' ? {
-                ...filter,
-                typeName: typeName || filter.typeName
-            } : getFeature(
-                query(typeName,
-                    [
-                        ...( sortOptions ? [sortBy(sortOptions.sortBy, sortOptions.sortOrder)] : []),
-                        ...(pn ? [propertyName(pn)] : []),
-                        ...(filter ? castArray(filter) : [])
-                    ]),
-                options), // options contains startIndex, maxFeatures and it can be passed as it is
-            {security, ...options})
+    return getTypeNameNamespaces(layer)
+        .switchMap(namespaces => getJSONFeature(search.url || url,
+            toRequest(namespaces, sortOptions ? [sortBy(sortOptions.sortBy, sortOptions.sortOrder)] : []),
+            {security, ...options, namespaces})
             // retry using 1st propertyNames property, if present, to workaround primary-key issues
             .catch(error => {
                 if (error.name === "OGCError" && error.code === 'NoApplicableCode' && !sortOptions && pn && pn[0]) {
                     return getJSONFeature(search.url || url,
-                        filter && typeof filter === 'object' ? {
-                            ...filter,
-                            typeName: typeName || filter.typeName
-                        } : getFeature(
-                            query(typeName,
-                                [
-                                    sortBy(isArray(pn) ? pn[0] : pn),
-                                    ...(pn ? [propertyName(pn)] : []),
-                                    ...(filter ? castArray(filter) : [])
-                                ]),
-                            options), // options contains startIndex, maxFeatures and it can be passed as it is
-                        options);
+                        toRequest(namespaces, [sortBy(isArray(pn) ? pn[0] : pn)]),
+                        {...options, namespaces});
                 }
                 throw error;
             }));
 };
 
-export const describeFeatureType = ({layer}) => {
-    const url = toDescribeURL(layer);
-    return Rx.Observable.defer(() =>
-        axios.get(url, {_msAuthSourceId: layer?.security?.sourceId})).let(interceptOGCError);
-};
 export const getLayerWFSCapabilities = ({layer}) => {
     const url = toLayerCapabilitiesURL(layer);
     return Rx.Observable.defer( () => axios.get(url, {_msAuthSourceId: layer?.security?.sourceId}))

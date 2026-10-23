@@ -45,6 +45,7 @@ import {
     addService
 } from '../../actions/catalog';
 import MockAdapter from 'axios-mock-adapter';
+import DESCRIBE_LAYERS from 'raw-loader!../../test-resources/wms/DescribeLayers.xml';
 import axios from '../../libs/ajax';
 
 let mockAxios;
@@ -794,7 +795,8 @@ describe('catalog Epics', () => {
             links: [],
             search: {
                 typeName: 'workspace:configured_type',
-                custom: true
+                custom: true,
+                wfsVersion: '1.1.0'
             },
             params: {
                 CQL_FILTER: 'NAME=\'Test\''
@@ -824,6 +826,7 @@ describe('catalog Epics', () => {
                         expect(action.newProperties.search.type).toBe("wfs");
                         expect(action.newProperties.search.typeName).toBe("workspace:configured_type");
                         expect(action.newProperties.search.custom).toBe(true);
+                        expect(action.newProperties.search.wfsVersion).toBe('1.1.0');
                         break;
                     case TEST_TIMEOUT:
                         break;
@@ -845,6 +848,29 @@ describe('catalog Epics', () => {
                     pageSize: 2
                 }
             });
+    });
+    it('addLayerAndDescribeEpic stores the detected version of the linked WFS service', (done) => {
+        const mock = new MockAdapter(axios);
+        mock.onGet(/AcceptVersions/).reply(200, '<wfs:WFS_Capabilities version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0"/>');
+        mock.onGet(/DescribeLayer/).reply(200, DESCRIBE_LAYERS.replace(/some\.geoserver\.org:80/g, 'detect.geoserver.org'));
+        const layer = {
+            type: 'wms',
+            url: 'base/web/client/test-resources/wms/DescribeLayers.xml',
+            visibility: true,
+            name: 'workspace:vector_layer',
+            title: 'workspace:vector_layer'
+        };
+        testEpic(addLayerAndDescribeEpic, 2, addLayerAndDescribe(layer), (actions) => {
+            mock.restore();
+            expect(actions.map(({ type }) => type).sort()).toEqual([ADD_LAYER, CHANGE_LAYER_PROPERTIES].sort());
+            const { newProperties } = actions.find(({ type }) => type === CHANGE_LAYER_PROPERTIES);
+            expect(newProperties.search).toEqual({
+                url: 'http://detect.geoserver.org/geoserver/wfs',
+                type: 'wfs',
+                typeName: 'workspace:vector_layer',
+                wfsVersion: '2.0.0'
+            });
+        }, { catalog: {} }, done);
     });
     it('addLayerAndDescribeEpic for wms layer with remoteTileGrids = true', (done) => {
         const layer = {

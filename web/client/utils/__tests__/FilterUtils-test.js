@@ -389,11 +389,11 @@ describe('FilterUtils', () => {
         };
 
         let filterParts = toOGCFilterParts(objFilter, versionOGC, nsplaceholder);
-        expect(filterParts[0]).toEqual('<ogc:Or><ogc:PropertyIsBetween>'
+        expect(filterParts[0]).toEqual('<ogc:PropertyIsBetween>'
             + '<ogc:PropertyName>attributeEmpty</ogc:PropertyName>'
                 + '<ogc:LowerBoundary><ogc:Literal>' + startDate + '</ogc:Literal></ogc:LowerBoundary>'
                 + '<ogc:UpperBoundary><ogc:Literal>' + endDate + '</ogc:Literal></ogc:UpperBoundary>'
-            + '</ogc:PropertyIsBetween></ogc:Or>');
+            + '</ogc:PropertyIsBetween>');
         let cqlFilter = toCQLFilter(objFilter);
         expect(cqlFilter).toBe("((attributeEmpty>='2000-01-01T00:00:00.000Z' AND attributeEmpty<='3000-01-01T00:00:00.000Z'))");
     });
@@ -449,7 +449,7 @@ describe('FilterUtils', () => {
         };
 
         let filterParts = toOGCFilterParts(objFilter, versionOGC, nsplaceholder);
-        const R1 = '<ogc:Or><ogc:PropertyIsEqualTo><ogc:PropertyName>attributeEmpty</ogc:PropertyName><ogc:Literal></ogc:Literal></ogc:PropertyIsEqualTo></ogc:Or>';
+        const R1 = '<ogc:PropertyIsEqualTo><ogc:PropertyName>attributeEmpty</ogc:PropertyName><ogc:Literal></ogc:Literal></ogc:PropertyIsEqualTo>';
         const R2 = '<ogc:PropertyIsEqualTo><ogc:PropertyName>prop</ogc:PropertyName><ogc:Literal>value</ogc:Literal></ogc:PropertyIsEqualTo>';
         expect(filterParts[0]).toEqual(R1);
         expect(filterParts[1]).toEqual(R2);
@@ -508,7 +508,7 @@ describe('FilterUtils', () => {
         };
 
         let filterParts = toOGCFilterParts(objFilter, versionOGC, nsplaceholder);
-        const R1 = '<fes:Or><fes:PropertyIsEqualTo><fes:ValueReference>attributeEmpty</fes:ValueReference><fes:Literal></fes:Literal></fes:PropertyIsEqualTo></fes:Or>';
+        const R1 = '<fes:PropertyIsEqualTo><fes:ValueReference>attributeEmpty</fes:ValueReference><fes:Literal></fes:Literal></fes:PropertyIsEqualTo>';
         const R2 = '<fes:PropertyIsEqualTo><fes:ValueReference>prop</fes:ValueReference><fes:Literal>value</fes:Literal></fes:PropertyIsEqualTo>';
         expect(filterParts[0]).toEqual(R1);
         expect(filterParts[1]).toEqual(R2);
@@ -590,7 +590,7 @@ describe('FilterUtils', () => {
                 value: ''
             }]
         };
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:PropertyIsEqualTo><fes:ValueReference>attributeEmpty</fes:ValueReference><fes:Literal></fes:Literal></fes:PropertyIsEqualTo></fes:Filter></wfs:Query></wfs:GetFeature>';
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:PropertyIsEqualTo><fes:ValueReference>attributeEmpty</fes:ValueReference><fes:Literal></fes:Literal></fes:PropertyIsEqualTo></fes:Filter></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj);
         expect(filter).toEqual(expected);
     });
@@ -720,7 +720,7 @@ describe('FilterUtils', () => {
                 value: undefined
             }]
         };
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"></wfs:Query></wfs:GetFeature>';
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj);
         let filterNumber = toOGCFilter("ft_name_test", filterObjNumbers);
         let filterList = toOGCFilter("ft_name_test", filterObjList);
@@ -801,7 +801,7 @@ describe('FilterUtils', () => {
                 logic: "AND NOT"
             }]
         };
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"></wfs:Query></wfs:GetFeature>';
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj);
         let filterNumber = toOGCFilter("ft_name_test", filterObjNumbers);
         let filterList = toOGCFilter("ft_name_test", filterObjList);
@@ -837,7 +837,7 @@ describe('FilterUtils', () => {
                 value: "isNull"
             }]
         };
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" '
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" '
             + 'xmlns:wfs="http://www.opengis.net/wfs/2.0" '
             + 'xmlns:fes="http://www.opengis.net/fes/2.0" '
             + 'xmlns:gml="http://www.opengis.net/gml/3.2" '
@@ -866,7 +866,7 @@ describe('FilterUtils', () => {
             filterFields: null
         };
         let filterObjNoFields2 = {};
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"></wfs:Query></wfs:GetFeature>';
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj);
         let filterNoFields1 = toOGCFilter("ft_name_test", filterObjNoFields1);
         let filterNoFields2 = toOGCFilter("ft_name_test", filterObjNoFields2);
@@ -886,7 +886,7 @@ describe('FilterUtils', () => {
                 value: "value1"
             }]
         };
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:PropertyIsEqualTo><fes:ValueReference>attribute1</fes:ValueReference><fes:Literal>value1</fes:Literal></fes:PropertyIsEqualTo></fes:Filter></wfs:Query></wfs:GetFeature>';
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:PropertyIsEqualTo><fes:ValueReference>attribute1</fes:ValueReference><fes:Literal>value1</fes:Literal></fes:PropertyIsEqualTo></fes:Filter></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj);
         expect(filter).toEqual(expected);
     });
@@ -911,7 +911,7 @@ describe('FilterUtils', () => {
                 "collapsible": true
             }]
         };
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:And><fes:Or><fes:PropertyIsEqualTo><fes:ValueReference>highway_system</fes:ValueReference><fes:Literal>state</fes:Literal></fes:PropertyIsEqualTo></fes:Or></fes:And></fes:Filter></wfs:Query></wfs:GetFeature>';
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:And><fes:Or><fes:PropertyIsEqualTo><fes:ValueReference>highway_system</fes:ValueReference><fes:Literal>state</fes:Literal></fes:PropertyIsEqualTo></fes:Or></fes:And></fes:Filter></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj);
         expect(filter).toEqual(expected);
     });
@@ -1008,9 +1008,9 @@ describe('FilterUtils', () => {
                 }
             }
         };
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:Intersects><fes:ValueReference>geometry</fes:ValueReference><gml:Point srsDimension="2" srsName="EPSG:4326"><gml:pos>1 1</gml:pos></gml:Point></fes:Intersects></fes:Filter></wfs:Query></wfs:GetFeature>';
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:Intersects><fes:ValueReference>geometry</fes:ValueReference><gml:Point gml:id="ID" srsDimension="2" srsName="EPSG:4326"><gml:pos>1 1</gml:pos></gml:Point></fes:Intersects></fes:Filter></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj, "2.0");
-        expect(filter).toEqual(expected);
+        expect(filter.replace(/gml:id="ms-[a-z0-9]+-\d+"/g, 'gml:id="ID"')).toEqual(expected);
     });
     it('Check SpatialFilterField ogc 2.0 Polygon', () => {
         let filterObj = {
@@ -1024,9 +1024,9 @@ describe('FilterUtils', () => {
                 }
             }
         };
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:Intersects><fes:ValueReference>geometry</fes:ValueReference><gml:Polygon srsName="EPSG:4326"><gml:exterior><gml:LinearRing><gml:posList>1 1 1 2 2 2 2 1 1 1</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></fes:Intersects></fes:Filter></wfs:Query></wfs:GetFeature>';
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:Intersects><fes:ValueReference>geometry</fes:ValueReference><gml:Polygon gml:id="ID" srsName="EPSG:4326"><gml:exterior><gml:LinearRing><gml:posList>1 1 1 2 2 2 2 1 1 1</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></fes:Intersects></fes:Filter></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj, "2.0");
-        expect(filter).toEqual(expected);
+        expect(filter.replace(/gml:id="ms-[a-z0-9]+-\d+"/g, 'gml:id="ID"')).toEqual(expected);
     });
     it('Check SpatialFilterField ogc default version is 2.0', () => {
         let filterObj = {
@@ -1040,9 +1040,9 @@ describe('FilterUtils', () => {
                 }
             }
         };
-        let expected = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:Intersects><fes:ValueReference>geometry</fes:ValueReference><gml:Point srsDimension="2" srsName="EPSG:4326"><gml:pos>1 1</gml:pos></gml:Point></fes:Intersects></fes:Filter></wfs:Query></wfs:GetFeature>';
+        let expected = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:Intersects><fes:ValueReference>geometry</fes:ValueReference><gml:Point gml:id="ID" srsDimension="2" srsName="EPSG:4326"><gml:pos>1 1</gml:pos></gml:Point></fes:Intersects></fes:Filter></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj);
-        expect(filter).toEqual(expected);
+        expect(filter.replace(/gml:id="ms-[a-z0-9]+-\d+"/g, 'gml:id="ID"')).toEqual(expected);
     });
     it('Check SpatialFilterField OGC collectGeometries', () => {
         let filterObj = {
@@ -1073,7 +1073,7 @@ describe('FilterUtils', () => {
          + '</ogc:Function></ogc:Function>'
          + "</ogc:Intersects>";
         let expected =
-            '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter>'
+            '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter>'
             + expectedGeom
             + '</fes:Filter></wfs:Query></wfs:GetFeature>';
         let filter = toOGCFilter("ft_name_test", filterObj);
@@ -1956,12 +1956,10 @@ describe('FilterUtils', () => {
         const filterPart = query.split('<ogc:Filter>')[1].split('</ogc:Filter>')[0];
         expect(filterPart).toEqual(
             '<ogc:And>' +
-                '<ogc:Or>' +
-                    '<ogc:PropertyIsEqualTo>' +
-                        '<ogc:PropertyName>attribute1</ogc:PropertyName>' +
-                        '<ogc:Literal>value1</ogc:Literal>' +
-                    '</ogc:PropertyIsEqualTo>' +
-                '</ogc:Or>' +
+                '<ogc:PropertyIsEqualTo>' +
+                    '<ogc:PropertyName>attribute1</ogc:PropertyName>' +
+                    '<ogc:Literal>value1</ogc:Literal>' +
+                '</ogc:PropertyIsEqualTo>' +
                 '<ogc:PropertyIsEqualTo>' +
                     '<ogc:PropertyName>prop</ogc:PropertyName>' +
                     '<ogc:Literal>test</ogc:Literal>' +
@@ -2340,7 +2338,7 @@ describe('FilterUtils', () => {
             addXmlnsToRoot: true,
             xmlnsToAdd: ['xmlns:ogc="http://www.opengis.net/ogc"', 'xmlns:gml="http://www.opengis.net/gml"']
         }, undefined, filterObj);
-        let expectedFilter = '<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml"><ogc:And><ogc:Intersects><ogc:PropertyName>shape</ogc:PropertyName><gml:Polygon srsName="EPSG:3857"><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>-189291.52323397118,6127162.329125555 -189291.52323397118,6127042.8962688595 -189157.75843447214,6127042.8962688595 -189157.75843447214,6127162.329125555 -189291.52323397118,6127162.329125555</gml:coordinates></gml:LinearRing></gml:outerBoundaryIs></gml:Polygon></ogc:Intersects></ogc:And></ogc:Filter>';
+        let expectedFilter = '<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml"><ogc:Intersects><ogc:PropertyName>shape</ogc:PropertyName><gml:Polygon srsName="EPSG:3857"><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>-189291.52323397118,6127162.329125555 -189291.52323397118,6127042.8962688595 -189157.75843447214,6127042.8962688595 -189157.75843447214,6127162.329125555 -189291.52323397118,6127162.329125555</gml:coordinates></gml:LinearRing></gml:outerBoundaryIs></gml:Polygon></ogc:Intersects></ogc:Filter>';
         expect(filter).toEqual(expectedFilter);
 
         // ogcVersion - 1.1.0
@@ -2350,26 +2348,19 @@ describe('FilterUtils', () => {
             addXmlnsToRoot: true,
             xmlnsToAdd: ['xmlns:ogc="http://www.opengis.net/ogc"', 'xmlns:gml="http://www.opengis.net/gml"']
         }, undefined, {...filterObj, ogcVersion});
-        expectedFilter = '<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml"><ogc:And><ogc:Intersects><ogc:PropertyName>shape</ogc:PropertyName><gml:Polygon srsName="EPSG:3857"><gml:exterior><gml:LinearRing><gml:posList>-189291.52323397118 6127162.329125555 -189291.52323397118 6127042.8962688595 -189157.75843447214 6127042.8962688595 -189157.75843447214 6127162.329125555 -189291.52323397118 6127162.329125555</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></ogc:Intersects></ogc:And></ogc:Filter>';
+        expectedFilter = '<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml"><ogc:Intersects><ogc:PropertyName>shape</ogc:PropertyName><gml:Polygon srsName="EPSG:3857"><gml:exterior><gml:LinearRing><gml:posList>-189291.52323397118 6127162.329125555 -189291.52323397118 6127042.8962688595 -189157.75843447214 6127042.8962688595 -189157.75843447214 6127162.329125555 -189291.52323397118 6127162.329125555</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></ogc:Intersects></ogc:Filter>';
         expect(filter).toEqual(expectedFilter);
 
-        // ogcVersion - 2.0
-        ogcVersion = '2.0';
-        filter = mergeFiltersToOGC({
-            ogcVersion,
-            addXmlnsToRoot: true,
-            xmlnsToAdd: ['xmlns:ogc="http://www.opengis.net/ogc"', 'xmlns:gml="http://www.opengis.net/gml"']
-        }, undefined, {...filterObj, ogcVersion});
-        expect(filter).toEqual(expectedFilter);
-
-        // ogcVersion - 2.0.0
-        ogcVersion = '2.0.0';
-        filter = mergeFiltersToOGC({
-            ogcVersion,
-            addXmlnsToRoot: true,
-            xmlnsToAdd: ['xmlns:ogc="http://www.opengis.net/ogc"', 'xmlns:gml="http://www.opengis.net/gml"']
-        }, undefined, {...filterObj, ogcVersion});
-        expect(filter).toEqual(expectedFilter);
+        // ogcVersion - 2.0 and 2.0.0 produce the same FES 2.0 filter
+        expectedFilter = '<fes:Filter xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2"><fes:Intersects><fes:ValueReference>shape</fes:ValueReference><gml:Polygon gml:id="ID" srsName="EPSG:3857"><gml:exterior><gml:LinearRing><gml:posList>-189291.52323397118 6127162.329125555 -189291.52323397118 6127042.8962688595 -189157.75843447214 6127042.8962688595 -189157.75843447214 6127162.329125555 -189291.52323397118 6127162.329125555</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></fes:Intersects></fes:Filter>';
+        ['2.0', '2.0.0'].forEach((version) => {
+            filter = mergeFiltersToOGC({
+                ogcVersion: version,
+                addXmlnsToRoot: true,
+                xmlnsToAdd: ['xmlns:fes="http://www.opengis.net/fes/2.0"', 'xmlns:gml="http://www.opengis.net/gml/3.2"']
+            }, undefined, {...filterObj, ogcVersion: version});
+            expect(filter.replace(/gml:id="ms-[a-z0-9]+-\d+"/, 'gml:id="ID"')).toEqual(expectedFilter);
+        });
         const args = [{
             "ogcVersion": "1.1.0"
         }, "P1 = 'V1' AND P2 = 'V2' OR P1 = 'V3' AND P2 = 'V4'", undefined, {
@@ -2381,7 +2372,7 @@ describe('FilterUtils', () => {
                 "maxFeatures": 20
             }
         }];
-        expect(mergeFiltersToOGC(...args)).toEqual(`<ogc:Filter><ogc:And><ogc:Or><ogc:And><ogc:PropertyIsEqualTo><ogc:PropertyName>P1</ogc:PropertyName><ogc:Literal>V1</ogc:Literal></ogc:PropertyIsEqualTo><ogc:PropertyIsEqualTo><ogc:PropertyName>P2</ogc:PropertyName><ogc:Literal>V2</ogc:Literal></ogc:PropertyIsEqualTo></ogc:And><ogc:And><ogc:PropertyIsEqualTo><ogc:PropertyName>P1</ogc:PropertyName><ogc:Literal>V3</ogc:Literal></ogc:PropertyIsEqualTo><ogc:PropertyIsEqualTo><ogc:PropertyName>P2</ogc:PropertyName><ogc:Literal>V4</ogc:Literal></ogc:PropertyIsEqualTo></ogc:And></ogc:Or></ogc:And></ogc:Filter>`);
+        expect(mergeFiltersToOGC(...args)).toEqual(`<ogc:Filter><ogc:Or><ogc:And><ogc:PropertyIsEqualTo><ogc:PropertyName>P1</ogc:PropertyName><ogc:Literal>V1</ogc:Literal></ogc:PropertyIsEqualTo><ogc:PropertyIsEqualTo><ogc:PropertyName>P2</ogc:PropertyName><ogc:Literal>V2</ogc:Literal></ogc:PropertyIsEqualTo></ogc:And><ogc:And><ogc:PropertyIsEqualTo><ogc:PropertyName>P1</ogc:PropertyName><ogc:Literal>V3</ogc:Literal></ogc:PropertyIsEqualTo><ogc:PropertyIsEqualTo><ogc:PropertyName>P2</ogc:PropertyName><ogc:Literal>V4</ogc:Literal></ogc:PropertyIsEqualTo></ogc:And></ogc:Or></ogc:Filter>`);
 
     });
     // sub function to convert filters from other formats

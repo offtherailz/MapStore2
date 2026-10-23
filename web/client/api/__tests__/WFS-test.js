@@ -8,7 +8,8 @@ import {
     toDescribeURL,
     getCapabilitiesURL,
     getFeatureURL,
-    getSupportedFormat
+    getSupportedFormat,
+    detectWFSVersion
 } from '../WFS';
 
 let mockAxios;
@@ -283,5 +284,86 @@ describe('Test WFS ogc API functions', () => {
         const _url = 'http://gs-stable.geosolutionsgroup.com:443/geoserver3/wfs?service=WFS&version=1.1.1&request=GetFeature';
         const featureURL = getFeatureURL(_url, "layerName");
         expect(featureURL.split('?')[1]).toEqual('typeName=layerName&version=1.1.1&service=WFS&request=GetFeature');
+    });
+    it('getFeatureURL renames the KVP parameters for WFS 2.0.0', () => {
+        const featureURL = getFeatureURL('http://wfs.example/ows', 'topp:states', { version: '2.0', maxFeatures: 10, featureId: 'states.1', outputFormat: 'application/json' });
+        const params = Object.fromEntries(new URL(featureURL).searchParams.entries());
+        expect(params).toEqual({
+            typeNames: 'topp:states',
+            version: '2.0.0',
+            service: 'WFS',
+            request: 'GetFeature',
+            count: '10',
+            resourceId: 'states.1',
+            outputFormat: 'application/json'
+        });
+    });
+    it('getFeatureURL keeps the WFS 1.1.0 parameters', () => {
+        const featureURL = getFeatureURL('http://wfs.example/ows', 'topp:states', { maxFeatures: 10, featureId: 'states.1' });
+        const params = Object.fromEntries(new URL(featureURL).searchParams.entries());
+        expect(params).toEqual({
+            typeName: 'topp:states',
+            version: '1.1.0',
+            service: 'WFS',
+            request: 'GetFeature',
+            maxFeatures: '10',
+            featureId: 'states.1'
+        });
+    });
+    it('getFeatureLayer sends a FES 2.0 filter for a layer on WFS 2.0.0', (done) => {
+        mockAxios.onPost().reply(({ data }) => {
+            expect(data).toContain('<wfs:GetFeature service="WFS" version="2.0.0"');
+            expect(data).toContain('<wfs:Query typeNames="topp:states" srsName="EPSG:4326">'
+                + '<fes:Filter><fes:PropertyIsEqualTo><fes:ValueReference>STATE_NAME</fes:ValueReference><fes:Literal>Arizona</fes:Literal></fes:PropertyIsEqualTo></fes:Filter>'
+                + '</wfs:Query>');
+            return [200, {}];
+        });
+        const layerFilter = {
+            groupFields: [{ id: 1, logic: 'OR', index: 0 }],
+            filterFields: [{ attribute: 'STATE_NAME', groupId: 1, operator: '=', type: 'string', value: 'Arizona', rowId: '1' }]
+        };
+        getFeatureLayer({ type: 'wfs', url: 'http://wfs.example/ows', name: 'topp:states', search: { type: 'wfs', url: 'http://wfs.example/ows', wfsVersion: '2.0.0' }, layerFilter })
+            .then(() => done())
+            .catch(done);
+    });
+    describe('detectWFSVersion', () => {
+        const capabilities = (version) => `<?xml version="1.0" encoding="UTF-8"?><wfs:WFS_Capabilities version="${version}" xmlns:wfs="http://www.opengis.net/wfs/2.0"><ows:ServiceIdentification/></wfs:WFS_Capabilities>`;
+        it('asks the service the highest version with a small request', (done) => {
+            mockAxios.onGet().reply(({ url }) => {
+                const params = Object.fromEntries(new URL(url).searchParams.entries());
+                expect(params).toEqual({
+                    map: 'wfs',
+                    service: 'WFS',
+                    request: 'GetCapabilities',
+                    AcceptVersions: '2.0.0,1.1.0',
+                    Sections: 'ServiceIdentification'
+                });
+                return [200, capabilities('2.0.0')];
+            });
+            detectWFSVersion('http://detect.example/wfs-2?map=wfs')
+                .then((version) => {
+                    expect(version).toBe('2.0.0');
+                    done();
+                })
+                .catch(done);
+        });
+        it('returns 1.1.0 for a WFS 1.1.0 service', (done) => {
+            mockAxios.onGet().reply(200, capabilities('1.1.0'));
+            detectWFSVersion('http://detect.example/wfs-1').then((version) => {
+                expect(version).toBe('1.1.0');
+                done();
+            }).catch(done);
+        });
+        it('returns undefined for an unsupported version or an error', (done) => {
+            mockAxios.onGet(/wfs-old/).reply(200, capabilities('1.0.0'));
+            mockAxios.onGet(/wfs-down/).reply(500);
+            Promise.all([detectWFSVersion('http://detect.example/wfs-old'), detectWFSVersion('http://detect.example/wfs-down')])
+                .then(([old, down]) => {
+                    expect(old).toBe(undefined);
+                    expect(down).toBe(undefined);
+                    done();
+                })
+                .catch(done);
+        });
     });
 });

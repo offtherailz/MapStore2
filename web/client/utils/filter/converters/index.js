@@ -74,7 +74,8 @@ converters.logic = {
                 return []; // TODO: check consistency
             } else if (filter.filters.length === 1) {
                 if (logic === 'Not') {
-                    return `<ogc:Not>${convertFilter(filter.filters[0])}</ogc:Not>`;
+                    const ns = opts[0]?.filterNS ?? "ogc";
+                    return `<${ns}:Not>${convertFilter(filter.filters[0])}</${ns}:Not>`;
                 }
                 return convertFilter(filter.filters[0]);
             }

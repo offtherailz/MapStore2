@@ -53,7 +53,7 @@ import {
     userSelector
 } from '../selectors/security';
 
-import { getLayerWFSCapabilities, getXMLFeature } from '../observables/wfs';
+import { getLayerRequestVersion, getLayerWFSCapabilities, getTypeNameNamespaces, getXMLFeature } from '../observables/wfs';
 import { download } from '../observables/wps/download';
 import { referenceOutputExtractor, makeOutputsExtractor, getExecutionStatus  } from '../observables/wps/execute';
 
@@ -88,7 +88,15 @@ const DOWNLOAD_FORMATS_LOOKUP = {
     "excel2007": "excel2007"
 };
 
-const { getFeature: getFilterFeature, query, sortBy, propertyName } = requestBuilder({ wfsVersion: "1.1.0" });
+const requestBuilders = {
+    "1.1.0": requestBuilder({ wfsVersion: "1.1.0" }),
+    "2.0.0": requestBuilder({ wfsVersion: "2.0.0" })
+};
+// the filter is extracted from the request, so it declares the namespaces it uses
+const FILTER_NAMESPACES = {
+    "1.1.0": ['xmlns:ogc="http://www.opengis.net/ogc"', 'xmlns:gml="http://www.opengis.net/gml"'],
+    "2.0.0": ['xmlns:fes="http://www.opengis.net/fes/2.0"', 'xmlns:gml="http://www.opengis.net/gml/3.2"']
+};
 const getCQLFilterFromLayer = (layer = {}) => {
     const params = layer?.params ?? {};
     return params?.[Object.keys(params).find((k) => k?.toLowerCase() === "cql_filter")];
@@ -98,17 +106,21 @@ const hasOutputFormat = (data) => {
     const operation = get(data, "WFS_Capabilities.OperationsMetadata.Operation");
     const getFeature = find(operation, function(o) { return o.name === 'GetFeature'; });
     const parameter = get(getFeature, "Parameter");
-    const outputFormatValue = find(parameter, function(o) { return o.name === 'outputFormat'; }).Value;
+    const outputFormat = find(parameter, function(o) { return o.name === 'outputFormat'; });
+    // OWS 1.1 (WFS 2.0) lists the values inside AllowedValues, OWS 1.0 (WFS 1.1.0) directly in the parameter
+    const outputFormatValue = outputFormat.Value ?? outputFormat.AllowedValues?.Value;
     const pickedObj = pick(DOWNLOAD_FORMATS_LOOKUP, outputFormatValue);
     return toPairs(pickedObj).map(([prop, value]) => ({ name: prop, label: value }));
 };
 
 const getWFSFeature = ({ url, filterObj = {}, layerFilter, layer, viewportFilter, temporalFilter, downloadOptions = {}, options } = {}) => {
     const { sortOptions, propertyNames } = options;
+    const version = getLayerRequestVersion(layer);
+    const { getFeature: getFilterFeature, query, sortBy, propertyName } = requestBuilders[version];
 
     const cqlFilter = getCQLFilterFromLayer(layer);
     const data = mergeFiltersToOGC(
-        { ogcVersion: '1.1.0', addXmlnsToRoot: true, xmlnsToAdd: ['xmlns:ogc="http://www.opengis.net/ogc"', 'xmlns:gml="http://www.opengis.net/gml"'] },
+        { ogcVersion: version, addXmlnsToRoot: true, xmlnsToAdd: FILTER_NAMESPACES[version] },
         downloadOptions.downloadFilteredDataSet ? layerFilter : {},
         downloadOptions.downloadFilteredDataSet ? filterObj : {},
         viewportFilter,
@@ -116,10 +128,12 @@ const getWFSFeature = ({ url, filterObj = {}, layerFilter, layer, viewportFilter
         temporalFilter
     );
 
-    return getXMLFeature(url, getFilterFeature(query(
-        filterObj.featureTypeName, [...(sortOptions ? [sortBy(sortOptions.sortBy, sortOptions.sortOrder)] : []), ...(propertyNames ? [propertyName(propertyNames)] : []), ...(data ? castArray(data) : [])],
-        { srsName: downloadOptions.selectedSrs })
-    ), options, downloadOptions.selectedFormat);
+    return getTypeNameNamespaces({ ...layer, name: filterObj.featureTypeName ?? layer?.name })
+        .switchMap(namespaces => getXMLFeature(url, getFilterFeature(query(
+            filterObj.featureTypeName, [...(sortOptions ? [sortBy(sortOptions.sortBy, sortOptions.sortOrder)] : []), ...(propertyNames ? [propertyName(propertyNames)] : []), ...(data ? castArray(data) : [])],
+            { srsName: downloadOptions.selectedSrs }),
+        { namespaces }
+        ), options, downloadOptions.selectedFormat));
 
 };
 

@@ -68,13 +68,13 @@ import { getCapabilities, describeLayers, flatLayers } from '../api/WMS';
 import {generateGeoServerWMTSUrl} from '../utils/WMTSUtils';
 import CoordinatesUtils from '../utils/CoordinatesUtils';
 import ConfigUtils from '../utils/ConfigUtils';
-import {getCapabilitiesUrl, getLayerId, getLayerUrl, removeWorkspace, DEFAULT_GROUP_ID} from '../utils/LayersUtils';
+import {getCapabilitiesUrl, getLayerId, getLayerUrl, removeWorkspace, DEFAULT_GROUP_ID, getWFSVersion} from '../utils/LayersUtils';
 
 import {zoomToExtent} from "../actions/map";
 import CSW from '../api/CSW';
 import { projectionSelector, mapSelector } from '../selectors/map';
 import { getResolutions, METERS_PER_UNIT } from "../utils/MapUtils";
-import { describeFeatureType } from '../api/WFS';
+import { describeFeatureType, detectWFSVersion } from '../api/WFS';
 import { extractGeometryType } from '../utils/WFSLayerUtils';
 import { createDefaultStyle, simplifyGeometryType } from '../utils/StyleUtils';
 import { logError } from '../utils/DebugUtils';
@@ -292,11 +292,16 @@ export default (API) => ({
                                 let description = find(results, (desc) => desc.name === layer.name );
                                 if (description && description.owsType === 'WFS') {
                                     const filteredUrl = ConfigUtils.filterUrlParams(ConfigUtils.cleanDuplicatedQuestionMarks(description.owsURL), authkeyParamNameSelector(state));
-                                    return Rx.Observable.of(changeLayerProperties(id, {
+                                    // the version is resolved once, when the layer is added, and saved with the layer
+                                    const wfsVersion$ = getWFSVersion(layer)
+                                        ? Rx.Observable.of(getWFSVersion(layer))
+                                        : Rx.Observable.defer(() => detectWFSVersion(filteredUrl, { protectedId: layer.security?.sourceId }));
+                                    return wfsVersion$.map((wfsVersion) => changeLayerProperties(id, {
                                         search: {
                                             url: filteredUrl,
                                             type: 'wfs',
                                             ...(description.query?.typeName && { typeName: description.query.typeName }),
+                                            ...(wfsVersion && { wfsVersion }),
                                             ...(layer.search || {})
                                         }, ...tileGridProperties
                                     }));

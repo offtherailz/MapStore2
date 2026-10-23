@@ -9,7 +9,7 @@
 import expect from 'expect';
 import requestBuilder from '../RequestBuilder';
 
-const TEST_REQUEST_V2 = '<wfs:GetFeature service="WFS" version="2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:And><fes:Or><fes:PropertyIsEqualTo><fes:ValueReference>highway_system</fes:ValueReference><fes:Literal>state</fes:Literal></fes:PropertyIsEqualTo></fes:Or></fes:And></fes:Filter></wfs:Query></wfs:GetFeature>';
+const TEST_REQUEST_V2 = '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter><fes:And><fes:Or><fes:PropertyIsEqualTo><fes:ValueReference>highway_system</fes:ValueReference><fes:Literal>state</fes:Literal></fes:PropertyIsEqualTo></fes:Or></fes:And></fes:Filter></wfs:Query></wfs:GetFeature>';
 
 const TEST_REQUEST_V1_POLY = '<wfs:GetFeature service="WFS" version="1.0.0" outputFormat="GML2" xmlns:gml="http://www.opengis.net/gml" xmlns:wfs="http://www.opengis.net/wfs" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs http://schemas.opengis.net/wfs/1.0.0/WFS-basic.xsd"><wfs:Query typeName="ft_name_test" srsName="EPSG:4326"><ogc:Filter><ogc:Intersects><ogc:PropertyName>geometry</ogc:PropertyName><gml:Polygon srsName="EPSG:4326"><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>1,1 1,2 2,2 2,1 1,1</gml:coordinates></gml:LinearRing></gml:outerBoundaryIs></gml:Polygon></ogc:Intersects></ogc:Filter></wfs:Query></wfs:GetFeature>';
 describe('RequestBuilder Operators', () => {
@@ -84,20 +84,20 @@ describe('RequestBuilder Operators', () => {
             + ' xmlns:ogc="http://www.opengis.net/ogc"'
             + ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs http://schemas.opengis.net/wfs/1.1.0/wfs.xsd">'
             + '<wfs:Query typeName="ft_name_test" srsName="EPSG:4326">'
-                + '<wfs:SortBy>'
-                    + '<wfs:SortProperty>'
-                        + '<ogc:PropertyName>highway_system</ogc:PropertyName>'
-                        + '<wfs:SortOrder>A</wfs:SortOrder>'
-                    + '</wfs:SortProperty>'
-                + '</wfs:SortBy>'
-                + '<ogc:PropertyName>highway_system</ogc:PropertyName>'
-                + '<ogc:PropertyName>name</ogc:PropertyName>'
+                + '<wfs:PropertyName>highway_system</wfs:PropertyName>'
+                + '<wfs:PropertyName>name</wfs:PropertyName>'
                 + '<ogc:Filter>'
                     + '<ogc:PropertyIsEqualTo>'
                         + '<ogc:PropertyName>highway_system</ogc:PropertyName>'
                         + '<ogc:Literal>state</ogc:Literal>'
                     + '</ogc:PropertyIsEqualTo>'
                 + '</ogc:Filter>'
+                + '<ogc:SortBy>'
+                    + '<ogc:SortProperty>'
+                        + '<ogc:PropertyName>highway_system</ogc:PropertyName>'
+                        + '<ogc:SortOrder>ASC</ogc:SortOrder>'
+                    + '</ogc:SortProperty>'
+                + '</ogc:SortBy>'
             + '</wfs:Query>'
         + '</wfs:GetFeature>';
         expect(
@@ -115,40 +115,52 @@ describe('RequestBuilder Operators', () => {
 
     });
     it('test PropertyName and sortBy usage WFS 2.0', () => {
-        const {filter, getFeature, property, query, propertyName, sortBy} = requestBuilder({wfsVersion: "2.0"});
-        const expected = '<wfs:GetFeature service="WFS" version="2.0"'
+        const expected = '<wfs:GetFeature service="WFS" version="2.0.0"'
             + ' xmlns:wfs="http://www.opengis.net/wfs/2.0"'
             + ' xmlns:fes="http://www.opengis.net/fes/2.0"'
             + ' xmlns:gml="http://www.opengis.net/gml/3.2"'
-            + ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd">'
-            + '<wfs:Query typeNames="ft_name_test" srsName="EPSG:4326">'
-                + '<wfs:SortBy>'
-                    + '<wfs:SortProperty>'
-                        + '<fes:ValueReference>highway_system</fes:ValueReference>'
-                        + '<wfs:SortOrder>A</wfs:SortOrder>'
-                    + '</wfs:SortProperty>'
-                + '</wfs:SortBy>'
-                + '<fes:PropertyName>highway_system</fes:PropertyName>'
-                + '<fes:PropertyName>name</fes:PropertyName>'
+            + ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"'
+            + ' xmlns:topp="http://www.openplans.org/topp" startIndex="10" count="5">'
+            + '<wfs:Query typeNames="topp:states" srsName="EPSG:4326">'
+                + '<wfs:PropertyName>highway_system</wfs:PropertyName>'
+                + '<wfs:PropertyName>name</wfs:PropertyName>'
                 + '<fes:Filter>'
                     + '<fes:PropertyIsEqualTo>'
                         + '<fes:ValueReference>highway_system</fes:ValueReference>'
                         + '<fes:Literal>state</fes:Literal>'
                     + '</fes:PropertyIsEqualTo>'
                 + '</fes:Filter>'
+                + '<fes:SortBy>'
+                    + '<fes:SortProperty>'
+                        + '<fes:ValueReference>highway_system</fes:ValueReference>'
+                        + '<fes:SortOrder>DESC</fes:SortOrder>'
+                    + '</fes:SortProperty>'
+                + '</fes:SortBy>'
             + '</wfs:Query>'
         + '</wfs:GetFeature>';
-        expect(
-            getFeature(query("ft_name_test",
-                [
-                    sortBy("highway_system", "A"),
-                    propertyName(["highway_system", "name"]),
-                    filter(property("highway_system").equalTo("state"))
-                ]
-
-            ))
-        ).toBe(
-            expected
-        );
+        const options = { namespaces: { topp: "http://www.openplans.org/topp" }, startIndex: 10, maxFeatures: 5 };
+        // 2.0 and 2.0.0 produce the same request
+        ["2.0", "2.0.0"].forEach((version) => {
+            const {filter, getFeature, property, query, propertyName, sortBy} = requestBuilder({wfsVersion: version});
+            expect(
+                getFeature(query("topp:states",
+                    [
+                        sortBy("highway_system", "D"),
+                        propertyName(["highway_system", "name"]),
+                        filter(property("highway_system").equalTo("state"))
+                    ]
+                ), options)
+            ).toBe(expected);
+        });
+    });
+    it('fidFilter uses ResourceId in WFS 2.0 and FeatureId in WFS 1.1.0', () => {
+        expect(requestBuilder({wfsVersion: "2.0.0"}).fidFilter("states.1"))
+            .toBe('<fes:Filter><fes:ResourceId rid="states.1"/></fes:Filter>');
+        expect(requestBuilder({wfsVersion: "1.1.0"}).fidFilter("states.1"))
+            .toBe('<ogc:Filter><ogc:FeatureId fid="states.1"/></ogc:Filter>');
+    });
+    it('explicit filterNS is kept for every version', () => {
+        expect(requestBuilder({wfsVersion: "1.1.0", filterNS: "ogc"}).filter("x")).toBe('<ogc:Filter>x</ogc:Filter>');
+        expect(requestBuilder({wfsVersion: "2.0.0"}).filter("x")).toBe('<fes:Filter>x</fes:Filter>');
     });
 });

@@ -18,12 +18,13 @@ import {
 } from '../../../../utils/VectorStyleUtils';
 import { applyDefaultStyleToVectorLayer } from '../../../../utils/StyleUtils';
 import GeoJSONStyledFeatures from  '../../../../utils/cesium/GeoJSONStyledFeatures';
-import { ServerTypes } from '../../../../utils/LayersUtils';
+import { ServerTypes, getWFSVersion } from '../../../../utils/LayersUtils';
 import TiledBillboardCollection from '../../../../utils/cesium/TiledBillboardCollection';
 
 
 const requestFeatures = (options, params, config) => {
     return getFeature(options.url, options.name, {
+        version: getWFSVersion(options),
         // ...(!params?.CQL_FILTER && { bbox: [minx, miny, maxx, maxy, projection].join(',') }),
         outputFormat: 'application/json',
         srsname: 'EPSG:4326',

@@ -9,7 +9,7 @@
 import { cleanAuthParamsFromURL } from '../../utils/SecurityUtils';
 import { getRecordLinks, extractOGCServicesReferences } from '../../utils/CatalogUtils';
 
-import { getCapabilities, getCapabilitiesURL } from '../WFS';
+import { detectWFSVersion, getCapabilities, getCapabilitiesURL } from '../WFS';
 import {
     validate as commonValidate,
     testService as commonTestService,
@@ -18,7 +18,7 @@ import {
 } from './common';
 import { get, castArray, isEmpty } from 'lodash';
 
-const searchAndPaginate = (json = {}, startPosition, maxRecords, text) => {
+const searchAndPaginate = (json = {}, startPosition, maxRecords, text, detectedWfsVersion) => {
 
     const layers = castArray(get(json, '["wfs:WFS_Capabilities"].FeatureTypeList.FeatureType', []));
 
@@ -45,6 +45,7 @@ const searchAndPaginate = (json = {}, startPosition, maxRecords, text) => {
                 featureType,
                 type: "wfs",
                 url: cleanAuthParamsFromURL(json.url), // Service URL
+                detectedWfsVersion,
                 name,
                 title,
                 description,
@@ -75,8 +76,11 @@ const recordToLayer = (record, {
     service
 }) => {
     const {
-        layerOptions
+        layerOptions,
+        wfsVersion: serviceWfsVersion
     } = service || {};
+    // the version configured in the service wins over the detected one
+    const wfsVersion = serviceWfsVersion || record.detectedWfsVersion;
     let security;
     if (service?.protectedId) {
         security = {sourceId: service?.protectedId, type: "basic"};
@@ -85,7 +89,8 @@ const recordToLayer = (record, {
         type: record.type || "wfs",
         search: {
             url: record.url,
-            type: "wfs"
+            type: "wfs",
+            ...(wfsVersion && { wfsVersion })
         },
         security,
         url: record.url,
@@ -102,8 +107,11 @@ const recordToLayer = (record, {
 };
 
 export const getRecords = (url, startPosition, maxRecords, text, info) => {
-    return getCapabilities(url, info).then((data) => {
-        return searchAndPaginate(data, startPosition, maxRecords, text, info);
+    return Promise.all([
+        getCapabilities(url, info),
+        detectWFSVersion(url, { protectedId: info?.options?.service?.protectedId })
+    ]).then(([data, detectedWfsVersion]) => {
+        return searchAndPaginate(data, startPosition, maxRecords, text, detectedWfsVersion);
     });
 };
 
