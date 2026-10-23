@@ -1265,6 +1265,7 @@
       "GroupManager",
       "TagsManager",
       "IPManager",
+      "ExtensionsManager",
       "Footer",
       {
         "name": "About",
