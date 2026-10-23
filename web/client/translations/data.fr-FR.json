@@ -5138,6 +5138,11 @@
         "confirm": "Confirmer",
         "cancel": "Annuler"
       }
+    },
+    "wfsVersion": {
+      "label": "Version WFS",
+      "default": "Par défaut (WFS 1.1.0, requêtes historiques)",
+      "detect": "Détecter depuis le service"
     }
   }
 }

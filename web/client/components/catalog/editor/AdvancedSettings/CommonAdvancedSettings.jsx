@@ -11,6 +11,7 @@ import { FormGroup, Checkbox, ControlLabel, FormControl } from "react-bootstrap"
 
 import Message from "../../../I18N/Message";
 import InfoPopover from '../../../widgets/widget/InfoPopover';
+import WFSVersionSelect from '../../../misc/WFSVersionSelect';
 
 const parseMaxFeaturesInView = (event) => {
     const maxFeaturesInView = Number(event?.target?.value);
@@ -84,6 +85,10 @@ export default ({
                 &nbsp;<InfoPopover text={<Message msgId="layerProperties.enableInteractiveLegendInfo.infoWithoutGSNote" />} />
                 </Checkbox>
             </FormGroup>}
+            {service.type === 'wfs' && <WFSVersionSelect
+                value={service.wfsVersion}
+                emptyLabelId="wfsVersion.detect"
+                onChange={(wfsVersion) => onChangeServiceProperty("wfsVersion", wfsVersion)} />}
             {children}
         </>
     );

@@ -774,4 +774,29 @@ describe('test  Layer Properties General module component', () => {
             })
             .then(() => done(), done);
     });
+    it('shows the WFS version only for native WFS layers and WMS layers with a linked service', () => {
+        const render = (element) => {
+            ReactDOM.render(<General element={element} />, document.getElementById("container"));
+            return document.querySelector('[data-qa="wfs-version"]');
+        };
+        expect(render({ id: 'a', type: 'wms', name: 'topp:states', url: '/geoserver/wms' })).toBe(null);
+        expect(render({ id: 'b', type: 'wms', name: 'topp:states', url: '/geoserver/wms', search: { type: 'wfs', url: '/geoserver/wfs', wfsVersion: '2.0.0' } })
+            .querySelector('.Select-value-label').textContent).toBe('WFS 2.0.0');
+        expect(render({ id: 'c', type: 'wfs', name: 'topp:states', url: '/geoserver/wfs' })
+            .querySelector('.Select-value-label').textContent).toBe('wfsVersion.default');
+    });
+    it('detects the WFS version of the linked service and keeps the rest of search', (done) => {
+        mockAxios.onGet(/AcceptVersions/).reply(200, '<wfs:WFS_Capabilities version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0"/>');
+        const handlers = { onChange: () => {} };
+        const spy = expect.spyOn(handlers, 'onChange');
+        const element = { id: 'd', type: 'wms', name: 'topp:states', url: '/geoserver/wms', search: { type: 'wfs', url: '/geoserver/detect/wfs', typeName: 'topp:linked' } };
+        ReactDOM.render(<General element={element} onChange={handlers.onChange} />, document.getElementById("container"));
+        ReactTestUtils.Simulate.click(document.querySelector('[data-qa="wfs-version-detect"]'));
+        waitFor(() => expect(spy).toHaveBeenCalled())
+            .then(() => {
+                expect(spy.calls.length).toBe(1);
+                expect(spy.calls[0].arguments).toEqual(['search', { type: 'wfs', url: '/geoserver/detect/wfs', typeName: 'topp:linked', wfsVersion: '2.0.0' }]);
+            })
+            .then(() => done(), done);
+    });
 });

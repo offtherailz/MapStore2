@@ -38,7 +38,22 @@ describe('Test common advanced settings', () => {
         const advancedSettingPanel = document.getElementsByClassName("mapstore-switch-panel");
         expect(advancedSettingPanel).toBeTruthy();
         const fields = document.querySelectorAll(".form-group");
-        expect(fields.length).toBe(3);
+        expect(fields.length).toBe(4);
+        const version = document.querySelector('[data-qa="wfs-version"]');
+        expect(version.querySelector('.Select-value-label').textContent).toBe('wfsVersion.detect');
+        expect(version.querySelector('[data-qa="wfs-version-detect"]')).toBe(null);
+    });
+    it('test wfs version of the service', () => {
+        const action = { onChangeServiceProperty: () => {} };
+        const spyOn = expect.spyOn(action, 'onChangeServiceProperty');
+        ReactDOM.render(<CommonAdvancedSettings service={{type: "wfs", wfsVersion: "1.1.0"}} onChangeServiceProperty={action.onChangeServiceProperty}/>, document.getElementById("container"));
+        const version = document.querySelector('[data-qa="wfs-version"]');
+        expect(version.querySelector('.Select-value-label').textContent).toBe('WFS 1.1.0');
+        TestUtils.Simulate.mouseDown(version.querySelector('.Select-control'), { button: 0 });
+        const options = [...version.querySelectorAll('.Select-option')];
+        expect(options.map(option => option.textContent)).toEqual(['wfsVersion.detect', 'WFS 2.0.0', 'WFS 1.1.0']);
+        TestUtils.Simulate.mouseDown(options[1]);
+        expect(spyOn.calls.map(call => call.arguments)).toEqual([['wfsVersion', '2.0.0']]);
     });
     it('test wms advanced options onChangeServiceProperty autoreload', () => {
         const action = {
@@ -52,7 +67,7 @@ describe('Test common advanced settings', () => {
         const advancedSettingPanel = document.getElementsByClassName("mapstore-switch-panel");
         expect(advancedSettingPanel).toBeTruthy();
         const fields = document.querySelectorAll(".form-group");
-        expect(fields.length).toBe(3);
+        expect(fields.length).toBe(4);
         const autoload = document.querySelectorAll('input[type="checkbox"]')[0];
         const formGroup = document.querySelectorAll('.form-group')[0];
         expect(formGroup.textContent.trim()).toBe('catalog.autoload');

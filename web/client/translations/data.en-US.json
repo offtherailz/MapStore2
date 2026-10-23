@@ -5146,6 +5146,11 @@
         "confirm": "Confirm",
         "cancel": "Cancel"
       }
+    },
+    "wfsVersion": {
+      "label": "WFS version",
+      "default": "Default (WFS 1.1.0, legacy requests)",
+      "detect": "Detect from the service"
     }
   }
 }

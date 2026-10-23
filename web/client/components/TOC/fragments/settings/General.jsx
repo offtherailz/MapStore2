@@ -18,6 +18,7 @@ import Spinner from 'react-spinkit';
 import Message from '../../../I18N/Message';
 import SwitchPanel from '../../../misc/switch/SwitchPanel';
 import EditableTextField from './EditableTextField';
+import WFSVersionSelect from '../../../misc/WFSVersionSelect';
 import useLayerSource from './hooks/useLayerSource';
 import { getMessageById } from '../../../../utils/LocaleUtils';
 import {
@@ -25,7 +26,8 @@ import {
     getLabelName as _getLabelName
 } from '../../../../plugins/TOC/utils/TOCUtils';
 import { supportsFeatureEditing } from "../../../../utils/FeatureGridUtils";
-import { DEFAULT_GROUP_ID, flattenGroups, getTitle as _getTitle } from '../../../../utils/LayersUtils';
+import { DEFAULT_GROUP_ID, flattenGroups, getSearchUrl, getTitle as _getTitle, getWFSVersion } from '../../../../utils/LayersUtils';
+import { detectWFSVersion } from '../../../../api/WFS';
 import { validateSourceField } from '../../../../utils/LayerSourceUtils';
 import { addSearch } from '../../../../observables/wms';
 
@@ -94,6 +96,21 @@ export class GeneralSettings extends React.Component {
             .catch(() => this.props.onChange('search', emptySearch));
     };
 
+    updateWFSVersion = (wfsVersion) => {
+        const { element } = this.props;
+        this.props.onChange('search', {
+            ...(element.search ?? { type: 'wfs', url: element.url }),
+            wfsVersion
+        });
+    };
+
+    renderWFSVersion = () => (
+        <WFSVersionSelect
+            value={getWFSVersion(this.props.element)}
+            onChange={this.updateWFSVersion}
+            onDetect={() => detectWFSVersion(getSearchUrl(this.props.element), { protectedId: this.props.element.security?.sourceId })} />
+    );
+
     render() {
         const { hideTitleTranslations = false } = this.props.pluginCfg;
 
@@ -129,6 +146,7 @@ export class GeneralSettings extends React.Component {
                     </FormGroup>
                     {sourceFields.name && <EditableTextField {...sourceFields.name} />}
                     {sourceFields.url && <EditableTextField {...sourceFields.url} />}
+                    {this.props.element.type === 'wfs' && this.renderWFSVersion()}
                     <FormGroup>
                         <ControlLabel><Message msgId="layerProperties.description" /></ControlLabel>
                         {this.props.element.capabilitiesLoading ? <Spinner spinnerName="circle" /> :
@@ -214,6 +232,7 @@ export class GeneralSettings extends React.Component {
                         onSwitch={this.updateWFSPanel}>
                         {sourceFields.searchUrl && <EditableTextField {...sourceFields.searchUrl} />}
                         {sourceFields.searchTypeName && <EditableTextField {...sourceFields.searchTypeName} />}
+                        {this.props.element.search && this.renderWFSVersion()}
                     </SwitchPanel>}
 
                 </form>
