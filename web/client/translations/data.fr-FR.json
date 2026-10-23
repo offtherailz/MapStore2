@@ -2102,6 +2102,7 @@
       "single": "Simple bande"
     },
     "featuregrid": {
+      "errorQuery": "Le service a refusé la requête de la table attributaire",
       "columns": "Des colonnes",
       "header": "Rechercher la liste des résultats",
       "tools": "Panneau d'outils",

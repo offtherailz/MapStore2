@@ -14,8 +14,9 @@ import { Observable } from 'rxjs';
 
 import WMS, { WMS_DESCRIBE_LAYER_VERSION } from '../api/WMS';
 import axios from '../libs/ajax';
+import { detectWFSVersion } from '../api/WFS';
 import { determineCrs, fetchProjRemotely, getProjUrl } from '../utils/CoordinatesUtils';
-import { getCapabilitiesUrl } from '../utils/LayersUtils';
+import { getCapabilitiesUrl, getWFSVersion } from '../utils/LayersUtils';
 import { interceptOGCError } from '../utils/ObservableUtils';
 import { cleanAuthParamsFromURL } from '../utils/SecurityUtils';
 import { getDefaultUrl } from '../utils/URLUtils';
@@ -48,15 +49,25 @@ export const getLayerCapabilities = l => {
         .map(c => WMS.parseLayerCapabilities(c, l));
 };
 
+// the linked service of a new layer gets the WFS version it supports, once, when the layer is created
+const withWFSVersion = (search, layer) => !search?.url || getWFSVersion(layer) || getWFSVersion({ search })
+    ? Observable.of(search)
+    : Observable.defer(() => detectWFSVersion(search.url, { protectedId: layer?.security?.sourceId }))
+        .map(wfsVersion => wfsVersion ? { ...search, wfsVersion } : search);
+
 export const addSearch = (l, { detectedSearchOverrides = false } = {}) =>
     describeLayer(l)
         .map( ({data = {}}) => data && data.layerDescriptions[0])
-        .map(({owsURL, typeName, query} = {}) => {
+        .switchMap((description = {}) => withWFSVersion(description.owsURL ? {
+            url: cleanAuthParamsFromURL(description.owsURL)
+        } : undefined, l).map(({ wfsVersion } = {}) => ({ ...description, wfsVersion })))
+        .map(({owsURL, typeName, query, wfsVersion} = {}) => {
             const detectedTypeName = typeName || head(castArray(query))?.typeName;
             const detectedSearch = owsURL ? {
                 type: "wfs",
                 url: cleanAuthParamsFromURL(owsURL),
-                ...(detectedTypeName && { typeName: detectedTypeName })
+                ...(detectedTypeName && { typeName: detectedTypeName }),
+                ...(wfsVersion && { wfsVersion })
             } : undefined;
             return {
                 ...l,

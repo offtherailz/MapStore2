@@ -308,7 +308,7 @@ export const getLayerJSONFeature = (layer = {}, filter, {sortOptions, propertyNa
     // TODO: Apply sort workaround for no primary keys
     return getTypeNameNamespaces(layer)
         .switchMap(namespaces => getJSONFeature(search.url || url,
-            toRequest(namespaces, sortOptions ? [sortBy(sortOptions.sortBy, sortOptions.sortOrder)] : []),
+            toRequest(namespaces, sortOptions?.sortBy ? [sortBy(sortOptions.sortBy, sortOptions.sortOrder)] : []),
             {security, ...options, namespaces})
             // retry using 1st propertyNames property, if present, to workaround primary-key issues
             .catch(error => {

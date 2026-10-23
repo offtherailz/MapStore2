@@ -2141,6 +2141,7 @@
       "single": "Single Band"
     },
     "featuregrid": {
+      "errorQuery": "Der Dienst hat die Anfrage der Attributtabelle abgelehnt",
       "columns": "Spalten",
       "header": "Suchresultate",
       "tools": "Werkzeugpalette",

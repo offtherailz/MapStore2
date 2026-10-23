@@ -21,7 +21,8 @@ export const toLayer = (r, service) => {
             ...(r.type === 'wfs' ? { bbox: r.bbox || r.boundingBox } : {}),
             search: r.type === 'wfs' ? {
                 url: r.url,
-                type: "wfs"
+                type: "wfs",
+                ...(r.detectedWfsVersion && { wfsVersion: r.detectedWfsVersion })
             } : undefined
         }
         // the type wms is default (for csw and wms), wmts have to be passed. // TODO: improve and centralize more

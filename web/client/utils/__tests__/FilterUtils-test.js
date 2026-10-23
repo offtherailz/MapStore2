@@ -2954,4 +2954,13 @@ describe('FilterUtils', () => {
             expect(isFilterFromWidgetOnly({ filters: [{ appliedFromWidget: 'w1' }, { appliedFromWidget: 'w2' }] })).toBe(true);
         });
     });
+    it('a single BBOX extent is not wrapped in Or', () => {
+        const bbox = (extent) => toOGCFilterParts({
+            spatialField: { geometry: { extent, projection: 'EPSG:4326' }, method: 'BBOX', operation: 'BBOX' }
+        }, '2.0.0', 'fes')[0];
+        const single = bbox([[1, 2, 3, 4]]);
+        expect(single.indexOf('<fes:BBOX>')).toBe(0);
+        expect(single).toNotContain('<fes:Or>');
+        expect(bbox([[1, 2, 3, 4], [5, 6, 7, 8]]).indexOf('<fes:Or><fes:BBOX>')).toBe(0);
+    });
 });

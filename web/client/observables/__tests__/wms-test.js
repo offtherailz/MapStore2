@@ -86,4 +86,36 @@ describe("WMS Observables", () => {
                 done(error);
             });
     });
+    it('addSearch stores the WFS version supported by the linked service', (done) => {
+        const mockAxios = new AxiosMockAdapter(axios);
+        mockAxios.onGet(/AcceptVersions/).reply(200, '<wfs:WFS_Capabilities version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0"/>');
+        mockAxios.onGet().reply(200, { layerDescriptions: [{ owsURL: 'version-wfs-url', typeName: 'workspace:layer' }] });
+        addSearch({ name: 'workspace:layer', url: 'wms-url' })
+            .toPromise()
+            .then((layer) => {
+                expect(layer.search).toEqual({ type: 'wfs', url: 'version-wfs-url', typeName: 'workspace:layer', wfsVersion: '2.0.0' });
+                mockAxios.restore();
+                done();
+            })
+            .catch((error) => {
+                mockAxios.restore();
+                done(error);
+            });
+    });
+    it('addSearch keeps the WFS version of the layer without detecting it', (done) => {
+        const mockAxios = new AxiosMockAdapter(axios);
+        mockAxios.onGet().reply(200, { layerDescriptions: [{ owsURL: 'kept-wfs-url', typeName: 'workspace:layer' }] });
+        addSearch({ name: 'workspace:layer', url: 'wms-url', search: { type: 'wfs', url: 'kept-wfs-url', wfsVersion: '1.1.0' } })
+            .toPromise()
+            .then((layer) => {
+                expect(layer.search.wfsVersion).toBe('1.1.0');
+                expect(mockAxios.history.get.length).toBe(1);
+                mockAxios.restore();
+                done();
+            })
+            .catch((error) => {
+                mockAxios.restore();
+                done(error);
+            });
+    });
 });

@@ -373,13 +373,15 @@ export const toOGCFilterParts = function(objFilter, versionOGC, nsplaceholder) {
     if (bboxField) {
         if (isArray(bboxField.geometry && bboxField.geometry.extent[0])) {
             const OP = "OR";
+            const extentCount = bboxField.geometry.extent.length;
             const bBoxFilter = bboxField.geometry.extent.reduce((a, extent) => {
                 let field = Object.assign({}, bboxField);
                 bboxField.geometry.extent = extent;
                 return a + FilterUtils.processOGCSpatialFilter(versionOGC, field, nsplaceholder);
             }, '');
 
-            spatialFilter = ogcLogicalOperators[OP](nsplaceholder, bBoxFilter);
+            // Or needs at least two operands in the filter schema
+            spatialFilter = extentCount === 1 ? bBoxFilter : ogcLogicalOperators[OP](nsplaceholder, bBoxFilter);
         }
         filters.push(spatialFilter);
     } else if (spatialFields) {

@@ -1278,3 +1278,18 @@ export const resetViewportFilter = (action$, store) =>
         return viewportFilter(store.getState()) !== null ? Rx.Observable.of(setViewportFilter(null))
             : Rx.Observable.empty();
     });
+
+/**
+ * Shows the error of a query of the attribute table, e.g. a request rejected by a strict WFS service,
+ * so an empty table is not mistaken for a query without results.
+ * @memberof epics.featuregrid
+ */
+export const featureGridQueryErrorEpic = (action$, { getState }) =>
+    action$.ofType(QUERY_ERROR)
+        .filter(() => isFeatureGridOpen(getState()))
+        .map(({ error: queryError }) => error({
+            title: "featuregrid.errorQuery",
+            message: queryError?.message || "Unknown Exception",
+            uid: "featureGridQueryError",
+            autoDismiss: 10
+        }));

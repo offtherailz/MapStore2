@@ -140,7 +140,7 @@ import {
     toggleSnappingOffOnFeatureGridViewMode,
     closeFeatureGridOnDrawingToolOpen,
     setViewportFilterEpic,
-    deactivateViewportFilterEpic, resetViewportFilter
+    deactivateViewportFilterEpic, resetViewportFilter, featureGridQueryErrorEpic
 } from '../featuregrid';
 import { onLocationChanged } from 'connected-react-router';
 import { TEST_TIMEOUT, testEpic, addTimeoutEpic } from './epicTestUtils';
@@ -2437,5 +2437,20 @@ describe('featuregrid Epics', () => {
             expect(actions[0].type).toBe(SET_VIEWPORT_FILTER);
             expect(actions[0].value).toBe(null);
         }, {featuregrid: { open: true, viewportFilter: false }}, done);
+    });
+    it('featureGridQueryErrorEpic shows the error of the attribute table query', (done) => {
+        const queryErrorAction = { type: 'QUERY_ERROR', error: { message: 'Invalid request' } };
+        testEpic(featureGridQueryErrorEpic, 1, [queryErrorAction], actions => {
+            expect(actions.length).toBe(1);
+            expect(actions[0].type).toBe(SHOW_NOTIFICATION);
+            expect(actions[0].title).toBe('featuregrid.errorQuery');
+            expect(actions[0].message).toBe('Invalid request');
+            expect(actions[0].level).toBe('error');
+        }, { featuregrid: { open: true } }, done);
+    });
+    it('featureGridQueryErrorEpic ignores errors when the attribute table is closed', (done) => {
+        testEpic(addTimeoutEpic(featureGridQueryErrorEpic, 50), 1, [{ type: 'QUERY_ERROR', error: { message: 'x' } }], actions => {
+            expect(actions.map(({ type }) => type)).toEqual([TEST_TIMEOUT]);
+        }, { featuregrid: { open: false } }, done);
     });
 });
