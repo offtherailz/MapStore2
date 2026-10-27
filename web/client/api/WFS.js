@@ -93,7 +93,7 @@ export const getFeatureURL = (url, typeName, { version = "1.1.0", ...params } = 
 };
 const typeNameNamespaces = {};
 /**
- * Resolves the namespace of the workspace prefix of a type name from DescribeFeatureType, cached by URL and type name.
+ * Resolves the namespace of the workspace prefix of a type name from DescribeFeatureType, cached by URL, type name and credentials; a failure is not cached.
  * Only layers with a configured WFS version resolve it, so the requests of legacy layers do not change.
  * @param {object} layer the layer
  * @param {string} url the WFS service URL
@@ -105,11 +105,15 @@ const getTypeNameNamespaces = (layer, url, typeName = "") => {
     if (!prefix || !getWFSVersion(layer)) {
         return Promise.resolve(undefined);
     }
-    const key = `${url}|${typeName}`;
+    const key = `${url}|${typeName}|${layer.security?.sourceId ?? ""}`;
     if (!typeNameNamespaces[key]) {
         typeNameNamespaces[key] = axios.get(toDescribeURL(url, typeName), {_msAuthSourceId: layer.security?.sourceId})
             .then(({ data }) => data?.targetNamespace ? { [prefix]: data.targetNamespace } : undefined)
-            .catch(() => undefined);
+            .catch(() => {
+                // a failure is not cached, so the next request tries again
+                delete typeNameNamespaces[key];
+                return undefined;
+            });
     }
     return typeNameNamespaces[key];
 };
@@ -192,14 +196,15 @@ const versionsCache = {};
 /**
  * Detects the highest WFS version supported by a service, between 2.0.0 and 1.1.0.
  * The request asks only the service identification, so the response is small.
- * The result is cached by URL.
+ * The result is cached by URL and credentials; a failed detection is not cached.
  * @param {string} url the WFS service URL
  * @param {object} [options]
  * @param {string} [options.protectedId] the id of the credentials of the service
  * @returns {Promise} resolves with `2.0.0`, `1.1.0` or undefined when the version cannot be detected
  */
 export const detectWFSVersion = (url, { protectedId } = {}) => {
-    if (!versionsCache[url]) {
+    const key = `${url}|${protectedId ?? ""}`;
+    if (!versionsCache[key]) {
         const parsed = urlUtil.parse(getDefaultUrl(url), true);
         const capabilitiesURL = urlUtil.format({
             ...parsed,
@@ -212,14 +217,17 @@ export const detectWFSVersion = (url, { protectedId } = {}) => {
                 Sections: "ServiceIdentification"
             }
         });
-        versionsCache[url] = axios.get(capabilitiesURL, {_msAuthSourceId: protectedId})
+        versionsCache[key] = axios.get(capabilitiesURL, {_msAuthSourceId: protectedId})
             .then(({ data }) => {
                 const version = `${data}`.match(/WFS_Capabilities[^>]*\sversion="([^"]+)"/)?.[1];
                 return isWFS2(version) ? "2.0.0" : ["1.1.0"].find(supported => supported === version);
             })
-            .catch(() => undefined);
+            .catch(() => {
+                delete versionsCache[key];
+                return undefined;
+            });
     }
-    return versionsCache[url];
+    return versionsCache[key];
 };
 
 export const describeFeatureType = function(url, typeName) {

@@ -3392,9 +3392,7 @@ describe('Openlayers layer', () => {
                     expect(data).toContain('<wfs:Query typeName="osm:vector_tile"');
                     expect(data).toContain(
                         '<ogc:Filter>'
-                        + '<ogc:And>'
                             + '<ogc:PropertyIsEqualTo><ogc:PropertyName>a</ogc:PropertyName><ogc:Literal>1</ogc:Literal></ogc:PropertyIsEqualTo>'
-                        + '</ogc:And>'
                     + '</ogc:Filter>');
 
                     return [200, SAMPLE_FEATURE_COLLECTION];

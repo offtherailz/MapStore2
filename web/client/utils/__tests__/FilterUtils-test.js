@@ -1063,15 +1063,15 @@ describe('FilterUtils', () => {
                 }
             }
         };
-        const expectedGeom = "<ogc:Intersects>"
-         + '<ogc:PropertyName>geometry</ogc:PropertyName>'
-         + '<ogc:Function name="collectGeometries">'
-         + '<ogc:Function name="queryCollection">'
-         + '<ogc:Literal>TEST</ogc:Literal>'
-         + '<ogc:Literal>GEOMETRY</ogc:Literal>'
-         + '<ogc:Literal><![CDATA[INCLUDE]]></ogc:Literal>'
-         + '</ogc:Function></ogc:Function>'
-         + "</ogc:Intersects>";
+        const expectedGeom = "<fes:Intersects>"
+         + '<fes:ValueReference>geometry</fes:ValueReference>'
+         + '<fes:Function name="collectGeometries">'
+         + '<fes:Function name="queryCollection">'
+         + '<fes:Literal>TEST</fes:Literal>'
+         + '<fes:Literal>GEOMETRY</fes:Literal>'
+         + '<fes:Literal><![CDATA[INCLUDE]]></fes:Literal>'
+         + '</fes:Function></fes:Function>'
+         + "</fes:Intersects>";
         let expected =
             '<wfs:GetFeature service="WFS" version="2.0.0" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"><wfs:Query typeNames="ft_name_test" srsName="EPSG:4326"><fes:Filter>'
             + expectedGeom

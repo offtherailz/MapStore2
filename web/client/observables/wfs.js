@@ -257,7 +257,7 @@ const typeNameNamespaces = {};
  * Resolves the namespace of the workspace prefix of the layer type name (e.g. `topp` of `topp:states`).
  * Strict servers reject a request that uses a prefix not declared in the XML.
  * Only layers with a configured WFS version resolve it, so the requests of legacy layers do not change.
- * The namespace comes from DescribeFeatureType and it is cached by service URL and type name.
+ * The namespace comes from DescribeFeatureType and it is cached by DescribeFeatureType URL and credentials; a failure is not cached.
  * @param {object} layer the layer
  * @returns {Observable} a stream that emits the namespaces to declare, e.g. `{topp: "http://www.openplans.org/topp"}`
  */
@@ -267,11 +267,15 @@ export const getTypeNameNamespaces = (layer = {}) => {
     if (!prefix || !getWFSVersion(layer)) {
         return Rx.Observable.of(undefined);
     }
-    const key = `${layer.search?.url ?? layer.url}|${typeName}`;
+    const key = `${toDescribeURL(layer)}|${layer.security?.sourceId ?? ""}`;
     if (!typeNameNamespaces[key]) {
         typeNameNamespaces[key] = describeFeatureType({ layer })
             .map(({ data } = {}) => data?.targetNamespace ? { [prefix]: data.targetNamespace } : undefined)
-            .catch(() => Rx.Observable.of(undefined))
+            .catch(() => {
+                // a failure is not cached, so the next request tries again
+                delete typeNameNamespaces[key];
+                return Rx.Observable.of(undefined);
+            })
             .toPromise();
     }
     return Rx.Observable.defer(() => typeNameNamespaces[key]);

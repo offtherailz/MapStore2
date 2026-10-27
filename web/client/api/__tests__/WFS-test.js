@@ -365,5 +365,28 @@ describe('Test WFS ogc API functions', () => {
                 })
                 .catch(done);
         });
+        it('asks again after a failure and caches a detected version', (done) => {
+            let calls = 0;
+            mockAxios.onGet(/wfs-retry/).reply(() => {
+                calls++;
+                return calls === 1 ? [500] : [200, capabilities('2.0.0')];
+            });
+            const url = 'http://detect.example/wfs-retry';
+            detectWFSVersion(url)
+                .then((first) => {
+                    expect(first).toBe(undefined);
+                    return detectWFSVersion(url);
+                })
+                .then((second) => {
+                    expect(second).toBe('2.0.0');
+                    return detectWFSVersion(url);
+                })
+                .then((third) => {
+                    expect(third).toBe('2.0.0');
+                    expect(calls).toBe(2);
+                    done();
+                })
+                .catch(done);
+        });
     });
 });

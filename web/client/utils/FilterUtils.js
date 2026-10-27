@@ -580,7 +580,7 @@ export const processOGCSpatialFilter = function(version, spatialField, nsplaceho
     // if it is present in the spatialField
     // the geometry have to be ignored in favor of crossLayer
     if (spatialField.collectGeometries) {
-        return FilterUtils.processOGCCrossLayerFilter(spatialField);
+        return FilterUtils.processOGCCrossLayerFilter(spatialField, nsplaceholder);
     }
     // spatial attribute name is not mandatory for bbox, and sometimes not present.
     // Filter should be generated anyway
